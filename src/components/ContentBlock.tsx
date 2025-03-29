@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { BookmarkIcon, ThumbsUpIcon, MessageCircleIcon, ExternalLinkIcon } from 'lucide-react';
+import { BookmarkIcon, ThumbsUpIcon, MessageCircleIcon } from 'lucide-react';
 import { SPECIALISTS } from './SpecialistAvatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,7 +39,12 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   const [flipCard, setFlipCard] = useState(false);
   
   // Get the right specialist
-  const specialist = SPECIALISTS.find(s => s.id === block.specialist_id) || SPECIALISTS[0];
+  const specialist = SPECIALISTS[block.specialist_id] || {
+    name: 'Wonder Wizard',
+    color: 'bg-gradient-to-r from-purple-500 to-pink-500',
+    emoji: '✨',
+    description: 'General knowledge expert'
+  };
 
   const handleSubmitReply = () => {
     if (!replyText.trim()) return;
@@ -312,12 +317,12 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     <Card className="bg-white/5 border-white/10 overflow-hidden">
       <div className="p-4">
         <div className="flex items-center mb-3">
-          <div className="h-8 w-8 rounded-full bg-wonderwhiz-purple/30 flex items-center justify-center">
-            {specialist.icon}
+          <div className={`h-8 w-8 rounded-full ${specialist.color} flex items-center justify-center`}>
+            {specialist.emoji}
           </div>
           <div className="ml-2">
             <h3 className="font-medium text-white">{specialist.name}</h3>
-            <p className="text-white/60 text-xs">{specialist.role}</p>
+            <p className="text-white/60 text-xs">{specialist.description}</p>
           </div>
         </div>
         

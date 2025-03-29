@@ -83,9 +83,19 @@ export async function checkAndAwardStreakBonus(childId: string): Promise<boolean
       return false;
     }
     
+    // Get streak days from useSparksSystem or other source
+    const { data: streakData, error: streakError } = await supabase.functions.invoke('track-login-streak', {
+      body: JSON.stringify({ childId })
+    });
+    
+    if (streakError) {
+      console.error('Error getting streak data:', streakError);
+      return false;
+    }
+    
     // If streak is divisible by 3, award the bonus
-    if (profile && profile.streak_days && profile.streak_days > 0 && profile.streak_days % 3 === 0) {
-      await awardSparks(childId, 'streak', `${profile.streak_days}-day streak bonus`);
+    if (streakData && streakData.streak_days && streakData.streak_days > 0 && streakData.streak_days % 3 === 0) {
+      await awardSparks(childId, 'streak', `${streakData.streak_days}-day streak bonus`);
       return true;
     }
     

@@ -1,76 +1,86 @@
 
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, Circle, Clock, Sparkles } from 'lucide-react';
-import { toast } from 'sonner';
-import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
-import ConfettiTrigger from './ConfettiTrigger';
+import { CheckCircle, Clock, Award } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Task {
   id: string;
   title: string;
-  description?: string;
+  description: string;
   sparks_reward: number;
-  status: string;
-  child_task_id: string;
+  status?: string;
+  assigned_at?: string;
+  completed_at?: string;
+  task_id?: string;
+  child_task_id?: string;
 }
 
 interface ChildTaskListProps {
   childId: string;
-  onTaskComplete?: (sparks: number) => void;
+  onSparkEarned: (amount: number) => void;
 }
 
-const ChildTaskList: React.FC<ChildTaskListProps> = ({ childId, onTaskComplete }) => {
+const ChildTaskList: React.FC<ChildTaskListProps> = ({ childId, onSparkEarned }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
-  const [completingTaskId, setCompletingTaskId] = useState<string | null>(null);
-
+  
   useEffect(() => {
+    if (!childId) return;
+    
+    const fetchTasks = async () => {
+      setLoading(true);
+      
+      try {
+        // Get child's tasks with status
+        const { data: childTasks, error: childTasksError } = await supabase
+          .from('child_tasks')
+          .select(`
+            id,
+            task_id,
+            status,
+            assigned_at,
+            completed_at,
+            tasks (
+              id,
+              title,
+              description,
+              sparks_reward
+            )
+          `)
+          .eq('child_profile_id', childId);
+          
+        if (childTasksError) throw childTasksError;
+        
+        // Transform the data to a flatter structure
+        const formattedTasks = childTasks?.map(ct => ({
+          id: ct.tasks.id,
+          title: ct.tasks.title,
+          description: ct.tasks.description,
+          sparks_reward: ct.tasks.sparks_reward,
+          status: ct.status,
+          assigned_at: ct.assigned_at,
+          completed_at: ct.completed_at,
+          task_id: ct.task_id,
+          child_task_id: ct.id
+        })) || [];
+        
+        setTasks(formattedTasks);
+      } catch (error) {
+        console.error('Error fetching tasks:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
     fetchTasks();
   }, [childId]);
-
-  const fetchTasks = async () => {
+  
+  const handleCompleteTask = async (taskId: string, childTaskId: string, sparksReward: number) => {
     try {
-      const { data, error } = await supabase
-        .from('child_tasks')
-        .select(`
-          id,
-          status,
-          task:tasks (
-            id,
-            title,
-            description,
-            sparks_reward
-          )
-        `)
-        .eq('child_profile_id', childId);
-
-      if (error) throw error;
-
-      // Transform the nested data into a flat structure
-      const formattedTasks = data.map(item => ({
-        id: item.task.id,
-        title: item.task.title,
-        description: item.task.description,
-        sparks_reward: item.task.sparks_reward,
-        status: item.status,
-        child_task_id: item.id
-      }));
-
-      setTasks(formattedTasks);
-    } catch (error) {
-      console.error('Error fetching tasks:', error);
-      toast.error('Could not load tasks');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCompleteTask = async (childTaskId: string, taskId: string, sparks: number) => {
-    setCompletingTaskId(childTaskId);
-    
-    try {
-      // Update the task status to completed
+      // Update task status to completed
       const { error: updateError } = await supabase
         .from('child_tasks')
         .update({
@@ -78,151 +88,120 @@ const ChildTaskList: React.FC<ChildTaskListProps> = ({ childId, onTaskComplete }
           completed_at: new Date().toISOString()
         })
         .eq('id', childTaskId);
-
-      if (updateError) throw updateError;
-
-      // Add the sparks transaction
-      const { error: transactionError } = await supabase
-        .from('sparks_transactions')
-        .insert({
-          child_id: childId,
-          amount: sparks,
-          reason: `Completed task`
-        });
-
-      if (transactionError) throw transactionError;
-
-      try {
-        // Call the edge function to update the child's sparks balance
-        const { error } = await supabase.functions.invoke('increment-sparks-balance', {
-          body: JSON.stringify({ 
-            profileId: childId, 
-            amount: sparks 
-          })
-        });
         
-        if (error) throw error;
-      } catch (error) {
-        console.error('Error calling increment-sparks-balance function:', error);
-        // Fallback: Try using RPC if edge function fails
-        try {
-          const { error: rpcError } = await supabase
-            .rpc('increment_sparks_balance', { 
-              profile_id: childId, 
-              amount: sparks 
-            });
-            
-          if (rpcError) throw rpcError;
-        } catch (rpcFallbackError) {
-          console.error('Error with RPC fallback:', rpcFallbackError);
-          throw rpcFallbackError;
-        }
-      }
-
-      // Update the local task list
+      if (updateError) throw updateError;
+      
+      // Update local state
       setTasks(prev => 
         prev.map(task => 
-          task.child_task_id === childTaskId 
-            ? { ...task, status: 'completed' } 
+          task.child_task_id === childTaskId
+            ? { ...task, status: 'completed', completed_at: new Date().toISOString() }
             : task
         )
       );
-
-      // Call the onTaskComplete callback if provided
-      if (onTaskComplete) {
-        onTaskComplete(sparks);
-      }
-
-      toast.success(`Task completed! You earned ${sparks} sparks! ✨`);
-
+      
+      // Award sparks
+      await supabase.functions.invoke('increment-sparks-balance', {
+        body: JSON.stringify({ 
+          profileId: childId, 
+          amount: sparksReward 
+        })
+      });
+      
+      // Add the transaction record
+      await supabase
+        .from('sparks_transactions')
+        .insert({
+          child_id: childId,
+          amount: sparksReward,
+          reason: `Completing task: ${tasks.find(t => t.child_task_id === childTaskId)?.title || 'Task'}`
+        });
+      
+      // Notify parent component
+      onSparkEarned(sparksReward);
+      
+      toast.success(`You earned ${sparksReward} sparks for completing this task! 🎉`, {
+        duration: 3000,
+        position: 'bottom-center'
+      });
+      
     } catch (error) {
       console.error('Error completing task:', error);
-      toast.error('Could not complete task');
-    } finally {
-      setCompletingTaskId(null);
+      toast.error('Failed to complete task. Please try again.');
     }
   };
-
+  
   if (loading) {
     return (
-      <div className="flex justify-center items-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-wonderwhiz-pink"></div>
+      <div className="text-center p-4">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-wonderwhiz-purple mx-auto"></div>
+        <p className="mt-2 text-white/70">Loading your tasks...</p>
       </div>
     );
   }
-
+  
   if (tasks.length === 0) {
     return (
-      <div className="text-center py-6 bg-white/5 rounded-lg">
-        <p className="text-white/70">No tasks assigned yet!</p>
+      <div className="text-center p-4">
+        <p className="text-white/70">No tasks assigned yet.</p>
       </div>
     );
   }
-
+  
   return (
     <div className="space-y-3">
-      {tasks.map(task => {
-        const isCompleted = task.status === 'completed';
-        const isPending = task.status === 'pending';
-        
-        return (
+      <AnimatePresence>
+        {tasks.map((task, index) => (
           <motion.div
             key={task.child_task_id}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ delay: index * 0.05 }}
             className={`p-3 rounded-lg border ${
-              isCompleted 
-                ? 'bg-wonderwhiz-purple/20 border-wonderwhiz-purple/40'
-                : 'bg-white/5 border-white/10 hover:bg-white/10 transition-colors'
-            }`}
+              task.status === 'completed'
+                ? 'bg-green-500/10 border-green-500/20'
+                : 'bg-white/5 border-white/10 hover:bg-white/10'
+            } transition-colors`}
           >
-            <div className="flex items-start">
-              <div className="mt-1 mr-3">
-                {isCompleted ? (
-                  <CheckCircle className="h-6 w-6 text-wonderwhiz-purple" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                {task.status === 'completed' ? (
+                  <CheckCircle className="h-5 w-5 text-green-400 mr-3" />
                 ) : (
-                  <Circle className="h-6 w-6 text-white/60" />
+                  <Clock className="h-5 w-5 text-white/60 mr-3" />
                 )}
-              </div>
-              
-              <div className="flex-1">
-                <h3 className="font-medium text-lg text-white">{task.title}</h3>
-                {task.description && (
-                  <p className="text-white/70 mt-1">{task.description}</p>
-                )}
-                <div className="flex items-center mt-2">
-                  <Sparkles className="h-4 w-4 text-wonderwhiz-gold mr-1" />
-                  <span className="text-sm text-white">{task.sparks_reward} Sparks reward</span>
+                <div>
+                  <h4 className="text-white font-medium">{task.title}</h4>
+                  {task.description && (
+                    <p className="text-white/70 text-sm">{task.description}</p>
+                  )}
                 </div>
               </div>
-              
-              <div>
-                {isPending ? (
-                  <ConfettiTrigger intensity="high">
-                    <button
-                      onClick={() => handleCompleteTask(task.child_task_id, task.id, task.sparks_reward)}
-                      disabled={!!completingTaskId}
-                      className="px-3 py-2 bg-wonderwhiz-pink hover:bg-wonderwhiz-pink/80 text-white rounded-md transition-colors flex items-center disabled:opacity-50"
-                    >
-                      {completingTaskId === task.child_task_id ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-1"></div>
-                      ) : (
-                        <CheckCircle className="h-4 w-4 mr-1" />
-                      )}
-                      Complete
-                    </button>
-                  </ConfettiTrigger>
-                ) : (
-                  <div className="flex items-center px-3 py-2 bg-wonderwhiz-purple/30 text-white/90 rounded-md">
-                    <CheckCircle className="h-4 w-4 mr-1" />
-                    Completed
-                  </div>
+              <div className="flex items-center">
+                <div className="flex items-center mr-2 bg-amber-500/20 px-2 py-1 rounded-full">
+                  <Award className="h-4 w-4 text-amber-400 mr-1" />
+                  <span className="text-amber-300 text-xs font-medium">+{task.sparks_reward}</span>
+                </div>
+                {task.status !== 'completed' && (
+                  <Button
+                    size="sm"
+                    onClick={() => handleCompleteTask(task.task_id, task.child_task_id as string, task.sparks_reward)}
+                    className="bg-wonderwhiz-purple hover:bg-wonderwhiz-purple/80 text-xs"
+                  >
+                    Complete
+                  </Button>
                 )}
               </div>
             </div>
+            {task.status === 'completed' && task.completed_at && (
+              <p className="text-white/50 text-xs mt-1">
+                Completed on {new Date(task.completed_at).toLocaleDateString()}
+              </p>
+            )}
           </motion.div>
-        );
-      })}
+        ))}
+      </AnimatePresence>
     </div>
   );
 };
