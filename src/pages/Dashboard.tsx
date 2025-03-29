@@ -798,12 +798,45 @@ const Dashboard = () => {
                 <CurioCard 
                   key={curio.id}
                   colorVariant={index}
-                  className="cursor-pointer transition-all hover:bg-white/10"
+                  className={`
+                    cursor-pointer 
+                    transition-all 
+                    hover:bg-white/10 
+                    border 
+                    border-opacity-20 
+                    rounded-lg 
+                    overflow-hidden 
+                    shadow-sm 
+                    hover:shadow-md
+                  `}
                   onClick={() => handleLoadCurio(curio)}
                 >
-                  <div className={`p-3 flex items-center ${currentCurio?.id === curio.id ? 'bg-white/10 text-white' : 'text-white/80'}`}>
+                  <div 
+                    className={`
+                      p-3 
+                      flex 
+                      items-center 
+                      ${currentCurio?.id === curio.id ? 'bg-white/10 text-white' : 'text-white/80'}
+                      line-clamp-2 
+                      break-words 
+                      overflow-hidden
+                    `}
+                  >
                     <MessageSquare className="h-4 w-4 mr-2 flex-shrink-0" />
-                    <span className="truncate text-sm font-medium leading-tight">{curio.title}</span>
+                    <span 
+                      className="
+                        text-sm 
+                        font-medium 
+                        leading-tight 
+                        line-clamp-2 
+                        break-words 
+                        max-h-[3rem] 
+                        overflow-hidden 
+                        text-ellipsis
+                      "
+                    >
+                      {curio.title}
+                    </span>
                   </div>
                 </CurioCard>
               ))}
@@ -817,7 +850,18 @@ const Dashboard = () => {
                   <Button 
                     variant="ghost" 
                     size="sm"
-                    className="text-white/60 hover:text-white hover:bg-white/10 flex items-center gap-1 text-xs"
+                    className="
+                      text-white/60 
+                      hover:text-white 
+                      hover:bg-white/10 
+                      flex 
+                      items-center 
+                      gap-1 
+                      text-xs 
+                      border 
+                      border-white/10 
+                      rounded-full
+                    "
                     onClick={handleLoadMoreCurios}
                   >
                     Load More <ChevronDown className="h-3 w-3" />
