@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import MagicWand from './MagicWand';
 import { Sparkles, Star, Lightbulb, BookOpen, Rocket, Heart, Brain, Globe } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
+
 const HeroSection = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [curioAnimations, setCurioAnimations] = useState({
@@ -12,6 +13,7 @@ const HeroSection = () => {
     spark: false,
     prism: false
   });
+
   const handleCurioHover = (curio: keyof typeof curioAnimations) => {
     setCurioAnimations(prev => ({
       ...prev,
@@ -24,6 +26,7 @@ const HeroSection = () => {
       }));
     }, 700);
   };
+
   const personas = [{
     name: "Nova",
     icon: <Star className="h-6 w-6 text-yellow-300 filter drop-shadow-md" />,
@@ -48,9 +51,11 @@ const HeroSection = () => {
     textColor: "text-gray-800",
     type: "creative"
   }];
+
   const handleSliderChange = (value: number[]) => {
     setActiveTab(Math.round(value[0] / 100 * (personas.length - 1)));
   };
+
   return <section className="pt-10 pb-20 px-6 md:px-10 lg:px-20">
       <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center">
         <motion.div initial={{
@@ -64,7 +69,7 @@ const HeroSection = () => {
       }} className="text-center md:text-left">
           <h1 className="text-4xl md:text-5xl lg:text-6xl leading-tight mb-6 text-white group">
             The discovery engine that <span className="text-wonderwhiz-pink relative">
-              sparks kids' curiosity
+              feeds kids' curiosity
               <span className="absolute -top-6 -right-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 <Sparkles className="h-8 w-8 text-wonderwhiz-pink filter drop-shadow-lg" />
               </span>
@@ -257,4 +262,5 @@ const HeroSection = () => {
       </div>
     </section>;
 };
+
 export default HeroSection;
