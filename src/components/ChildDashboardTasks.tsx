@@ -55,7 +55,11 @@ const ChildDashboardTasks: React.FC<ChildDashboardTasksProps> = ({ childId, onSp
             transition={{ duration: 0.3 }}
           >
             <CardContent>
-              <ChildTaskList childId={childId} onTaskComplete={handleTaskComplete} />
+              <ChildTaskList 
+                childId={childId} 
+                onSparkEarned={onSparkEarned}
+                onTaskComplete={handleTaskComplete} 
+              />
             </CardContent>
           </motion.div>
         )}

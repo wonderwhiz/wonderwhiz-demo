@@ -38,7 +38,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   const [creativeUploaded, setCreativeUploaded] = useState(false);
   const [flipCard, setFlipCard] = useState(false);
   
-  // Get the right specialist
   const specialist = SPECIALISTS[block.specialist_id] || {
     name: 'Wonder Wizard',
     color: 'bg-gradient-to-r from-purple-500 to-pink-500',
@@ -87,7 +86,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     }
   };
   
-  // Render different block types
   const renderBlockContent = () => {
     switch (block.type) {
       case 'fact':

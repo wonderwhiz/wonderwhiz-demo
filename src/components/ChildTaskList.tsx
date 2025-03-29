@@ -20,10 +20,11 @@ interface Task {
 
 interface ChildTaskListProps {
   childId: string;
-  onSparkEarned: (amount: number) => void;
+  onSparkEarned?: (amount: number) => void;
+  onTaskComplete?: (amount: number) => void; // Added this prop to match with what's passed from ChildDashboardTasks
 }
 
-const ChildTaskList: React.FC<ChildTaskListProps> = ({ childId, onSparkEarned }) => {
+const ChildTaskList: React.FC<ChildTaskListProps> = ({ childId, onSparkEarned, onTaskComplete }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -117,8 +118,9 @@ const ChildTaskList: React.FC<ChildTaskListProps> = ({ childId, onSparkEarned })
           reason: `Completing task: ${tasks.find(t => t.child_task_id === childTaskId)?.title || 'Task'}`
         });
       
-      // Notify parent component
-      onSparkEarned(sparksReward);
+      // Notify parent component - support both callback methods
+      if (onSparkEarned) onSparkEarned(sparksReward);
+      if (onTaskComplete) onTaskComplete(sparksReward);
       
       toast.success(`You earned ${sparksReward} sparks for completing this task! 🎉`, {
         duration: 3000,
@@ -186,7 +188,7 @@ const ChildTaskList: React.FC<ChildTaskListProps> = ({ childId, onSparkEarned })
                 {task.status !== 'completed' && (
                   <Button
                     size="sm"
-                    onClick={() => handleCompleteTask(task.task_id, task.child_task_id as string, task.sparks_reward)}
+                    onClick={() => handleCompleteTask(task.task_id as string, task.child_task_id as string, task.sparks_reward)}
                     className="bg-wonderwhiz-purple hover:bg-wonderwhiz-purple/80 text-xs"
                   >
                     Complete
