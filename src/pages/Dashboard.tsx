@@ -20,6 +20,7 @@ import { useSparksSystem } from '@/hooks/useSparksSystem';
 import MagicalBorder from '@/components/MagicalBorder';
 import FloatingElements from '@/components/FloatingElements';
 import CurioSuggestion from '@/components/CurioSuggestion';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ChildProfile {
   id: string;
@@ -78,6 +79,7 @@ const Dashboard = () => {
   ]);
   const [loadingBlocks, setLoadingBlocks] = useState(false);
   const [visibleBlocksCount, setVisibleBlocksCount] = useState(3);
+  const isMobile = useIsMobile();
   
   const { streakDays, streakBonusReceived, streakBonusAmount } = useSparksSystem(profileId);
   
@@ -712,22 +714,24 @@ const Dashboard = () => {
           </Button>
           
           <div className="flex-1 mx-auto max-w-lg">
-            <div className="flex items-center space-x-4">
-              <motion.button 
-                whileHover={{ scale: 1.1, rotate: 5 }}
-                whileTap={{ scale: 0.95 }}
-                className="text-white hover:text-wonderwhiz-gold transition-colors"
-                onClick={() => setShowQuickMenu(!showQuickMenu)}
-              >
-                <Sparkles className="h-5 w-5" />
-              </motion.button>
-              
-              <SparksBalance 
-                childId={profileId || ''} 
-                initialBalance={childProfile?.sparks_balance} 
-                size="sm"
-                className="md:flex"
-              />
+            <div className="flex items-center space-x-4 justify-between">
+              <div className="flex items-center">
+                <motion.button 
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="text-white hover:text-wonderwhiz-gold transition-colors"
+                  onClick={() => setShowQuickMenu(!showQuickMenu)}
+                >
+                  <Sparkles className="h-5 w-5" />
+                </motion.button>
+                
+                <SparksBalance 
+                  childId={profileId || ''} 
+                  initialBalance={childProfile?.sparks_balance} 
+                  size="sm"
+                  className="md:flex ml-3"
+                />
+              </div>
 
               <Button
                 variant="ghost"
@@ -741,9 +745,9 @@ const Dashboard = () => {
           </div>
         </header>
         
-        <div className="flex-1 overflow-y-auto py-4 px-4 md:px-6">
+        <div className="flex-1 overflow-y-auto py-4 px-3 sm:px-4 md:px-6">
           <div className="max-w-6xl mx-auto space-y-6">
-            <div className="my-6 relative">
+            <div className="my-4 sm:my-6 relative">
               <FloatingElements 
                 type="stars" 
                 density="low" 
@@ -757,20 +761,20 @@ const Dashboard = () => {
               >
                 <form onSubmit={(e) => { e.preventDefault(); handleSubmitQuery(); }} className="relative">
                   <Input 
-                    placeholder="What do you want to explore today? Ask me anything!"
+                    placeholder={isMobile ? "Ask me anything!" : "What do you want to explore today? Ask me anything!"}
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    className="px-6 py-8 bg-white/10 border-white/20 text-white text-lg placeholder:text-white/60 placeholder:text-center focus:ring-2 focus:ring-wonderwhiz-gold/50 focus:border-wonderwhiz-gold"
+                    className="px-6 py-6 sm:py-8 bg-white/10 border-white/20 text-white text-base sm:text-lg placeholder:text-white/60 placeholder:text-center focus:ring-2 focus:ring-wonderwhiz-gold/50 focus:border-wonderwhiz-gold"
                     disabled={isGenerating}
                   />
                   
                   <Button 
                     type="submit" 
                     size="icon"
-                    className="absolute right-4 top-1/2 -translate-y-1/2 h-10 w-10 bg-wonderwhiz-gold text-wonderwhiz-dark hover:bg-wonderwhiz-gold/80 rounded-full shadow-glow-gold"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 h-9 w-9 sm:h-10 sm:w-10 bg-wonderwhiz-gold text-wonderwhiz-dark hover:bg-wonderwhiz-gold/80 rounded-full shadow-glow-gold"
                     disabled={!query.trim() || isGenerating}
                   >
-                    <Send className="h-5 w-5" />
+                    <Send className="h-4 w-4 sm:h-5 sm:w-5" />
                   </Button>
                   
                   <div className="absolute left-4 top-1/2 -translate-y-1/2">
@@ -778,7 +782,7 @@ const Dashboard = () => {
                       animate={{ rotate: [0, 15, -15, 0] }}
                       transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
                     >
-                      <Lightbulb className="h-6 w-6 text-wonderwhiz-gold" />
+                      <Lightbulb className="h-5 w-5 sm:h-6 sm:w-6 text-wonderwhiz-gold" />
                     </motion.div>
                   </div>
                 </form>
@@ -831,17 +835,17 @@ const Dashboard = () => {
             >
               <Card className="bg-white/5 border-white/10">
                 {!currentCurio && (
-                  <div className="text-center py-12">
+                  <div className="text-center py-8 sm:py-12">
                     <motion.div 
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ duration: 0.5 }}
                       className="mb-6"
                     >
-                      <WonderWhizLogo className="h-24 mx-auto" />
+                      <WonderWhizLogo className="h-20 sm:h-24 mx-auto" />
                     </motion.div>
-                    <h1 className="text-3xl font-bold text-white mb-4">Welcome to WonderWhiz!</h1>
-                    <p className="text-white/80 text-lg mb-8">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-white mb-4">Welcome to WonderWhiz!</h1>
+                    <p className="text-white/80 text-base sm:text-lg mb-6 sm:mb-8 px-4">
                       What are you curious about today? Type your question above!
                     </p>
                     
@@ -864,7 +868,7 @@ const Dashboard = () => {
                       </Button>
                     </div>
                     
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 max-w-3xl mx-auto px-3 sm:px-4">
                       {curioSuggestions.map((suggestion, index) => (
                         <CurioSuggestion
                           key={`${suggestion}-${index}`}
@@ -899,8 +903,8 @@ const Dashboard = () => {
                       )}
                     </AnimatePresence>
                     
-                    <h2 className="text-2xl font-bold text-white mb-4 px-4 pt-4">{currentCurio.title}</h2>
-                    <div className="space-y-4 px-4 pb-4">
+                    <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 px-3 sm:px-4 pt-4">{currentCurio.title}</h2>
+                    <div className="space-y-4 px-3 sm:px-4 pb-4">
                       {contentBlocks.slice(0, visibleBlocksCount).map((block, index) => (
                         <motion.div 
                           key={block.id} 
@@ -919,10 +923,11 @@ const Dashboard = () => {
                             onQuizCorrect={() => handleQuizCorrect(block.id)}
                             onNewsRead={() => handleNewsRead(block.id)}
                             onCreativeUpload={() => handleCreativeUpload(block.id)}
+                            colorVariant={index % 3}
                           />
                           
                           {blockReplies[block.id] && blockReplies[block.id].length > 0 && (
-                            <div className="pl-4 border-l-2 border-white/20 ml-4">
+                            <div className="pl-3 sm:pl-4 border-l-2 border-white/20 ml-3 sm:ml-4">
                               {blockReplies[block.id].map((reply) => (
                                 <BlockReply 
                                   key={reply.id}
@@ -954,9 +959,9 @@ const Dashboard = () => {
               </Card>
             </motion.div>
             
-            <div className="pt-8 mt-8 border-t border-white/10">
-              <h2 className="text-2xl font-bold text-white mb-6 text-center">Discover More</h2>
-              <div className="grid md:grid-cols-2 gap-6">
+            <div className="pt-6 sm:pt-8 mt-6 sm:mt-8 border-t border-white/10">
+              <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 sm:mb-6 text-center">Discover More</h2>
+              <div className="grid gap-6 md:grid-cols-2">
                 <motion.div
                   id="sparks-overview"
                   initial={{ opacity: 0, y: 20 }}
@@ -1036,6 +1041,12 @@ const Dashboard = () => {
         
         .animate-shake {
           animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        
+        @media (max-width: 640px) {
+          .flip-card {
+            height: 100px;
+          }
         }
         `}
       </style>

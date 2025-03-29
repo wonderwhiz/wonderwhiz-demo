@@ -17,6 +17,7 @@ interface ContentBlockProps {
   onQuizCorrect?: () => void;
   onNewsRead?: () => void;
   onCreativeUpload?: () => void;
+  colorVariant?: number;
 }
 
 const ContentBlock: React.FC<ContentBlockProps> = ({
@@ -28,7 +29,8 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   onRabbitHoleFollow,
   onQuizCorrect,
   onNewsRead,
-  onCreativeUpload
+  onCreativeUpload,
+  colorVariant = 0
 }) => {
   const [replyText, setReplyText] = useState('');
   const [showReplyForm, setShowReplyForm] = useState(false);
@@ -43,6 +45,32 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     color: 'bg-gradient-to-r from-purple-500 to-pink-500',
     emoji: '✨',
     description: 'General knowledge expert'
+  };
+
+  const getBackgroundColor = () => {
+    switch (colorVariant) {
+      case 0:
+        return 'bg-white/5';
+      case 1:
+        return 'bg-wonderwhiz-purple/5';
+      case 2:
+        return 'bg-wonderwhiz-blue/5';
+      default:
+        return 'bg-white/5';
+    }
+  };
+
+  const getBorderColor = () => {
+    switch (colorVariant) {
+      case 0:
+        return 'border-white/10';
+      case 1:
+        return 'border-wonderwhiz-purple/15';
+      case 2:
+        return 'border-wonderwhiz-blue/15';
+      default:
+        return 'border-white/10';
+    }
   };
 
   const handleSubmitReply = () => {
@@ -312,8 +340,8 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   };
   
   return (
-    <Card className="bg-white/5 border-white/10 overflow-hidden">
-      <div className="p-4">
+    <Card className={`${getBackgroundColor()} ${getBorderColor()} overflow-hidden transition-colors duration-300 hover:shadow-md`}>
+      <div className="p-3 sm:p-4">
         <div className="flex items-center mb-3">
           <div className={`h-8 w-8 rounded-full ${specialist.color} flex items-center justify-center`}>
             {specialist.emoji}
