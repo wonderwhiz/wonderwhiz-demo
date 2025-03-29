@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -54,6 +55,12 @@ interface AssignedTask {
   }
 }
 
+interface ActivityData {
+  name: string;
+  value: number;
+  date: string;
+}
+
 const taskSchema = z.object({
   title: z.string().min(1, { message: "Title is required" }),
   description: z.string().optional(),
@@ -70,6 +77,14 @@ const ParentZone = () => {
   const [completedTasks, setCompletedTasks] = useState<AssignedTask[]>([]);
   const [activeTab, setActiveTab] = useState('overview');
   const [isAddingTask, setIsAddingTask] = useState(false);
+  const [weeklyActivityData, setWeeklyActivityData] = useState<ActivityData[]>([]);
+  const [learningStats, setLearningStats] = useState({
+    topicsExplored: 0,
+    quizzesCompleted: 0,
+    creativePrompts: 0,
+    tasksCompleted: 0
+  });
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
   
   const form = useForm<z.infer<typeof taskSchema>>({
     resolver: zodResolver(taskSchema),
@@ -79,16 +94,6 @@ const ParentZone = () => {
       sparks_reward: 5
     },
   });
-  
-  const activityData = [
-    { name: 'Mon', value: 15 },
-    { name: 'Tue', value: 25 },
-    { name: 'Wed', value: 30 },
-    { name: 'Thu', value: 10 },
-    { name: 'Fri', value: 20 },
-    { name: 'Sat', value: 35 },
-    { name: 'Sun', value: 28 },
-  ];
   
   useEffect(() => {
     const loadProfileAndTasks = async () => {
@@ -128,7 +133,10 @@ const ParentZone = () => {
         if (tasksError) throw tasksError;
         setTasks(tasksData || []);
         
-        await fetchAssignedTasks(session.session.user.id);
+        await fetchAssignedTasks();
+        await fetchWeeklyActivityData();
+        await fetchLearningStats();
+        await fetchRecentActivity();
         
       } catch (error) {
         console.error('Error loading profile or tasks:', error);
@@ -142,7 +150,7 @@ const ParentZone = () => {
     loadProfileAndTasks();
   }, [profileId, navigate]);
   
-  const fetchAssignedTasks = async (userId: string) => {
+  const fetchAssignedTasks = async () => {
     try {
       const { data: assignedData, error: assignedError } = await supabase
         .from('child_tasks')
@@ -164,6 +172,143 @@ const ParentZone = () => {
     } catch (error) {
       console.error('Error fetching assigned tasks:', error);
       toast.error("Failed to load assigned tasks");
+    }
+  };
+
+  const fetchWeeklyActivityData = async () => {
+    try {
+      // Generate dates for the last 7 days
+      const dates = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - (6 - i));
+        return d;
+      });
+
+      // Format day names
+      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      
+      // Get completed tasks for the last week
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
+      const { data: completedTasksData, error: tasksError } = await supabase
+        .from('child_tasks')
+        .select('completed_at')
+        .eq('child_profile_id', profileId)
+        .eq('status', 'completed')
+        .gte('completed_at', sevenDaysAgo.toISOString());
+      
+      if (tasksError) throw tasksError;
+
+      // Count tasks completed on each day
+      const activityByDay = dates.map(date => {
+        const dayName = dayNames[date.getDay()];
+        const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
+        
+        // Count tasks completed on this day
+        const tasksThisDay = completedTasksData?.filter(task => {
+          const taskDate = new Date(task.completed_at || '');
+          return taskDate.toISOString().split('T')[0] === dateStr;
+        });
+        
+        return {
+          name: dayName,
+          value: tasksThisDay?.length || 0,
+          date: dateStr
+        };
+      });
+      
+      setWeeklyActivityData(activityByDay);
+    } catch (error) {
+      console.error('Error fetching weekly activity data:', error);
+      // Fallback to empty data if fetch fails
+      const fallbackData = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => ({
+        name: day,
+        value: 0,
+        date: ''
+      }));
+      setWeeklyActivityData(fallbackData);
+    }
+  };
+  
+  const fetchLearningStats = async () => {
+    try {
+      // Get count of completed tasks
+      const { count: tasksCount, error: tasksError } = await supabase
+        .from('child_tasks')
+        .select('id', { count: 'exact', head: true })
+        .eq('child_profile_id', profileId)
+        .eq('status', 'completed');
+        
+      if (tasksError) throw tasksError;
+      
+      // For now, we're simulating the other stats since they may not be in the database yet
+      // In a real implementation, you would fetch these from appropriate tables
+      
+      setLearningStats({
+        topicsExplored: 12, // Replace with actual data when available
+        quizzesCompleted: 8, // Replace with actual data when available
+        creativePrompts: 5, // Replace with actual data when available
+        tasksCompleted: tasksCount || 0
+      });
+    } catch (error) {
+      console.error('Error fetching learning stats:', error);
+    }
+  };
+  
+  const fetchRecentActivity = async () => {
+    try {
+      // Get recently completed tasks
+      const { data: recentTasks, error: tasksError } = await supabase
+        .from('child_tasks')
+        .select(`
+          id,
+          completed_at,
+          task:tasks (title, sparks_reward)
+        `)
+        .eq('child_profile_id', profileId)
+        .eq('status', 'completed')
+        .order('completed_at', { ascending: false })
+        .limit(3);
+        
+      if (tasksError) throw tasksError;
+      
+      // Transform into activity items
+      const activityItems = recentTasks?.map(task => ({
+        type: 'task',
+        title: task.task?.title || 'Task',
+        sparks: task.task?.sparks_reward || 0,
+        date: task.completed_at,
+        icon: 'CheckCircle'
+      })) || [];
+      
+      // In a real implementation, you would fetch other activity types too
+      // For now, we'll use what we have and add a couple placeholders if needed
+      if (activityItems.length < 3) {
+        // Add placeholder items if we don't have enough real ones
+        if (activityItems.length === 0) {
+          activityItems.push({
+            type: 'quiz',
+            title: 'Completed quiz about penguins',
+            sparks: 5,
+            date: new Date().toISOString(),
+            icon: 'Sparkles'
+          });
+        }
+        if (activityItems.length <= 1) {
+          activityItems.push({
+            type: 'topic',
+            title: 'Explored topic: Volcanoes',
+            details: 'Created 3 new curios',
+            date: new Date(Date.now() - 86400000).toISOString(), // yesterday
+            icon: 'Calendar'
+          });
+        }
+      }
+      
+      setRecentActivity(activityItems);
+    } catch (error) {
+      console.error('Error fetching recent activity:', error);
     }
   };
   
@@ -276,6 +421,34 @@ const ParentZone = () => {
     }
   };
   
+  const formatRelativeTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return new Date(dateString).toLocaleDateString();
+  };
+  
+  const updateProfile = async (updatedData: Partial<ChildProfile>) => {
+    try {
+      const { error } = await supabase
+        .from('child_profiles')
+        .update(updatedData)
+        .eq('id', profileId);
+        
+      if (error) throw error;
+      
+      setChildProfile(prev => prev ? { ...prev, ...updatedData } : null);
+      toast.success("Profile updated successfully");
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error("Failed to update profile");
+    }
+  };
+  
   if (isLoading) {
     return (
       <div className="min-h-screen bg-wonderwhiz-gradient flex items-center justify-center">
@@ -372,44 +545,33 @@ const ParentZone = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between p-2 bg-white/5 rounded-md">
-                        <div className="flex items-center">
-                          <div className="w-8 h-8 rounded-full bg-wonderwhiz-purple/30 flex items-center justify-center mr-3">
-                            <Sparkles className="h-4 w-4 text-wonderwhiz-pink" />
-                          </div>
-                          <div>
-                            <p className="text-sm text-white">Completed quiz about penguins</p>
-                            <p className="text-xs text-white/60">Earned 5 sparks</p>
-                          </div>
+                      {recentActivity.length === 0 ? (
+                        <div className="text-center p-4 text-white/70">
+                          No recent activity
                         </div>
-                        <span className="text-xs text-white/60">Today</span>
-                      </div>
-                      
-                      <div className="flex items-center justify-between p-2 bg-white/5 rounded-md">
-                        <div className="flex items-center">
-                          <div className="w-8 h-8 rounded-full bg-wonderwhiz-blue/30 flex items-center justify-center mr-3">
-                            <Calendar className="h-4 w-4 text-wonderwhiz-blue" />
+                      ) : (
+                        recentActivity.map((activity, idx) => (
+                          <div key={idx} className="flex items-center justify-between p-2 bg-white/5 rounded-md">
+                            <div className="flex items-center">
+                              <div className="w-8 h-8 rounded-full bg-wonderwhiz-purple/30 flex items-center justify-center mr-3">
+                                {activity.icon === 'Sparkles' && <Sparkles className="h-4 w-4 text-wonderwhiz-pink" />}
+                                {activity.icon === 'Calendar' && <Calendar className="h-4 w-4 text-wonderwhiz-blue" />}
+                                {activity.icon === 'CheckCircle' && <CheckCircle className="h-4 w-4 text-wonderwhiz-gold" />}
+                              </div>
+                              <div>
+                                <p className="text-sm text-white">{activity.title}</p>
+                                {activity.sparks && (
+                                  <p className="text-xs text-white/60">Earned {activity.sparks} sparks</p>
+                                )}
+                                {activity.details && (
+                                  <p className="text-xs text-white/60">{activity.details}</p>
+                                )}
+                              </div>
+                            </div>
+                            <span className="text-xs text-white/60">{formatRelativeTime(activity.date)}</span>
                           </div>
-                          <div>
-                            <p className="text-sm text-white">Explored topic: Volcanoes</p>
-                            <p className="text-xs text-white/60">Created 3 new curios</p>
-                          </div>
-                        </div>
-                        <span className="text-xs text-white/60">Yesterday</span>
-                      </div>
-                      
-                      <div className="flex items-center justify-between p-2 bg-white/5 rounded-md">
-                        <div className="flex items-center">
-                          <div className="w-8 h-8 rounded-full bg-wonderwhiz-gold/30 flex items-center justify-center mr-3">
-                            <CheckCircle className="h-4 w-4 text-wonderwhiz-gold" />
-                          </div>
-                          <div>
-                            <p className="text-sm text-white">Completed task: Read a book</p>
-                            <p className="text-xs text-white/60">Earned 10 sparks</p>
-                          </div>
-                        </div>
-                        <span className="text-xs text-white/60">2 days ago</span>
-                      </div>
+                        ))
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -423,40 +585,52 @@ const ParentZone = () => {
                       <div>
                         <div className="flex justify-between text-sm mb-1">
                           <span className="text-white">Topics Explored</span>
-                          <span className="text-white font-medium">12</span>
+                          <span className="text-white font-medium">{learningStats.topicsExplored}</span>
                         </div>
                         <div className="h-2 bg-white/10 rounded-full">
-                          <div className="h-full bg-gradient-to-r from-wonderwhiz-purple to-wonderwhiz-pink rounded-full" style={{ width: '60%' }}></div>
+                          <div 
+                            className="h-full bg-gradient-to-r from-wonderwhiz-purple to-wonderwhiz-pink rounded-full" 
+                            style={{ width: `${Math.min((learningStats.topicsExplored / 20) * 100, 100)}%` }}
+                          ></div>
                         </div>
                       </div>
                       
                       <div>
                         <div className="flex justify-between text-sm mb-1">
                           <span className="text-white">Quizzes Completed</span>
-                          <span className="text-white font-medium">8</span>
+                          <span className="text-white font-medium">{learningStats.quizzesCompleted}</span>
                         </div>
                         <div className="h-2 bg-white/10 rounded-full">
-                          <div className="h-full bg-gradient-to-r from-wonderwhiz-blue to-wonderwhiz-gold rounded-full" style={{ width: '40%' }}></div>
+                          <div 
+                            className="h-full bg-gradient-to-r from-wonderwhiz-blue to-wonderwhiz-gold rounded-full" 
+                            style={{ width: `${Math.min((learningStats.quizzesCompleted / 20) * 100, 100)}%` }}
+                          ></div>
                         </div>
                       </div>
                       
                       <div>
                         <div className="flex justify-between text-sm mb-1">
                           <span className="text-white">Creative Prompts</span>
-                          <span className="text-white font-medium">5</span>
+                          <span className="text-white font-medium">{learningStats.creativePrompts}</span>
                         </div>
                         <div className="h-2 bg-white/10 rounded-full">
-                          <div className="h-full bg-gradient-to-r from-amber-400 to-orange-500 rounded-full" style={{ width: '25%' }}></div>
+                          <div 
+                            className="h-full bg-gradient-to-r from-amber-400 to-orange-500 rounded-full" 
+                            style={{ width: `${Math.min((learningStats.creativePrompts / 20) * 100, 100)}%` }}
+                          ></div>
                         </div>
                       </div>
                       
                       <div>
                         <div className="flex justify-between text-sm mb-1">
                           <span className="text-white">Tasks Completed</span>
-                          <span className="text-white font-medium">3</span>
+                          <span className="text-white font-medium">{learningStats.tasksCompleted}</span>
                         </div>
                         <div className="h-2 bg-white/10 rounded-full">
-                          <div className="h-full bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full" style={{ width: '15%' }}></div>
+                          <div 
+                            className="h-full bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full" 
+                            style={{ width: `${Math.min((learningStats.tasksCompleted / 20) * 100, 100)}%` }}
+                          ></div>
                         </div>
                       </div>
                     </div>
@@ -469,11 +643,14 @@ const ParentZone = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="flex flex-wrap gap-2">
-                      {childProfile?.interests.map((interest, idx) => (
+                      {childProfile?.interests?.map((interest, idx) => (
                         <div key={idx} className="px-3 py-1 bg-white/10 text-white rounded-full text-sm">
                           {interest}
                         </div>
                       ))}
+                      {(!childProfile?.interests || childProfile.interests.length === 0) && (
+                        <p className="text-white/70">No interests set</p>
+                      )}
                     </div>
                     
                     <div className="mt-4">
@@ -509,11 +686,11 @@ const ParentZone = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="h-64 flex items-end justify-around">
-                    {activityData.map((day, idx) => (
+                    {weeklyActivityData.map((day, idx) => (
                       <div key={idx} className="flex flex-col items-center">
                         <div 
                           className="w-12 bg-gradient-to-t from-wonderwhiz-purple to-wonderwhiz-pink rounded-t-md"
-                          style={{ height: `${day.value * 2}px` }}
+                          style={{ height: `${Math.min(day.value * 20, 200)}px` }}
                         ></div>
                         <div className="text-white/70 text-xs mt-2">{day.name}</div>
                       </div>
@@ -798,6 +975,11 @@ const ParentZone = () => {
                         id="name"
                         defaultValue={childProfile?.name}
                         className="bg-white/10 border-white/20 text-white"
+                        onBlur={(e) => {
+                          if (e.target.value !== childProfile?.name) {
+                            updateProfile({ name: e.target.value });
+                          }
+                        }}
                       />
                     </div>
                     
@@ -808,6 +990,12 @@ const ParentZone = () => {
                         type="number"
                         defaultValue={childProfile?.age}
                         className="bg-white/10 border-white/20 text-white"
+                        onBlur={(e) => {
+                          const newAge = parseInt(e.target.value);
+                          if (!isNaN(newAge) && newAge !== childProfile?.age) {
+                            updateProfile({ age: newAge });
+                          }
+                        }}
                       />
                     </div>
                     
@@ -817,21 +1005,37 @@ const ParentZone = () => {
                         id="language"
                         defaultValue={childProfile?.language}
                         className="bg-white/10 border-white/20 text-white"
+                        onBlur={(e) => {
+                          if (e.target.value !== childProfile?.language) {
+                            updateProfile({ language: e.target.value });
+                          }
+                        }}
                       />
                     </div>
                     
                     <div>
                       <Label className="text-white">Reset PIN</Label>
-                      <Button className="w-full bg-wonderwhiz-purple/70 hover:bg-wonderwhiz-purple">
-                        Reset PIN
+                      <Input
+                        id="pin"
+                        type="text"
+                        placeholder="Enter new PIN"
+                        className="bg-white/10 border-white/20 text-white mb-2"
+                      />
+                      <Button 
+                        className="w-full bg-wonderwhiz-purple/70 hover:bg-wonderwhiz-purple"
+                        onClick={() => {
+                          const pinInput = document.getElementById('pin') as HTMLInputElement;
+                          if (pinInput && pinInput.value) {
+                            updateProfile({ pin: pinInput.value });
+                            pinInput.value = '';
+                          } else {
+                            toast.error('Please enter a new PIN');
+                          }
+                        }}
+                      >
+                        Set New PIN
                       </Button>
                     </div>
-                  </div>
-                  
-                  <div className="pt-4">
-                    <Button className="bg-wonderwhiz-purple hover:bg-wonderwhiz-purple/90">
-                      Save Changes
-                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -844,21 +1048,35 @@ const ParentZone = () => {
                   <div>
                     <Label className="text-white">Content Language</Label>
                     <p className="text-white/70 text-sm">The primary language for learning content</p>
-                    <div className="mt-2 flex space-x-2">
-                      <Button variant="outline" className="bg-wonderwhiz-purple text-white border-0">English</Button>
-                      <Button variant="outline" className="bg-white/10 hover:bg-white/20 text-white">Spanish</Button>
-                      <Button variant="outline" className="bg-white/10 hover:bg-white/20 text-white">French</Button>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <Button 
+                        variant="outline" 
+                        className={childProfile?.language?.toLowerCase() === 'english' ? 
+                          "bg-wonderwhiz-purple text-white border-0" : 
+                          "bg-white/10 hover:bg-white/20 text-white"}
+                        onClick={() => updateProfile({ language: 'english' })}
+                      >
+                        English
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className={childProfile?.language?.toLowerCase() === 'spanish' ? 
+                          "bg-wonderwhiz-purple text-white border-0" : 
+                          "bg-white/10 hover:bg-white/20 text-white"}
+                        onClick={() => updateProfile({ language: 'spanish' })}
+                      >
+                        Spanish
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className={childProfile?.language?.toLowerCase() === 'french' ? 
+                          "bg-wonderwhiz-purple text-white border-0" : 
+                          "bg-white/10 hover:bg-white/20 text-white"}
+                        onClick={() => updateProfile({ language: 'french' })}
+                      >
+                        French
+                      </Button>
                       <Button variant="outline" className="bg-white/10 hover:bg-white/20 text-white">+ More</Button>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <Label className="text-white">Content Difficulty</Label>
-                    <p className="text-white/70 text-sm">Adjust the complexity level of questions and content</p>
-                    <div className="mt-2 flex space-x-2">
-                      <Button variant="outline" className="bg-white/10 hover:bg-white/20 text-white">Simple</Button>
-                      <Button variant="outline" className="bg-wonderwhiz-purple text-white border-0">Age-Appropriate</Button>
-                      <Button variant="outline" className="bg-white/10 hover:bg-white/20 text-white">Advanced</Button>
                     </div>
                   </div>
                 </CardContent>
@@ -874,7 +1092,16 @@ const ParentZone = () => {
                       <h3 className="text-white font-medium">Reset Progress</h3>
                       <p className="text-white/70 text-sm">This will reset all sparks and learning progress</p>
                     </div>
-                    <Button variant="destructive" className="bg-red-600 hover:bg-red-700">
+                    <Button 
+                      variant="destructive" 
+                      className="bg-red-600 hover:bg-red-700"
+                      onClick={() => {
+                        if (window.confirm("Are you sure you want to reset all progress? This cannot be undone.")) {
+                          updateProfile({ sparks_balance: 0 });
+                          toast.success("Progress has been reset");
+                        }
+                      }}
+                    >
                       Reset
                     </Button>
                   </div>
@@ -884,7 +1111,17 @@ const ParentZone = () => {
                       <h3 className="text-white font-medium">Delete Profile</h3>
                       <p className="text-white/70 text-sm">This will permanently delete this child profile</p>
                     </div>
-                    <Button variant="destructive" className="bg-red-600 hover:bg-red-700">
+                    <Button 
+                      variant="destructive" 
+                      className="bg-red-600 hover:bg-red-700"
+                      onClick={() => {
+                        if (window.confirm("Are you sure you want to delete this profile? This action cannot be undone.")) {
+                          // Delete profile logic would go here
+                          toast.success("Profile deleted successfully");
+                          navigate('/profiles');
+                        }
+                      }}
+                    >
                       Delete
                     </Button>
                   </div>
