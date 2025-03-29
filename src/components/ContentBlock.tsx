@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { BookmarkIcon, ThumbsUpIcon, MessageCircleIcon } from 'lucide-react';
 import { SPECIALISTS } from './SpecialistAvatar';
@@ -6,6 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { motion } from 'framer-motion';
 import { Send } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import BlockReply from './BlockReply';
+import { toast } from '@/hooks/use-toast';
 
 interface ContentBlockProps {
   block: any;
@@ -18,6 +22,17 @@ interface ContentBlockProps {
   onNewsRead?: () => void;
   onCreativeUpload?: () => void;
   colorVariant?: number;
+  userId?: string;
+  childProfileId?: string;
+}
+
+interface Reply {
+  id: string;
+  block_id: string;
+  content: string;
+  from_user: boolean;
+  timestamp: string;
+  specialist_id?: string;
 }
 
 const ContentBlock: React.FC<ContentBlockProps> = ({
@@ -30,7 +45,9 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   onQuizCorrect,
   onNewsRead,
   onCreativeUpload,
-  colorVariant = 0
+  colorVariant = 0,
+  userId,
+  childProfileId
 }) => {
   const [replyText, setReplyText] = useState('');
   const [showReplyForm, setShowReplyForm] = useState(false);
@@ -39,6 +56,8 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   const [newsRead, setNewsRead] = useState(false);
   const [creativeUploaded, setCreativeUploaded] = useState(false);
   const [flipCard, setFlipCard] = useState(false);
+  const [replies, setReplies] = useState<Reply[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   
   const specialist = SPECIALISTS[block.specialist_id] || {
     name: 'Wonder Wizard',
@@ -46,6 +65,34 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     emoji: '✨',
     description: 'General knowledge expert'
   };
+
+  // Fetch existing replies when the component mounts or block changes
+  useEffect(() => {
+    const fetchReplies = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('block_replies')
+          .select('*')
+          .eq('block_id', block.id)
+          .order('timestamp', { ascending: true });
+          
+        if (error) {
+          console.error('Error fetching replies:', error);
+          return;
+        }
+        
+        if (data) {
+          setReplies(data);
+        }
+      } catch (err) {
+        console.error('Error in fetchReplies:', err);
+      }
+    };
+    
+    if (block.id) {
+      fetchReplies();
+    }
+  }, [block.id]);
 
   const getBackgroundColor = () => {
     switch (colorVariant) {
@@ -86,12 +133,115 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     }
   };
 
-  const handleSubmitReply = () => {
+  const handleSubmitReply = async () => {
     if (!replyText.trim()) return;
     
-    onReply(block.id, replyText);
-    setReplyText('');
-    setShowReplyForm(false);
+    // First add the user's message to the UI immediately
+    const userReply = {
+      id: `temp-${Date.now()}`,
+      block_id: block.id,
+      content: replyText,
+      from_user: true,
+      timestamp: new Date().toISOString()
+    };
+    
+    setReplies(prev => [...prev, userReply]);
+    
+    try {
+      setIsLoading(true);
+      
+      // Send the reply using our edge function instead of direct DB insert
+      const response = await supabase.functions.invoke('handle-block-replies', {
+        body: {
+          block_id: block.id,
+          content: replyText,
+          from_user: true,
+          user_id: userId,
+          child_profile_id: childProfileId
+        }
+      });
+      
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+      
+      // Call the handle reply function to get a specialist response
+      await handleSpecialistReply(block.id, replyText);
+      
+      // Call the parent component's onReply function
+      onReply(block.id, replyText);
+      
+      setReplyText('');
+    } catch (error) {
+      console.error('Error handling reply:', error);
+      toast({
+        title: "Couldn't send message",
+        description: "There was an error sending your message. Please try again.",
+        variant: "destructive"
+      });
+      
+      // Remove the temporary user reply if it failed
+      setReplies(prev => prev.filter(r => r.id !== `temp-${Date.now()}`));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const handleSpecialistReply = async (blockId: string, messageContent: string) => {
+    try {
+      // Get the child profile information from localStorage or context
+      const childProfileString = localStorage.getItem('currentChildProfile');
+      const childProfile = childProfileString ? JSON.parse(childProfileString) : {
+        age: 8,
+        interests: ['science', 'art', 'space']
+      };
+      
+      const response = await supabase.functions.invoke('handle-block-chat', {
+        body: {
+          blockId,
+          messageContent,
+          blockType: block.type,
+          blockContent: block.content,
+          childProfile,
+          specialistId: block.specialist_id
+        }
+      });
+      
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+      
+      // Insert the specialist's reply using our edge function
+      await supabase.functions.invoke('handle-block-replies', {
+        body: {
+          block_id: blockId,
+          content: response.data.reply,
+          from_user: false,
+          specialist_id: response.data.specialistId,
+          user_id: userId,
+          child_profile_id: childProfileId
+        }
+      });
+      
+      // Refresh the replies
+      const { data, error } = await supabase
+        .from('block_replies')
+        .select('*')
+        .eq('block_id', blockId)
+        .order('timestamp', { ascending: true });
+        
+      if (error) {
+        console.error('Error fetching replies after specialist response:', error);
+        return;
+      }
+      
+      if (data) {
+        setReplies(data);
+      }
+      
+    } catch (error) {
+      console.error('Error getting specialist reply:', error);
+    }
   };
   
   const handleQuizOptionSelect = (idx: number) => {
@@ -340,6 +490,24 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         
         {renderBlockContent()}
         
+        {/* Replies section */}
+        {replies.length > 0 && (
+          <div className="mt-3 sm:mt-4 pt-2 sm:pt-3 border-t border-white/10">
+            <h4 className="text-white text-xs sm:text-sm mb-2">Conversation</h4>
+            <div className="space-y-2 sm:space-y-3 max-h-60 overflow-y-auto px-1">
+              {replies.map((reply) => (
+                <BlockReply
+                  key={reply.id}
+                  content={reply.content}
+                  fromUser={reply.from_user}
+                  specialistId={reply.specialist_id || block.specialist_id}
+                  timestamp={reply.timestamp}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+        
         <div className="flex items-center justify-between mt-3 sm:mt-4 pt-2 sm:pt-3 border-t border-white/10">
           <div className="flex items-center space-x-1 sm:space-x-2">
             <button 
@@ -384,13 +552,14 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
               onChange={(e) => setReplyText(e.target.value)}
               placeholder="Type your reply..."
               className="bg-white/10 border-white/20 text-white text-xs sm:text-sm h-8 sm:h-10"
-              onKeyDown={(e) => e.key === 'Enter' && handleSubmitReply()}
+              onKeyDown={(e) => e.key === 'Enter' && !isLoading && handleSubmitReply()}
+              disabled={isLoading}
             />
             <Button 
               onClick={handleSubmitReply}
               size="icon"
               className="bg-wonderwhiz-purple hover:bg-wonderwhiz-purple/80 text-white h-8 w-8 sm:h-10 sm:w-10"
-              disabled={!replyText.trim()}
+              disabled={!replyText.trim() || isLoading}
             >
               <Send className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </Button>
