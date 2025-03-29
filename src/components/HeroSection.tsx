@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,6 @@ import { motion } from 'framer-motion';
 import MagicWand from './MagicWand';
 import { Sparkles, Star, Lightbulb, BookOpen, Rocket, Heart, Brain, Globe } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
-
 const HeroSection = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [curioAnimations, setCurioAnimations] = useState({
@@ -14,56 +12,56 @@ const HeroSection = () => {
     spark: false,
     prism: false
   });
-  
   const handleCurioHover = (curio: keyof typeof curioAnimations) => {
-    setCurioAnimations(prev => ({ ...prev, [curio]: true }));
+    setCurioAnimations(prev => ({
+      ...prev,
+      [curio]: true
+    }));
     setTimeout(() => {
-      setCurioAnimations(prev => ({ ...prev, [curio]: false }));
+      setCurioAnimations(prev => ({
+        ...prev,
+        [curio]: false
+      }));
     }, 700);
   };
-  
-  const personas = [
-    { 
-      name: "Nova",
-      icon: <Star className="h-6 w-6 text-yellow-300 filter drop-shadow-md" />,
-      title: "Nova the Explorer", 
-      content: "Did you know penguins can't fly but are amazing swimmers?",
-      gradient: "from-purple-500 to-pink-500",
-      type: "fact"
-    },
-    { 
-      name: "Spark",
-      icon: <Lightbulb className="h-6 w-6 text-yellow-300 filter drop-shadow-md" />,
-      title: "Spark the Scientist", 
-      content: "Let's test your penguin knowledge!",
-      gradient: "from-blue-500 to-cyan-400",
-      options: ["They live only in Antarctica", "They can be found in both hemispheres"],
-      type: "quiz"
-    },
-    { 
-      name: "Prism",
-      icon: <BookOpen className="h-6 w-6 text-purple-700 filter drop-shadow-md" />,
-      title: "Prism the Artist", 
-      content: "Can you draw a penguin? Upload your art!",
-      gradient: "from-amber-400 to-yellow-300",
-      textColor: "text-gray-800",
-      type: "creative"
-    }
-  ];
-  
+  const personas = [{
+    name: "Nova",
+    icon: <Star className="h-6 w-6 text-yellow-300 filter drop-shadow-md" />,
+    title: "Nova the Explorer",
+    content: "Did you know penguins can't fly but are amazing swimmers?",
+    gradient: "from-purple-500 to-pink-500",
+    type: "fact"
+  }, {
+    name: "Spark",
+    icon: <Lightbulb className="h-6 w-6 text-yellow-300 filter drop-shadow-md" />,
+    title: "Spark the Scientist",
+    content: "Let's test your penguin knowledge!",
+    gradient: "from-blue-500 to-cyan-400",
+    options: ["They live only in Antarctica", "They can be found in both hemispheres"],
+    type: "quiz"
+  }, {
+    name: "Prism",
+    icon: <BookOpen className="h-6 w-6 text-purple-700 filter drop-shadow-md" />,
+    title: "Prism the Artist",
+    content: "Can you draw a penguin? Upload your art!",
+    gradient: "from-amber-400 to-yellow-300",
+    textColor: "text-gray-800",
+    type: "creative"
+  }];
   const handleSliderChange = (value: number[]) => {
-    setActiveTab(Math.round((value[0] / 100) * (personas.length - 1)));
+    setActiveTab(Math.round(value[0] / 100 * (personas.length - 1)));
   };
-  
-  return (
-    <section className="pt-10 pb-20 px-6 md:px-10 lg:px-20">
+  return <section className="pt-10 pb-20 px-6 md:px-10 lg:px-20">
       <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="text-center md:text-left"
-        >
+        <motion.div initial={{
+        opacity: 0,
+        y: 20
+      }} animate={{
+        opacity: 1,
+        y: 0
+      }} transition={{
+        duration: 0.8
+      }} className="text-center md:text-left">
           <h1 className="text-4xl md:text-5xl lg:text-6xl leading-tight mb-6 text-white group">
             The discovery engine that <span className="text-wonderwhiz-pink relative">
               sparks kids' curiosity
@@ -75,9 +73,7 @@ const HeroSection = () => {
           <p className="text-lg md:text-xl mb-8 text-gray-200">
             Turn screen time into growth time. WonderWhiz transforms your child's natural curiosity into daily habits, smart thinking, and joyful learning.
           </p>
-          <p className="text-sm md:text-base mb-10 text-gray-300">
-            Trusted by 14,000+ parents building smarter habits at home.
-          </p>
+          <p className="text-sm md:text-base mb-10 text-gray-300">Trusted by parents building smarter habits at home.</p>
           <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-6 justify-center md:justify-start">
             <Link to="/register">
               <Button className="jelly-button w-full sm:w-auto text-lg group relative overflow-hidden">
@@ -98,12 +94,16 @@ const HeroSection = () => {
             </Link>
           </div>
         </motion.div>
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="relative"
-        >
+        <motion.div initial={{
+        opacity: 0,
+        scale: 0.9
+      }} animate={{
+        opacity: 1,
+        scale: 1
+      }} transition={{
+        duration: 0.8,
+        delay: 0.2
+      }} className="relative">
           <div className="relative mx-auto max-w-[350px]">
             <div className="absolute -top-10 -right-10 animate-float">
               <MagicWand />
@@ -152,21 +152,21 @@ const HeroSection = () => {
                   
                   {/* Specialists Strip */}
                   <div className="flex space-x-3 mb-4 justify-center">
-                    {[
-                      { emoji: "🔭", color: "bg-gradient-to-r from-blue-500 to-purple-500" },
-                      { emoji: "🎨", color: "bg-gradient-to-r from-pink-500 to-orange-400" },
-                      { emoji: "🌿", color: "bg-gradient-to-r from-green-500 to-teal-400" },
-                      { emoji: "🧠", color: "bg-gradient-to-r from-purple-500 to-indigo-500" }
-                    ].map((specialist, idx) => (
-                      <div 
-                        key={idx} 
-                        className={`w-8 h-8 rounded-full ${specialist.color} flex items-center justify-center text-sm shadow-lg ${
-                          idx === 0 ? 'ring-2 ring-white' : ''
-                        }`}
-                      >
+                    {[{
+                    emoji: "🔭",
+                    color: "bg-gradient-to-r from-blue-500 to-purple-500"
+                  }, {
+                    emoji: "🎨",
+                    color: "bg-gradient-to-r from-pink-500 to-orange-400"
+                  }, {
+                    emoji: "🌿",
+                    color: "bg-gradient-to-r from-green-500 to-teal-400"
+                  }, {
+                    emoji: "🧠",
+                    color: "bg-gradient-to-r from-purple-500 to-indigo-500"
+                  }].map((specialist, idx) => <div key={idx} className={`w-8 h-8 rounded-full ${specialist.color} flex items-center justify-center text-sm shadow-lg ${idx === 0 ? 'ring-2 ring-white' : ''}`}>
                         {specialist.emoji}
-                      </div>
-                    ))}
+                      </div>)}
                   </div>
                 </div>
                 
@@ -243,14 +243,18 @@ const HeroSection = () => {
             </div>
             
             {/* Sparkles */}
-            <div className="absolute -top-5 left-0 h-5 w-5 star-sparkle" style={{ animationDelay: "0.2s" }}></div>
-            <div className="absolute top-1/4 -right-4 h-4 w-4 star-sparkle" style={{ animationDelay: "0.5s" }}></div>
-            <div className="absolute bottom-10 -left-6 h-6 w-6 star-sparkle" style={{ animationDelay: "0.8s" }}></div>
+            <div className="absolute -top-5 left-0 h-5 w-5 star-sparkle" style={{
+            animationDelay: "0.2s"
+          }}></div>
+            <div className="absolute top-1/4 -right-4 h-4 w-4 star-sparkle" style={{
+            animationDelay: "0.5s"
+          }}></div>
+            <div className="absolute bottom-10 -left-6 h-6 w-6 star-sparkle" style={{
+            animationDelay: "0.8s"
+          }}></div>
           </div>
         </motion.div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default HeroSection;
