@@ -3,11 +3,11 @@ import { Helmet } from 'react-helmet-async';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent, CurioCard } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
-import { Send, Menu, ArrowLeftRight, MessageSquare, Sparkles, Search, Star, Lightbulb, RefreshCw } from 'lucide-react';
+import { Send, Menu, ArrowLeftRight, MessageSquare, Sparkles, Search, Star, Lightbulb, RefreshCw, ChevronDown } from 'lucide-react';
 import WonderWhizLogo from '@/components/WonderWhizLogo';
 import ContentBlock from '@/components/ContentBlock';
 import BlockReply from '@/components/BlockReply';
@@ -79,6 +79,8 @@ const Dashboard = () => {
   ]);
   const [loadingBlocks, setLoadingBlocks] = useState(false);
   const [visibleBlocksCount, setVisibleBlocksCount] = useState(3);
+  const [curioPageSize] = useState(5);
+  const [displayedCuriosCount, setDisplayedCuriosCount] = useState(curioPageSize);
   const isMobile = useIsMobile();
   
   const { streakDays, streakBonusReceived, streakBonusAmount } = useSparksSystem(profileId);
@@ -716,6 +718,10 @@ const Dashboard = () => {
     }
   };
 
+  const handleLoadMoreCurios = () => {
+    setDisplayedCuriosCount(prev => Math.min(prev + curioPageSize, pastCurios.length));
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-wonderwhiz-gradient flex items-center justify-center">
@@ -777,25 +783,47 @@ const Dashboard = () => {
         </AnimatePresence>
         
         <div className="p-4">
-          <h3 className="text-white font-medium mb-2">Your Past Curios</h3>
+          <h3 className="text-white font-medium mb-3 flex items-center">
+            <span>Your Past Curios</span>
+            <div className="ml-2 text-xs bg-white/10 px-2 py-0.5 rounded-full text-white/70">
+              {pastCurios.length}
+            </div>
+          </h3>
+          
           {pastCurios.length === 0 ? (
             <p className="text-white/60 text-sm">Ask a question to start exploring!</p>
           ) : (
-            <div className="space-y-2">
-              {pastCurios.map(curio => (
-                <button
+            <div className="space-y-3">
+              {pastCurios.slice(0, displayedCuriosCount).map((curio, index) => (
+                <CurioCard 
                   key={curio.id}
+                  colorVariant={index}
+                  className="cursor-pointer transition-all hover:bg-white/10"
                   onClick={() => handleLoadCurio(curio)}
-                  className={`w-full text-left p-2 rounded-lg text-sm hover:bg-white/10 transition-colors ${
-                    currentCurio?.id === curio.id ? 'bg-white/20 text-white' : 'text-white/70'
-                  }`}
                 >
-                  <div className="flex items-center">
+                  <div className={`p-3 flex items-center ${currentCurio?.id === curio.id ? 'bg-white/10 text-white' : 'text-white/80'}`}>
                     <MessageSquare className="h-4 w-4 mr-2 flex-shrink-0" />
-                    <span className="truncate">{curio.title}</span>
+                    <span className="truncate text-sm font-medium leading-tight">{curio.title}</span>
                   </div>
-                </button>
+                </CurioCard>
               ))}
+              
+              {displayedCuriosCount < pastCurios.length && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex justify-center pt-2"
+                >
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    className="text-white/60 hover:text-white hover:bg-white/10 flex items-center gap-1 text-xs"
+                    onClick={handleLoadMoreCurios}
+                  >
+                    Load More <ChevronDown className="h-3 w-3" />
+                  </Button>
+                </motion.div>
+              )}
             </div>
           )}
         </div>

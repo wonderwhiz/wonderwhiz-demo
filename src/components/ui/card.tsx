@@ -1,3 +1,4 @@
+
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
@@ -76,4 +77,33 @@ const CardFooter = React.forwardRef<
 ))
 CardFooter.displayName = "CardFooter"
 
-export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }
+const CurioCard = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement> & { colorVariant?: number }
+>(({ className, colorVariant = 0, ...props }, ref) => {
+  const getBorderColor = () => {
+    switch (colorVariant % 5) {
+      case 0: return "border-wonderwhiz-pink/60 bg-wonderwhiz-pink/5";
+      case 1: return "border-wonderwhiz-gold/60 bg-wonderwhiz-gold/5";
+      case 2: return "border-wonderwhiz-blue/60 bg-wonderwhiz-blue/5";
+      case 3: return "border-wonderwhiz-purple/60 bg-wonderwhiz-purple/5";
+      case 4: return "border-emerald-400/60 bg-emerald-400/5";
+      default: return "border-white/60 bg-white/5";
+    }
+  };
+
+  return (
+    <div
+      ref={ref}
+      className={cn(
+        "rounded-lg border-2 shadow-sm transition-all hover:shadow-md hover:scale-[1.01]",
+        getBorderColor(),
+        className
+      )}
+      {...props}
+    />
+  );
+})
+CurioCard.displayName = "CurioCard"
+
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent, CurioCard }
