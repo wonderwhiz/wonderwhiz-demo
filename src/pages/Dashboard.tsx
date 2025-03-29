@@ -76,7 +76,8 @@ const Dashboard = () => {
     'Tell me about penguins',
     'Show me cool dinosaurs'
   ]);
-  const [streakBonusReceived, streakBonusAmount] = useSparksSystem(profileId);
+  
+  const { streakDays, streakBonusReceived, streakBonusAmount } = useSparksSystem(profileId);
   
   useEffect(() => {
     const loadProfileAndCurios = async () => {
