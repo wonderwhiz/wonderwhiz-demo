@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -30,15 +29,10 @@ const CTASection = () => {
           <p className="text-lg md:text-xl text-gray-300 mb-10 max-w-3xl mx-auto">
             Join thousands of families who are transforming screen time into a journey of discovery, learning, and growth.
           </p>
-          <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-6">
+          <div className="flex justify-center">
             <Link to="/register">
               <button className="jelly-button text-lg px-10 py-4 w-full sm:w-auto">
-                Join the waitlist
-              </button>
-            </Link>
-            <Link to="/demo">
-              <button className="bg-white/10 hover:bg-white/20 border-2 border-white/30 rounded-full px-10 py-4 text-white font-bold transition-all w-full sm:w-auto">
-                See how it works
+                Try WonderWhiz
               </button>
             </Link>
           </div>

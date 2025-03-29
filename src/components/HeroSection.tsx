@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import MagicWand from './MagicWand';
 import { Sparkles, Star, Lightbulb, BookOpen, Rocket, Heart, Brain, Globe } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
+
 const HeroSection = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [curioAnimations, setCurioAnimations] = useState({
@@ -12,6 +13,7 @@ const HeroSection = () => {
     spark: false,
     prism: false
   });
+
   const handleCurioHover = (curio: keyof typeof curioAnimations) => {
     setCurioAnimations(prev => ({
       ...prev,
@@ -24,6 +26,7 @@ const HeroSection = () => {
       }));
     }, 700);
   };
+
   const personas = [{
     name: "Nova",
     icon: <Star className="h-6 w-6 text-yellow-300 filter drop-shadow-md" />,
@@ -48,9 +51,11 @@ const HeroSection = () => {
     textColor: "text-gray-800",
     type: "creative"
   }];
+
   const handleSliderChange = (value: number[]) => {
     setActiveTab(Math.round(value[0] / 100 * (personas.length - 1)));
   };
+
   return <section className="pt-10 pb-20 px-6 md:px-10 lg:px-20">
       <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center">
         <motion.div initial={{
@@ -78,7 +83,7 @@ const HeroSection = () => {
             <Link to="/register">
               <Button className="jelly-button w-full sm:w-auto text-lg group relative overflow-hidden">
                 <span className="relative z-10 flex items-center gap-2">
-                  Join the waitlist 
+                  Try WonderWhiz
                   <Rocket className="h-5 w-5 transition-transform group-hover:translate-x-1" />
                 </span>
                 <span className="absolute inset-0 bg-white bg-opacity-20 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></span>
@@ -257,4 +262,5 @@ const HeroSection = () => {
       </div>
     </section>;
 };
+
 export default HeroSection;

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -94,20 +93,10 @@ const EnhancedHeroSection = () => {
               <Link to="/register">
                 <Button className="jelly-button w-full sm:w-auto text-lg group relative overflow-hidden">
                   <span className="relative z-10 flex items-center gap-2">
-                    Join the waitlist 
+                    Try WonderWhiz
                     <Rocket className="h-5 w-5 transition-transform group-hover:translate-x-1" />
                   </span>
                   <span className="absolute inset-0 bg-white bg-opacity-20 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></span>
-                </Button>
-              </Link>
-            </MagneticButton>
-            <MagneticButton>
-              <Link to="/demo">
-                <Button variant="outline" className="w-full sm:w-auto border-wonderwhiz-blue border-2 text-wonderwhiz-blue bg-opacity-20 hover:bg-opacity-30 text-lg group">
-                  <span className="group-hover:scale-105 transition-transform inline-block flex items-center gap-2">
-                    See the demo
-                    <Heart className="h-5 w-5 text-wonderwhiz-pink transition-transform group-hover:scale-125" />
-                  </span>
                 </Button>
               </Link>
             </MagneticButton>
