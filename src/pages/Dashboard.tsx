@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
-import { Send, Menu, ArrowLeftRight, MessageSquare, Sparkles, Search, Star, Lightbulb } from 'lucide-react';
+import { Send, Menu, ArrowLeftRight, MessageSquare, Sparkles, Search, Star, Lightbulb, RefreshCw } from 'lucide-react';
 import WonderWhizLogo from '@/components/WonderWhizLogo';
 import ContentBlock from '@/components/ContentBlock';
 import BlockReply from '@/components/BlockReply';
@@ -69,7 +69,14 @@ const Dashboard = () => {
   const [showSparksHistory, setShowSparksHistory] = useState(false);
   const [showQuickMenu, setShowQuickMenu] = useState(false);
   const feedEndRef = useRef<HTMLDivElement>(null);
-  const { streakBonusReceived, streakBonusAmount } = useSparksSystem(profileId);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [curioSuggestions, setCurioSuggestions] = useState<string[]>([
+    'How do volcanoes work?',
+    'What are black holes?',
+    'Tell me about penguins',
+    'Show me cool dinosaurs'
+  ]);
+  const [streakBonusReceived, streakBonusAmount] = useSparksSystem(profileId);
   
   useEffect(() => {
     const loadProfileAndCurios = async () => {
@@ -97,6 +104,10 @@ const Dashboard = () => {
         if (curiosError) throw curiosError;
         setPastCurios(curiosData || []);
         
+        if (profileData) {
+          fetchCurioSuggestions(profileData, curiosData || []);
+        }
+        
       } catch (error) {
         console.error('Error loading profile or curios:', error);
         toast.error("Failed to load your profile");
@@ -108,6 +119,42 @@ const Dashboard = () => {
     
     loadProfileAndCurios();
   }, [profileId, navigate]);
+  
+  const fetchCurioSuggestions = async (profile: any, curios: any[]) => {
+    setIsLoadingSuggestions(true);
+    
+    try {
+      const response = await supabase.functions.invoke('generate-curio-suggestions', {
+        body: JSON.stringify({
+          childProfile: profile,
+          pastCurios: curios
+        })
+      });
+      
+      if (response.error) {
+        console.error('Error fetching curio suggestions:', response.error);
+        if (response.data?.fallbackSuggestions) {
+          setCurioSuggestions(response.data.fallbackSuggestions);
+        }
+        return;
+      }
+      
+      const suggestions = response.data;
+      if (Array.isArray(suggestions) && suggestions.length > 0) {
+        setCurioSuggestions(suggestions);
+      }
+    } catch (error) {
+      console.error('Error fetching curio suggestions:', error);
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+  };
+  
+  const handleRefreshSuggestions = () => {
+    if (childProfile && pastCurios) {
+      fetchCurioSuggestions(childProfile, pastCurios);
+    }
+  };
   
   const handleSubmitQuery = async () => {
     if (!query.trim() || isGenerating || !childProfile) return;
@@ -634,7 +681,7 @@ const Dashboard = () => {
                 className="text-white hover:text-wonderwhiz-gold transition-colors"
                 onClick={() => setShowQuickMenu(!showQuickMenu)}
               >
-                <Sparkles className="h-6 w-6" />
+                <Sparkles className="h-5 w-5" />
               </motion.button>
               
               <SparksBalance 
@@ -759,10 +806,30 @@ const Dashboard = () => {
                     <p className="text-white/80 text-lg mb-8">
                       What are you curious about today? Type your question above!
                     </p>
+                    
+                    <div className="flex items-center justify-center mb-4">
+                      <h3 className="text-lg font-medium text-white mr-2">Suggestions for you</h3>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-white hover:text-wonderwhiz-gold transition-colors"
+                        onClick={handleRefreshSuggestions}
+                        disabled={isLoadingSuggestions}
+                      >
+                        <motion.div
+                          animate={isLoadingSuggestions ? { rotate: 360 } : {}}
+                          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                          className={isLoadingSuggestions ? "animate-spin" : ""}
+                        >
+                          <RefreshCw className="h-5 w-5" />
+                        </motion.div>
+                      </Button>
+                    </div>
+                    
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
-                      {['Tell me about penguins', 'How do volcanoes work?', 'What are black holes?', 'Show me cool dinosaurs'].map((suggestion, index) => (
+                      {curioSuggestions.map((suggestion, index) => (
                         <CurioSuggestion
-                          key={suggestion}
+                          key={`${suggestion}-${index}`}
                           suggestion={suggestion}
                           onClick={setQuery}
                           index={index}
