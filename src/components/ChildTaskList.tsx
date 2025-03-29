@@ -34,9 +34,9 @@ const ChildTaskList: React.FC<ChildTaskListProps> = ({ childId, onTaskComplete }
       const { data, error } = await supabase
         .from('child_tasks')
         .select(`
-          id as child_task_id,
+          id,
           status,
-          tasks (
+          task:tasks (
             id,
             title,
             description,
@@ -49,12 +49,12 @@ const ChildTaskList: React.FC<ChildTaskListProps> = ({ childId, onTaskComplete }
 
       // Transform the nested data into a flat structure
       const formattedTasks = data.map(item => ({
-        id: item.tasks.id,
-        title: item.tasks.title,
-        description: item.tasks.description,
-        sparks_reward: item.tasks.sparks_reward,
+        id: item.task.id,
+        title: item.task.title,
+        description: item.task.description,
+        sparks_reward: item.task.sparks_reward,
         status: item.status,
-        child_task_id: item.child_task_id
+        child_task_id: item.id
       }));
 
       setTasks(formattedTasks);
@@ -92,14 +92,32 @@ const ChildTaskList: React.FC<ChildTaskListProps> = ({ childId, onTaskComplete }
 
       if (transactionError) throw transactionError;
 
-      // Update the child's sparks balance
-      const { error: balanceError } = await supabase
-        .rpc('increment_sparks_balance', { 
-          profile_id: childId, 
-          amount: sparks 
+      try {
+        // Call the edge function to update the child's sparks balance
+        const { error } = await supabase.functions.invoke('increment-sparks-balance', {
+          body: JSON.stringify({ 
+            profileId: childId, 
+            amount: sparks 
+          })
         });
-
-      if (balanceError) throw balanceError;
+        
+        if (error) throw error;
+      } catch (error) {
+        console.error('Error calling increment-sparks-balance function:', error);
+        // Fallback: Try using RPC if edge function fails
+        try {
+          const { error: rpcError } = await supabase
+            .rpc('increment_sparks_balance', { 
+              profile_id: childId, 
+              amount: sparks 
+            });
+            
+          if (rpcError) throw rpcError;
+        } catch (rpcFallbackError) {
+          console.error('Error with RPC fallback:', rpcFallbackError);
+          throw rpcFallbackError;
+        }
+      }
 
       // Update the local task list
       setTasks(prev => 
