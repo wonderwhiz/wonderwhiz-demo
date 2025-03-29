@@ -16,9 +16,9 @@ import ChildDashboardTasks from '@/components/ChildDashboardTasks';
 import SparksBalance from '@/components/SparksBalance';
 import SparksHistory from '@/components/SparksHistory';
 import SparksOverview from '@/components/SparksOverview';
-import { useSparksSystem } from '@/hooks/useSparksSystem';
 import MagicalBorder from '@/components/MagicalBorder';
 import FloatingElements from '@/components/FloatingElements';
+import CurioSuggestion from '@/components/CurioSuggestion';
 
 interface ChildProfile {
   id: string;
