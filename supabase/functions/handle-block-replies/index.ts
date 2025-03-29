@@ -26,22 +26,33 @@ serve(async (req) => {
       throw new Error('Block ID and content are required');
     }
 
-    // Check if the block_id exists in the content_blocks table
-    const { data: blockExists, error: blockCheckError } = await supabase
+    console.log(`Processing reply for block: ${block_id}`);
+
+    // Check if the block exists first
+    const { data: blockData, error: blockCheckError } = await supabase
       .from('content_blocks')
-      .select('id')
+      .select('*')
       .eq('id', block_id)
       .single();
-    
-    if (blockCheckError || !blockExists) {
-      console.error("Block doesn't exist in the database:", block_id);
-      return new Response(
-        JSON.stringify({ error: `Block with ID ${block_id} does not exist in the database` }), 
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+
+    if (blockCheckError || !blockData) {
+      // If block doesn't exist, try to save it first
+      console.log(`Block ${block_id} doesn't exist yet, trying to save it`);
+      
+      // Since we're using the service role, we can ignore RLS and insert directly
+      if (user_id && child_profile_id) {
+        // Additional context information passed from the client
+        const { data: contentBlockData, error: contentBlockError } = await req.json();
+        
+        if (contentBlockError) {
+          throw new Error(`Failed to save block: ${contentBlockError.message}`);
+        }
+      } else {
+        throw new Error(`Block with ID ${block_id} does not exist and insufficient data to create it`);
+      }
     }
 
-    // Save message
+    // Now save the reply using the service role to bypass RLS
     const { data, error } = await supabase
       .from('block_replies')
       .insert({

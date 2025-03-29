@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { BookmarkIcon, ThumbsUpIcon, MessageCircleIcon } from 'lucide-react';
@@ -173,7 +172,9 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     try {
       setIsLoading(true);
       
-      // Check if block has been saved to the database
+      // First, ensure the block exists in the database using the service role function
+      console.log('Ensuring block exists in database:', block.id);
+      
       const { data: blockExists, error: blockCheckError } = await supabase
         .from('content_blocks')
         .select('id')
@@ -184,25 +185,28 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         console.error('Error checking if block exists:', blockCheckError);
       }
       
-      // If block doesn't exist in the database yet, save it
+      // If block doesn't exist in the database yet, save it using the service role function
       if (!blockExists) {
         console.log('Block not found in database, saving first:', block.id);
-        const { error: saveBlockError } = await supabase
-          .from('content_blocks')
-          .insert({
-            id: block.id,
-            curio_id: block.curio_id || null,
-            type: block.type,
-            specialist_id: block.specialist_id,
-            content: block.content
-          });
+        const { data: ensureBlockData, error: ensureBlockError } = await supabase.functions.invoke('ensure-block-exists', {
+          body: {
+            block: {
+              id: block.id,
+              curio_id: block.curio_id || null,
+              type: block.type,
+              specialist_id: block.specialist_id,
+              content: block.content,
+              liked: block.liked,
+              bookmarked: block.bookmarked
+            }
+          }
+        });
           
-        if (saveBlockError) {
-          throw new Error(`Failed to save block: ${saveBlockError.message}`);
+        if (ensureBlockError) {
+          throw new Error(`Failed to save block: ${ensureBlockError}`);
         }
         
-        // Wait a moment to ensure the block is saved before proceeding
-        await new Promise(resolve => setTimeout(resolve, 500));
+        console.log('Block saved successfully:', ensureBlockData);
       }
       
       // Send the reply to the edge function
