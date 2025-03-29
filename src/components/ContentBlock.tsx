@@ -152,12 +152,13 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   const handleSubmitReply = async () => {
     if (!replyText.trim()) return;
     
+    const tempTimestamp = new Date().toISOString();
     const userReply: Reply = {
       id: `temp-${Date.now()}`,
       block_id: block.id,
       content: replyText,
       from_user: true,
-      timestamp: new Date().toISOString()
+      timestamp: tempTimestamp
     };
     
     setReplies(prev => [...prev, userReply]);
@@ -165,7 +166,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     try {
       setIsLoading(true);
       
-      const response = await supabase.functions.invoke('handle-block-replies', {
+      const { error } = await supabase.functions.invoke('handle-block-replies', {
         body: {
           block_id: block.id,
           content: replyText,
@@ -175,8 +176,8 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         }
       });
       
-      if (response.error) {
-        throw new Error(response.error.message);
+      if (error) {
+        throw new Error(error.message);
       }
       
       await handleSpecialistReply(block.id, replyText);
@@ -258,6 +259,11 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       
     } catch (error) {
       console.error('Error getting specialist reply:', error);
+      toast({
+        title: "Couldn't get specialist response",
+        description: "There was an error getting a response. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 

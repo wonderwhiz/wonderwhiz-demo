@@ -7,7 +7,7 @@ interface CurioSuggestionProps {
   suggestion: string;
   onClick: (suggestion: string) => void;
   index: number;
-  directGenerate?: boolean;
+  directGenerate: boolean;
 }
 
 const COLOR_VARIANTS = [
