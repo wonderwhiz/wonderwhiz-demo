@@ -157,6 +157,87 @@
   .magic-cursor {
     cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewport='0 0 100 100' style='fill:none;stroke:%23FF5EBA;stroke-width:3;opacity:0.7'><circle cx='20' cy='20' r='10'/><circle cx='20' cy='20' r='16' style='animation: pulse 1s infinite'/></svg>") 20 20, auto;
   }
+
+  .tilt-card {
+    @apply transition-all duration-300 transform-gpu backface-visibility-hidden;
+  }
+  
+  .magnetic-button {
+    @apply transition-transform duration-200;
+  }
+  
+  .shine-effect {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .shine-effect::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+      to right,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.3) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    transform: rotate(30deg);
+    animation: shine 6s infinite;
+  }
+  
+  @keyframes shine {
+    0% { transform: translateX(-100%) rotate(30deg); }
+    20%, 100% { transform: translateX(100%) rotate(30deg); }
+  }
+  
+  .pulse-border {
+    position: relative;
+  }
+  
+  .pulse-border::before {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: inherit;
+    padding: 3px;
+    background: linear-gradient(
+      90deg,
+      rgba(126, 48, 225, 0.5),
+      rgba(255, 94, 186, 0.5),
+      rgba(255, 199, 44, 0.5),
+      rgba(126, 48, 225, 0.5)
+    );
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: border-pulse 3s linear infinite;
+  }
+  
+  @keyframes border-pulse {
+    0% { background-position: 0% center; }
+    100% { background-position: 200% center; }
+  }
+  
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  @keyframes float {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-10px) rotate(5deg); }
+  }
+  
+  @keyframes sparkle {
+    0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.7; }
+    50% { transform: scale(1.2) rotate(15deg); opacity: 1; }
+  }
+  
+  .animate-sparkle {
+    animation: sparkle 2s infinite;
+  }
 }
 
 html.magic-cursor-active {

@@ -20,6 +20,36 @@ const queryClient = new QueryClient();
 // Create a new helmetContext
 const helmetContext = {};
 
+// Define custom cursor styles
+const CustomCursorStyles = () => (
+  <style jsx global>{`
+    @keyframes cursor-pulse {
+      0% { transform: scale(1); opacity: 0.7; }
+      50% { transform: scale(1.2); opacity: 1; }
+      100% { transform: scale(1); opacity: 0.7; }
+    }
+    
+    .magic-cursor-dot {
+      animation: cursor-pulse 2s infinite;
+    }
+    
+    @keyframes sparkle-rotate {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    @keyframes pop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.15); }
+      100% { transform: scale(1); }
+    }
+    
+    .animate-pop {
+      animation: pop 0.5s ease-out;
+    }
+  `}</style>
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <HelmetProvider context={helmetContext}>
@@ -27,6 +57,7 @@ const App = () => (
         <BrowserRouter>
           <Toaster />
           <Sonner />
+          <CustomCursorStyles />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/about" element={<About />} />

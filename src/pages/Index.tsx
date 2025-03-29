@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Award } from 'lucide-react'; // Added import for Award icon
+import { Award, Sparkles } from 'lucide-react'; // Added Sparkles icon as well
 import Navbar from '@/components/Navbar';
 import HeroSection from '@/components/HeroSection';
 import FeaturesSection from '@/components/FeaturesSection';
@@ -9,11 +9,15 @@ import HowItWorksSection from '@/components/HowItWorksSection';
 import TestimonialsSection from '@/components/TestimonialsSection';
 import CTASection from '@/components/CTASection';
 import Footer from '@/components/Footer';
+import ParticleEffect from '@/components/ParticleEffect';
+import ConfettiTrigger from '@/components/ConfettiTrigger';
+import AnimatedTooltip from '@/components/AnimatedTooltip';
 
 const Index = () => {
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
   const [cursorHover, setCursorHover] = useState(false);
   const [showParticles, setShowParticles] = useState(false);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   
   useEffect(() => {
     // Initialize custom cursor
@@ -31,6 +35,7 @@ const Index = () => {
     // Track cursor position
     const updateCursorPosition = (e: MouseEvent) => {
       setCursorPosition({ x: e.clientX, y: e.clientY });
+      setMousePosition({ x: e.clientX, y: e.clientY });
       
       // Update CSS variables for spotlight effect
       document.documentElement.style.setProperty('--cursor-x', `${e.clientX}px`);
@@ -142,19 +147,33 @@ const Index = () => {
   };
   
   return (
-    <div className="min-h-screen bg-wonderwhiz-gradient spotlight-hover">
+    <div className="min-h-screen bg-wonderwhiz-gradient spotlight-hover relative">
       <Helmet>
         <title>WonderWhiz - Feed Your Child's Curiosity</title>
         <meta name="description" content="WonderWhiz is an AI-powered learning platform that transforms screen time into growth time for kids. Turn curiosity into daily habits, smart thinking, and joyful learning." />
       </Helmet>
       
+      {/* Background particles */}
+      <ParticleEffect type="stars" intensity="low" />
+      
       {/* Award-winning site badge */}
-      <div className="award-badge">
-        <div className="flex items-center">
-          <Award className="h-5 w-5 mr-2 text-wonderwhiz-dark" />
-          <span className="text-xs font-bold text-wonderwhiz-dark">Award Winner</span>
-        </div>
-      </div>
+      <AnimatedTooltip 
+        content={
+          <div className="text-center">
+            <p className="font-bold">Webby Award Nominee 2023</p>
+            <p className="text-xs mt-1">For Excellence in Innovation</p>
+          </div>
+        }
+      >
+        <ConfettiTrigger>
+          <div className="award-badge cursor-pointer">
+            <div className="flex items-center">
+              <Award className="h-5 w-5 mr-2 text-wonderwhiz-dark" />
+              <span className="text-xs font-bold text-wonderwhiz-dark">Award Winner</span>
+            </div>
+          </div>
+        </ConfettiTrigger>
+      </AnimatedTooltip>
       
       <Navbar />
       <main>
@@ -166,7 +185,22 @@ const Index = () => {
       </main>
       <Footer />
       
-      {/* Add CSS Variables for cursor-following spotlight effect - fixed syntax */}
+      {/* Interactive sparkle that follows cursor with delay */}
+      <div 
+        className="fixed pointer-events-none z-50 transition-all duration-300 opacity-70"
+        style={{
+          left: `${mousePosition.x}px`,
+          top: `${mousePosition.y}px`,
+          transform: 'translate(-50%, -50%)'
+        }}
+      >
+        <Sparkles 
+          className="h-6 w-6 text-wonderwhiz-gold animate-pulse" 
+          style={{ filter: 'drop-shadow(0 0 5px rgba(255, 199, 44, 0.7))' }}
+        />
+      </div>
+      
+      {/* Add CSS Variables for cursor-following spotlight effect */}
       <style>
         {`
         .spotlight-hover::before {
