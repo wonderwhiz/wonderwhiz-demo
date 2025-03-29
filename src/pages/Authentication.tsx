@@ -100,137 +100,139 @@ const Authentication = () => {
         
         <Card className="backdrop-blur-md bg-white/10 border border-white/20 shadow-xl">
           <CardHeader>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid grid-cols-2 mb-4 bg-white/10">
                 <TabsTrigger value="login" className="data-[state=active]:bg-wonderwhiz-purple data-[state=active]:text-white">
                   <LogIn className="mr-2 h-4 w-4" />
                   Log In
                 </TabsTrigger>
-                <TabsTrigger value="signup" className="data-[state=active]:bg-wonderwhiz-pink data-[state=active]:text-white">
+                <TabsTrigger value="signup" className="data-[state=active]:bg-wonderwhiz-purple data-[state=active]:text-white">
                   <UserPlus className="mr-2 h-4 w-4" />
                   Sign Up
                 </TabsTrigger>
               </TabsList>
+
+              <TabsContent value="login" className="space-y-4">
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60 h-4 w-4" />
+                      <Input 
+                        id="email-login" 
+                        placeholder="Email" 
+                        type="email" 
+                        className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/60" 
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60 h-4 w-4" />
+                      <Input 
+                        id="password-login" 
+                        placeholder="Password" 
+                        type="password" 
+                        className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/60"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full jelly-button group" 
+                    disabled={isLoading}
+                  >
+                    {isLoading ? 'Logging in...' : (
+                      <>
+                        Log In 
+                        <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                      </>
+                    )}
+                  </Button>
+                </form>
+              </TabsContent>
+              
+              <TabsContent value="signup" className="space-y-4">
+                <form onSubmit={handleSignUp} className="space-y-4">
+                  <div className="space-y-2">
+                    <Input 
+                      id="name" 
+                      placeholder="Full Name" 
+                      className="bg-white/10 border-white/20 text-white placeholder:text-white/60"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60 h-4 w-4" />
+                      <Input 
+                        id="email-signup" 
+                        placeholder="Email" 
+                        type="email" 
+                        className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/60"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60 h-4 w-4" />
+                      <Input 
+                        id="password-signup" 
+                        placeholder="Password" 
+                        type="password" 
+                        className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/60"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <ul className="text-sm text-white/70 space-y-1">
+                      <li className="flex items-center">
+                        <Check className="mr-2 h-3 w-3 text-wonderwhiz-pink" />
+                        Access to curated learning content
+                      </li>
+                      <li className="flex items-center">
+                        <Check className="mr-2 h-3 w-3 text-wonderwhiz-pink" />
+                        Manage multiple child profiles
+                      </li>
+                      <li className="flex items-center">
+                        <Check className="mr-2 h-3 w-3 text-wonderwhiz-pink" />
+                        Track learning progress
+                      </li>
+                    </ul>
+                  </div>
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-gradient-to-r from-wonderwhiz-pink to-wonderwhiz-purple hover:brightness-110 text-white font-bold py-2 rounded-full transition-all shadow-lg hover:shadow-wonderwhiz-pink/30 hover:scale-105 active:scale-95" 
+                    disabled={isLoading}
+                  >
+                    {isLoading ? 'Creating Account...' : 'Sign Up Free'}
+                  </Button>
+                </form>
+              </TabsContent>
             </Tabs>
           </CardHeader>
           
           <CardContent>
-            <TabsContent value="login" className="space-y-4">
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60 h-4 w-4" />
-                    <Input 
-                      id="email-login" 
-                      placeholder="Email" 
-                      type="email" 
-                      className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/60" 
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="relative">
-                    <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60 h-4 w-4" />
-                    <Input 
-                      id="password-login" 
-                      placeholder="Password" 
-                      type="password" 
-                      className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/60"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-                
-                <Button 
-                  type="submit" 
-                  className="w-full jelly-button group" 
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Logging in...' : (
-                    <>
-                      Log In 
-                      <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                    </>
-                  )}
-                </Button>
-              </form>
-            </TabsContent>
-            
-            <TabsContent value="signup" className="space-y-4">
-              <form onSubmit={handleSignUp} className="space-y-4">
-                <div className="space-y-2">
-                  <Input 
-                    id="name" 
-                    placeholder="Full Name" 
-                    className="bg-white/10 border-white/20 text-white placeholder:text-white/60"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60 h-4 w-4" />
-                    <Input 
-                      id="email-signup" 
-                      placeholder="Email" 
-                      type="email" 
-                      className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/60"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="relative">
-                    <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60 h-4 w-4" />
-                    <Input 
-                      id="password-signup" 
-                      placeholder="Password" 
-                      type="password" 
-                      className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/60"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <ul className="text-sm text-white/70 space-y-1">
-                    <li className="flex items-center">
-                      <Check className="mr-2 h-3 w-3 text-wonderwhiz-pink" />
-                      Access to curated learning content
-                    </li>
-                    <li className="flex items-center">
-                      <Check className="mr-2 h-3 w-3 text-wonderwhiz-pink" />
-                      Manage multiple child profiles
-                    </li>
-                    <li className="flex items-center">
-                      <Check className="mr-2 h-3 w-3 text-wonderwhiz-pink" />
-                      Track learning progress
-                    </li>
-                  </ul>
-                </div>
-                
-                <Button 
-                  type="submit" 
-                  className="w-full bg-gradient-to-r from-wonderwhiz-pink to-wonderwhiz-purple hover:brightness-110 text-white font-bold py-2 rounded-full transition-all shadow-lg hover:shadow-wonderwhiz-pink/30 hover:scale-105 active:scale-95" 
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Creating Account...' : 'Sign Up Free'}
-                </Button>
-              </form>
-            </TabsContent>
+            {/* Content is now moved inside TabsContent components inside the Tabs component */}
           </CardContent>
           
           <CardFooter className="flex flex-col space-y-2 text-center border-t border-white/10 pt-4">
