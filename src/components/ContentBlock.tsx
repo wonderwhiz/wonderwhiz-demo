@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { BookmarkIcon, ThumbsUpIcon, MessageCircleIcon } from 'lucide-react';
@@ -152,48 +153,94 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   const handleSubmitReply = async () => {
     if (!replyText.trim()) return;
     
+    const tempId = `temp-${Date.now()}`;
     const tempTimestamp = new Date().toISOString();
+    
+    // Optimistically add the reply to the UI
     const userReply: Reply = {
-      id: `temp-${Date.now()}`,
+      id: tempId,
       block_id: block.id,
       content: replyText,
       from_user: true,
       timestamp: tempTimestamp
     };
     
+    // Save the current reply text before clearing it
+    const currentReplyText = replyText;
     setReplies(prev => [...prev, userReply]);
+    setReplyText('');
     
     try {
       setIsLoading(true);
       
-      const { error } = await supabase.functions.invoke('handle-block-replies', {
+      // Check if block has been saved to the database
+      const { data: blockExists, error: blockCheckError } = await supabase
+        .from('content_blocks')
+        .select('id')
+        .eq('id', block.id)
+        .maybeSingle();
+      
+      if (blockCheckError) {
+        console.error('Error checking if block exists:', blockCheckError);
+      }
+      
+      // If block doesn't exist in the database yet, save it
+      if (!blockExists) {
+        console.log('Block not found in database, saving first:', block.id);
+        const { error: saveBlockError } = await supabase
+          .from('content_blocks')
+          .insert({
+            id: block.id,
+            curio_id: block.curio_id || null,
+            type: block.type,
+            specialist_id: block.specialist_id,
+            content: block.content
+          });
+          
+        if (saveBlockError) {
+          throw new Error(`Failed to save block: ${saveBlockError.message}`);
+        }
+        
+        // Wait a moment to ensure the block is saved before proceeding
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
+      // Send the reply to the edge function
+      const { data: replyData, error: replyError } = await supabase.functions.invoke('handle-block-replies', {
         body: {
           block_id: block.id,
-          content: replyText,
+          content: currentReplyText,
           from_user: true,
+          specialist_id: null,
           user_id: userId,
           child_profile_id: childProfileId
         }
       });
       
-      if (error) {
-        throw new Error(error.message);
+      if (replyError) {
+        throw new Error(`Reply error: ${replyError}`);
       }
       
-      await handleSpecialistReply(block.id, replyText);
+      // Handle specialist reply
+      await handleSpecialistReply(block.id, currentReplyText);
       
-      onReply(block.id, replyText);
+      // Notify parent component
+      onReply(block.id, currentReplyText);
       
-      setReplyText('');
     } catch (error) {
       console.error('Error handling reply:', error);
+      
+      // Remove the optimistically added reply
+      setReplies(prev => prev.filter(r => r.id !== tempId));
+      
+      // Restore the reply text so user doesn't lose their input
+      setReplyText(currentReplyText);
+      
       toast({
         title: "Couldn't send message",
         description: "There was an error sending your message. Please try again.",
         variant: "destructive"
       });
-      
-      setReplies(prev => prev.filter(r => r.id !== `temp-${Date.now()}`));
     } finally {
       setIsLoading(false);
     }
@@ -227,7 +274,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
           block_id: blockId,
           content: response.data.reply,
           from_user: false,
-          specialist_id: response.data.specialistId,
+          specialist_id: response.data.specialistId || block.specialist_id,
           user_id: userId,
           child_profile_id: childProfileId
         }
@@ -582,6 +629,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
               size="icon"
               className="bg-wonderwhiz-purple hover:bg-wonderwhiz-purple/80 text-white h-8 w-8 sm:h-10 sm:w-10"
               disabled={!replyText.trim() || isLoading}
+              aria-label="Send reply"
             >
               <Send className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </Button>

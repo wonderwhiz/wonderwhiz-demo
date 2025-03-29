@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -1025,6 +1024,8 @@ const Dashboard = () => {
                             onNewsRead={() => handleNewsRead(block.id)}
                             onCreativeUpload={() => handleCreativeUpload(block.id)}
                             colorVariant={index % 3}
+                            userId={profileId} 
+                            childProfileId={profileId}
                           />
                           
                           {blockReplies[block.id] && blockReplies[block.id].length > 0 && (

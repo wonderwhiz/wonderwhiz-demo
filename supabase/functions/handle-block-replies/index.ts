@@ -26,6 +26,21 @@ serve(async (req) => {
       throw new Error('Block ID and content are required');
     }
 
+    // Check if the block_id exists in the content_blocks table
+    const { data: blockExists, error: blockCheckError } = await supabase
+      .from('content_blocks')
+      .select('id')
+      .eq('id', block_id)
+      .single();
+    
+    if (blockCheckError || !blockExists) {
+      console.error("Block doesn't exist in the database:", block_id);
+      return new Response(
+        JSON.stringify({ error: `Block with ID ${block_id} does not exist in the database` }), 
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Save message
     const { data, error } = await supabase
       .from('block_replies')
