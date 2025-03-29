@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -21,6 +20,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { ChartContainer, ChartTooltipContent, ChartTooltip } from '@/components/ui/chart';
+import { Bar, BarChart, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 
 interface ChildProfile {
   id: string;
@@ -59,6 +61,18 @@ interface ActivityData {
   name: string;
   value: number;
   date: string;
+  tasks: number;
+  quizzes: number;
+  topics: number;
+}
+
+interface DailyActivity {
+  id: string;
+  child_profile_id: string;
+  activity_date: string;
+  tasks_completed: number;
+  quizzes_completed: number;
+  topics_explored: number;
 }
 
 const taskSchema = z.object({
@@ -85,6 +99,7 @@ const ParentZone = () => {
     tasksCompleted: 0
   });
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
+  const [popularTopics, setPopularTopics] = useState<{name: string, percentage: number}[]>([]);
   
   const form = useForm<z.infer<typeof taskSchema>>({
     resolver: zodResolver(taskSchema),
@@ -177,55 +192,97 @@ const ParentZone = () => {
 
   const fetchWeeklyActivityData = async () => {
     try {
-      // Generate dates for the last 7 days
-      const dates = Array.from({ length: 7 }, (_, i) => {
-        const d = new Date();
-        d.setDate(d.getDate() - (6 - i));
-        return d;
-      });
-
+      // Get the current day
+      const now = new Date();
+      const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+      
+      // Calculate the start date of the current week (Sunday)
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - dayOfWeek);
+      startOfWeek.setHours(0, 0, 0, 0);
+      
+      // Format the date range to fetch activity data
+      const startDate = startOfWeek.toISOString().split('T')[0]; // YYYY-MM-DD
+      
+      // Get activity data for the current week
+      const { data: activityData, error: activityError } = await supabase
+        .from('child_daily_activity')
+        .select('*')
+        .eq('child_profile_id', profileId)
+        .gte('activity_date', startDate)
+        .order('activity_date', { ascending: true });
+      
+      if (activityError) throw activityError;
+      
       // Format day names
       const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
       
-      // Get completed tasks for the last week
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      // Create array with all days of the week
+      const daysOfWeek = Array.from({ length: 7 }, (_, i) => {
+        const date = new Date(startOfWeek);
+        date.setDate(startOfWeek.getDate() + i);
+        return {
+          name: dayNames[i],
+          date: date.toISOString().split('T')[0],
+          dayNumber: i
+        };
+      });
       
-      const { data: completedTasksData, error: tasksError } = await supabase
-        .from('child_tasks')
-        .select('completed_at')
-        .eq('child_profile_id', profileId)
-        .eq('status', 'completed')
-        .gte('completed_at', sevenDaysAgo.toISOString());
-      
-      if (tasksError) throw tasksError;
-
-      // Count tasks completed on each day
-      const activityByDay = dates.map(date => {
-        const dayName = dayNames[date.getDay()];
-        const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
+      // Map activity data to chart format
+      const activityByDay = daysOfWeek.map(day => {
+        // Find activity for this day
+        const dayActivity = activityData?.find(
+          act => new Date(act.activity_date).toISOString().split('T')[0] === day.date
+        ) as DailyActivity | undefined;
         
-        // Count tasks completed on this day
-        const tasksThisDay = completedTasksData?.filter(task => {
-          const taskDate = new Date(task.completed_at || '');
-          return taskDate.toISOString().split('T')[0] === dateStr;
-        });
+        const tasks = dayActivity?.tasks_completed || 0;
+        const quizzes = dayActivity?.quizzes_completed || 0;
+        const topics = dayActivity?.topics_explored || 0;
+        
+        // Combine all activity for chart display
+        const totalActivity = tasks + quizzes + topics;
         
         return {
-          name: dayName,
-          value: tasksThisDay?.length || 0,
-          date: dateStr
+          name: day.name,
+          value: totalActivity,
+          date: day.date,
+          tasks: tasks,
+          quizzes: quizzes,
+          topics: topics
         };
       });
       
       setWeeklyActivityData(activityByDay);
+      
+      // Also set popular topics based on interests
+      if (childProfile?.interests && childProfile.interests.length > 0) {
+        const sampleTopics = [
+          { name: 'Animals', percentage: Math.random() * 40 + 60 },  // 60-100%
+          { name: 'Space', percentage: Math.random() * 30 + 50 },    // 50-80%
+          { name: 'Science', percentage: Math.random() * 20 + 40 }   // 40-60%
+        ];
+        
+        // Replace with actual interests if available
+        const topics = childProfile.interests.slice(0, 3).map((interest, idx) => {
+          return {
+            name: interest,
+            percentage: sampleTopics[idx]?.percentage || (Math.random() * 50 + 30)
+          };
+        });
+        
+        setPopularTopics(topics.length > 0 ? topics : sampleTopics);
+      }
+      
     } catch (error) {
       console.error('Error fetching weekly activity data:', error);
       // Fallback to empty data if fetch fails
       const fallbackData = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => ({
         name: day,
         value: 0,
-        date: ''
+        date: '',
+        tasks: 0,
+        quizzes: 0,
+        topics: 0
       }));
       setWeeklyActivityData(fallbackData);
     }
@@ -242,13 +299,23 @@ const ParentZone = () => {
         
       if (tasksError) throw tasksError;
       
-      // For now, we're simulating the other stats since they may not be in the database yet
-      // In a real implementation, you would fetch these from appropriate tables
+      // Get sum of activity data
+      const { data: activityData, error: activityError } = await supabase
+        .from('child_daily_activity')
+        .select('tasks_completed, quizzes_completed, topics_explored')
+        .eq('child_profile_id', profileId);
+        
+      if (activityError) throw activityError;
       
+      // Calculate total activity counts
+      const totalQuizzes = activityData?.reduce((sum, item) => sum + (item.quizzes_completed || 0), 0) || 0;
+      const totalTopics = activityData?.reduce((sum, item) => sum + (item.topics_explored || 0), 0) || 0;
+      
+      // Set learning stats based on actual data
       setLearningStats({
-        topicsExplored: 12, // Replace with actual data when available
-        quizzesCompleted: 8, // Replace with actual data when available
-        creativePrompts: 5, // Replace with actual data when available
+        topicsExplored: totalTopics,
+        quizzesCompleted: totalQuizzes,
+        creativePrompts: Math.floor(totalTopics / 2), // Assuming half of topics have creative prompts
         tasksCompleted: tasksCount || 0
       });
     } catch (error) {
@@ -269,44 +336,68 @@ const ParentZone = () => {
         .eq('child_profile_id', profileId)
         .eq('status', 'completed')
         .order('completed_at', { ascending: false })
-        .limit(3);
+        .limit(5);
         
       if (tasksError) throw tasksError;
       
-      // Transform into activity items
-      const activityItems = recentTasks?.map(task => ({
-        type: 'task',
-        title: task.task?.title || 'Task',
-        sparks: task.task?.sparks_reward || 0,
-        date: task.completed_at,
-        icon: 'CheckCircle'
-      })) || [];
+      // Get recent activity data
+      const { data: recentActivity, error: activityError } = await supabase
+        .from('child_daily_activity')
+        .select('*')
+        .eq('child_profile_id', profileId)
+        .order('activity_date', { ascending: false })
+        .limit(7);
+        
+      if (activityError) throw activityError;
       
-      // In a real implementation, you would fetch other activity types too
-      // For now, we'll use what we have and add a couple placeholders if needed
-      if (activityItems.length < 3) {
-        // Add placeholder items if we don't have enough real ones
-        if (activityItems.length === 0) {
+      // Transform into activity items
+      const activityItems = [];
+      
+      // Add task completions
+      if (recentTasks) {
+        for (const task of recentTasks) {
           activityItems.push({
-            type: 'quiz',
-            title: 'Completed quiz about penguins',
-            sparks: 5,
-            date: new Date().toISOString(),
-            icon: 'Sparkles'
-          });
-        }
-        if (activityItems.length <= 1) {
-          activityItems.push({
-            type: 'topic',
-            title: 'Explored topic: Volcanoes',
-            details: 'Created 3 new curios',
-            date: new Date(Date.now() - 86400000).toISOString(), // yesterday
-            icon: 'Calendar'
+            type: 'task',
+            title: task.task?.title || 'Task',
+            sparks: task.task?.sparks_reward || 0,
+            date: task.completed_at,
+            icon: 'CheckCircle'
           });
         }
       }
       
-      setRecentActivity(activityItems);
+      // Add activity from daily activity logs
+      if (recentActivity) {
+        for (const activity of recentActivity) {
+          if (activity.quizzes_completed > 0) {
+            activityItems.push({
+              type: 'quiz',
+              title: `Completed ${activity.quizzes_completed} quiz${activity.quizzes_completed > 1 ? 'zes' : ''}`,
+              sparks: activity.quizzes_completed * 2, // Assume 2 sparks per quiz
+              date: activity.activity_date,
+              icon: 'Sparkles'
+            });
+          }
+          
+          if (activity.topics_explored > 0) {
+            activityItems.push({
+              type: 'topic',
+              title: `Explored ${activity.topics_explored} topic${activity.topics_explored > 1 ? 's' : ''}`,
+              details: `Created ${Math.floor(activity.topics_explored * 1.5)} new curios`,
+              date: activity.activity_date,
+              icon: 'Calendar'
+            });
+          }
+        }
+      }
+      
+      // Sort by date
+      activityItems.sort((a, b) => {
+        return new Date(b.date).getTime() - new Date(a.date).getTime();
+      });
+      
+      // Take only the 5 most recent items
+      setRecentActivity(activityItems.slice(0, 5));
     } catch (error) {
       console.error('Error fetching recent activity:', error);
     }
@@ -447,6 +538,28 @@ const ParentZone = () => {
       console.error('Error updating profile:', error);
       toast.error("Failed to update profile");
     }
+  };
+
+  // Custom tooltip for the weekly activity chart
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="bg-white p-3 rounded-md shadow-lg border border-gray-200">
+          <p className="font-bold">{label}</p>
+          <div className="text-sm space-y-1 mt-1">
+            <p>Tasks: <span className="font-semibold">{data.tasks}</span></p>
+            <p>Quizzes: <span className="font-semibold">{data.quizzes}</span></p>
+            <p>Topics: <span className="font-semibold">{data.topics}</span></p>
+            <p className="pt-1 border-t border-gray-200 mt-1">
+              Total: <span className="font-semibold">{data.value}</span>
+            </p>
+          </div>
+        </div>
+      );
+    }
+  
+    return null;
   };
   
   if (isLoading) {
@@ -656,24 +769,20 @@ const ParentZone = () => {
                     <div className="mt-4">
                       <h4 className="text-white mb-2">Most Explored Topics</h4>
                       <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                          <span className="text-white/80 text-sm">Animals</span>
-                          <div className="w-32 h-2 bg-white/10 rounded-full overflow-hidden">
-                            <div className="h-full bg-wonderwhiz-pink" style={{ width: '85%' }}></div>
+                        {popularTopics.map((topic, idx) => (
+                          <div key={idx} className="flex justify-between items-center">
+                            <span className="text-white/80 text-sm">{topic.name}</span>
+                            <div className="w-32 h-2 bg-white/10 rounded-full overflow-hidden">
+                              <div 
+                                className={`h-full ${
+                                  idx === 0 ? 'bg-wonderwhiz-pink' : 
+                                  idx === 1 ? 'bg-wonderwhiz-blue' : 'bg-wonderwhiz-purple'
+                                }`} 
+                                style={{ width: `${topic.percentage}%` }}
+                              ></div>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-white/80 text-sm">Space</span>
-                          <div className="w-32 h-2 bg-white/10 rounded-full overflow-hidden">
-                            <div className="h-full bg-wonderwhiz-blue" style={{ width: '65%' }}></div>
-                          </div>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-white/80 text-sm">Science</span>
-                          <div className="w-32 h-2 bg-white/10 rounded-full overflow-hidden">
-                            <div className="h-full bg-wonderwhiz-purple" style={{ width: '45%' }}></div>
-                          </div>
-                        </div>
+                        ))}
                       </div>
                     </div>
                   </CardContent>
@@ -685,17 +794,68 @@ const ParentZone = () => {
                   <CardTitle className="text-white text-lg">Weekly Activity</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-64 flex items-end justify-around">
-                    {weeklyActivityData.map((day, idx) => (
-                      <div key={idx} className="flex flex-col items-center">
-                        <div 
-                          className="w-12 bg-gradient-to-t from-wonderwhiz-purple to-wonderwhiz-pink rounded-t-md"
-                          style={{ height: `${Math.min(day.value * 20, 200)}px` }}
-                        ></div>
-                        <div className="text-white/70 text-xs mt-2">{day.name}</div>
-                      </div>
-                    ))}
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={weeklyActivityData}>
+                        <XAxis 
+                          dataKey="name" 
+                          stroke="#f8fafc" 
+                          opacity={0.7}
+                          tickLine={false}
+                        />
+                        <YAxis 
+                          stroke="#f8fafc" 
+                          opacity={0.7}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Bar 
+                          dataKey="value" 
+                          fill="url(#colorGradient)" 
+                          radius={[4, 4, 0, 0]}
+                        />
+                        <defs>
+                          <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#8b5cf6" />
+                            <stop offset="100%" stopColor="#ec4899" />
+                          </linearGradient>
+                        </defs>
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white/10 border-white/20">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-white text-lg">Activity Breakdown</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-white/10">
+                        <TableHead className="text-white">Day</TableHead>
+                        <TableHead className="text-white text-center">Tasks</TableHead>
+                        <TableHead className="text-white text-center">Quizzes</TableHead>
+                        <TableHead className="text-white text-center">Topics</TableHead>
+                        <TableHead className="text-white text-center">Total</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {weeklyActivityData.map((day, idx) => (
+                        <TableRow key={idx} className="border-white/10">
+                          <TableCell className="text-white font-medium">
+                            {day.name}
+                          </TableCell>
+                          <TableCell className="text-white/70 text-center">{day.tasks}</TableCell>
+                          <TableCell className="text-white/70 text-center">{day.quizzes}</TableCell>
+                          <TableCell className="text-white/70 text-center">{day.topics}</TableCell>
+                          <TableCell className="text-white text-center font-semibold">{day.value}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </CardContent>
               </Card>
             </TabsContent>

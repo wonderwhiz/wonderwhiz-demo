@@ -41,6 +41,44 @@ export type Database = {
           },
         ]
       }
+      child_daily_activity: {
+        Row: {
+          activity_date: string
+          child_profile_id: string
+          created_at: string | null
+          id: string
+          quizzes_completed: number | null
+          tasks_completed: number | null
+          topics_explored: number | null
+        }
+        Insert: {
+          activity_date: string
+          child_profile_id: string
+          created_at?: string | null
+          id?: string
+          quizzes_completed?: number | null
+          tasks_completed?: number | null
+          topics_explored?: number | null
+        }
+        Update: {
+          activity_date?: string
+          child_profile_id?: string
+          created_at?: string | null
+          id?: string
+          quizzes_completed?: number | null
+          tasks_completed?: number | null
+          topics_explored?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "child_daily_activity_child_profile_id_fkey"
+            columns: ["child_profile_id"]
+            isOneToOne: false
+            referencedRelation: "child_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       child_profiles: {
         Row: {
           age: number | null
