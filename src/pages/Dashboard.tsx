@@ -24,6 +24,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import SparksBadge from '@/components/SparksBadge';
 import { Sidebar, SidebarProvider, SidebarContent, SidebarHeader, SidebarFooter, SidebarSeparator, SidebarTrigger } from '@/components/ui/sidebar';
+
 interface ChildProfile {
   id: string;
   name: string;
@@ -32,12 +33,14 @@ interface ChildProfile {
   age: number;
   sparks_balance: number;
 }
+
 interface Curio {
   id: string;
   title: string;
   query: string;
   created_at: string;
 }
+
 interface ContentBlock {
   id: string;
   type: 'fact' | 'quiz' | 'flashcard' | 'creative' | 'task' | 'riddle' | 'funFact' | 'activity' | 'news' | 'mindfulness';
@@ -46,6 +49,7 @@ interface ContentBlock {
   liked: boolean;
   bookmarked: boolean;
 }
+
 interface BlockReply {
   id: string;
   block_id: string;
@@ -53,6 +57,7 @@ interface BlockReply {
   from_user: boolean;
   created_at: string;
 }
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const {
@@ -83,6 +88,7 @@ const Dashboard = () => {
     streakBonusReceived,
     streakBonusAmount
   } = useSparksSystem(profileId);
+
   useEffect(() => {
     const loadProfileAndCurios = async () => {
       if (!profileId) {
@@ -117,6 +123,7 @@ const Dashboard = () => {
     };
     loadProfileAndCurios();
   }, [profileId, navigate]);
+
   const fetchCurioSuggestions = async (profile: any, curios: any[]) => {
     setIsLoadingSuggestions(true);
     try {
@@ -143,11 +150,13 @@ const Dashboard = () => {
       setIsLoadingSuggestions(false);
     }
   };
+
   const handleRefreshSuggestions = () => {
     if (childProfile && pastCurios) {
       fetchCurioSuggestions(childProfile, pastCurios);
     }
   };
+
   const handleSubmitQuery = async () => {
     if (!query.trim() || isGenerating || !childProfile) return;
     setIsGenerating(true);
@@ -232,6 +241,7 @@ const Dashboard = () => {
       setIsGenerating(false);
     }
   };
+
   const handleLoadCurio = async (curio: Curio) => {
     setCurrentCurio(curio);
     setLoadingBlocks(true);
@@ -297,6 +307,7 @@ const Dashboard = () => {
       setLoadingBlocks(false);
     }
   };
+
   const handleFollowRabbitHole = async (question: string) => {
     setQuery(question);
     try {
@@ -330,6 +341,7 @@ const Dashboard = () => {
       handleSubmitQuery();
     }, 100);
   };
+
   const handleQuizCorrect = async (blockId: string) => {
     try {
       const {
@@ -360,6 +372,7 @@ const Dashboard = () => {
       console.error('Error awarding sparks for correct quiz answer:', error);
     }
   };
+
   const handleNewsRead = async (blockId: string) => {
     try {
       const {
@@ -390,6 +403,7 @@ const Dashboard = () => {
       console.error('Error awarding sparks for news read:', error);
     }
   };
+
   const handleCreativeUpload = async (blockId: string) => {
     try {
       const {
@@ -420,6 +434,7 @@ const Dashboard = () => {
       console.error('Error awarding sparks for creative upload:', error);
     }
   };
+
   const handleToggleLike = async (blockId: string) => {
     setContentBlocks(prev => prev.map(block => block.id === blockId ? {
       ...block,
@@ -436,6 +451,7 @@ const Dashboard = () => {
       console.error('Error updating like status:', error);
     }
   };
+
   const handleToggleBookmark = async (blockId: string) => {
     setContentBlocks(prev => prev.map(block => block.id === blockId ? {
       ...block,
@@ -452,6 +468,7 @@ const Dashboard = () => {
       console.error('Error updating bookmark status:', error);
     }
   };
+
   const handleBlockReply = async (blockId: string, message: string) => {
     if (!message.trim() || !childProfile) return;
     try {
@@ -501,6 +518,7 @@ const Dashboard = () => {
       toast.error("Failed to send message");
     }
   };
+
   const handleSparkEarned = (amount: number) => {
     if (childProfile) {
       setChildProfile({
@@ -509,9 +527,11 @@ const Dashboard = () => {
       });
     }
   };
+
   const handleLoadMoreBlocks = () => {
     setVisibleBlocksCount(prev => Math.min(prev + 3, contentBlocks.length));
   };
+
   const observerTarget = useRef(null);
   useEffect(() => {
     const observer = new IntersectionObserver(entries => {
@@ -530,6 +550,7 @@ const Dashboard = () => {
       }
     };
   }, [observerTarget, loadingBlocks, visibleBlocksCount, contentBlocks.length]);
+
   const handleCurioSuggestionClick = async (suggestion: string) => {
     if (!childProfile || isGenerating) return;
     setIsGenerating(true);
@@ -614,14 +635,17 @@ const Dashboard = () => {
       setIsGenerating(false);
     }
   };
+
   const handleLoadMoreCurios = () => {
     setDisplayedCuriosCount(prev => Math.min(prev + curioPageSize, pastCurios.length));
   };
+
   if (isLoading) {
     return <div className="min-h-screen bg-wonderwhiz-gradient flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-wonderwhiz-pink"></div>
       </div>;
   }
+
   return <SidebarProvider>
       <div className="min-h-screen bg-wonderwhiz-gradient flex w-full">
         <Helmet>
@@ -745,11 +769,12 @@ const Dashboard = () => {
             <div className="flex items-center gap-3">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="relative text-white hover:bg-white/10 rounded-full">
-                    <UserCircle className="h-6 w-6" />
-                    <span className="absolute -top-1 -right-1">
-                      <SparksBadge sparks={childProfile?.sparks_balance || 0} size="sm" className="h-5 px-1 py-0" />
-                    </span>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="relative text-white hover:bg-white/10 rounded-full p-1"
+                  >
+                    <UserCircle className="h-10 w-10 text-wonderwhiz-purple" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 bg-wonderwhiz-dark/95 border-white/20 backdrop-blur-xl text-white">
@@ -760,35 +785,24 @@ const Dashboard = () => {
                   
                   <DropdownMenuSeparator className="bg-white/10" />
                   
-                  <DropdownMenuItem className="flex items-center gap-2 text-white hover:bg-white/10 focus:bg-white/10 cursor-pointer" onClick={() => {
-                  document.getElementById('sparks-overview')?.scrollIntoView({
-                    behavior: 'smooth'
-                  });
-                }}>
-                    <Sparkles className="h-4 w-4 text-wonderwhiz-gold" />
-                    <span>Sparks Balance</span>
-                    <div className="ml-auto">
-                      <SparksBadge sparks={childProfile?.sparks_balance || 0} size="sm" />
-                    </div>
-                  </DropdownMenuItem>
-                  
-                  <DropdownMenuItem className="flex items-center gap-2 text-white hover:bg-white/10 focus:bg-white/10 cursor-pointer" onClick={() => navigate('/profiles')}>
-                    <User className="h-4 w-4 text-wonderwhiz-purple" />
-                    <span>Switch Profile</span>
-                  </DropdownMenuItem>
-                  
-                  <DropdownMenuItem className="flex items-center gap-2 text-white hover:bg-white/10 focus:bg-white/10 cursor-pointer" onClick={() => navigate(`/parent-zone/${profileId}`)}>
+                  <DropdownMenuItem 
+                    className="flex items-center gap-2 text-white hover:bg-white/10 focus:bg-white/10 cursor-pointer" 
+                    onClick={() => navigate(`/parent-zone/${profileId}`)}
+                  >
                     <ArrowLeftRight className="h-4 w-4 text-wonderwhiz-blue" />
                     <span>Parent Zone</span>
                   </DropdownMenuItem>
                   
                   <DropdownMenuSeparator className="bg-white/10" />
                   
-                  <DropdownMenuItem className="flex items-center gap-2 text-white hover:bg-white/10 focus:bg-white/10 hover:text-red-400 focus:text-red-400 cursor-pointer" onClick={async () => {
-                  await supabase.auth.signOut();
-                  navigate('/login');
-                  toast.success('Logged out successfully');
-                }}>
+                  <DropdownMenuItem 
+                    className="flex items-center gap-2 text-white hover:bg-white/10 focus:bg-white/10 hover:text-red-400 focus:text-red-400 cursor-pointer" 
+                    onClick={async () => {
+                      await supabase.auth.signOut();
+                      navigate('/login');
+                      toast.success('Logged out successfully');
+                    }}
+                  >
                     <LogOut className="h-4 w-4" />
                     <span>Logout</span>
                   </DropdownMenuItem>
@@ -1045,4 +1059,5 @@ const Dashboard = () => {
       </style>
     </SidebarProvider>;
 };
+
 export default Dashboard;
