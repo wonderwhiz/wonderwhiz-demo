@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -12,6 +11,7 @@ import WonderWhizLogo from '@/components/WonderWhizLogo';
 import ContentBlock from '@/components/ContentBlock';
 import BlockReply from '@/components/BlockReply';
 import { SPECIALISTS } from '@/components/SpecialistAvatar';
+import ChildDashboardTasks from '@/components/ChildDashboardTasks';
 
 interface ChildProfile {
   id: string;
@@ -19,6 +19,7 @@ interface ChildProfile {
   avatar_url: string;
   interests: string[];
   age: number;
+  sparks_balance: number;
 }
 
 interface Curio {
@@ -67,7 +68,6 @@ const Dashboard = () => {
       }
       
       try {
-        // Load child profile
         const { data: profileData, error: profileError } = await supabase
           .from('child_profiles')
           .select('*')
@@ -77,7 +77,6 @@ const Dashboard = () => {
         if (profileError) throw profileError;
         setChildProfile(profileData);
         
-        // Load past curios
         const { data: curiosData, error: curiosError } = await supabase
           .from('curios')
           .select('*')
@@ -105,7 +104,6 @@ const Dashboard = () => {
     setIsGenerating(true);
     
     try {
-      // First, save the new curio
       const { data: newCurio, error: curioError } = await supabase
         .from('curios')
         .insert({
@@ -118,7 +116,6 @@ const Dashboard = () => {
         
       if (curioError) throw curioError;
       
-      // Call Claude Edge Function to generate content blocks
       const claudeResponse = await supabase.functions.invoke('generate-curiosity-blocks', {
         body: JSON.stringify({
           query: query.trim(),
@@ -138,7 +135,6 @@ const Dashboard = () => {
       
       console.log("Generated blocks:", generatedBlocks);
       
-      // Save blocks to database
       for (const block of generatedBlocks) {
         await supabase
           .from('content_blocks')
@@ -150,17 +146,13 @@ const Dashboard = () => {
           });
       }
       
-      // Add new curio to pastCurios
       setPastCurios(prev => [newCurio, ...prev]);
       
-      // Update UI with new blocks
       setContentBlocks(generatedBlocks);
       setCurrentCurio(newCurio);
       
-      // Clear query
       setQuery('');
       
-      // Scroll to the new content
       setTimeout(() => {
         feedEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
@@ -178,7 +170,6 @@ const Dashboard = () => {
     setIsSidebarOpen(false);
     
     try {
-      // Fetch content blocks for this curio
       const { data: blocks, error: blocksError } = await supabase
         .from('content_blocks')
         .select('*')
@@ -186,7 +177,6 @@ const Dashboard = () => {
         
       if (blocksError) throw blocksError;
       
-      // Fetch replies for each block
       const blockIds = blocks?.map(block => block.id) || [];
       let allReplies: Record<string, BlockReply[]> = {};
       
@@ -199,7 +189,6 @@ const Dashboard = () => {
           
         if (repliesError) throw repliesError;
         
-        // Group replies by block_id
         if (replies) {
           allReplies = replies.reduce((acc: Record<string, BlockReply[]>, reply) => {
             if (!acc[reply.block_id]) {
@@ -212,7 +201,6 @@ const Dashboard = () => {
       }
       
       if (!blocks || blocks.length === 0) {
-        // Generate new content if blocks don't exist yet
         if (childProfile) {
           setIsGenerating(true);
           
@@ -225,7 +213,6 @@ const Dashboard = () => {
           
           const generatedBlocks = claudeResponse.data;
           
-          // Save blocks to database
           for (const block of generatedBlocks) {
             await supabase
               .from('content_blocks')
@@ -261,7 +248,6 @@ const Dashboard = () => {
       )
     );
     
-    // Update in database
     try {
       const blockToUpdate = contentBlocks.find(b => b.id === blockId);
       if (blockToUpdate) {
@@ -284,7 +270,6 @@ const Dashboard = () => {
       )
     );
     
-    // Update in database
     try {
       const blockToUpdate = contentBlocks.find(b => b.id === blockId);
       if (blockToUpdate) {
@@ -302,11 +287,9 @@ const Dashboard = () => {
     if (!message.trim() || !childProfile) return;
     
     try {
-      // Find the block to know its content and specialist
       const block = contentBlocks.find(b => b.id === blockId);
       if (!block) return;
       
-      // Save user message to DB
       const { data: replyData, error: replyError } = await supabase
         .from('block_replies')
         .insert({
@@ -319,13 +302,11 @@ const Dashboard = () => {
         
       if (replyError) throw replyError;
       
-      // Update UI immediately with user message
       setBlockReplies(prev => ({
         ...prev,
         [blockId]: [...(prev[blockId] || []), replyData]
       }));
       
-      // Send to edge function to get AI response
       const aiResponse = await supabase.functions.invoke('handle-block-chat', {
         body: JSON.stringify({
           blockId,
@@ -341,7 +322,6 @@ const Dashboard = () => {
         throw new Error(`Failed to get response: ${aiResponse.error.message}`);
       }
       
-      // Save AI response to DB
       const { data: aiReplyData, error: aiReplyError } = await supabase
         .from('block_replies')
         .insert({
@@ -354,7 +334,6 @@ const Dashboard = () => {
         
       if (aiReplyError) throw aiReplyError;
       
-      // Update UI with AI response
       setBlockReplies(prev => ({
         ...prev,
         [blockId]: [...(prev[blockId] || []), aiReplyData]
@@ -363,6 +342,15 @@ const Dashboard = () => {
     } catch (error) {
       console.error('Error handling reply:', error);
       toast.error("Failed to send message");
+    }
+  };
+
+  const handleSparkEarned = (amount: number) => {
+    if (childProfile) {
+      setChildProfile({
+        ...childProfile,
+        sparks_balance: (childProfile.sparks_balance || 0) + amount
+      });
     }
   };
 
@@ -381,7 +369,6 @@ const Dashboard = () => {
         <meta name="description" content="Explore topics, ask questions, and learn in a fun, interactive way with WonderWhiz." />
       </Helmet>
       
-      {/* Sidebar for past curios */}
       <aside 
         className={`fixed inset-y-0 left-0 z-20 w-64 bg-wonderwhiz-dark border-r border-white/10 transform transition-transform duration-300 ease-in-out ${
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
@@ -425,9 +412,7 @@ const Dashboard = () => {
         </div>
       </aside>
       
-      {/* Main content */}
       <main className="flex-1 flex flex-col min-h-screen relative">
-        {/* Top navigation */}
         <header className="sticky top-0 z-10 bg-wonderwhiz-dark/80 backdrop-blur-md border-b border-white/10 p-3 flex items-center justify-between">
           <Button 
             variant="ghost" 
@@ -472,97 +457,110 @@ const Dashboard = () => {
           </div>
         </header>
         
-        {/* Content feed */}
-        <div className="flex-1 overflow-auto p-4">
-          <div className="max-w-2xl mx-auto">
-            {/* Welcome message when no content */}
-            {!currentCurio && (
-              <div className="text-center py-12">
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.5 }}
-                  className="mb-6"
-                >
-                  <WonderWhizLogo className="h-24 mx-auto" />
-                </motion.div>
-                <h1 className="text-3xl font-bold text-white mb-4">Welcome to WonderWhiz!</h1>
-                <p className="text-white/80 text-lg mb-8">
-                  What are you curious about today? Type your question above!
-                </p>
-                <div className="grid grid-cols-2 gap-3 max-w-md mx-auto">
-                  {['Tell me about penguins', 'How do volcanoes work?', 'What are black holes?', 'Show me cool dinosaurs'].map(suggestion => (
-                    <Button
-                      key={suggestion}
-                      variant="outline"
-                      className="bg-white/10 text-white border-white/20 hover:bg-white/20"
-                      onClick={() => setQuery(suggestion)}
-                    >
-                      {suggestion}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            )}
+        <div className="flex-1 overflow-y-auto py-4 px-4 md:px-6">
+          <div className="max-w-6xl mx-auto space-y-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <ChildDashboardTasks 
+                childId={profileId || ''} 
+                onSparkEarned={handleSparkEarned}
+              />
+            </motion.div>
             
-            {/* Show current curio and its content */}
-            {currentCurio && (
-              <div>
-                <AnimatePresence>
-                  {isGenerating && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="p-4 mb-6 bg-wonderwhiz-purple/20 backdrop-blur-sm rounded-lg border border-wonderwhiz-purple/30 flex items-center"
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <Card className="bg-white/5 border-white/10">
+                {!currentCurio && (
+                  <div className="text-center py-12">
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.5 }}
+                      className="mb-6"
                     >
-                      <div className="mr-3">
-                        <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
-                      </div>
-                      <p className="text-white">Generating your personalized content...</p>
+                      <WonderWhizLogo className="h-24 mx-auto" />
                     </motion.div>
-                  )}
-                </AnimatePresence>
-                
-                <h2 className="text-2xl font-bold text-white mb-4">{currentCurio.title}</h2>
-                <div className="space-y-4">
-                  {contentBlocks.map(block => (
-                    <div key={block.id} className="space-y-2">
-                      <ContentBlock 
-                        block={block} 
-                        onToggleLike={handleToggleLike}
-                        onToggleBookmark={handleToggleBookmark}
-                        onReply={handleBlockReply}
-                        onSetQuery={setQuery}
-                      />
-                      
-                      {/* Show replies for this block */}
-                      {blockReplies[block.id] && blockReplies[block.id].length > 0 && (
-                        <div className="pl-4 border-l-2 border-white/20 ml-4">
-                          {blockReplies[block.id].map((reply) => (
-                            <BlockReply 
-                              key={reply.id}
-                              content={reply.content}
-                              fromUser={reply.from_user}
-                              specialistId={block.specialist_id}
-                              timestamp={reply.created_at}
-                            />
-                          ))}
-                        </div>
-                      )}
+                    <h1 className="text-3xl font-bold text-white mb-4">Welcome to WonderWhiz!</h1>
+                    <p className="text-white/80 text-lg mb-8">
+                      What are you curious about today? Type your question above!
+                    </p>
+                    <div className="grid grid-cols-2 gap-3 max-w-md mx-auto">
+                      {['Tell me about penguins', 'How do volcanoes work?', 'What are black holes?', 'Show me cool dinosaurs'].map(suggestion => (
+                        <Button
+                          key={suggestion}
+                          variant="outline"
+                          className="bg-white/10 text-white border-white/20 hover:bg-white/20"
+                          onClick={() => setQuery(suggestion)}
+                        >
+                          {suggestion}
+                        </Button>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {/* Ref for scrolling to the end of feed */}
-            <div ref={feedEndRef} />
+                  </div>
+                )}
+                
+                {currentCurio && (
+                  <div>
+                    <AnimatePresence>
+                      {isGenerating && (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="p-4 mb-6 bg-wonderwhiz-purple/20 backdrop-blur-sm rounded-lg border border-wonderwhiz-purple/30 flex items-center"
+                        >
+                          <div className="mr-3">
+                            <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+                          </div>
+                          <p className="text-white">Generating your personalized content...</p>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                    
+                    <h2 className="text-2xl font-bold text-white mb-4">{currentCurio.title}</h2>
+                    <div className="space-y-4">
+                      {contentBlocks.map(block => (
+                        <div key={block.id} className="space-y-2">
+                          <ContentBlock 
+                            block={block} 
+                            onToggleLike={handleToggleLike}
+                            onToggleBookmark={handleToggleBookmark}
+                            onReply={handleBlockReply}
+                            onSetQuery={setQuery}
+                          />
+                          
+                          {blockReplies[block.id] && blockReplies[block.id].length > 0 && (
+                            <div className="pl-4 border-l-2 border-white/20 ml-4">
+                              {blockReplies[block.id].map((reply) => (
+                                <BlockReply 
+                                  key={reply.id}
+                                  content={reply.content}
+                                  fromUser={reply.from_user}
+                                  specialistId={block.specialist_id}
+                                  timestamp={reply.created_at}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                <div ref={feedEndRef} />
+              </Card>
+            </motion.div>
           </div>
         </div>
       </main>
       
-      {/* Overlay for sidebar on mobile */}
       {isSidebarOpen && (
         <div 
           className="fixed inset-0 bg-black/50 z-10 md:hidden" 

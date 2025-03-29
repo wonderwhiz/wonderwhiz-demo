@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -14,9 +13,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { 
   User, ArrowLeft, ChevronRight, Settings, 
   BarChart3, Sparkles, Plus, Trash2, Calendar,
-  CheckCircle, Clock
+  CheckCircle, Clock, X
 } from 'lucide-react';
 import WonderWhizLogo from '@/components/WonderWhizLogo';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
 interface ChildProfile {
   id: string;
@@ -36,17 +39,47 @@ interface Task {
   sparks_reward: number;
 }
 
+interface AssignedTask {
+  id: string;
+  child_profile_id: string;
+  task_id: string;
+  status: string;
+  assigned_at: string;
+  completed_at: string | null;
+  task: {
+    id: string;
+    title: string;
+    description: string | null;
+    sparks_reward: number;
+  }
+}
+
+const taskSchema = z.object({
+  title: z.string().min(1, { message: "Title is required" }),
+  description: z.string().optional(),
+  sparks_reward: z.number().min(1, { message: "Reward must be at least 1 spark" })
+});
+
 const ParentZone = () => {
   const navigate = useNavigate();
   const { profileId } = useParams<{ profileId: string }>();
   const [isLoading, setIsLoading] = useState(true);
   const [childProfile, setChildProfile] = useState<ChildProfile | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [assignedTasks, setAssignedTasks] = useState<AssignedTask[]>([]);
+  const [completedTasks, setCompletedTasks] = useState<AssignedTask[]>([]);
   const [activeTab, setActiveTab] = useState('overview');
-  const [newTask, setNewTask] = useState({ title: '', sparks: 5, description: '' });
   const [isAddingTask, setIsAddingTask] = useState(false);
   
-  // Sample activity data for the charts
+  const form = useForm<z.infer<typeof taskSchema>>({
+    resolver: zodResolver(taskSchema),
+    defaultValues: {
+      title: '',
+      description: '',
+      sparks_reward: 5
+    },
+  });
+  
   const activityData = [
     { name: 'Mon', value: 15 },
     { name: 'Tue', value: 25 },
@@ -65,14 +98,12 @@ const ParentZone = () => {
       }
       
       try {
-        // Check current user session first
         const { data: session } = await supabase.auth.getSession();
         if (!session.session) {
           navigate('/login');
           return;
         }
         
-        // Load child profile
         const { data: profileData, error: profileError } = await supabase
           .from('child_profiles')
           .select('*')
@@ -81,7 +112,6 @@ const ParentZone = () => {
           
         if (profileError) throw profileError;
         
-        // Verify this profile belongs to the current user
         if (profileData.parent_user_id !== session.session.user.id) {
           toast.error("You don't have permission to view this profile");
           navigate('/profiles');
@@ -90,7 +120,6 @@ const ParentZone = () => {
         
         setChildProfile(profileData);
         
-        // Load tasks
         const { data: tasksData, error: tasksError } = await supabase
           .from('tasks')
           .select('*')
@@ -98,6 +127,8 @@ const ParentZone = () => {
           
         if (tasksError) throw tasksError;
         setTasks(tasksData || []);
+        
+        await fetchAssignedTasks(session.session.user.id);
         
       } catch (error) {
         console.error('Error loading profile or tasks:', error);
@@ -111,6 +142,31 @@ const ParentZone = () => {
     loadProfileAndTasks();
   }, [profileId, navigate]);
   
+  const fetchAssignedTasks = async (userId: string) => {
+    try {
+      const { data: assignedData, error: assignedError } = await supabase
+        .from('child_tasks')
+        .select(`
+          *,
+          task:tasks (*)
+        `)
+        .eq('child_profile_id', profileId)
+        .order('assigned_at', { ascending: false });
+        
+      if (assignedError) throw assignedError;
+
+      const activeTasksData = assignedData?.filter(task => task.status === 'pending') || [];
+      const completedTasksData = assignedData?.filter(task => task.status === 'completed') || [];
+      
+      setAssignedTasks(activeTasksData);
+      setCompletedTasks(completedTasksData);
+      
+    } catch (error) {
+      console.error('Error fetching assigned tasks:', error);
+      toast.error("Failed to load assigned tasks");
+    }
+  };
+  
   const handleBackToChild = () => {
     navigate(`/dashboard/${profileId}`);
   };
@@ -119,12 +175,7 @@ const ParentZone = () => {
     navigate('/profiles');
   };
   
-  const handleAddTask = async () => {
-    if (!newTask.title.trim()) {
-      toast.error("Please enter a task title");
-      return;
-    }
-    
+  const onSubmitTask = async (values: z.infer<typeof taskSchema>) => {
     try {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) {
@@ -136,9 +187,9 @@ const ParentZone = () => {
         .from('tasks')
         .insert({
           parent_user_id: session.session.user.id,
-          title: newTask.title,
-          description: newTask.description || null,
-          sparks_reward: newTask.sparks,
+          title: values.title,
+          description: values.description || null,
+          sparks_reward: values.sparks_reward,
         })
         .select()
         .single();
@@ -146,13 +197,13 @@ const ParentZone = () => {
       if (error) throw error;
       
       setTasks(prev => [...prev, task]);
-      setNewTask({ title: '', sparks: 5, description: '' });
+      form.reset({ title: '', description: '', sparks_reward: 5 });
       setIsAddingTask(false);
-      toast.success("Task added successfully");
+      toast.success("Task created successfully");
       
     } catch (error) {
       console.error('Error adding task:', error);
-      toast.error("Failed to add task");
+      toast.error("Failed to create task");
     }
   };
   
@@ -176,21 +227,52 @@ const ParentZone = () => {
   
   const handleAssignTask = async (taskId: string) => {
     try {
-      const { error } = await supabase
+      const existingTask = assignedTasks.find(t => t.task.id === taskId);
+      
+      if (existingTask) {
+        toast.error("This task is already assigned");
+        return;
+      }
+      
+      const { data, error } = await supabase
         .from('child_tasks')
         .insert({
           child_profile_id: profileId,
           task_id: taskId,
           status: 'pending'
-        });
+        })
+        .select(`
+          *,
+          task:tasks (*)
+        `)
+        .single();
         
       if (error) throw error;
       
+      setAssignedTasks(prev => [data, ...prev]);
       toast.success("Task assigned successfully");
       
     } catch (error) {
       console.error('Error assigning task:', error);
       toast.error("Failed to assign task");
+    }
+  };
+  
+  const handleUnassignTask = async (childTaskId: string) => {
+    try {
+      const { error } = await supabase
+        .from('child_tasks')
+        .delete()
+        .eq('id', childTaskId);
+        
+      if (error) throw error;
+      
+      setAssignedTasks(prev => prev.filter(task => task.id !== childTaskId));
+      toast.success("Task unassigned");
+      
+    } catch (error) {
+      console.error('Error unassigning task:', error);
+      toast.error("Failed to unassign task");
     }
   };
   
@@ -447,11 +529,20 @@ const ParentZone = () => {
                   <div className="flex justify-between items-center">
                     <CardTitle className="text-white text-lg">Manage Tasks</CardTitle>
                     <Button 
-                      onClick={() => setIsAddingTask(true)}
+                      onClick={() => setIsAddingTask(!isAddingTask)}
                       className="bg-wonderwhiz-purple hover:bg-wonderwhiz-purple/90"
                     >
-                      <Plus className="h-4 w-4 mr-2" />
-                      New Task
+                      {isAddingTask ? (
+                        <>
+                          <X className="h-4 w-4 mr-2" />
+                          Cancel
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="h-4 w-4 mr-2" />
+                          New Task
+                        </>
+                      )}
                     </Button>
                   </div>
                 </CardHeader>
@@ -463,61 +554,88 @@ const ParentZone = () => {
                       className="mb-6 p-4 bg-white/5 rounded-lg border border-white/10"
                     >
                       <h3 className="text-white font-medium mb-4">Create New Task</h3>
-                      <div className="space-y-4">
-                        <div>
-                          <Label htmlFor="task-title" className="text-white">Task Title</Label>
-                          <Input
-                            id="task-title"
-                            placeholder="e.g., Read a book for 20 minutes"
-                            value={newTask.title}
-                            onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-                            className="bg-white/10 border-white/20 text-white placeholder:text-white/60"
+                      <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmitTask)} className="space-y-4">
+                          <FormField
+                            control={form.control}
+                            name="title"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-white">Task Title</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    placeholder="e.g., Read a book for 20 minutes"
+                                    className="bg-white/10 border-white/20 text-white placeholder:text-white/60"
+                                    {...field}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
                           />
-                        </div>
-                        
-                        <div>
-                          <Label htmlFor="task-description" className="text-white">Description (Optional)</Label>
-                          <Input
-                            id="task-description"
-                            placeholder="Add details about the task"
-                            value={newTask.description}
-                            onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-                            className="bg-white/10 border-white/20 text-white placeholder:text-white/60"
+                          
+                          <FormField
+                            control={form.control}
+                            name="description"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-white">Description (Optional)</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    placeholder="Add details about the task"
+                                    className="bg-white/10 border-white/20 text-white placeholder:text-white/60"
+                                    {...field}
+                                  />
+                                </FormControl>
+                                <FormDescription className="text-white/60">
+                                  Provide any additional instructions for this task
+                                </FormDescription>
+                              </FormItem>
+                            )}
                           />
-                        </div>
-                        
-                        <div>
-                          <Label htmlFor="task-sparks" className="text-white">Spark Reward</Label>
-                          <div className="flex items-center">
-                            <Input
-                              id="task-sparks"
-                              type="number"
-                              min="1"
-                              max="100"
-                              value={newTask.sparks}
-                              onChange={(e) => setNewTask({ ...newTask, sparks: parseInt(e.target.value) || 5 })}
-                              className="bg-white/10 border-white/20 text-white w-24"
-                            />
-                            <Sparkles className="ml-2 h-4 w-4 text-wonderwhiz-gold" />
+                          
+                          <FormField
+                            control={form.control}
+                            name="sparks_reward"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-white">Spark Reward</FormLabel>
+                                <div className="flex items-center">
+                                  <FormControl>
+                                    <Input
+                                      type="number"
+                                      min="1"
+                                      max="100"
+                                      className="bg-white/10 border-white/20 text-white w-24"
+                                      {...field}
+                                      onChange={(e) => field.onChange(parseInt(e.target.value) || 5)}
+                                    />
+                                  </FormControl>
+                                  <Sparkles className="ml-2 h-4 w-4 text-wonderwhiz-gold" />
+                                </div>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <div className="flex justify-end pt-2">
+                            <Button 
+                              type="submit"
+                              className="bg-wonderwhiz-purple hover:bg-wonderwhiz-purple/90"
+                              disabled={form.formState.isSubmitting}
+                            >
+                              {form.formState.isSubmitting ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-1"></div>
+                                  Creating...
+                                </>
+                              ) : (
+                                'Create Task'
+                              )}
+                            </Button>
                           </div>
-                        </div>
-                        
-                        <div className="flex justify-end space-x-3 pt-2">
-                          <Button 
-                            variant="outline" 
-                            onClick={() => setIsAddingTask(false)}
-                            className="bg-white/10 text-white hover:bg-white/20"
-                          >
-                            Cancel
-                          </Button>
-                          <Button 
-                            onClick={handleAddTask}
-                            className="bg-wonderwhiz-purple hover:bg-wonderwhiz-purple/90"
-                          >
-                            Create Task
-                          </Button>
-                        </div>
-                      </div>
+                        </form>
+                      </Form>
                     </motion.div>
                   )}
                   
@@ -527,40 +645,49 @@ const ParentZone = () => {
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {tasks.map(task => (
-                        <div key={task.id} className="p-3 bg-white/5 rounded-lg border border-white/10 flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center">
-                              <Clock className="h-4 w-4 text-wonderwhiz-pink mr-2" />
-                              <h3 className="font-medium text-white">{task.title}</h3>
+                      {tasks.map(task => {
+                        const isAlreadyAssigned = assignedTasks.some(t => t.task.id === task.id);
+                        
+                        return (
+                          <div key={task.id} className="p-3 bg-white/5 rounded-lg border border-white/10 flex items-center justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center">
+                                <Clock className="h-4 w-4 text-wonderwhiz-pink mr-2" />
+                                <h3 className="font-medium text-white">{task.title}</h3>
+                              </div>
+                              {task.description && (
+                                <p className="text-white/70 text-sm mt-1 ml-6">{task.description}</p>
+                              )}
+                              <div className="ml-6 flex items-center mt-2">
+                                <Sparkles className="h-3 w-3 text-wonderwhiz-gold mr-1" />
+                                <span className="text-xs text-white/70">{task.sparks_reward} Sparks</span>
+                              </div>
                             </div>
-                            {task.description && (
-                              <p className="text-white/70 text-sm mt-1 ml-6">{task.description}</p>
-                            )}
-                            <div className="ml-6 flex items-center mt-2">
-                              <Sparkles className="h-3 w-3 text-wonderwhiz-gold mr-1" />
-                              <span className="text-xs text-white/70">{task.sparks_reward} Sparks</span>
+                            <div className="flex space-x-2">
+                              <Button 
+                                size="sm"
+                                onClick={() => handleAssignTask(task.id)}
+                                className={`text-white text-xs ${
+                                  isAlreadyAssigned
+                                    ? 'bg-gray-500 hover:bg-gray-600 cursor-not-allowed'
+                                    : 'bg-wonderwhiz-purple/70 hover:bg-wonderwhiz-purple'
+                                }`}
+                                disabled={isAlreadyAssigned}
+                              >
+                                {isAlreadyAssigned ? 'Assigned' : 'Assign'}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleDeleteTask(task.id)}
+                                className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </div>
                           </div>
-                          <div className="flex space-x-2">
-                            <Button 
-                              size="sm"
-                              onClick={() => handleAssignTask(task.id)}
-                              className="bg-wonderwhiz-purple/70 hover:bg-wonderwhiz-purple text-white text-xs"
-                            >
-                              Assign
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleDeleteTask(task.id)}
-                              className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </CardContent>
@@ -571,9 +698,48 @@ const ParentZone = () => {
                   <CardTitle className="text-white text-lg">Assigned Tasks</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-center py-8">
-                    <p className="text-white/70">No tasks currently assigned to {childProfile?.name}.</p>
-                  </div>
+                  {assignedTasks.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-white/70">No tasks currently assigned to {childProfile?.name}.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {assignedTasks.map((assignedTask) => (
+                        <div key={assignedTask.id} className="p-3 bg-white/5 rounded-lg border border-white/10 flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center">
+                              <Clock className="h-4 w-4 text-wonderwhiz-blue mr-2" />
+                              <h3 className="font-medium text-white">{assignedTask.task.title}</h3>
+                            </div>
+                            {assignedTask.task.description && (
+                              <p className="text-white/70 text-sm mt-1 ml-6">{assignedTask.task.description}</p>
+                            )}
+                            <div className="ml-6 flex items-center mt-2">
+                              <div className="flex items-center mr-3">
+                                <Sparkles className="h-3 w-3 text-wonderwhiz-gold mr-1" />
+                                <span className="text-xs text-white/70">{assignedTask.task.sparks_reward} Sparks</span>
+                              </div>
+                              <div className="flex items-center">
+                                <Calendar className="h-3 w-3 text-wonderwhiz-pink/70 mr-1" />
+                                <span className="text-xs text-white/70">
+                                  Assigned: {new Date(assignedTask.assigned_at).toLocaleDateString()}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleUnassignTask(assignedTask.id)}
+                            className="bg-white/10 hover:bg-white/20 text-white text-xs"
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Unassign
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
               
@@ -582,9 +748,39 @@ const ParentZone = () => {
                   <CardTitle className="text-white text-lg">Completed Tasks</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-center py-8">
-                    <p className="text-white/70">No completed tasks yet.</p>
-                  </div>
+                  {completedTasks.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-white/70">No completed tasks yet.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {completedTasks.map((completedTask) => (
+                        <div key={completedTask.id} className="p-3 bg-wonderwhiz-purple/20 rounded-lg border border-wonderwhiz-purple/30 flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center">
+                              <CheckCircle className="h-4 w-4 text-wonderwhiz-purple mr-2" />
+                              <h3 className="font-medium text-white">{completedTask.task.title}</h3>
+                            </div>
+                            {completedTask.task.description && (
+                              <p className="text-white/70 text-sm mt-1 ml-6">{completedTask.task.description}</p>
+                            )}
+                            <div className="ml-6 flex items-center mt-2 space-x-3">
+                              <div className="flex items-center">
+                                <Sparkles className="h-3 w-3 text-wonderwhiz-gold mr-1" />
+                                <span className="text-xs text-white/70">{completedTask.task.sparks_reward} Sparks</span>
+                              </div>
+                              <div className="flex items-center">
+                                <Clock className="h-3 w-3 text-wonderwhiz-pink/70 mr-1" />
+                                <span className="text-xs text-white/70">
+                                  Completed: {new Date(completedTask.completed_at || '').toLocaleDateString()}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
