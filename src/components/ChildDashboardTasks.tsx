@@ -81,7 +81,7 @@ const ChildDashboardTasks: React.FC<ChildDashboardTasksProps> = ({ childId, onSp
           >
             <CardContent>
               <ChildTaskList 
-                childId={childId} 
+                profileId={childId} 
                 onSparkEarned={onSparkEarned}
                 onTaskComplete={handleTaskComplete} 
               />

@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -9,18 +10,21 @@ import { Plus, CheckCircle, XCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface ChildTaskListProps {
+  profileId?: string;  // Make profileId optional, will use from params if not provided
   onSparkEarned?: (amount: number) => void;
   onTaskComplete?: (sparks: number) => void;
 }
 
-const ChildTaskList = ({ onSparkEarned, onTaskComplete }: ChildTaskListProps) => {
-  const { profileId } = useParams<{ profileId: string }>();
+const ChildTaskList = ({ profileId, onSparkEarned, onTaskComplete }: ChildTaskListProps) => {
+  const params = useParams<{ profileId: string }>();
+  const childProfileId = profileId || params.profileId; // Use the provided profileId or get from route params
+  
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [taskList, setTaskList] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const loadTasks = useCallback(async () => {
-    if (!profileId) return;
+    if (!childProfileId) return;
 
     setIsLoading(true);
     try {
@@ -36,7 +40,7 @@ const ChildTaskList = ({ onSparkEarned, onTaskComplete }: ChildTaskListProps) =>
           *,
           task:tasks (*)
         `)
-        .eq('child_profile_id', profileId)
+        .eq('child_profile_id', childProfileId)
         .order('assigned_at', { ascending: false });
 
       if (error) throw error;
@@ -48,7 +52,7 @@ const ChildTaskList = ({ onSparkEarned, onTaskComplete }: ChildTaskListProps) =>
     } finally {
       setIsLoading(false);
     }
-  }, [profileId]);
+  }, [childProfileId]);
 
   React.useEffect(() => {
     loadTasks();
@@ -62,7 +66,7 @@ const ChildTaskList = ({ onSparkEarned, onTaskComplete }: ChildTaskListProps) =>
         return;
       }
 
-      const { data, error } = await supabase
+      const { data: taskData, error: taskError } = await supabase
         .from('tasks')
         .insert({
           title,
@@ -74,10 +78,25 @@ const ChildTaskList = ({ onSparkEarned, onTaskComplete }: ChildTaskListProps) =>
         .select()
         .single();
 
-      if (error) throw error;
+      if (taskError) throw taskError;
+
+      // Now create the child_task entry linking task to child
+      if (!childProfileId) {
+        toast.error('Child profile ID not found');
+        return;
+      }
+      
+      const { error: childTaskError } = await supabase
+        .from('child_tasks')
+        .insert({
+          child_profile_id: childProfileId,
+          task_id: taskData.id,
+          status: 'pending'
+        });
+        
+      if (childTaskError) throw childTaskError;
 
       toast.success(`Quick task "${title}" added!`);
-      // Additional logic for refreshing tasks or updating UI
       loadTasks();
     } catch (error) {
       console.error('Error adding quick task:', error);
@@ -100,13 +119,13 @@ const ChildTaskList = ({ onSparkEarned, onTaskComplete }: ChildTaskListProps) =>
           completed_at: new Date().toISOString() 
         })
         .eq('id', taskId)
-        .eq('child_profile_id', profileId);
+        .eq('child_profile_id', childProfileId);
 
       if (error) throw error;
 
       // Update sparks balance
       const { error: sparksError } = await supabase.rpc('increment_sparks_balance', {
-        child_profile_id: profileId,
+        child_profile_id: childProfileId,
         spark_amount: sparksReward
       });
 
@@ -128,7 +147,7 @@ const ChildTaskList = ({ onSparkEarned, onTaskComplete }: ChildTaskListProps) =>
         .from('child_tasks')
         .delete()
         .eq('id', taskId)
-        .eq('child_profile_id', profileId);
+        .eq('child_profile_id', childProfileId);
 
       if (error) throw error;
 
