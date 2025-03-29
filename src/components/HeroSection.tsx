@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import MagicWand from './MagicWand';
+import { Sparkles, Star, Lightbulb, BookOpen } from 'lucide-react';
 
 const HeroSection = () => {
   return (
@@ -15,8 +16,13 @@ const HeroSection = () => {
           transition={{ duration: 0.8 }}
           className="text-center md:text-left"
         >
-          <h1 className="text-4xl md:text-5xl lg:text-6xl leading-tight mb-6 text-white">
-            The discovery engine that <span className="text-wonderwhiz-pink">sparks kids' curiosity</span>—one scroll at a time.
+          <h1 className="text-4xl md:text-5xl lg:text-6xl leading-tight mb-6 text-white group">
+            The discovery engine that <span className="text-wonderwhiz-pink relative">
+              sparks kids' curiosity
+              <span className="absolute -top-6 -right-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <Sparkles className="h-8 w-8 text-wonderwhiz-pink filter drop-shadow-lg" />
+              </span>
+            </span>—one scroll at a time.
           </h1>
           <p className="text-lg md:text-xl mb-8 text-gray-200">
             Turn screen time into growth time. WonderWhiz transforms your child's natural curiosity into daily habits, smart thinking, and joyful learning.
@@ -26,13 +32,14 @@ const HeroSection = () => {
           </p>
           <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-6 justify-center md:justify-start">
             <Link to="/register">
-              <Button className="jelly-button w-full sm:w-auto text-lg">
-                Join the waitlist
+              <Button className="jelly-button w-full sm:w-auto text-lg group relative overflow-hidden">
+                <span className="relative z-10">Join the waitlist</span>
+                <span className="absolute inset-0 bg-white bg-opacity-20 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></span>
               </Button>
             </Link>
             <Link to="/demo">
-              <Button variant="outline" className="w-full sm:w-auto border-wonderwhiz-blue border-2 text-wonderwhiz-blue bg-opacity-20 hover:bg-opacity-30 text-lg">
-                See the demo
+              <Button variant="outline" className="w-full sm:w-auto border-wonderwhiz-blue border-2 text-wonderwhiz-blue bg-opacity-20 hover:bg-opacity-30 text-lg group">
+                <span className="group-hover:scale-105 transition-transform inline-block">See the demo</span>
               </Button>
             </Link>
           </div>
@@ -49,7 +56,7 @@ const HeroSection = () => {
             </div>
             
             {/* Phone mockup */}
-            <div className="relative bg-black rounded-[40px] p-3 border-[10px] border-gray-800 shadow-2xl">
+            <div className="relative bg-black rounded-[40px] p-3 border-[10px] border-gray-800 shadow-2xl transform hover:rotate-1 transition-transform duration-500">
               <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-1/3 h-6 bg-black rounded-b-lg"></div>
               <div className="rounded-[30px] overflow-hidden bg-wonderwhiz-gradient pt-6 pb-10 px-4">
                 <div className="text-center mb-4">
@@ -59,9 +66,11 @@ const HeroSection = () => {
                 {/* App content preview */}
                 <div className="space-y-4">
                   {/* Card 1 */}
-                  <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl p-4 transform hover:scale-[1.02] transition-transform">
+                  <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl p-4 transform hover:scale-[1.02] transition-transform cursor-pointer">
                     <div className="flex items-start">
-                      <img src="https://i.pravatar.cc/80?img=1" alt="Nova" className="rounded-full w-10 h-10 mr-3" />
+                      <div className="rounded-full w-10 h-10 mr-3 bg-white bg-opacity-20 flex items-center justify-center">
+                        <Star className="h-6 w-6 text-yellow-300 filter drop-shadow-md" />
+                      </div>
                       <div>
                         <h4 className="font-bold text-white">Nova the Explorer</h4>
                         <p className="text-sm text-white">Did you know penguins can't fly but are amazing swimmers?</p>
@@ -70,9 +79,11 @@ const HeroSection = () => {
                   </div>
                   
                   {/* Card 2 */}
-                  <div className="bg-gradient-to-r from-blue-500 to-cyan-400 rounded-2xl p-4 transform hover:scale-[1.02] transition-transform">
+                  <div className="bg-gradient-to-r from-blue-500 to-cyan-400 rounded-2xl p-4 transform hover:scale-[1.02] transition-transform cursor-pointer">
                     <div className="flex items-start">
-                      <img src="https://i.pravatar.cc/80?img=9" alt="Spark" className="rounded-full w-10 h-10 mr-3" />
+                      <div className="rounded-full w-10 h-10 mr-3 bg-white bg-opacity-20 flex items-center justify-center">
+                        <Lightbulb className="h-6 w-6 text-yellow-300 filter drop-shadow-md" />
+                      </div>
                       <div>
                         <h4 className="font-bold text-white">Spark the Scientist</h4>
                         <p className="text-sm text-white">Let's test your penguin knowledge!</p>
@@ -89,13 +100,15 @@ const HeroSection = () => {
                   </div>
                   
                   {/* Card 3 */}
-                  <div className="bg-gradient-to-r from-amber-400 to-yellow-300 rounded-2xl p-4 transform hover:scale-[1.02] transition-transform">
+                  <div className="bg-gradient-to-r from-amber-400 to-yellow-300 rounded-2xl p-4 transform hover:scale-[1.02] transition-transform cursor-pointer">
                     <div className="flex items-start">
-                      <img src="https://i.pravatar.cc/80?img=7" alt="Prism" className="rounded-full w-10 h-10 mr-3" />
+                      <div className="rounded-full w-10 h-10 mr-3 bg-white bg-opacity-20 flex items-center justify-center">
+                        <BookOpen className="h-6 w-6 text-purple-700 filter drop-shadow-md" />
+                      </div>
                       <div>
                         <h4 className="font-bold text-gray-800">Prism the Artist</h4>
                         <p className="text-sm text-gray-800">Can you draw a penguin? Upload your art!</p>
-                        <div className="mt-2 p-2 bg-white bg-opacity-30 rounded-lg border-2 border-dashed border-gray-500 flex items-center justify-center">
+                        <div className="mt-2 p-2 bg-white bg-opacity-30 rounded-lg border-2 border-dashed border-gray-500 flex items-center justify-center hover:bg-opacity-40 transition-colors">
                           <span className="text-xs text-gray-700">Tap to upload your penguin drawing</span>
                         </div>
                       </div>

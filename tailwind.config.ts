@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -112,6 +111,23 @@ export default {
 				'pulse-gentle': {
 					'0%, 100%': { transform: 'scale(1)' },
 					'50%': { transform: 'scale(1.05)' }
+				},
+				'float-gentle': {
+					'0%, 100%': { transform: 'translateY(0) rotate(0)' },
+					'50%': { transform: 'translateY(-5px) rotate(2deg)' }
+				},
+				'bounce-gentle': {
+					'0%, 100%': { transform: 'translateY(0)' },
+					'50%': { transform: 'translateY(-4px)' }
+				},
+				'pop': {
+					'0%': { transform: 'scale(1)' },
+					'50%': { transform: 'scale(1.08)' },
+					'100%': { transform: 'scale(1)' }
+				},
+				'wiggle': {
+					'0%, 100%': { transform: 'rotate(-3deg)' },
+					'50%': { transform: 'rotate(3deg)' }
 				}
 			},
 			animation: {
@@ -119,12 +135,26 @@ export default {
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'float': 'float 5s ease-in-out infinite',
 				'sparkle': 'sparkle 2s ease-in-out infinite',
-				'pulse-gentle': 'pulse-gentle 3s ease-in-out infinite'
+				'pulse-gentle': 'pulse-gentle 3s ease-in-out infinite',
+				'float-gentle': 'float-gentle 5s ease-in-out infinite',
+				'bounce-gentle': 'bounce-gentle 2s ease-in-out infinite',
+				'pop': 'pop 0.5s ease-in-out',
+				'wiggle': 'wiggle 1s ease-in-out infinite'
 			},
 			backgroundImage: {
 				'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
 				'wonderwhiz-gradient': 'linear-gradient(to bottom, #20053D, #3D0E64)',
 				'button-gradient': 'linear-gradient(90deg, #FF5EBA 0%, #FF8FD9 100%)',
+			},
+			boxShadow: {
+				'glow': '0 0 15px rgba(126, 48, 225, 0.5)',
+				'glow-blue': '0 0 15px rgba(0, 224, 255, 0.5)',
+				'glow-pink': '0 0 15px rgba(255, 94, 186, 0.5)',
+				'glow-gold': '0 0 15px rgba(255, 199, 44, 0.5)',
+			},
+			cursor: {
+				'wand': 'url(/wand-cursor.png), pointer',
+				'sparkles': 'url(/sparkles-cursor.png), pointer',
 			}
 		}
 	},
