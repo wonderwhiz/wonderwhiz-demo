@@ -1,15 +1,17 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
-import { Send, Star, MessageCircle, BookmarkPlus, Menu, ArrowLeftRight, MessageSquare, Sparkles } from 'lucide-react';
+import { Send, Menu, ArrowLeftRight, MessageSquare, Sparkles, Search } from 'lucide-react';
 import WonderWhizLogo from '@/components/WonderWhizLogo';
+import ContentBlock from '@/components/ContentBlock';
+import BlockReply from '@/components/BlockReply';
+import { SPECIALISTS } from '@/components/SpecialistAvatar';
 
 interface ChildProfile {
   id: string;
@@ -35,161 +37,13 @@ interface ContentBlock {
   bookmarked: boolean;
 }
 
-// Mock specialists for our content
-const SPECIALISTS = {
-  'nova': { name: 'Nova the Explorer', color: 'bg-gradient-to-r from-blue-400 to-indigo-500' },
-  'spark': { name: 'Spark the Scientist', color: 'bg-gradient-to-r from-yellow-300 to-amber-500' },
-  'prism': { name: 'Prism the Artist', color: 'bg-gradient-to-r from-emerald-400 to-teal-500' },
-  'pixel': { name: 'Pixel the Robot', color: 'bg-gradient-to-r from-pink-400 to-rose-500' },
-  'atlas': { name: 'Atlas the Turtle', color: 'bg-gradient-to-r from-purple-400 to-indigo-500' },
-  'lotus': { name: 'Lotus the Wellbeing Panda', color: 'bg-gradient-to-r from-orange-400 to-red-500' },
-};
-
-// A mock function to generate content blocks based on a query
-// In a real implementation, this would call Claude/Gemini
-const generateMockContentBlocks = (query: string): ContentBlock[] => {
-  const blocks: ContentBlock[] = [];
-  const specialistIds = Object.keys(SPECIALISTS);
-  
-  // 1. Knowledge Card
-  blocks.push({
-    id: `block-${Date.now()}-1`,
-    type: 'fact',
-    specialist_id: 'nova',
-    content: {
-      fact: `Here's what I know about ${query}: This is a fascinating topic that has many interesting aspects! Let me tell you more...`,
-      rabbitHoles: [
-        `Tell me more about the history of ${query}`,
-        `What are some fun facts about ${query}?`
-      ]
-    },
-    liked: false,
-    bookmarked: false
-  });
-  
-  // 2. Quiz
-  blocks.push({
-    id: `block-${Date.now()}-2`,
-    type: 'quiz',
-    specialist_id: 'spark',
-    content: {
-      question: `Which of these facts about ${query} is true?`,
-      options: [
-        `${query} has been studied for over 100 years`,
-        `${query} was first discovered in 1995`,
-        `${query} is related to quantum physics`,
-        `${query} can be found in nature`
-      ],
-      correctIndex: 3
-    },
-    liked: false,
-    bookmarked: false
-  });
-  
-  // 3. Flashcard
-  blocks.push({
-    id: `block-${Date.now()}-3`,
-    type: 'flashcard',
-    specialist_id: 'atlas',
-    content: {
-      front: `What is special about ${query}?`,
-      back: `${query} is special because it has unique properties that make it important for many different applications.`
-    },
-    liked: false,
-    bookmarked: false
-  });
-  
-  // 4. Creative Prompt
-  blocks.push({
-    id: `block-${Date.now()}-4`,
-    type: 'creative',
-    specialist_id: 'prism',
-    content: {
-      prompt: `Can you draw or describe what ${query} might look like in your imagination?`,
-      type: 'drawing'
-    },
-    liked: false,
-    bookmarked: false
-  });
-  
-  // Generate remaining blocks...
-  blocks.push({
-    id: `block-${Date.now()}-5`,
-    type: 'task',
-    specialist_id: 'lotus',
-    content: {
-      task: `Let's learn more about ${query} by doing a quick 1-minute research activity.`,
-      reward: 5
-    },
-    liked: false,
-    bookmarked: false
-  });
-  
-  blocks.push({
-    id: `block-${Date.now()}-6`,
-    type: 'riddle',
-    specialist_id: 'spark',
-    content: {
-      riddle: `I'm thinking of something related to ${query} that starts with the letter A. Can you guess what it is?`,
-      answer: `Adventure! Every exploration into ${query} is an exciting adventure of discovery.`
-    },
-    liked: false,
-    bookmarked: false
-  });
-  
-  blocks.push({
-    id: `block-${Date.now()}-7`,
-    type: 'funFact',
-    specialist_id: 'nova',
-    content: {
-      fact: `Did you know that ${query} is connected to many other topics? Scientists are still learning new things about it every day!`,
-      rabbitHoles: [
-        `How does ${query} affect our daily lives?`,
-        `What's the future of ${query}?`
-      ]
-    },
-    liked: false,
-    bookmarked: false
-  });
-  
-  blocks.push({
-    id: `block-${Date.now()}-8`,
-    type: 'activity',
-    specialist_id: 'atlas',
-    content: {
-      activity: `Find something in your home that reminds you of ${query} and share why!`
-    },
-    liked: false,
-    bookmarked: false
-  });
-  
-  blocks.push({
-    id: `block-${Date.now()}-9`,
-    type: 'news',
-    specialist_id: 'pixel',
-    content: {
-      headline: `New Discoveries About ${query} Surprise Scientists`,
-      summary: `Recent studies have shown exciting new information about ${query} that changes how we understand it.`,
-      source: 'WonderWhiz News'
-    },
-    liked: false,
-    bookmarked: false
-  });
-  
-  blocks.push({
-    id: `block-${Date.now()}-10`,
-    type: 'mindfulness',
-    specialist_id: 'lotus',
-    content: {
-      exercise: `Close your eyes and imagine ${query}. What colors do you see? What feelings come up? Take 3 deep breaths as you think about it.`,
-      duration: 30
-    },
-    liked: false,
-    bookmarked: false
-  });
-  
-  return blocks;
-};
+interface BlockReply {
+  id: string;
+  block_id: string;
+  content: string;
+  from_user: boolean;
+  created_at: string;
+}
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -199,6 +53,7 @@ const Dashboard = () => {
   const [query, setQuery] = useState('');
   const [currentCurio, setCurrentCurio] = useState<Curio | null>(null);
   const [contentBlocks, setContentBlocks] = useState<ContentBlock[]>([]);
+  const [blockReplies, setBlockReplies] = useState<Record<string, BlockReply[]>>({});
   const [pastCurios, setPastCurios] = useState<Curio[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -245,7 +100,7 @@ const Dashboard = () => {
   }, [profileId, navigate]);
   
   const handleSubmitQuery = async () => {
-    if (!query.trim() || isGenerating) return;
+    if (!query.trim() || isGenerating || !childProfile) return;
     
     setIsGenerating(true);
     
@@ -270,11 +125,21 @@ const Dashboard = () => {
           childProfile: childProfile
         })
       });
-
-      const contentBlocks = claudeResponse.data;
+      
+      if (claudeResponse.error) {
+        throw new Error(`Failed to generate content: ${claudeResponse.error.message}`);
+      }
+      
+      const generatedBlocks = claudeResponse.data;
+      
+      if (!Array.isArray(generatedBlocks)) {
+        throw new Error("Invalid response format from generate-curiosity-blocks");
+      }
+      
+      console.log("Generated blocks:", generatedBlocks);
       
       // Save blocks to database
-      for (const block of contentBlocks) {
+      for (const block of generatedBlocks) {
         await supabase
           .from('content_blocks')
           .insert({
@@ -285,8 +150,11 @@ const Dashboard = () => {
           });
       }
       
+      // Add new curio to pastCurios
+      setPastCurios(prev => [newCurio, ...prev]);
+      
       // Update UI with new blocks
-      setContentBlocks(contentBlocks);
+      setContentBlocks(generatedBlocks);
       setCurrentCurio(newCurio);
       
       // Clear query
@@ -310,22 +178,73 @@ const Dashboard = () => {
     setIsSidebarOpen(false);
     
     try {
-      const { data: blocks, error } = await supabase
+      // Fetch content blocks for this curio
+      const { data: blocks, error: blocksError } = await supabase
         .from('content_blocks')
         .select('*')
         .eq('curio_id', curio.id);
         
-      if (error) throw error;
+      if (blocksError) throw blocksError;
       
-      // If no blocks exist for this curio, generate them now
-      if (!blocks || blocks.length === 0) {
-        const newBlocks = generateMockContentBlocks(curio.query);
-        setContentBlocks(newBlocks);
+      // Fetch replies for each block
+      const blockIds = blocks?.map(block => block.id) || [];
+      let allReplies: Record<string, BlockReply[]> = {};
+      
+      if (blockIds.length > 0) {
+        const { data: replies, error: repliesError } = await supabase
+          .from('block_replies')
+          .select('*')
+          .in('block_id', blockIds)
+          .order('created_at', { ascending: true });
+          
+        if (repliesError) throw repliesError;
         
-        // Save blocks to database (would happen in real app)
+        // Group replies by block_id
+        if (replies) {
+          allReplies = replies.reduce((acc: Record<string, BlockReply[]>, reply) => {
+            if (!acc[reply.block_id]) {
+              acc[reply.block_id] = [];
+            }
+            acc[reply.block_id].push(reply);
+            return acc;
+          }, {});
+        }
+      }
+      
+      if (!blocks || blocks.length === 0) {
+        // Generate new content if blocks don't exist yet
+        if (childProfile) {
+          setIsGenerating(true);
+          
+          const claudeResponse = await supabase.functions.invoke('generate-curiosity-blocks', {
+            body: JSON.stringify({
+              query: curio.query,
+              childProfile: childProfile
+            })
+          });
+          
+          const generatedBlocks = claudeResponse.data;
+          
+          // Save blocks to database
+          for (const block of generatedBlocks) {
+            await supabase
+              .from('content_blocks')
+              .insert({
+                curio_id: curio.id,
+                type: block.type,
+                specialist_id: block.specialist_id,
+                content: block.content,
+              });
+          }
+          
+          setContentBlocks(generatedBlocks);
+          setIsGenerating(false);
+        }
       } else {
         setContentBlocks(blocks as ContentBlock[]);
       }
+      
+      setBlockReplies(allReplies);
       
     } catch (error) {
       console.error('Error loading curio content:', error);
@@ -333,7 +252,7 @@ const Dashboard = () => {
     }
   };
   
-  const handleToggleLike = (blockId: string) => {
+  const handleToggleLike = async (blockId: string) => {
     setContentBlocks(prev => 
       prev.map(block => 
         block.id === blockId 
@@ -342,10 +261,21 @@ const Dashboard = () => {
       )
     );
     
-    // In a real app, we would update the like status in the database
+    // Update in database
+    try {
+      const blockToUpdate = contentBlocks.find(b => b.id === blockId);
+      if (blockToUpdate) {
+        await supabase
+          .from('content_blocks')
+          .update({ liked: !blockToUpdate.liked })
+          .eq('id', blockId);
+      }
+    } catch (error) {
+      console.error('Error updating like status:', error);
+    }
   };
   
-  const handleToggleBookmark = (blockId: string) => {
+  const handleToggleBookmark = async (blockId: string) => {
     setContentBlocks(prev => 
       prev.map(block => 
         block.id === blockId 
@@ -354,170 +284,86 @@ const Dashboard = () => {
       )
     );
     
-    // In a real app, we would update the bookmark status in the database
+    // Update in database
+    try {
+      const blockToUpdate = contentBlocks.find(b => b.id === blockId);
+      if (blockToUpdate) {
+        await supabase
+          .from('content_blocks')
+          .update({ bookmarked: !blockToUpdate.bookmarked })
+          .eq('id', blockId);
+      }
+    } catch (error) {
+      console.error('Error updating bookmark status:', error);
+    }
   };
   
-  const renderContentBlock = (block: ContentBlock) => {
-    const specialist = SPECIALISTS[block.specialist_id as keyof typeof SPECIALISTS] || {
-      name: 'Wonder Wizard',
-      color: 'bg-gradient-to-r from-purple-500 to-pink-500'
-    };
+  const handleBlockReply = async (blockId: string, message: string) => {
+    if (!message.trim() || !childProfile) return;
     
-    let content;
-    switch (block.type) {
-      case 'fact':
-        content = (
-          <div className="space-y-3">
-            <p>{block.content.fact}</p>
-            {block.content.rabbitHoles && (
-              <div className="pt-2">
-                <p className="text-sm font-medium mb-2">Want to know more?</p>
-                <div className="flex flex-col space-y-2">
-                  {block.content.rabbitHoles.map((question: string, idx: number) => (
-                    <Button 
-                      key={idx} 
-                      variant="outline" 
-                      className="justify-start bg-white/10 hover:bg-white/20 border-white/20 text-white"
-                      onClick={() => setQuery(question)}
-                    >
-                      {question}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        );
-        break;
+    try {
+      // Find the block to know its content and specialist
+      const block = contentBlocks.find(b => b.id === blockId);
+      if (!block) return;
       
-      case 'quiz':
-        content = (
-          <div className="space-y-4">
-            <p className="font-medium">{block.content.question}</p>
-            <div className="space-y-2">
-              {block.content.options.map((option: string, idx: number) => (
-                <Button
-                  key={idx}
-                  variant="outline"
-                  className="justify-start w-full bg-white/10 hover:bg-white/20 border-white/20 text-white"
-                >
-                  {option}
-                </Button>
-              ))}
-            </div>
-          </div>
-        );
-        break;
+      // Save user message to DB
+      const { data: replyData, error: replyError } = await supabase
+        .from('block_replies')
+        .insert({
+          block_id: blockId,
+          content: message,
+          from_user: true
+        })
+        .select()
+        .single();
         
-      case 'flashcard':
-        content = (
-          <div className="flip-card">
-            <div className="flip-card-inner">
-              <div className="flip-card-front bg-white/20 p-6 flex items-center justify-center rounded-lg min-h-[120px]">
-                <p className="font-medium text-center">{block.content.front}</p>
-              </div>
-              <div className="flip-card-back bg-white/30 p-6 flex items-center justify-center rounded-lg min-h-[120px]">
-                <p className="text-center">{block.content.back}</p>
-              </div>
-            </div>
-          </div>
-        );
-        break;
-        
-      case 'creative':
-        content = (
-          <div className="space-y-4">
-            <p>{block.content.prompt}</p>
-            <div className="p-4 border-2 border-dashed border-white/30 rounded-lg flex flex-col items-center justify-center hover:border-wonderwhiz-pink transition-colors cursor-pointer">
-              <p className="text-white/60 text-sm">Tap to upload your {block.content.type}</p>
-            </div>
-          </div>
-        );
-        break;
-        
-      case 'task':
-        content = (
-          <div className="space-y-4">
-            <p>{block.content.task}</p>
-            <Button className="space-x-2">
-              <span>Mark Complete</span>
-              <Sparkles className="h-4 w-4" />
-              <span className="text-xs bg-white/20 px-2 py-1 rounded-full">+{block.content.reward} Sparks</span>
-            </Button>
-          </div>
-        );
-        break;
-        
-      case 'riddle':
-        content = (
-          <div className="space-y-4">
-            <p>{block.content.riddle}</p>
-            <Collapsible>
-              <CollapsibleTrigger asChild>
-                <Button variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20">
-                  Reveal Answer
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="mt-2 p-3 bg-white/10 rounded-lg">
-                {block.content.answer}
-              </CollapsibleContent>
-            </Collapsible>
-          </div>
-        );
-        break;
-        
-      // More cases would follow for other block types...
+      if (replyError) throw replyError;
       
-      default:
-        content = <p>This content is still loading...</p>;
+      // Update UI immediately with user message
+      setBlockReplies(prev => ({
+        ...prev,
+        [blockId]: [...(prev[blockId] || []), replyData]
+      }));
+      
+      // Send to edge function to get AI response
+      const aiResponse = await supabase.functions.invoke('handle-block-chat', {
+        body: JSON.stringify({
+          blockId,
+          messageContent: message,
+          blockType: block.type,
+          blockContent: block.content,
+          childProfile,
+          specialistId: block.specialist_id
+        })
+      });
+      
+      if (aiResponse.error) {
+        throw new Error(`Failed to get response: ${aiResponse.error.message}`);
+      }
+      
+      // Save AI response to DB
+      const { data: aiReplyData, error: aiReplyError } = await supabase
+        .from('block_replies')
+        .insert({
+          block_id: blockId,
+          content: aiResponse.data.reply,
+          from_user: false
+        })
+        .select()
+        .single();
+        
+      if (aiReplyError) throw aiReplyError;
+      
+      // Update UI with AI response
+      setBlockReplies(prev => ({
+        ...prev,
+        [blockId]: [...(prev[blockId] || []), aiReplyData]
+      }));
+      
+    } catch (error) {
+      console.error('Error handling reply:', error);
+      toast.error("Failed to send message");
     }
-    
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-4"
-      >
-        <Card className={`overflow-hidden ${specialist.color}`}>
-          <CardContent className="p-0">
-            <div className="p-3 bg-black/20 flex items-center">
-              <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center mr-3">
-                <span className="font-bold text-white">{specialist.name.charAt(0)}</span>
-              </div>
-              <span className="font-medium text-white/90">{specialist.name}</span>
-            </div>
-            <div className="p-4 text-white">
-              {content}
-            </div>
-            <div className="p-2 bg-black/10 flex justify-end space-x-1">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className={`hover:bg-white/10 ${block.liked ? 'text-red-400' : 'text-white/70'}`}
-                onClick={() => handleToggleLike(block.id)}
-              >
-                <Star className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-white/70 hover:bg-white/10"
-              >
-                <MessageCircle className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className={`hover:bg-white/10 ${block.bookmarked ? 'text-wonderwhiz-blue' : 'text-white/70'}`}
-                onClick={() => handleToggleBookmark(block.id)}
-              >
-                <BookmarkPlus className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
-    );
   };
 
   if (isLoading) {
@@ -680,7 +526,32 @@ const Dashboard = () => {
                 
                 <h2 className="text-2xl font-bold text-white mb-4">{currentCurio.title}</h2>
                 <div className="space-y-4">
-                  {contentBlocks.map(block => renderContentBlock(block))}
+                  {contentBlocks.map(block => (
+                    <div key={block.id} className="space-y-2">
+                      <ContentBlock 
+                        block={block} 
+                        onToggleLike={handleToggleLike}
+                        onToggleBookmark={handleToggleBookmark}
+                        onReply={handleBlockReply}
+                        onSetQuery={setQuery}
+                      />
+                      
+                      {/* Show replies for this block */}
+                      {blockReplies[block.id] && blockReplies[block.id].length > 0 && (
+                        <div className="pl-4 border-l-2 border-white/20 ml-4">
+                          {blockReplies[block.id].map((reply) => (
+                            <BlockReply 
+                              key={reply.id}
+                              content={reply.content}
+                              fromUser={reply.from_user}
+                              specialistId={block.specialist_id}
+                              timestamp={reply.created_at}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
