@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface MagicWandProps {
   className?: string;
@@ -7,12 +7,42 @@ interface MagicWandProps {
 
 const MagicWand: React.FC<MagicWandProps> = ({ className = "h-16 w-16" }) => {
   const [isGlowing, setIsGlowing] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [sparklePositions, setSparklePositions] = useState<Array<{x: number, y: number, size: number, delay: number}>>([]);
+  
+  // Generate random sparkle positions when wand is clicked
+  useEffect(() => {
+    if (isAnimating) {
+      const newSparkles = Array.from({ length: 10 }, () => ({
+        x: Math.random() * 100,
+        y: Math.random() * 100,
+        size: Math.random() * 2 + 1,
+        delay: Math.random() * 0.5
+      }));
+      setSparklePositions(newSparkles);
+      
+      const timer = setTimeout(() => {
+        setIsAnimating(false);
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isAnimating]);
+  
+  const handleClick = () => {
+    setIsAnimating(true);
+    // Play magic sound effect
+    const audio = new Audio('/lovable-uploads/magic-sound.mp3');
+    audio.volume = 0.3;
+    audio.play().catch(e => console.log('Audio play failed', e));
+  };
   
   return (
     <div 
       className={`relative ${className} cursor-pointer`}
       onMouseEnter={() => setIsGlowing(true)}
       onMouseLeave={() => setIsGlowing(false)}
+      onClick={handleClick}
     >
       <svg viewBox="0 0 100 100" className="w-full h-full">
         <defs>
@@ -38,10 +68,10 @@ const MagicWand: React.FC<MagicWandProps> = ({ className = "h-16 w-16" }) => {
         <circle 
           cx="48" 
           cy="45" 
-          r={isGlowing ? "14" : "12"} 
+          r={isGlowing || isAnimating ? "14" : "12"} 
           fill="url(#wand-gradient)" 
           filter="url(#glow)"
-          className="transition-all duration-300" 
+          className={`transition-all duration-300 ${isAnimating ? 'animate-pulse' : ''}`}
         />
         
         {/* Stars/magic coming out */}
@@ -51,7 +81,7 @@ const MagicWand: React.FC<MagicWandProps> = ({ className = "h-16 w-16" }) => {
           className="animate-pulse" 
           style={{ 
             animationDuration: "1.5s",
-            transform: isGlowing ? "scale(1.2)" : "scale(1)",
+            transform: (isGlowing || isAnimating) ? "scale(1.2)" : "scale(1)",
             transformOrigin: "center",
             transition: "transform 0.3s ease-out"
           }} 
@@ -64,7 +94,7 @@ const MagicWand: React.FC<MagicWandProps> = ({ className = "h-16 w-16" }) => {
           style={{ 
             animationDuration: "2s", 
             animationDelay: "0.3s",
-            transform: isGlowing ? "scale(1.2)" : "scale(1)",
+            transform: (isGlowing || isAnimating) ? "scale(1.2)" : "scale(1)",
             transformOrigin: "center",
             transition: "transform 0.3s ease-out"
           }}
@@ -77,7 +107,7 @@ const MagicWand: React.FC<MagicWandProps> = ({ className = "h-16 w-16" }) => {
           style={{ 
             animationDuration: "1.8s", 
             animationDelay: "0.6s",
-            transform: isGlowing ? "scale(1.2)" : "scale(1)",
+            transform: (isGlowing || isAnimating) ? "scale(1.2)" : "scale(1)",
             transformOrigin: "center",
             transition: "transform 0.3s ease-out"
           }}
@@ -93,7 +123,29 @@ const MagicWand: React.FC<MagicWandProps> = ({ className = "h-16 w-16" }) => {
             <circle cx="45" cy="55" r="1" fill="#FFFFFF" className="animate-pulse" style={{ animationDuration: "1.5s" }} />
           </>
         )}
+        
+        {/* Magic burst effect when clicked */}
+        {isAnimating && sparklePositions.map((sparkle, i) => (
+          <circle 
+            key={i} 
+            cx={sparkle.x} 
+            cy={sparkle.y} 
+            r={sparkle.size} 
+            fill="#FFFFFF" 
+            className="animate-ping" 
+            style={{ 
+              animationDuration: "0.8s",
+              animationDelay: `${sparkle.delay}s`,
+              opacity: Math.random() * 0.5 + 0.5
+            }} 
+          />
+        ))}
       </svg>
+      
+      {/* Tooltip */}
+      <div className={`absolute -top-10 left-1/2 transform -translate-x-1/2 bg-wonderwhiz-purple/80 text-white px-3 py-1 rounded-lg text-sm whitespace-nowrap transition-opacity duration-300 ${isGlowing ? 'opacity-100' : 'opacity-0'}`}>
+        Click me for magic!
+      </div>
     </div>
   );
 };
