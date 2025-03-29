@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { Award } from 'lucide-react'; // Added import for Award icon
 import Navbar from '@/components/Navbar';
 import HeroSection from '@/components/HeroSection';
 import FeaturesSection from '@/components/FeaturesSection';
@@ -165,13 +166,15 @@ const Index = () => {
       </main>
       <Footer />
       
-      {/* Add "CSS Variables" for cursor-following spotlight effect */}
-      <style jsx>{`
+      {/* Add CSS Variables for cursor-following spotlight effect - fixed syntax */}
+      <style>
+        {`
         .spotlight-hover::before {
           --x: ${cursorPosition.x}px;
           --y: ${cursorPosition.y}px;
         }
-      `}</style>
+        `}
+      </style>
     </div>
   );
 };
