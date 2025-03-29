@@ -30,7 +30,7 @@ const MagicalBorder: React.FC<MagicalBorderProps> = ({
   };
 
   return (
-    <div className={`relative ${className}`}>
+    <div className={`relative h-full ${className}`}>
       {active && (
         <motion.div 
           className={`absolute -inset-0.5 rounded-[inherit] bg-gradient-to-r ${getBorderGradient()} z-0 opacity-80`}
@@ -47,7 +47,7 @@ const MagicalBorder: React.FC<MagicalBorderProps> = ({
           }}
         />
       )}
-      <div className="relative z-10">
+      <div className="relative z-10 h-full">
         {children}
       </div>
     </div>

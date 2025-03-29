@@ -758,16 +758,14 @@ const Dashboard = () => {
                     <p className="text-white/80 text-lg mb-8">
                       What are you curious about today? Type your question above!
                     </p>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-xl mx-auto">
-                      {['Tell me about penguins', 'How do volcanoes work?', 'What are black holes?', 'Show me cool dinosaurs'].map(suggestion => (
-                        <Button
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
+                      {['Tell me about penguins', 'How do volcanoes work?', 'What are black holes?', 'Show me cool dinosaurs'].map((suggestion, index) => (
+                        <CurioSuggestion
                           key={suggestion}
-                          variant="outline"
-                          className="bg-white/10 text-white border-white/20 hover:bg-white/20"
-                          onClick={() => setQuery(suggestion)}
-                        >
-                          {suggestion}
-                        </Button>
+                          suggestion={suggestion}
+                          onClick={setQuery}
+                          index={index}
+                        />
                       ))}
                     </div>
                   </div>
