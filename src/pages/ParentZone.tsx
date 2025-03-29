@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -23,6 +24,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { ChartContainer, ChartTooltipContent, ChartTooltip } from '@/components/ui/chart';
 import { Bar, BarChart, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface ChildProfile {
   id: string;
@@ -75,11 +77,26 @@ interface DailyActivity {
   topics_explored: number;
 }
 
+interface PopularTopic {
+  name: string;
+  percentage: number;
+}
+
 const taskSchema = z.object({
   title: z.string().min(1, { message: "Title is required" }),
   description: z.string().optional(),
   sparks_reward: z.number().min(1, { message: "Reward must be at least 1 spark" })
 });
+
+const languageOptions = [
+  { value: 'english', label: 'English' },
+  { value: 'spanish', label: 'Spanish' },
+  { value: 'french', label: 'French' },
+  { value: 'german', label: 'German' },
+  { value: 'italian', label: 'Italian' },
+  { value: 'chinese', label: 'Chinese' },
+  { value: 'japanese', label: 'Japanese' }
+];
 
 const ParentZone = () => {
   const navigate = useNavigate();
@@ -99,7 +116,7 @@ const ParentZone = () => {
     tasksCompleted: 0
   });
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
-  const [popularTopics, setPopularTopics] = useState<{name: string, percentage: number}[]>([]);
+  const [popularTopics, setPopularTopics] = useState<PopularTopic[]>([]);
   
   const form = useForm<z.infer<typeof taskSchema>>({
     resolver: zodResolver(taskSchema),
@@ -152,6 +169,7 @@ const ParentZone = () => {
         await fetchWeeklyActivityData();
         await fetchLearningStats();
         await fetchRecentActivity();
+        await fetchPopularTopics();
         
       } catch (error) {
         console.error('Error loading profile or tasks:', error);
@@ -232,7 +250,7 @@ const ParentZone = () => {
       const activityByDay = daysOfWeek.map(day => {
         // Find activity for this day
         const dayActivity = activityData?.find(
-          act => new Date(act.activity_date).toISOString().split('T')[0] === day.date
+          act => act.activity_date.split('T')[0] === day.date
         ) as DailyActivity | undefined;
         
         const tasks = dayActivity?.tasks_completed || 0;
@@ -253,26 +271,6 @@ const ParentZone = () => {
       });
       
       setWeeklyActivityData(activityByDay);
-      
-      // Also set popular topics based on interests
-      if (childProfile?.interests && childProfile.interests.length > 0) {
-        const sampleTopics = [
-          { name: 'Animals', percentage: Math.random() * 40 + 60 },  // 60-100%
-          { name: 'Space', percentage: Math.random() * 30 + 50 },    // 50-80%
-          { name: 'Science', percentage: Math.random() * 20 + 40 }   // 40-60%
-        ];
-        
-        // Replace with actual interests if available
-        const topics = childProfile.interests.slice(0, 3).map((interest, idx) => {
-          return {
-            name: interest,
-            percentage: sampleTopics[idx]?.percentage || (Math.random() * 50 + 30)
-          };
-        });
-        
-        setPopularTopics(topics.length > 0 ? topics : sampleTopics);
-      }
-      
     } catch (error) {
       console.error('Error fetching weekly activity data:', error);
       // Fallback to empty data if fetch fails
@@ -285,6 +283,106 @@ const ParentZone = () => {
         topics: 0
       }));
       setWeeklyActivityData(fallbackData);
+    }
+  };
+  
+  const fetchPopularTopics = async () => {
+    try {
+      // Get topics from content blocks and curios
+      const { data: contentBlocks, error: contentError } = await supabase
+        .from('content_blocks')
+        .select('content, type')
+        .in('type', ['fact', 'funFact', 'quiz'])
+        .order('created_at', { ascending: false })
+        .limit(50);
+      
+      if (contentError) throw contentError;
+      
+      const { data: curios, error: curiosError } = await supabase
+        .from('curios')
+        .select('title')
+        .eq('child_id', profileId)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
+      if (curiosError) throw curiosError;
+      
+      // Extract keywords from content and titles
+      const keywords: Record<string, number> = {};
+      
+      // Process content blocks
+      contentBlocks?.forEach(block => {
+        const content = block.content as any;
+        let text = '';
+        
+        if (block.type === 'fact' || block.type === 'funFact') {
+          text = content.fact || '';
+        } else if (block.type === 'quiz') {
+          text = content.question || '';
+        }
+        
+        // Extract keywords (simple implementation)
+        const words = text.toLowerCase().split(/\s+/);
+        words.forEach(word => {
+          if (word.length > 5) {  // Only consider substantial words
+            keywords[word] = (keywords[word] || 0) + 1;
+          }
+        });
+      });
+      
+      // Process curios titles
+      curios?.forEach(curio => {
+        const words = curio.title.toLowerCase().split(/\s+/);
+        words.forEach(word => {
+          if (word.length > 5) {
+            keywords[word] = (keywords[word] || 0) + 2;  // Give more weight to curio titles
+          }
+        });
+      });
+      
+      // Use child's interests if no meaningful data is available
+      if (Object.keys(keywords).length < 3 && childProfile?.interests && childProfile.interests.length > 0) {
+        const topics = childProfile.interests.slice(0, 3).map((interest, idx) => {
+          return {
+            name: interest,
+            percentage: Math.floor(Math.random() * 40 + 60)  // 60-100%
+          };
+        });
+        
+        setPopularTopics(topics);
+        return;
+      }
+      
+      // Sort keywords by frequency and get top 3
+      const sortedKeywords = Object.entries(keywords)
+        .sort(([, countA], [, countB]) => countB - countA)
+        .slice(0, 3);
+      
+      // Calculate percentages based on relative frequencies
+      const total = sortedKeywords.reduce((sum, [, count]) => sum + count, 0);
+      const topics = sortedKeywords.map(([word, count]) => ({
+        name: word.charAt(0).toUpperCase() + word.slice(1),  // Capitalize first letter
+        percentage: Math.floor((count / total) * 100)
+      }));
+      
+      // Ensure minimum of 3 topics
+      while (topics.length < 3) {
+        topics.push({
+          name: `Topic ${topics.length + 1}`,
+          percentage: Math.floor(Math.random() * 40 + 30)
+        });
+      }
+      
+      setPopularTopics(topics);
+    } catch (error) {
+      console.error('Error fetching popular topics:', error);
+      // Fallback to sample topics
+      const fallbackTopics = [
+        { name: 'Space', percentage: 85 },
+        { name: 'Animals', percentage: 72 },
+        { name: 'Science', percentage: 64 }
+      ];
+      setPopularTopics(fallbackTopics);
     }
   };
   
@@ -540,6 +638,33 @@ const ParentZone = () => {
     }
   };
 
+  const updatePIN = async (newPIN: string) => {
+    try {
+      if (!newPIN || newPIN.trim() === '') {
+        toast.error('Please enter a valid PIN');
+        return;
+      }
+      
+      const { error } = await supabase
+        .from('child_profiles')
+        .update({ pin: newPIN })
+        .eq('id', profileId);
+        
+      if (error) throw error;
+      
+      toast.success("PIN updated successfully");
+      
+      // Clear the input field
+      const pinInput = document.getElementById('pin') as HTMLInputElement;
+      if (pinInput) {
+        pinInput.value = '';
+      }
+    } catch (error) {
+      console.error('Error updating PIN:', error);
+      toast.error("Failed to update PIN");
+    }
+  };
+
   // Custom tooltip for the weekly activity chart
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -752,7 +877,10 @@ const ParentZone = () => {
                 
                 <Card className="bg-white/10 border-white/20">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-white text-lg">Popular Interests</CardTitle>
+                    <CardTitle className="text-white text-lg flex items-center">
+                      Popular Interests
+                      <span className="ml-2 px-2 py-0.5 bg-wonderwhiz-purple/60 text-white text-xs rounded-full">Insightful</span>
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="flex flex-wrap gap-2">
@@ -1160,41 +1288,28 @@ const ParentZone = () => {
                     </div>
                     
                     <div>
-                      <Label htmlFor="language" className="text-white">Language</Label>
-                      <Input
-                        id="language"
-                        defaultValue={childProfile?.language}
-                        className="bg-white/10 border-white/20 text-white"
-                        onBlur={(e) => {
-                          if (e.target.value !== childProfile?.language) {
-                            updateProfile({ language: e.target.value });
-                          }
-                        }}
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label className="text-white">Reset PIN</Label>
-                      <Input
-                        id="pin"
-                        type="text"
-                        placeholder="Enter new PIN"
-                        className="bg-white/10 border-white/20 text-white mb-2"
-                      />
-                      <Button 
-                        className="w-full bg-wonderwhiz-purple/70 hover:bg-wonderwhiz-purple"
-                        onClick={() => {
-                          const pinInput = document.getElementById('pin') as HTMLInputElement;
-                          if (pinInput && pinInput.value) {
-                            updateProfile({ pin: pinInput.value });
-                            pinInput.value = '';
-                          } else {
-                            toast.error('Please enter a new PIN');
-                          }
-                        }}
-                      >
-                        Set New PIN
-                      </Button>
+                      <Label htmlFor="pin-reset" className="text-white">Reset PIN</Label>
+                      <div className="flex space-x-2">
+                        <Input
+                          id="pin"
+                          type="text"
+                          placeholder="Enter new PIN"
+                          className="bg-white/10 border-white/20 text-white"
+                        />
+                        <Button 
+                          className="bg-wonderwhiz-purple/70 hover:bg-wonderwhiz-purple"
+                          onClick={() => {
+                            const pinInput = document.getElementById('pin') as HTMLInputElement;
+                            if (pinInput && pinInput.value) {
+                              updatePIN(pinInput.value);
+                            } else {
+                              toast.error('Please enter a new PIN');
+                            }
+                          }}
+                        >
+                          Set PIN
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -1208,36 +1323,21 @@ const ParentZone = () => {
                   <div>
                     <Label className="text-white">Content Language</Label>
                     <p className="text-white/70 text-sm">The primary language for learning content</p>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      <Button 
-                        variant="outline" 
-                        className={childProfile?.language?.toLowerCase() === 'english' ? 
-                          "bg-wonderwhiz-purple text-white border-0" : 
-                          "bg-white/10 hover:bg-white/20 text-white"}
-                        onClick={() => updateProfile({ language: 'english' })}
-                      >
-                        English
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        className={childProfile?.language?.toLowerCase() === 'spanish' ? 
-                          "bg-wonderwhiz-purple text-white border-0" : 
-                          "bg-white/10 hover:bg-white/20 text-white"}
-                        onClick={() => updateProfile({ language: 'spanish' })}
-                      >
-                        Spanish
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        className={childProfile?.language?.toLowerCase() === 'french' ? 
-                          "bg-wonderwhiz-purple text-white border-0" : 
-                          "bg-white/10 hover:bg-white/20 text-white"}
-                        onClick={() => updateProfile({ language: 'french' })}
-                      >
-                        French
-                      </Button>
-                      <Button variant="outline" className="bg-white/10 hover:bg-white/20 text-white">+ More</Button>
-                    </div>
+                    <Select
+                      defaultValue={childProfile?.language?.toLowerCase() || 'english'}
+                      onValueChange={(value) => updateProfile({ language: value })}
+                    >
+                      <SelectTrigger className="w-full mt-2 bg-white/10 border-white/20 text-white">
+                        <SelectValue placeholder="Select a language" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {languageOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </CardContent>
               </Card>
