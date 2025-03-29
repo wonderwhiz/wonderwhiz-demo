@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -52,6 +53,14 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				wonderwhiz: {
+					purple: '#7E30E1',
+					pink: '#FF5EBA',
+					gold: '#FFC72C',
+					blue: '#00E0FF',
+					yellow: '#FFE883',
+					dark: '#20053D'
+				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
@@ -66,7 +75,14 @@ export default {
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
-				sm: 'calc(var(--radius) - 4px)'
+				sm: 'calc(var(--radius) - 4px)',
+				xl: '1rem',
+				'2xl': '1.5rem',
+				'3xl': '2rem',
+			},
+			fontFamily: {
+				'baloo': ['"Baloo 2"', 'sans-serif'],
+				'lexend': ['Lexend Deca', 'sans-serif'],
 			},
 			keyframes: {
 				'accordion-down': {
@@ -84,11 +100,31 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'float': {
+					'0%, 100%': { transform: 'translateY(0)' },
+					'50%': { transform: 'translateY(-10px)' }
+				},
+				'sparkle': {
+					'0%, 100%': { opacity: '1' },
+					'50%': { opacity: '0.5', transform: 'scale(0.9)' }
+				},
+				'pulse-gentle': {
+					'0%, 100%': { transform: 'scale(1)' },
+					'50%': { transform: 'scale(1.05)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'float': 'float 5s ease-in-out infinite',
+				'sparkle': 'sparkle 2s ease-in-out infinite',
+				'pulse-gentle': 'pulse-gentle 3s ease-in-out infinite'
+			},
+			backgroundImage: {
+				'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+				'wonderwhiz-gradient': 'linear-gradient(to bottom, #20053D, #3D0E64)',
+				'button-gradient': 'linear-gradient(90deg, #FF5EBA 0%, #FF8FD9 100%)',
 			}
 		}
 	},
