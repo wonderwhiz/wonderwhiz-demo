@@ -6,7 +6,7 @@ import { Star, MessageCircle, BookmarkPlus } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { motion } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
-import SpecialistAvatar from '@/components/SpecialistAvatar';
+import SpecialistAvatar, { SPECIALISTS } from '@/components/SpecialistAvatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 
