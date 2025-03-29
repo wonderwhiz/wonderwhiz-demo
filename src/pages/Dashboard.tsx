@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent, CurioCard } from '@/component
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
-import { Send, Menu, ArrowLeftRight, MessageSquare, Sparkles, Search, Star, Lightbulb, RefreshCw, ChevronDown, User, LogOut, UserCircle } from 'lucide-react';
+import { Send, Menu, ArrowLeftRight, MessageSquare, Sparkles, Search, Star, Lightbulb, RefreshCw, ChevronDown, User, LogOut, UserCircle, PanelLeftClose, PanelLeft } from 'lucide-react';
 import WonderWhizLogo from '@/components/WonderWhizLogo';
 import ContentBlock from '@/components/ContentBlock';
 import BlockReply from '@/components/BlockReply';
@@ -23,6 +23,15 @@ import CurioSuggestion from '@/components/CurioSuggestion';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import SparksBadge from '@/components/SparksBadge';
+import { 
+  Sidebar, 
+  SidebarProvider,
+  SidebarContent,
+  SidebarHeader,
+  SidebarFooter,
+  SidebarSeparator,
+  SidebarTrigger
+} from '@/components/ui/sidebar';
 
 interface ChildProfile {
   id: string;
@@ -67,8 +76,6 @@ const Dashboard = () => {
   const [contentBlocks, setContentBlocks] = useState<ContentBlock[]>([]);
   const [blockReplies, setBlockReplies] = useState<Record<string, BlockReply[]>>({});
   const [pastCurios, setPastCurios] = useState<Curio[]>([]);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [showSparksHistory, setShowSparksHistory] = useState(false);
   const [showQuickMenu, setShowQuickMenu] = useState(false);
   const feedEndRef = useRef<HTMLDivElement>(null);
@@ -84,6 +91,7 @@ const Dashboard = () => {
   const [curioPageSize] = useState(5);
   const [displayedCuriosCount, setDisplayedCuriosCount] = useState(curioPageSize);
   const isMobile = useIsMobile();
+  const [isGenerating, setIsGenerating] = useState(false);
   
   const { streakDays, streakBonusReceived, streakBonusAmount } = useSparksSystem(profileId);
   
@@ -266,7 +274,6 @@ const Dashboard = () => {
   
   const handleLoadCurio = async (curio: Curio) => {
     setCurrentCurio(curio);
-    setIsSidebarOpen(false);
     setLoadingBlocks(true);
     setContentBlocks([]);
     setVisibleBlocksCount(3);
@@ -733,497 +740,483 @@ const Dashboard = () => {
   }
   
   return (
-    <div className="min-h-screen bg-wonderwhiz-gradient flex">
-      <Helmet>
-        <title>WonderWhiz - Explore & Learn</title>
-        <meta name="description" content="Explore topics, ask questions, and learn in a fun, interactive way with WonderWhiz." />
-      </Helmet>
-      
-      <aside 
-        className={`fixed inset-y-0 left-0 z-20 w-64 bg-wonderwhiz-dark border-r border-white/10 transform transition-transform duration-300 ease-in-out ${
-          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } md:relative md:translate-x-0`}
-      >
-        <div className="p-4 border-b border-white/10 flex items-center">
-          <WonderWhizLogo className="h-8" />
-          <span className="ml-3 font-baloo font-bold text-white">WonderWhiz</span>
-        </div>
+    <SidebarProvider>
+      <div className="min-h-screen bg-wonderwhiz-gradient flex w-full">
+        <Helmet>
+          <title>WonderWhiz - Explore & Learn</title>
+          <meta name="description" content="Explore topics, ask questions, and learn in a fun, interactive way with WonderWhiz." />
+        </Helmet>
         
-        <div className="p-4 border-b border-white/10">
-          <h3 className="text-white font-medium mb-1">Welcome, {childProfile?.name}!</h3>
-          <div className="flex items-center">
-            <SparksBalance 
-              childId={profileId || ''} 
-              initialBalance={childProfile?.sparks_balance} 
-              size="md"
-            />
-            <button 
-              onClick={() => setShowSparksHistory(prev => !prev)} 
-              className="ml-auto text-white/60 hover:text-white transition-colors"
-            >
-              {showSparksHistory ? 'Hide' : 'View'} History
-            </button>
-          </div>
-        </div>
-        
-        <AnimatePresence>
-          {showSparksHistory && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden"
-            >
-              <div className="p-4 border-b border-white/10">
-                <SparksHistory 
-                  childId={profileId || ''} 
-                  limit={5}
-                />
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        
-        <div className="p-4">
-          <h3 className="text-white font-medium mb-3 flex items-center">
-            <span>Your Past Curios</span>
-            <div className="ml-2 text-xs bg-white/10 px-2 py-0.5 rounded-full text-white/70">
-              {pastCurios.length}
+        <Sidebar variant="inset">
+          <SidebarHeader>
+            <div className="flex items-center justify-between">
+              <h3 className="text-white font-medium">Welcome, {childProfile?.name}!</h3>
+              <SidebarTrigger />
             </div>
-          </h3>
+            <div className="flex items-center">
+              <SparksBalance 
+                childId={profileId || ''} 
+                initialBalance={childProfile?.sparks_balance} 
+                size="md"
+              />
+              <button 
+                onClick={() => setShowSparksHistory(prev => !prev)} 
+                className="ml-auto text-white/60 hover:text-white transition-colors"
+              >
+                {showSparksHistory ? 'Hide' : 'View'} History
+              </button>
+            </div>
+          </SidebarHeader>
           
-          {pastCurios.length === 0 ? (
-            <p className="text-white/60 text-sm">Ask a question to start exploring!</p>
-          ) : (
-            <div className="space-y-3">
-              {pastCurios.slice(0, displayedCuriosCount).map((curio, index) => (
-                <CurioCard 
-                  key={curio.id}
-                  colorVariant={index}
-                  className={`
-                    cursor-pointer 
-                    transition-all 
-                    hover:bg-white/10 
-                    border 
-                    border-opacity-20 
-                    rounded-lg 
-                    overflow-hidden 
-                    shadow-sm 
-                    hover:shadow-md
-                  `}
-                  onClick={() => handleLoadCurio(curio)}
-                >
-                  <div 
-                    className={`
-                      p-3 
-                      flex 
-                      items-center 
-                      ${currentCurio?.id === curio.id ? 'bg-white/10 text-white' : 'text-white/80'}
-                      line-clamp-2 
-                      break-words 
-                      overflow-hidden
-                    `}
-                  >
-                    <MessageSquare className="h-4 w-4 mr-2 flex-shrink-0" />
-                    <span 
-                      className="
-                        text-sm 
-                        font-medium 
-                        leading-tight 
-                        line-clamp-2 
-                        break-words 
-                        max-h-[3rem] 
-                        overflow-hidden 
-                        text-ellipsis
-                      "
-                    >
-                      {curio.title}
-                    </span>
-                  </div>
-                </CurioCard>
-              ))}
+          <AnimatePresence>
+            {showSparksHistory && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="p-4 border-b border-white/10">
+                  <SparksHistory 
+                    childId={profileId || ''} 
+                    limit={5}
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          
+          <SidebarContent>
+            <div className="p-4">
+              <h3 className="text-white font-medium mb-3 flex items-center">
+                <span>Your Past Curios</span>
+                <div className="ml-2 text-xs bg-white/10 px-2 py-0.5 rounded-full text-white/70">
+                  {pastCurios.length}
+                </div>
+              </h3>
               
-              {displayedCuriosCount < pastCurios.length && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex justify-center pt-2"
-                >
+              {pastCurios.length === 0 ? (
+                <p className="text-white/60 text-sm">Ask a question to start exploring!</p>
+              ) : (
+                <div className="space-y-3">
+                  {pastCurios.slice(0, displayedCuriosCount).map((curio, index) => (
+                    <CurioCard 
+                      key={curio.id}
+                      colorVariant={index}
+                      className={`
+                        cursor-pointer 
+                        transition-all 
+                        hover:bg-white/10 
+                        border 
+                        border-opacity-20 
+                        rounded-lg 
+                        overflow-hidden 
+                        shadow-sm 
+                        hover:shadow-md
+                      `}
+                      onClick={() => handleLoadCurio(curio)}
+                    >
+                      <div 
+                        className={`
+                          p-3 
+                          flex 
+                          items-center 
+                          ${currentCurio?.id === curio.id ? 'bg-white/10 text-white' : 'text-white/80'}
+                          line-clamp-2 
+                          break-words 
+                          overflow-hidden
+                        `}
+                      >
+                        <MessageSquare className="h-4 w-4 mr-2 flex-shrink-0" />
+                        <span 
+                          className="
+                            text-sm 
+                            font-medium 
+                            leading-tight 
+                            line-clamp-2 
+                            break-words 
+                            max-h-[3rem] 
+                            overflow-hidden 
+                            text-ellipsis
+                          "
+                        >
+                          {curio.title}
+                        </span>
+                      </div>
+                    </CurioCard>
+                  ))}
+                  
+                  {displayedCuriosCount < pastCurios.length && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="flex justify-center pt-2"
+                    >
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="
+                          text-white/60 
+                          hover:text-white 
+                          hover:bg-white/10 
+                          flex 
+                          items-center 
+                          gap-1 
+                          text-xs 
+                          border 
+                          border-white/10 
+                          rounded-full
+                        "
+                        onClick={handleLoadMoreCurios}
+                      >
+                        Load More <ChevronDown className="h-3 w-3" />
+                      </Button>
+                    </motion.div>
+                  )}
+                </div>
+              )}
+            </div>
+          </SidebarContent>
+        </Sidebar>
+        
+        <main className="flex-1 flex flex-col min-h-screen relative">
+          <header className="sticky top-0 z-10 bg-wonderwhiz-dark/80 backdrop-blur-md border-b border-white/10 p-3 flex items-center justify-between">
+            <div className="flex items-center">
+              <SidebarTrigger className="text-white hover:bg-white/10 rounded-full" />
+            </div>
+            
+            <div className="flex-1 flex justify-center">
+              <WonderWhizLogo className="h-8" />
+              <h1 className="ml-2 font-baloo text-xl text-white hidden sm:block">WonderWhiz</h1>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
                   <Button 
                     variant="ghost" 
-                    size="sm"
-                    className="
-                      text-white/60 
-                      hover:text-white 
-                      hover:bg-white/10 
-                      flex 
-                      items-center 
-                      gap-1 
-                      text-xs 
-                      border 
-                      border-white/10 
-                      rounded-full
-                    "
-                    onClick={handleLoadMoreCurios}
-                  >
-                    Load More <ChevronDown className="h-3 w-3" />
-                  </Button>
-                </motion.div>
-              )}
-            </div>
-          )}
-        </div>
-      </aside>
-      
-      <main className="flex-1 flex flex-col min-h-screen relative">
-        <header className="sticky top-0 z-10 bg-wonderwhiz-dark/80 backdrop-blur-md border-b border-white/10 p-3 flex items-center justify-between">
-          <Button 
-            variant="ghost" 
-            size="icon"
-            className="md:hidden text-white" 
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
-          
-          <div className="flex-1 flex justify-center">
-            <WonderWhizLogo className="h-8" />
-            <h1 className="ml-2 font-baloo text-xl text-white hidden sm:block">WonderWhiz</h1>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  className="relative text-white hover:bg-white/10 rounded-full"
-                >
-                  <UserCircle className="h-6 w-6" />
-                  <span className="absolute -top-1 -right-1">
-                    <SparksBadge 
-                      sparks={childProfile?.sparks_balance || 0}
-                      size="sm"
-                      className="h-5 px-1 py-0"
-                    />
-                  </span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 bg-wonderwhiz-dark/95 border-white/20 backdrop-blur-xl text-white">
-                <DropdownMenuLabel className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-wonderwhiz-gold" />
-                  <span>{childProfile?.name}</span>
-                </DropdownMenuLabel>
-                
-                <DropdownMenuSeparator className="bg-white/10" />
-                
-                <DropdownMenuItem 
-                  className="flex items-center gap-2 text-white hover:bg-white/10 focus:bg-white/10 cursor-pointer"
-                  onClick={() => {
-                    document.getElementById('sparks-overview')?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                >
-                  <Sparkles className="h-4 w-4 text-wonderwhiz-gold" />
-                  <span>Sparks Balance</span>
-                  <div className="ml-auto">
-                    <SparksBadge 
-                      sparks={childProfile?.sparks_balance || 0}
-                      size="sm"
-                    />
-                  </div>
-                </DropdownMenuItem>
-                
-                <DropdownMenuItem 
-                  className="flex items-center gap-2 text-white hover:bg-white/10 focus:bg-white/10 cursor-pointer"
-                  onClick={() => navigate('/profiles')}
-                >
-                  <User className="h-4 w-4 text-wonderwhiz-purple" />
-                  <span>Switch Profile</span>
-                </DropdownMenuItem>
-                
-                <DropdownMenuItem 
-                  className="flex items-center gap-2 text-white hover:bg-white/10 focus:bg-white/10 cursor-pointer"
-                  onClick={() => navigate(`/parent-zone/${profileId}`)}
-                >
-                  <ArrowLeftRight className="h-4 w-4 text-wonderwhiz-blue" />
-                  <span>Parent Zone</span>
-                </DropdownMenuItem>
-                
-                <DropdownMenuSeparator className="bg-white/10" />
-                
-                <DropdownMenuItem 
-                  className="flex items-center gap-2 text-white hover:bg-white/10 focus:bg-white/10 hover:text-red-400 focus:text-red-400 cursor-pointer"
-                  onClick={async () => {
-                    await supabase.auth.signOut();
-                    navigate('/login');
-                    toast.success('Logged out successfully');
-                  }}
-                >
-                  <LogOut className="h-4 w-4" />
-                  <span>Logout</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </header>
-        
-        <div className="flex-1 overflow-y-auto py-4 px-3 sm:px-4 md:px-6">
-          <div className="max-w-6xl mx-auto space-y-6">
-            <div className="my-4 sm:my-6 relative">
-              <FloatingElements 
-                type="stars" 
-                density="low" 
-                className="absolute inset-0 pointer-events-none opacity-50" 
-              />
-              
-              <MagicalBorder 
-                active={true} 
-                type="rainbow" 
-                className="rounded-2xl overflow-hidden shadow-lg"
-              >
-                <form onSubmit={(e) => { e.preventDefault(); handleSubmitQuery(); }} className="relative">
-                  <Input 
-                    placeholder={isMobile ? "Ask me anything!" : "What do you want to explore today? Ask me anything!"}
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    className="px-6 py-6 sm:py-8 bg-white/10 border-white/20 text-white text-base sm:text-lg placeholder:text-white/60 placeholder:text-center focus:ring-2 focus:ring-wonderwhiz-gold/50 focus:border-wonderwhiz-gold"
-                    disabled={isGenerating}
-                  />
-                  
-                  <Button 
-                    type="submit" 
                     size="icon"
-                    className="absolute right-4 top-1/2 -translate-y-1/2 h-9 w-9 sm:h-10 sm:w-10 bg-wonderwhiz-gold text-wonderwhiz-dark hover:bg-wonderwhiz-gold/80 rounded-full shadow-glow-gold"
-                    disabled={!query.trim() || isGenerating}
+                    className="relative text-white hover:bg-white/10 rounded-full"
                   >
-                    <Send className="h-4 w-4 sm:h-5 sm:w-5" />
+                    <UserCircle className="h-6 w-6" />
+                    <span className="absolute -top-1 -right-1">
+                      <SparksBadge 
+                        sparks={childProfile?.sparks_balance || 0}
+                        size="sm"
+                        className="h-5 px-1 py-0"
+                      />
+                    </span>
                   </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 bg-wonderwhiz-dark/95 border-white/20 backdrop-blur-xl text-white">
+                  <DropdownMenuLabel className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-wonderwhiz-gold" />
+                    <span>{childProfile?.name}</span>
+                  </DropdownMenuLabel>
                   
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                    <motion.div
-                      animate={{ rotate: [0, 15, -15, 0] }}
-                      transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                    >
-                      <Lightbulb className="h-5 w-5 sm:h-6 sm:w-6 text-wonderwhiz-gold" />
-                    </motion.div>
-                  </div>
-                </form>
-              </MagicalBorder>
+                  <DropdownMenuSeparator className="bg-white/10" />
+                  
+                  <DropdownMenuItem 
+                    className="flex items-center gap-2 text-white hover:bg-white/10 focus:bg-white/10 cursor-pointer"
+                    onClick={() => {
+                      document.getElementById('sparks-overview')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                  >
+                    <Sparkles className="h-4 w-4 text-wonderwhiz-gold" />
+                    <span>Sparks Balance</span>
+                    <div className="ml-auto">
+                      <SparksBadge 
+                        sparks={childProfile?.sparks_balance || 0}
+                        size="sm"
+                      />
+                    </div>
+                  </DropdownMenuItem>
+                  
+                  <DropdownMenuItem 
+                    className="flex items-center gap-2 text-white hover:bg-white/10 focus:bg-white/10 cursor-pointer"
+                    onClick={() => navigate('/profiles')}
+                  >
+                    <User className="h-4 w-4 text-wonderwhiz-purple" />
+                    <span>Switch Profile</span>
+                  </DropdownMenuItem>
+                  
+                  <DropdownMenuItem 
+                    className="flex items-center gap-2 text-white hover:bg-white/10 focus:bg-white/10 cursor-pointer"
+                    onClick={() => navigate(`/parent-zone/${profileId}`)}
+                  >
+                    <ArrowLeftRight className="h-4 w-4 text-wonderwhiz-blue" />
+                    <span>Parent Zone</span>
+                  </DropdownMenuItem>
+                  
+                  <DropdownMenuSeparator className="bg-white/10" />
+                  
+                  <DropdownMenuItem 
+                    className="flex items-center gap-2 text-white hover:bg-white/10 focus:bg-white/10 hover:text-red-400 focus:text-red-400 cursor-pointer"
+                    onClick={async () => {
+                      await supabase.auth.signOut();
+                      navigate('/login');
+                      toast.success('Logged out successfully');
+                    }}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span>Logout</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-            
-            <AnimatePresence>
-              {showQuickMenu && (
-                <motion.div 
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className="fixed right-4 top-20 z-30 bg-wonderwhiz-dark/95 rounded-2xl p-2 border border-white/20 backdrop-blur-xl shadow-lg"
+          </header>
+          
+          <div className="flex-1 overflow-y-auto py-4 px-3 sm:px-4 md:px-6">
+            <div className="max-w-6xl mx-auto space-y-6">
+              <div className="my-4 sm:my-6 relative">
+                <FloatingElements 
+                  type="stars" 
+                  density="low" 
+                  className="absolute inset-0 pointer-events-none opacity-50" 
+                />
+                
+                <MagicalBorder 
+                  active={true} 
+                  type="rainbow" 
+                  className="rounded-2xl overflow-hidden shadow-lg"
                 >
-                  <div className="flex flex-col gap-2">
-                    <Button 
-                      variant="ghost" 
-                      className="flex items-center justify-start gap-3 text-white hover:bg-white/10"
-                      onClick={() => {
-                        setShowQuickMenu(false);
-                        // Show SparksOverview
-                        document.getElementById('sparks-overview')?.scrollIntoView({ behavior: 'smooth' });
-                      }}
-                    >
-                      <Sparkles className="h-5 w-5 text-wonderwhiz-gold" />
-                      <span>Your Sparks</span>
-                    </Button>
+                  <form onSubmit={(e) => { e.preventDefault(); handleSubmitQuery(); }} className="relative">
+                    <Input 
+                      placeholder={isMobile ? "Ask me anything!" : "What do you want to explore today? Ask me anything!"}
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      className="px-6 py-6 sm:py-8 bg-white/10 border-white/20 text-white text-base sm:text-lg placeholder:text-white/60 placeholder:text-center focus:ring-2 focus:ring-wonderwhiz-gold/50 focus:border-wonderwhiz-gold"
+                      disabled={isGenerating}
+                    />
                     
                     <Button 
-                      variant="ghost" 
-                      className="flex items-center justify-start gap-3 text-white hover:bg-white/10"
-                      onClick={() => {
-                        setShowQuickMenu(false);
-                        // Show Tasks
-                        document.getElementById('tasks-section')?.scrollIntoView({ behavior: 'smooth' });
-                      }}
+                      type="submit" 
+                      size="icon"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 h-9 w-9 sm:h-10 sm:w-10 bg-wonderwhiz-gold text-wonderwhiz-dark hover:bg-wonderwhiz-gold/80 rounded-full shadow-glow-gold"
+                      disabled={!query.trim() || isGenerating}
                     >
-                      <Star className="h-5 w-5 text-wonderwhiz-purple" />
-                      <span>My Tasks</span>
+                      <Send className="h-4 w-4 sm:h-5 sm:w-5" />
                     </Button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-            
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <Card className="bg-white/5 border-white/10">
-                {!currentCurio && (
-                  <div className="text-center py-8 sm:py-12">
-                    <motion.div 
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.5 }}
-                      className="mb-6"
-                    >
-                      <WonderWhizLogo className="h-20 sm:h-24 mx-auto" />
-                    </motion.div>
-                    <h1 className="text-2xl sm:text-3xl font-bold text-white mb-4">Welcome to WonderWhiz!</h1>
-                    <p className="text-white/80 text-base sm:text-lg mb-6 sm:mb-8 px-4">
-                      What are you curious about today? Type your question above!
-                    </p>
                     
-                    <div className="flex items-center justify-center mb-4">
-                      <h3 className="text-lg font-medium text-white mr-2">Suggestions for you</h3>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-white hover:text-wonderwhiz-gold transition-colors"
-                        onClick={handleRefreshSuggestions}
-                        disabled={isLoadingSuggestions}
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2">
+                      <motion.div
+                        animate={{ rotate: [0, 15, -15, 0] }}
+                        transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
                       >
-                        <motion.div
-                          animate={isLoadingSuggestions ? { rotate: 360 } : {}}
-                          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                          className={isLoadingSuggestions ? "animate-spin" : ""}
-                        >
-                          <RefreshCw className="h-5 w-5" />
-                        </motion.div>
+                        <Lightbulb className="h-5 w-5 sm:h-6 sm:w-6 text-wonderwhiz-gold" />
+                      </motion.div>
+                    </div>
+                  </form>
+                </MagicalBorder>
+              </div>
+              
+              <AnimatePresence>
+                {showQuickMenu && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    className="fixed right-4 top-20 z-30 bg-wonderwhiz-dark/95 rounded-2xl p-2 border border-white/20 backdrop-blur-xl shadow-lg"
+                  >
+                    <div className="flex flex-col gap-2">
+                      <Button 
+                        variant="ghost" 
+                        className="flex items-center justify-start gap-3 text-white hover:bg-white/10"
+                        onClick={() => {
+                          setShowQuickMenu(false);
+                          // Show SparksOverview
+                          document.getElementById('sparks-overview')?.scrollIntoView({ behavior: 'smooth' });
+                        }}
+                      >
+                        <Sparkles className="h-5 w-5 text-wonderwhiz-gold" />
+                        <span>Your Sparks</span>
+                      </Button>
+                      
+                      <Button 
+                        variant="ghost" 
+                        className="flex items-center justify-start gap-3 text-white hover:bg-white/10"
+                        onClick={() => {
+                          setShowQuickMenu(false);
+                          // Show Tasks
+                          document.getElementById('tasks-section')?.scrollIntoView({ behavior: 'smooth' });
+                        }}
+                      >
+                        <Star className="h-5 w-5 text-wonderwhiz-purple" />
+                        <span>My Tasks</span>
                       </Button>
                     </div>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 max-w-3xl mx-auto px-3 sm:px-4">
-                      {curioSuggestions.map((suggestion, index) => (
-                        <CurioSuggestion
-                          key={`${suggestion}-${index}`}
-                          suggestion={suggestion}
-                          onClick={handleCurioSuggestionClick}
-                          index={index}
-                          directGenerate={true}
-                        />
-                      ))}
-                    </div>
-                  </div>
+                  </motion.div>
                 )}
-                
-                {currentCurio && (
-                  <div>
-                    <AnimatePresence>
-                      {(isGenerating || loadingBlocks) && (
-                        <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          className="p-4 mb-6 bg-wonderwhiz-purple/20 backdrop-blur-sm rounded-lg border border-wonderwhiz-purple/30 flex items-center"
-                        >
-                          <div className="mr-3">
-                            <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
-                          </div>
-                          <p className="text-white">
-                            {isGenerating 
-                              ? "Generating your personalized content..." 
-                              : "Loading content blocks..."}
-                          </p>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                    
-                    <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 px-3 sm:px-4 pt-4">{currentCurio.title}</h2>
-                    <div className="space-y-4 px-3 sm:px-4 pb-4">
-                      {contentBlocks.slice(0, visibleBlocksCount).map((block, index) => (
-                        <motion.div 
-                          key={block.id} 
-                          className="space-y-2"
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.1, duration: 0.3 }}
-                        >
-                          <ContentBlock 
-                            block={block} 
-                            onToggleLike={handleToggleLike}
-                            onToggleBookmark={handleToggleBookmark}
-                            onReply={handleBlockReply}
-                            onSetQuery={setQuery}
-                            onRabbitHoleFollow={handleFollowRabbitHole}
-                            onQuizCorrect={() => handleQuizCorrect(block.id)}
-                            onNewsRead={() => handleNewsRead(block.id)}
-                            onCreativeUpload={() => handleCreativeUpload(block.id)}
-                            colorVariant={index % 3}
-                            userId={profileId} 
-                            childProfileId={profileId}
-                          />
-                          
-                          {blockReplies[block.id] && blockReplies[block.id].length > 0 && (
-                            <div className="pl-3 sm:pl-4 border-l-2 border-white/20 ml-3 sm:ml-4">
-                              {blockReplies[block.id].map((reply) => (
-                                <BlockReply 
-                                  key={reply.id}
-                                  content={reply.content}
-                                  fromUser={reply.from_user}
-                                  specialistId={block.specialist_id}
-                                  timestamp={reply.created_at}
-                                />
-                              ))}
-                            </div>
-                          )}
-                        </motion.div>
-                      ))}
+              </AnimatePresence>
+              
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+              >
+                <Card className="bg-white/5 border-white/10">
+                  {!currentCurio && (
+                    <div className="text-center py-8 sm:py-12">
+                      <motion.div 
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.5 }}
+                        className="mb-6"
+                      >
+                        <WonderWhizLogo className="h-20 sm:h-24 mx-auto" />
+                      </motion.div>
+                      <h1 className="text-2xl sm:text-3xl font-bold text-white mb-4">Welcome to WonderWhiz!</h1>
+                      <p className="text-white/80 text-base sm:text-lg mb-6 sm:mb-8 px-4">
+                        What are you curious about today? Type your question above!
+                      </p>
                       
-                      {/* Load more target for intersection observer */}
-                      {visibleBlocksCount < contentBlocks.length && (
-                        <div 
-                          ref={observerTarget} 
-                          className="h-10 flex items-center justify-center text-white/50 text-sm"
+                      <div className="flex items-center justify-center mb-4">
+                        <h3 className="text-lg font-medium text-white mr-2">Suggestions for you</h3>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-white hover:text-wonderwhiz-gold transition-colors"
+                          onClick={handleRefreshSuggestions}
+                          disabled={isLoadingSuggestions}
                         >
-                          <div className="animate-pulse">Loading more content...</div>
-                        </div>
-                      )}
+                          <motion.div
+                            animate={isLoadingSuggestions ? { rotate: 360 } : {}}
+                            transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                            className={isLoadingSuggestions ? "animate-spin" : ""}
+                          >
+                            <RefreshCw className="h-5 w-5" />
+                          </motion.div>
+                        </Button>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 max-w-3xl mx-auto px-3 sm:px-4">
+                        {curioSuggestions.map((suggestion, index) => (
+                          <CurioSuggestion
+                            key={`${suggestion}-${index}`}
+                            suggestion={suggestion}
+                            onClick={handleCurioSuggestionClick}
+                            index={index}
+                            directGenerate={true}
+                          />
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
-                
-                <div ref={feedEndRef} />
-              </Card>
-            </motion.div>
-            
-            <div className="pt-6 sm:pt-8 mt-6 sm:mt-8 border-t border-white/10">
-              <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 sm:mb-6 text-center">Discover More</h2>
-              <div className="grid gap-6 md:grid-cols-2">
-                <motion.div
-                  id="sparks-overview"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                >
-                  {childProfile && (
-                    <SparksOverview 
-                      childId={profileId || ''}
-                      sparksBalance={childProfile.sparks_balance || 0}
-                    />
                   )}
-                </motion.div>
-                
-                <motion.div
-                  id="tasks-section"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                >
-                  <ChildDashboardTasks 
-                    childId={profileId || ''} 
-                    onSparkEarned={handleSparkEarned}
-                  />
-                </motion.div>
+                  
+                  {currentCurio && (
+                    <div>
+                      <AnimatePresence>
+                        {(isGenerating || loadingBlocks) && (
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="p-4 mb-6 bg-wonderwhiz-purple/20 backdrop-blur-sm rounded-lg border border-wonderwhiz-purple/30 flex items-center"
+                          >
+                            <div className="mr-3">
+                              <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+                            </div>
+                            <p className="text-white">
+                              {isGenerating 
+                                ? "Generating your personalized content..." 
+                                : "Loading content blocks..."}
+                            </p>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                      
+                      <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 px-3 sm:px-4 pt-4">{currentCurio.title}</h2>
+                      <div className="space-y-4 px-3 sm:px-4 pb-4">
+                        {contentBlocks.slice(0, visibleBlocksCount).map((block, index) => (
+                          <motion.div 
+                            key={block.id} 
+                            className="space-y-2"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.1, duration: 0.3 }}
+                          >
+                            <ContentBlock 
+                              block={block} 
+                              onToggleLike={handleToggleLike}
+                              onToggleBookmark={handleToggleBookmark}
+                              onReply={handleBlockReply}
+                              onSetQuery={setQuery}
+                              onRabbitHoleFollow={handleFollowRabbitHole}
+                              onQuizCorrect={() => handleQuizCorrect(block.id)}
+                              onNewsRead={() => handleNewsRead(block.id)}
+                              onCreativeUpload={() => handleCreativeUpload(block.id)}
+                              colorVariant={index % 3}
+                              userId={profileId} 
+                              childProfileId={profileId}
+                            />
+                            
+                            {blockReplies[block.id] && blockReplies[block.id].length > 0 && (
+                              <div className="pl-3 sm:pl-4 border-l-2 border-white/20 ml-3 sm:ml-4">
+                                {blockReplies[block.id].map((reply) => (
+                                  <BlockReply 
+                                    key={reply.id}
+                                    content={reply.content}
+                                    fromUser={reply.from_user}
+                                    specialistId={block.specialist_id}
+                                    timestamp={reply.created_at}
+                                  />
+                                ))}
+                              </div>
+                            )}
+                          </motion.div>
+                        ))}
+                        
+                        {/* Load more target for intersection observer */}
+                        {visibleBlocksCount < contentBlocks.length && (
+                          <div 
+                            ref={observerTarget} 
+                            className="h-10 flex items-center justify-center text-white/50 text-sm"
+                          >
+                            <div className="animate-pulse">Loading more content...</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div ref={feedEndRef} />
+                </Card>
+              </motion.div>
+              
+              <div className="pt-6 sm:pt-8 mt-6 sm:mt-8 border-t border-white/10">
+                <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 sm:mb-6 text-center">Discover More</h2>
+                <div className="grid gap-6 md:grid-cols-2">
+                  <motion.div
+                    id="sparks-overview"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                  >
+                    {childProfile && (
+                      <SparksOverview 
+                        childId={profileId || ''}
+                        sparksBalance={childProfile.sparks_balance || 0}
+                      />
+                    )}
+                  </motion.div>
+                  
+                  <motion.div
+                    id="tasks-section"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                  >
+                    <ChildDashboardTasks 
+                      childId={profileId || ''} 
+                      onSparkEarned={handleSparkEarned}
+                    />
+                  </motion.div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </main>
-      
-      {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-10 md:hidden" 
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
+        </main>
+      </div>
       
       <style>
         {`
@@ -1275,7 +1268,7 @@ const Dashboard = () => {
         }
         `}
       </style>
-    </div>
+    </SidebarProvider>
   );
 };
 
