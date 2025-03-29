@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -22,7 +21,8 @@ const helmetContext = {};
 
 // Define custom cursor styles
 const CustomCursorStyles = () => (
-  <style jsx global>{`
+  <style>
+    {`
     @keyframes cursor-pulse {
       0% { transform: scale(1); opacity: 0.7; }
       50% { transform: scale(1.2); opacity: 1; }
@@ -47,7 +47,8 @@ const CustomCursorStyles = () => (
     .animate-pop {
       animation: pop 0.5s ease-out;
     }
-  `}</style>
+    `}
+  </style>
 );
 
 const App = () => (
