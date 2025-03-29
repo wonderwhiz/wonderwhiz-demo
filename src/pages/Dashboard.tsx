@@ -630,7 +630,7 @@ const Dashboard = () => {
         </Helmet>
         
         <Sidebar variant="inset" className="bg-purple-950">
-          <SidebarHeader>
+          <SidebarHeader className="rounded-none bg-violet-900">
             <div className="flex items-center justify-between">
               <h3 className="text-white font-medium">Welcome, {childProfile?.name}!</h3>
               <SidebarTrigger />
