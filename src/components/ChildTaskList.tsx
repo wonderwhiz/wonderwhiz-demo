@@ -2,7 +2,7 @@
 // Fix the TypeScript error by making the necessary type adjustments
 // We'll update the component to properly handle the task type
 import { useState, useEffect } from 'react';
-import { CheckCircle, Clock, X } from 'lucide-react';
+import { CheckCircle, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';

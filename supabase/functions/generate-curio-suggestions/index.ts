@@ -14,6 +14,7 @@ interface ChildProfile {
   avatar_url: string;
   interests: string[];
   age: number;
+  language: string;
 }
 
 interface Curio {
@@ -36,8 +37,9 @@ serve(async (req) => {
 
     const interests = childProfile.interests || [];
     const recentQueries = pastCurios.slice(0, 5).map((c: Curio) => c.query);
+    const language = childProfile.language || 'English';
 
-    // Updated prompt to generate shorter, more engaging suggestions
+    // Updated prompt to generate shorter, more engaging suggestions in the child's preferred language
     const systemPrompt = `Generate 4 short, fun curiosity prompts for a ${childProfile.age} year old child 
     with interests in: ${interests.join(', ')}.
     
@@ -45,7 +47,9 @@ serve(async (req) => {
     
     Based on their age, interests, and past queries, generate 4 interesting, age-appropriate questions.
     
-    VERY IMPORTANT: Each prompt must be SHORT (max 5-6 words), punchy, and exciting for a child.
+    VERY IMPORTANT: 
+    - Each prompt must be SHORT (max 5-6 words), punchy, and exciting for a child.
+    - Your response MUST be in ${language} language.
     
     Return your response as a simple JSON array of strings:
     ["Short prompt 1?", "Short prompt 2?", "Short prompt 3?", "Short prompt 4?"]

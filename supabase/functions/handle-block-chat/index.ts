@@ -16,6 +16,7 @@ serve(async (req) => {
 
   try {
     const { blockId, messageContent, blockType, blockContent, childProfile, specialistId } = await req.json();
+    const language = childProfile.language || 'English';
 
     // Get specialist info
     const specialists = {
@@ -58,6 +59,8 @@ You are chatting with a child who is ${childProfile.age} years old and has inter
 ${contextInfo}
 
 The child has sent you this message: "${messageContent}"
+
+VERY IMPORTANT: You must respond in ${language} language.
 
 Please respond to their message in a friendly, educational way that:
 1. Is age-appropriate for a ${childProfile.age}-year-old

@@ -16,12 +16,15 @@ serve(async (req) => {
 
   try {
     const { query, childProfile } = await req.json();
+    const language = childProfile.language || 'English';
 
-    // Construct prompt for Claude to generate content blocks in a specific format
+    // Construct prompt for Claude to generate content blocks in a specific format and language
     const systemPrompt = `You are an AI assistant creating educational content for children aged ${childProfile.age}. 
     Generate 10 diverse, engaging content blocks about the topic: "${query}". 
 
     Each block should be appropriate for the age group and aligned with these interests: ${childProfile.interests.join(', ')}.
+
+    VERY IMPORTANT: All content must be in ${language} language.
 
     Return your response as a JSON array with 10 objects, each having this structure:
     {
@@ -52,7 +55,7 @@ serve(async (req) => {
     - atlas: geography and history
     - lotus: wellbeing and mindfulness
 
-    Make the content educational, engaging, and fun!`;
+    Make the content educational, engaging, and fun in ${language} language!`;
 
     console.log("Sending request to Claude API");
     
