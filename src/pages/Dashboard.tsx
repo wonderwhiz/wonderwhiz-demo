@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent, CurioCard } from '@/component
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
-import { Send, Menu, ArrowLeftRight, MessageSquare, Sparkles, Search, Star, Lightbulb, RefreshCw, ChevronDown } from 'lucide-react';
+import { Send, Menu, ArrowLeftRight, MessageSquare, Sparkles, Search, Star, Lightbulb, RefreshCw, ChevronDown, User, LogOut, UserCircle } from 'lucide-react';
 import WonderWhizLogo from '@/components/WonderWhizLogo';
 import ContentBlock from '@/components/ContentBlock';
 import BlockReply from '@/components/BlockReply';
@@ -21,6 +21,8 @@ import MagicalBorder from '@/components/MagicalBorder';
 import FloatingElements from '@/components/FloatingElements';
 import CurioSuggestion from '@/components/CurioSuggestion';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import SparksBadge from '@/components/SparksBadge';
 
 interface ChildProfile {
   id: string;
@@ -884,35 +886,84 @@ const Dashboard = () => {
             <Menu className="h-5 w-5" />
           </Button>
           
-          <div className="flex-1 mx-auto max-w-lg">
-            <div className="flex items-center space-x-4 justify-between">
-              <div className="flex items-center">
-                <motion.button 
-                  whileHover={{ scale: 1.1, rotate: 5 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="text-white hover:text-wonderwhiz-gold transition-colors"
-                  onClick={() => setShowQuickMenu(!showQuickMenu)}
+          <div className="flex-1 flex justify-center">
+            <WonderWhizLogo className="h-8" />
+            <h1 className="ml-2 font-baloo text-xl text-white hidden sm:block">WonderWhiz</h1>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  className="relative text-white hover:bg-white/10 rounded-full"
                 >
-                  <Sparkles className="h-5 w-5" />
-                </motion.button>
+                  <UserCircle className="h-6 w-6" />
+                  <span className="absolute -top-1 -right-1">
+                    <SparksBadge 
+                      sparks={childProfile?.sparks_balance || 0}
+                      size="sm"
+                      className="h-5 px-1 py-0"
+                    />
+                  </span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 bg-wonderwhiz-dark/95 border-white/20 backdrop-blur-xl text-white">
+                <DropdownMenuLabel className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-wonderwhiz-gold" />
+                  <span>{childProfile?.name}</span>
+                </DropdownMenuLabel>
                 
-                <SparksBalance 
-                  childId={profileId || ''} 
-                  initialBalance={childProfile?.sparks_balance} 
-                  size="sm"
-                  className="md:flex ml-3"
-                />
-              </div>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-white hover:text-wonderwhiz-gold transition-colors"
-                onClick={() => navigate(`/parent-zone/${profileId}`)}
-              >
-                <ArrowLeftRight className="h-5 w-5" />
-              </Button>
-            </div>
+                <DropdownMenuSeparator className="bg-white/10" />
+                
+                <DropdownMenuItem 
+                  className="flex items-center gap-2 text-white hover:bg-white/10 focus:bg-white/10 cursor-pointer"
+                  onClick={() => {
+                    document.getElementById('sparks-overview')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                >
+                  <Sparkles className="h-4 w-4 text-wonderwhiz-gold" />
+                  <span>Sparks Balance</span>
+                  <div className="ml-auto">
+                    <SparksBadge 
+                      sparks={childProfile?.sparks_balance || 0}
+                      size="sm"
+                    />
+                  </div>
+                </DropdownMenuItem>
+                
+                <DropdownMenuItem 
+                  className="flex items-center gap-2 text-white hover:bg-white/10 focus:bg-white/10 cursor-pointer"
+                  onClick={() => navigate('/profiles')}
+                >
+                  <User className="h-4 w-4 text-wonderwhiz-purple" />
+                  <span>Switch Profile</span>
+                </DropdownMenuItem>
+                
+                <DropdownMenuItem 
+                  className="flex items-center gap-2 text-white hover:bg-white/10 focus:bg-white/10 cursor-pointer"
+                  onClick={() => navigate(`/parent-zone/${profileId}`)}
+                >
+                  <ArrowLeftRight className="h-4 w-4 text-wonderwhiz-blue" />
+                  <span>Parent Zone</span>
+                </DropdownMenuItem>
+                
+                <DropdownMenuSeparator className="bg-white/10" />
+                
+                <DropdownMenuItem 
+                  className="flex items-center gap-2 text-white hover:bg-white/10 focus:bg-white/10 hover:text-red-400 focus:text-red-400 cursor-pointer"
+                  onClick={async () => {
+                    await supabase.auth.signOut();
+                    navigate('/login');
+                    toast.success('Logged out successfully');
+                  }}
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Logout</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
         
