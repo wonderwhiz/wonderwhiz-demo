@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Check, X } from 'lucide-react';
+import { CheckCircle, XCircle } from 'lucide-react';
 
 const features = [
   { name: 'Personalized Curiosity Feed', wonderWhiz: true, chatGPT: false, schoolApps: false },
@@ -13,20 +13,24 @@ const features = [
 
 const FeatureCheck = ({ available }: { available: boolean }) => {
   return available ? (
-    <div className="flex items-center justify-center bg-wonderwhiz-purple bg-opacity-20 p-2 rounded-full">
-      <Check className="h-5 w-5 text-wonderwhiz-blue" />
+    <div className="flex items-center justify-center bg-wonderwhiz-purple/20 p-2 rounded-full">
+      <CheckCircle className="h-6 w-6 text-wonderwhiz-blue" />
     </div>
   ) : (
-    <div className="flex items-center justify-center bg-red-500 bg-opacity-20 p-2 rounded-full">
-      <X className="h-5 w-5 text-red-500" />
+    <div className="flex items-center justify-center bg-red-500/20 p-2 rounded-full">
+      <XCircle className="h-6 w-6 text-red-500" />
     </div>
   );
 };
 
 const FeaturesSection = () => {
   return (
-    <section className="py-20 px-6 md:px-10 lg:px-20">
-      <div className="max-w-7xl mx-auto">
+    <section className="py-20 px-6 md:px-10 lg:px-20 relative overflow-hidden">
+      {/* Decorative background elements */}
+      <div className="absolute top-40 -left-20 w-80 h-80 rounded-full bg-wonderwhiz-purple opacity-5 blur-3xl"></div>
+      <div className="absolute bottom-40 -right-20 w-80 h-80 rounded-full bg-wonderwhiz-pink opacity-5 blur-3xl"></div>
+      
+      <div className="max-w-7xl mx-auto relative z-10">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -34,7 +38,7 @@ const FeaturesSection = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <h2 className="text-lg text-wonderwhiz-blue uppercase tracking-wider mb-3 font-bold">WELCOME TO THE CURIOSITY FEED</h2>
+          <h2 className="text-lg text-wonderwhiz-blue uppercase tracking-wider mb-3 font-bold inline-block px-4 py-1 rounded-full bg-wonderwhiz-blue/10">WELCOME TO THE CURIOSITY FEED</h2>
           <h3 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6">
             It feels like magic.<br />
             It's just exceptionally thoughtful AI.
@@ -64,23 +68,35 @@ const FeaturesSection = () => {
               key={index} 
               className={`grid grid-cols-4 text-center py-5 ${index % 2 === 0 ? 'bg-wonderwhiz-dark bg-opacity-30' : 'bg-wonderwhiz-dark bg-opacity-10'}`}
             >
-              <div className="flex items-center px-4 text-white font-medium">{feature.name}</div>
+              <div className="flex items-center px-6 text-white font-medium">{feature.name}</div>
               <div className="flex justify-center">
                 {feature.wonderWhiz ? 
-                  <div className="text-wonderwhiz-yellow font-bold px-4 py-1 rounded-full bg-wonderwhiz-purple bg-opacity-20">✓ Yes</div> : 
-                  <div className="text-red-400 font-bold">✕ No</div>
+                  <div className="flex items-center gap-2 text-wonderwhiz-yellow font-bold px-4 py-1 rounded-full bg-wonderwhiz-purple bg-opacity-20">
+                    <span className="text-lg">✓</span> Yes
+                  </div> : 
+                  <div className="flex items-center gap-2 text-red-400 font-bold">
+                    <span className="text-lg">✕</span> No
+                  </div>
                 }
               </div>
               <div className="flex justify-center">
                 {feature.chatGPT ? 
-                  <div className="text-green-400 font-bold px-4 py-1 rounded-full bg-green-400 bg-opacity-20">✓ Yes</div> : 
-                  <div className="text-red-400 font-bold">✕ No</div>
+                  <div className="flex items-center gap-2 text-green-400 font-bold px-4 py-1 rounded-full bg-green-400 bg-opacity-20">
+                    <span className="text-lg">✓</span> Yes
+                  </div> : 
+                  <div className="flex items-center gap-2 text-red-400 font-bold">
+                    <span className="text-lg">✕</span> No
+                  </div>
                 }
               </div>
               <div className="flex justify-center">
                 {feature.schoolApps ? 
-                  <div className="text-green-400 font-bold px-4 py-1 rounded-full bg-green-400 bg-opacity-20">✓ Yes</div> : 
-                  <div className="text-red-400 font-bold">✕ No</div>
+                  <div className="flex items-center gap-2 text-green-400 font-bold px-4 py-1 rounded-full bg-green-400 bg-opacity-20">
+                    <span className="text-lg">✓</span> Yes
+                  </div> : 
+                  <div className="flex items-center gap-2 text-red-400 font-bold">
+                    <span className="text-lg">✕</span> No
+                  </div>
                 }
               </div>
             </div>

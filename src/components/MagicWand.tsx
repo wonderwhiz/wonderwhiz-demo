@@ -15,21 +15,24 @@ const MagicWand: React.FC<MagicWandProps> = ({ className = "h-16 w-16" }) => {
             <stop offset="100%" stopColor="#FFB100" />
           </linearGradient>
           <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="2" result="blur" />
+            <feGaussianBlur stdDeviation="3" result="blur" />
             <feComposite in="SourceGraphic" in2="blur" operator="over" />
           </filter>
         </defs>
         
         {/* Wand handle */}
-        <rect x="40" y="50" width="15" height="40" rx="3" ry="3" fill="#8A4B0A" />
+        <rect x="40" y="55" width="15" height="35" rx="7.5" ry="7.5" fill="#8A4B0A" />
         
         {/* Wand top */}
-        <circle cx="48" cy="45" r="10" fill="url(#wand-gradient)" filter="url(#glow)" />
+        <circle cx="48" cy="45" r="12" fill="url(#wand-gradient)" filter="url(#glow)" />
         
         {/* Stars/magic coming out */}
-        <circle cx="48" cy="30" r="3" fill="#FFFFFF" className="animate-ping" style={{ animationDuration: "1.5s" }} />
-        <circle cx="40" cy="35" r="2" fill="#FFFFFF" className="animate-ping" style={{ animationDuration: "2s", animationDelay: "0.3s" }} />
-        <circle cx="55" cy="33" r="2.5" fill="#FFFFFF" className="animate-ping" style={{ animationDuration: "1.8s", animationDelay: "0.6s" }} />
+        <path d="M48,25 L50,30 L55,30 L51,33 L53,38 L48,35 L43,38 L45,33 L41,30 L46,30 Z" 
+              fill="#FFFFFF" className="animate-pulse" style={{ animationDuration: "1.5s" }} />
+        <path d="M35,35 L36,38 L39,38 L37,40 L38,43 L35,41 L32,43 L33,40 L31,38 L34,38 Z" 
+              fill="#FFFFFF" className="animate-pulse" style={{ animationDuration: "2s", animationDelay: "0.3s" }} />
+        <path d="M60,33 L61,36 L64,36 L62,38 L63,41 L60,39 L57,41 L58,38 L56,36 L59,36 Z" 
+              fill="#FFFFFF" className="animate-pulse" style={{ animationDuration: "1.8s", animationDelay: "0.6s" }} />
       </svg>
     </div>
   );

@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import { Star, Sparkles } from 'lucide-react';
 
 const testimonials = [
   {
@@ -28,15 +29,22 @@ const testimonials = [
 
 const TestimonialsSection = () => {
   return (
-    <section className="py-20 px-6 md:px-10 lg:px-20">
+    <section className="py-20 px-6 md:px-10 lg:px-20 relative overflow-hidden">
+      {/* Background decorations */}
+      <div className="absolute top-10 left-10 w-40 h-40 rounded-full bg-wonderwhiz-gold opacity-10 blur-3xl"></div>
+      <div className="absolute bottom-10 right-10 w-40 h-40 rounded-full bg-wonderwhiz-pink opacity-10 blur-3xl"></div>
+      
       <div className="max-w-7xl mx-auto">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          className="text-center mb-16 relative"
         >
+          <div className="absolute -top-10 left-1/2 transform -translate-x-1/2">
+            <Sparkles className="h-12 w-12 text-wonderwhiz-gold opacity-70" />
+          </div>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6">
             Loved by Families Worldwide
           </h2>
@@ -53,18 +61,21 @@ const TestimonialsSection = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: index * 0.2 }}
-              className="bg-white bg-opacity-5 backdrop-blur-sm rounded-3xl p-8 border border-wonderwhiz-purple border-opacity-30 hover:border-opacity-50 transition-all hover:transform hover:scale-[1.02]"
+              className="bg-white bg-opacity-5 backdrop-blur-sm rounded-3xl p-8 border border-wonderwhiz-purple border-opacity-30 hover:border-opacity-50 transition-all hover:transform hover:scale-[1.02] relative overflow-hidden"
             >
-              <div className="flex mb-4">
+              {/* Decorative corner elements */}
+              <div className="absolute -top-10 -right-10 w-20 h-20 rounded-full bg-gradient-to-br from-wonderwhiz-purple to-transparent opacity-20"></div>
+              
+              <div className="flex mb-4 gap-1">
                 {[...Array(testimonial.stars)].map((_, i) => (
-                  <svg key={i} className="w-5 h-5 text-wonderwhiz-gold fill-current" viewBox="0 0 24 24">
-                    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                  </svg>
+                  <Star key={i} className="w-5 h-5 text-wonderwhiz-gold fill-current" />
                 ))}
               </div>
               <p className="text-gray-200 mb-6">{testimonial.quote}</p>
               <div className="flex items-center">
-                <img src={testimonial.image} alt={testimonial.author} className="w-12 h-12 rounded-full mr-4" />
+                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-wonderwhiz-purple/30 mr-4">
+                  <img src={testimonial.image} alt={testimonial.author} className="w-full h-full object-cover" />
+                </div>
                 <div>
                   <h4 className="font-bold text-white">{testimonial.author}</h4>
                   <p className="text-sm text-gray-400">{testimonial.role}</p>
