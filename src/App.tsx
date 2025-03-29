@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,6 +13,11 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Demo from "./pages/Demo";
 import NotFound from "./pages/NotFound";
+import Authentication from "./pages/Authentication";
+import CreateProfile from "./pages/CreateProfile";
+import ProfileSelector from "./pages/ProfileSelector";
+import Dashboard from "./pages/Dashboard";
+import ParentZone from "./pages/ParentZone";
 
 // Create a new QueryClient instance
 const queryClient = new QueryClient();
@@ -64,9 +70,13 @@ const App = () => (
             <Route path="/about" element={<About />} />
             <Route path="/features" element={<Features />} />
             <Route path="/pricing" element={<Pricing />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+            <Route path="/login" element={<Authentication />} />
+            <Route path="/register" element={<Authentication />} />
             <Route path="/demo" element={<Demo />} />
+            <Route path="/create-profile" element={<CreateProfile />} />
+            <Route path="/profiles" element={<ProfileSelector />} />
+            <Route path="/dashboard/:profileId" element={<Dashboard />} />
+            <Route path="/parent-zone/:profileId" element={<ParentZone />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
