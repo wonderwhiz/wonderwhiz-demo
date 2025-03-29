@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { CheckCircle, Clock, Award, Star, ChevronRight, Check, PlusCircle } from 'lucide-react';
@@ -46,7 +45,6 @@ const ChildTaskList: React.FC<ChildTaskListProps> = ({ childId, onSparkEarned, o
       setLoading(true);
       
       try {
-        // Get child's tasks with status
         const { data: childTasks, error: childTasksError } = await supabase
           .from('child_tasks')
           .select(`
@@ -66,7 +64,6 @@ const ChildTaskList: React.FC<ChildTaskListProps> = ({ childId, onSparkEarned, o
           
         if (childTasksError) throw childTasksError;
         
-        // Transform the data to a flatter structure
         const formattedTasks = childTasks?.map(ct => ({
           id: ct.tasks.id,
           title: ct.tasks.title,
@@ -94,7 +91,6 @@ const ChildTaskList: React.FC<ChildTaskListProps> = ({ childId, onSparkEarned, o
     setCompletingTask(childTaskId);
     
     try {
-      // Update task status to completed
       const { error: updateError } = await supabase
         .from('child_tasks')
         .update({
@@ -105,7 +101,6 @@ const ChildTaskList: React.FC<ChildTaskListProps> = ({ childId, onSparkEarned, o
         
       if (updateError) throw updateError;
       
-      // Update local state
       setTasks(prev => 
         prev.map(task => 
           task.child_task_id === childTaskId
@@ -114,7 +109,6 @@ const ChildTaskList: React.FC<ChildTaskListProps> = ({ childId, onSparkEarned, o
         )
       );
       
-      // Award sparks
       const { error } = await supabase.functions.invoke('increment-sparks-balance', {
         body: JSON.stringify({ 
           profileId: childId, 
@@ -127,7 +121,6 @@ const ChildTaskList: React.FC<ChildTaskListProps> = ({ childId, onSparkEarned, o
         throw new Error('Failed to award sparks');
       }
       
-      // Add the transaction record
       const { error: transactionError } = await supabase
         .from('sparks_transactions')
         .insert({
@@ -140,7 +133,6 @@ const ChildTaskList: React.FC<ChildTaskListProps> = ({ childId, onSparkEarned, o
         console.error('Error creating transaction record:', transactionError);
       }
       
-      // Notify parent component - support both callback methods
       if (onSparkEarned) onSparkEarned(sparksReward);
       if (onTaskComplete) onTaskComplete(sparksReward);
       
@@ -164,14 +156,13 @@ const ChildTaskList: React.FC<ChildTaskListProps> = ({ childId, onSparkEarned, o
     }
 
     try {
-      // First, create the task
       const { data: taskData, error: taskError } = await supabase
         .from('tasks')
         .insert({
           title: newTask.title,
           description: newTask.description || '',
           sparks_reward: newTask.sparks_reward,
-          creator_id: childId,
+          parent_user_id: childId,
           status: 'active',
           type: 'quick'
         })
@@ -180,7 +171,6 @@ const ChildTaskList: React.FC<ChildTaskListProps> = ({ childId, onSparkEarned, o
 
       if (taskError) throw taskError;
 
-      // Then, assign it to the child
       const { data: childTaskData, error: childTaskError } = await supabase
         .from('child_tasks')
         .insert({
@@ -194,7 +184,6 @@ const ChildTaskList: React.FC<ChildTaskListProps> = ({ childId, onSparkEarned, o
 
       if (childTaskError) throw childTaskError;
 
-      // Add the new task to the state
       const newTaskObj: Task = {
         id: taskData.id,
         title: newTask.title,
@@ -276,7 +265,6 @@ const ChildTaskList: React.FC<ChildTaskListProps> = ({ childId, onSparkEarned, o
   
   return (
     <div className="space-y-4 relative">
-      {/* Quick Task Add Button */}
       <div className="flex justify-end mb-2">
         <Button 
           onClick={() => setQuickTaskOpen(true)} 
@@ -371,7 +359,6 @@ const ChildTaskList: React.FC<ChildTaskListProps> = ({ childId, onSparkEarned, o
               </motion.p>
             )}
             
-            {/* Decorative elements */}
             <motion.div 
               className="absolute bottom-0 right-0 h-8 w-16 bg-gradient-to-l from-white/5 to-transparent rounded-tl-xl"
               initial={{ opacity: 0 }}
@@ -429,7 +416,6 @@ const ChildTaskList: React.FC<ChildTaskListProps> = ({ childId, onSparkEarned, o
         transition={{ duration: 3, repeat: Infinity }}
       />
 
-      {/* Quick Task Dialog */}
       <Dialog open={quickTaskOpen} onOpenChange={setQuickTaskOpen}>
         <DialogContent className="sm:max-w-[425px] bg-gray-900 text-white border-wonderwhiz-gold/30">
           <DialogHeader>
