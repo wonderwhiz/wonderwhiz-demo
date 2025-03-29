@@ -13,6 +13,18 @@ interface Task {
   reward_sparks: number;
 }
 
+interface ChildTask {
+  id: string;
+  task_id: string;
+  child_profile_id: string;
+  status: string;
+  assigned_at: string;
+  completed_at: string;
+  title?: string;
+  description?: string;
+  reward_sparks?: number;
+}
+
 interface ChildTaskListProps {
   childId: string;
   onTaskCompleted?: () => void;
@@ -27,13 +39,25 @@ const ChildTaskList = ({ childId, onTaskCompleted }: ChildTaskListProps) => {
     try {
       const { data, error } = await supabase
         .from('child_tasks')
-        .select('*')
+        .select('*, tasks:task_id(title, description, reward_sparks)')
         .eq('child_profile_id', childId)
         .eq('status', 'pending')
-        .order('created_at', { ascending: false });
+        .order('assigned_at', { ascending: false });
         
       if (error) throw error;
-      setTasks(data as Task[]);
+      
+      // Map the joined data to the Task interface format
+      if (data) {
+        const formattedTasks: Task[] = data.map((item: any) => ({
+          id: item.id,
+          title: item.tasks?.title || 'Unnamed Task',
+          description: item.tasks?.description || '',
+          status: item.status as 'pending' | 'completed',
+          reward_sparks: item.tasks?.reward_sparks || 0
+        }));
+        
+        setTasks(formattedTasks);
+      }
     } catch (error) {
       console.error('Error fetching tasks:', error);
       toast.error('Failed to load tasks');
