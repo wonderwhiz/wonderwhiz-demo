@@ -37,18 +37,20 @@ serve(async (req) => {
     const interests = childProfile.interests || [];
     const recentQueries = pastCurios.slice(0, 5).map((c: Curio) => c.query);
 
-    // Construct prompt for Claude to generate personalized suggestions
-    const systemPrompt = `Generate 4 interesting curiosity prompts for a ${childProfile.age} year old child 
+    // Updated prompt to generate shorter, more engaging suggestions
+    const systemPrompt = `Generate 4 short, fun curiosity prompts for a ${childProfile.age} year old child 
     with interests in: ${interests.join(', ')}.
     
     Their recent queries were: ${recentQueries.length ? recentQueries.join(', ') : 'None yet'}.
     
-    Based on their age, interests, and past queries, generate 4 interesting, age-appropriate questions they might want to explore.
+    Based on their age, interests, and past queries, generate 4 interesting, age-appropriate questions.
     
-    Return your response as a simple JSON array of strings, each being a curious question:
-    ["Question 1?", "Question 2?", "Question 3?", "Question 4?"]
+    VERY IMPORTANT: Each prompt must be SHORT (max 5-6 words), punchy, and exciting for a child.
     
-    Make the questions engaging, diverse, educational, and fun! Avoid repeating their past queries.`;
+    Return your response as a simple JSON array of strings:
+    ["Short prompt 1?", "Short prompt 2?", "Short prompt 3?", "Short prompt 4?"]
+    
+    Make the questions engaging, diverse, educational, and FUN! Avoid repeating past queries.`;
 
     console.log("Sending request to Claude API for curio suggestions");
 
@@ -95,12 +97,12 @@ serve(async (req) => {
       console.error("Error parsing Claude's response:", error);
       console.log("Raw response:", text);
       
-      // Fallback to default suggestions if parsing fails
+      // Fallback to default short suggestions if parsing fails
       suggestionsJSON = [
         "How do volcanoes work?",
-        "What are black holes?",
-        "Tell me about penguins",
-        "What's the largest dinosaur ever discovered?"
+        "Coolest dinosaur ever?",
+        "Space aliens?",
+        "Ocean mysteries?"
       ];
     }
     
@@ -113,9 +115,9 @@ serve(async (req) => {
       error: error.message,
       fallbackSuggestions: [
         "How do volcanoes work?",
-        "What are black holes?",
-        "Tell me about penguins",
-        "What's the largest dinosaur ever discovered?"
+        "Coolest dinosaur ever?",
+        "Space aliens?",
+        "Ocean mysteries?"
       ] 
     }), {
       status: 500,

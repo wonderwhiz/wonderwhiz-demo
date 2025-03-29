@@ -7,6 +7,7 @@ interface CurioSuggestionProps {
   suggestion: string;
   onClick: (suggestion: string) => void;
   index: number;
+  directGenerate?: boolean;
 }
 
 const COLOR_VARIANTS = [
@@ -16,7 +17,8 @@ const COLOR_VARIANTS = [
 const CurioSuggestion: React.FC<CurioSuggestionProps> = ({ 
   suggestion, 
   onClick,
-  index 
+  index,
+  directGenerate = true
 }) => {
   const colorVariant = COLOR_VARIANTS[index % COLOR_VARIANTS.length];
   

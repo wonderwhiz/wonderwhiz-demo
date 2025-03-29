@@ -617,6 +617,105 @@ const Dashboard = () => {
     };
   }, [observerTarget, loadingBlocks, visibleBlocksCount, contentBlocks.length]);
 
+  const handleCurioSuggestionClick = async (suggestion: string) => {
+    if (!childProfile || isGenerating) return;
+    
+    setIsGenerating(true);
+    
+    try {
+      const { data: newCurio, error: curioError } = await supabase
+        .from('curios')
+        .insert({
+          child_id: profileId,
+          query: suggestion.trim(),
+          title: suggestion.trim(),
+        })
+        .select()
+        .single();
+        
+      if (curioError) throw curioError;
+      
+      // Award sparks for starting a new curio
+      try {
+        const { data: sparkData } = await supabase.functions.invoke('increment-sparks-balance', {
+          body: JSON.stringify({ 
+            profileId: profileId, 
+            amount: 1
+          })
+        });
+        
+        // Update the local state with new sparks balance
+        if (childProfile) {
+          setChildProfile({
+            ...childProfile,
+            sparks_balance: (childProfile.sparks_balance || 0) + 1
+          });
+        }
+        
+        // Add the transaction record
+        await supabase.from('sparks_transactions').insert({
+          child_id: profileId,
+          amount: 1,
+          reason: 'Starting new Curio'
+        });
+        
+        toast.success('You earned 1 spark for your curiosity!', {
+          duration: 2000,
+          position: 'bottom-right'
+        });
+      } catch (error) {
+        console.error('Error awarding sparks for new curio:', error);
+      }
+      
+      const claudeResponse = await supabase.functions.invoke('generate-curiosity-blocks', {
+        body: JSON.stringify({
+          query: suggestion.trim(),
+          childProfile: childProfile
+        })
+      });
+      
+      if (claudeResponse.error) {
+        throw new Error(`Failed to generate content: ${claudeResponse.error.message}`);
+      }
+      
+      const generatedBlocks = claudeResponse.data;
+      
+      if (!Array.isArray(generatedBlocks)) {
+        throw new Error("Invalid response format from generate-curiosity-blocks");
+      }
+      
+      console.log("Generated blocks:", generatedBlocks);
+      
+      for (const block of generatedBlocks) {
+        await supabase
+          .from('content_blocks')
+          .insert({
+            curio_id: newCurio.id,
+            type: block.type,
+            specialist_id: block.specialist_id,
+            content: block.content,
+          });
+      }
+      
+      setPastCurios(prev => [newCurio, ...prev]);
+      
+      setContentBlocks(generatedBlocks);
+      setCurrentCurio(newCurio);
+      
+      setQuery('');
+      
+      setTimeout(() => {
+        feedEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+      
+    } catch (error) {
+      console.error('Error creating curio:', error);
+      toast.error("Oops! Something went wrong with your question.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-wonderwhiz-gradient flex items-center justify-center">
@@ -873,7 +972,7 @@ const Dashboard = () => {
                         <CurioSuggestion
                           key={`${suggestion}-${index}`}
                           suggestion={suggestion}
-                          onClick={setQuery}
+                          onClick={handleCurioSuggestionClick}
                           index={index}
                         />
                       ))}
