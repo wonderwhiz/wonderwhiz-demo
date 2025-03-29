@@ -1,6 +1,4 @@
 
-// Fix the TypeScript error by making the necessary type adjustments
-// We'll update the component to properly handle the task type
 import { useState, useEffect } from 'react';
 import { CheckCircle, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -81,15 +79,12 @@ export const ChildTaskList = ({ childId, onTaskCompleted }: ChildTaskListProps) 
 
       if (taskData?.task?.sparks_reward) {
         // Add sparks to child's balance
-        const { error: sparksError } = await supabase
-          .from('child_profiles')
-          .update({
-            sparks_balance: supabase.rpc('increment', { 
-              row_id: childId,
-              increment_amount: taskData.task.sparks_reward
-            })
-          })
-          .eq('id', childId);
+        const sparksReward = taskData.task.sparks_reward;
+        
+        const { error: sparksError } = await supabase.rpc('increment', {
+          row_id: childId,
+          increment_amount: sparksReward
+        });
 
         if (sparksError) throw sparksError;
         
@@ -98,7 +93,7 @@ export const ChildTaskList = ({ childId, onTaskCompleted }: ChildTaskListProps) 
           .from('sparks_transactions')
           .insert({
             child_id: childId,
-            amount: taskData.task.sparks_reward,
+            amount: sparksReward,
             reason: 'Task completed'
           });
           
