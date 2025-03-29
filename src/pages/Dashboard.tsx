@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
-import { Send, Menu, ArrowLeftRight, MessageSquare, Sparkles, Search } from 'lucide-react';
+import { Send, Menu, ArrowLeftRight, MessageSquare, Sparkles, Search, Star, Lightbulb } from 'lucide-react';
 import WonderWhizLogo from '@/components/WonderWhizLogo';
 import ContentBlock from '@/components/ContentBlock';
 import BlockReply from '@/components/BlockReply';
@@ -17,6 +17,8 @@ import SparksBalance from '@/components/SparksBalance';
 import SparksHistory from '@/components/SparksHistory';
 import SparksOverview from '@/components/SparksOverview';
 import { useSparksSystem } from '@/hooks/useSparksSystem';
+import MagicalBorder from '@/components/MagicalBorder';
+import FloatingElements from '@/components/FloatingElements';
 
 interface ChildProfile {
   id: string;
@@ -64,6 +66,7 @@ const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showSparksHistory, setShowSparksHistory] = useState(false);
+  const [showQuickMenu, setShowQuickMenu] = useState(false);
   const feedEndRef = useRef<HTMLDivElement>(null);
   const { streakBonusReceived, streakBonusAmount } = useSparksSystem(profileId);
   
@@ -622,71 +625,118 @@ const Dashboard = () => {
             <Menu className="h-5 w-5" />
           </Button>
           
-          <div className="flex-1 max-w-2xl mx-auto">
-            <form onSubmit={(e) => { e.preventDefault(); handleSubmitQuery(); }}>
-              <div className="relative">
-                <Input 
-                  placeholder="What do you want to explore today?" 
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  className="pr-10 bg-white/10 border-white/20 text-white placeholder:text-white/60"
-                  disabled={isGenerating}
-                />
-                <Button 
-                  type="submit" 
-                  size="icon"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 bg-wonderwhiz-purple text-white hover:bg-wonderwhiz-purple/80"
-                  disabled={!query.trim() || isGenerating}
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
-              </div>
-            </form>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <SparksBalance 
-              childId={profileId || ''} 
-              initialBalance={childProfile?.sparks_balance} 
-              size="sm"
-              className="hidden md:flex mr-2"
-            />
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-white"
-              onClick={() => navigate(`/parent-zone/${profileId}`)}
-            >
-              <ArrowLeftRight className="h-5 w-5" />
-            </Button>
+          <div className="flex-1 mx-auto max-w-lg">
+            <div className="flex items-center space-x-4">
+              <motion.button 
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                whileTap={{ scale: 0.95 }}
+                className="text-white hover:text-wonderwhiz-gold transition-colors"
+                onClick={() => setShowQuickMenu(!showQuickMenu)}
+              >
+                <Sparkles className="h-6 w-6" />
+              </motion.button>
+              
+              <SparksBalance 
+                childId={profileId || ''} 
+                initialBalance={childProfile?.sparks_balance} 
+                size="sm"
+                className="md:flex"
+              />
+
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white hover:text-wonderwhiz-gold transition-colors"
+                onClick={() => navigate(`/parent-zone/${profileId}`)}
+              >
+                <ArrowLeftRight className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
         </header>
         
         <div className="flex-1 overflow-y-auto py-4 px-4 md:px-6">
           <div className="max-w-6xl mx-auto space-y-6">
-            {childProfile && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-              >
-                <SparksOverview 
-                  childId={profileId || ''}
-                  sparksBalance={childProfile.sparks_balance || 0}
-                />
-              </motion.div>
-            )}
-            
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <ChildDashboardTasks 
-                childId={profileId || ''} 
-                onSparkEarned={handleSparkEarned}
+            <div className="my-6 relative">
+              <FloatingElements 
+                type="stars" 
+                density="low" 
+                className="absolute inset-0 pointer-events-none opacity-50" 
               />
-            </motion.div>
+              
+              <MagicalBorder 
+                active={true} 
+                type="rainbow" 
+                className="rounded-2xl overflow-hidden shadow-lg"
+              >
+                <form onSubmit={(e) => { e.preventDefault(); handleSubmitQuery(); }} className="relative">
+                  <Input 
+                    placeholder="What do you want to explore today? Ask me anything!"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    className="px-6 py-8 bg-white/10 border-white/20 text-white text-lg placeholder:text-white/60 placeholder:text-center focus:ring-2 focus:ring-wonderwhiz-gold/50 focus:border-wonderwhiz-gold"
+                    disabled={isGenerating}
+                  />
+                  
+                  <Button 
+                    type="submit" 
+                    size="icon"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 h-10 w-10 bg-wonderwhiz-gold text-wonderwhiz-dark hover:bg-wonderwhiz-gold/80 rounded-full shadow-glow-gold"
+                    disabled={!query.trim() || isGenerating}
+                  >
+                    <Send className="h-5 w-5" />
+                  </Button>
+                  
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2">
+                    <motion.div
+                      animate={{ rotate: [0, 15, -15, 0] }}
+                      transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                    >
+                      <Lightbulb className="h-6 w-6 text-wonderwhiz-gold" />
+                    </motion.div>
+                  </div>
+                </form>
+              </MagicalBorder>
+            </div>
+            
+            <AnimatePresence>
+              {showQuickMenu && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="fixed right-4 top-20 z-30 bg-wonderwhiz-dark/95 rounded-2xl p-2 border border-white/20 backdrop-blur-xl shadow-lg"
+                >
+                  <div className="flex flex-col gap-2">
+                    <Button 
+                      variant="ghost" 
+                      className="flex items-center justify-start gap-3 text-white hover:bg-white/10"
+                      onClick={() => {
+                        setShowQuickMenu(false);
+                        // Show SparksOverview
+                        document.getElementById('sparks-overview')?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                    >
+                      <Sparkles className="h-5 w-5 text-wonderwhiz-gold" />
+                      <span>Your Sparks</span>
+                    </Button>
+                    
+                    <Button 
+                      variant="ghost" 
+                      className="flex items-center justify-start gap-3 text-white hover:bg-white/10"
+                      onClick={() => {
+                        setShowQuickMenu(false);
+                        // Show Tasks
+                        document.getElementById('tasks-section')?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                    >
+                      <Star className="h-5 w-5 text-wonderwhiz-purple" />
+                      <span>My Tasks</span>
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
             
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -708,7 +758,7 @@ const Dashboard = () => {
                     <p className="text-white/80 text-lg mb-8">
                       What are you curious about today? Type your question above!
                     </p>
-                    <div className="grid grid-cols-2 gap-3 max-w-md mx-auto">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-xl mx-auto">
                       {['Tell me about penguins', 'How do volcanoes work?', 'What are black holes?', 'Show me cool dinosaurs'].map(suggestion => (
                         <Button
                           key={suggestion}
@@ -741,8 +791,8 @@ const Dashboard = () => {
                       )}
                     </AnimatePresence>
                     
-                    <h2 className="text-2xl font-bold text-white mb-4">{currentCurio.title}</h2>
-                    <div className="space-y-4">
+                    <h2 className="text-2xl font-bold text-white mb-4 px-4 pt-4">{currentCurio.title}</h2>
+                    <div className="space-y-4 px-4 pb-4">
                       {contentBlocks.map(block => (
                         <div key={block.id} className="space-y-2">
                           <ContentBlock 
@@ -779,6 +829,37 @@ const Dashboard = () => {
                 <div ref={feedEndRef} />
               </Card>
             </motion.div>
+            
+            <div className="pt-8 mt-8 border-t border-white/10">
+              <h2 className="text-2xl font-bold text-white mb-6 text-center">Discover More</h2>
+              <div className="grid md:grid-cols-2 gap-6">
+                <motion.div
+                  id="sparks-overview"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  {childProfile && (
+                    <SparksOverview 
+                      childId={profileId || ''}
+                      sparksBalance={childProfile.sparks_balance || 0}
+                    />
+                  )}
+                </motion.div>
+                
+                <motion.div
+                  id="tasks-section"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <ChildDashboardTasks 
+                    childId={profileId || ''} 
+                    onSparkEarned={handleSparkEarned}
+                  />
+                </motion.div>
+              </div>
+            </div>
           </div>
         </div>
       </main>
