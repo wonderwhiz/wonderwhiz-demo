@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -257,22 +256,25 @@ const Dashboard = () => {
         .insert({
           child_id: profileId,
           query: query.trim(),
-          title: query.trim(), // In a real app, we might generate a better title
+          title: query.trim(),
         })
         .select()
         .single();
         
       if (curioError) throw curioError;
       
-      // Set as current curio and add to past curios
-      setCurrentCurio(newCurio);
-      setPastCurios(prev => [newCurio, ...prev]);
-      
-      // Generate content blocks (in a real app, this would call Claude or Gemini)
-      const newBlocks = generateMockContentBlocks(query);
+      // Call Claude Edge Function to generate content blocks
+      const claudeResponse = await supabase.functions.invoke('generate-curiosity-blocks', {
+        body: JSON.stringify({
+          query: query.trim(),
+          childProfile: childProfile
+        })
+      });
+
+      const contentBlocks = claudeResponse.data;
       
       // Save blocks to database
-      for (const block of newBlocks) {
+      for (const block of contentBlocks) {
         await supabase
           .from('content_blocks')
           .insert({
@@ -284,7 +286,8 @@ const Dashboard = () => {
       }
       
       // Update UI with new blocks
-      setContentBlocks(newBlocks);
+      setContentBlocks(contentBlocks);
+      setCurrentCurio(newCurio);
       
       // Clear query
       setQuery('');
