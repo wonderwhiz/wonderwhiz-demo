@@ -9,6 +9,21 @@ import { Input } from '@/components/ui/input';
 import { Plus, CheckCircle, XCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+interface Task {
+  id: string;
+  title: string;
+  sparks_reward: number;
+  status: string;
+}
+
+interface ChildTask {
+  id: string;
+  child_profile_id: string;
+  task_id: string;
+  status: string;
+  task: Task;
+}
+
 interface ChildTaskListProps {
   profileId?: string;  // Make profileId optional, will use from params if not provided
   onSparkEarned?: (amount: number) => void;
@@ -20,7 +35,7 @@ const ChildTaskList = ({ profileId, onSparkEarned, onTaskComplete }: ChildTaskLi
   const childProfileId = profileId || params.profileId; // Use the provided profileId or get from route params
   
   const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [taskList, setTaskList] = useState<any[]>([]);
+  const [taskList, setTaskList] = useState<ChildTask[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const loadTasks = useCallback(async () => {
@@ -124,16 +139,18 @@ const ChildTaskList = ({ profileId, onSparkEarned, onTaskComplete }: ChildTaskLi
       if (error) throw error;
 
       // Update sparks balance
-      const { error: sparksError } = await supabase.rpc('increment_sparks_balance', {
-        child_profile_id: childProfileId,
-        spark_amount: sparksReward
-      });
+      if (childProfileId) {
+        const { error: sparksError } = await supabase.rpc('increment_sparks_balance', {
+          child_profile_id: childProfileId,
+          spark_amount: sparksReward
+        });
 
-      if (sparksError) throw sparksError;
+        if (sparksError) throw sparksError;
+      }
 
       toast.success(`Task completed! You earned ${sparksReward} sparks!`);
-      onTaskComplete?.(sparksReward);
-      onSparkEarned?.(sparksReward);
+      if (onTaskComplete) onTaskComplete(sparksReward);
+      if (onSparkEarned) onSparkEarned(sparksReward);
       loadTasks();
     } catch (error) {
       console.error('Error completing task:', error);
