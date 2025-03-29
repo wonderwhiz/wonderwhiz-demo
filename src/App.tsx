@@ -18,6 +18,7 @@ import CreateProfile from "./pages/CreateProfile";
 import ProfileSelector from "./pages/ProfileSelector";
 import Dashboard from "./pages/Dashboard";
 import ParentZone from "./pages/ParentZone";
+import { useEffect } from "react";
 
 // Import the spark animations CSS
 import './components/sparkAnimations.css';
@@ -151,37 +152,71 @@ const CustomCursorStyles = () => (
     .animate-pop {
       animation: pop 0.5s ease-out;
     }
+    
+    /* Responsive improvements */
+    @media (max-width: 640px) {
+      .award-badge {
+        top: auto;
+        bottom: 20px;
+        right: 20px;
+        padding: 3px 8px;
+        font-size: 0.75rem;
+      }
+    }
     `}
   </style>
 );
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <HelmetProvider context={helmetContext}>
-      <TooltipProvider>
-        <BrowserRouter>
-          <Toaster />
-          <Sonner />
-          <CustomCursorStyles />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/features" element={<Features />} />
-            <Route path="/pricing" element={<Pricing />} />
-            <Route path="/login" element={<Authentication />} />
-            <Route path="/register" element={<Authentication />} />
-            <Route path="/demo" element={<Demo />} />
-            <Route path="/create-profile" element={<CreateProfile />} />
-            <Route path="/profiles" element={<ProfileSelector />} />
-            <Route path="/dashboard/:profileId" element={<Dashboard />} />
-            <Route path="/parent-zone/:profileId" element={<ParentZone />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </HelmetProvider>
-  </QueryClientProvider>
-);
+// App component with proper viewport setup for mobile
+const App = () => {
+  // Set proper viewport meta tag for all pages
+  useEffect(() => {
+    const viewportMeta = document.querySelector('meta[name="viewport"]');
+    if (!viewportMeta) {
+      const meta = document.createElement('meta');
+      meta.name = 'viewport';
+      meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+      document.head.appendChild(meta);
+    } else {
+      viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+    }
+    
+    // Add touch-friendly class to body
+    document.body.classList.add('touch-friendly');
+    
+    return () => {
+      document.body.classList.remove('touch-friendly');
+    };
+  }, []);
+  
+  return (
+    <QueryClientProvider client={queryClient}>
+      <HelmetProvider context={helmetContext}>
+        <TooltipProvider>
+          <BrowserRouter>
+            <Toaster />
+            <Sonner />
+            <CustomCursorStyles />
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/features" element={<Features />} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/login" element={<Authentication />} />
+              <Route path="/register" element={<Authentication />} />
+              <Route path="/demo" element={<Demo />} />
+              <Route path="/create-profile" element={<CreateProfile />} />
+              <Route path="/profiles" element={<ProfileSelector />} />
+              <Route path="/dashboard/:profileId" element={<Dashboard />} />
+              <Route path="/parent-zone/:profileId" element={<ParentZone />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </HelmetProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
