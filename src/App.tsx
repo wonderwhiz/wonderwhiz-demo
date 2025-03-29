@@ -19,6 +19,9 @@ import ProfileSelector from "./pages/ProfileSelector";
 import Dashboard from "./pages/Dashboard";
 import ParentZone from "./pages/ParentZone";
 
+// Import the spark animations CSS
+import './components/sparkAnimations.css';
+
 // Create a new QueryClient instance
 const queryClient = new QueryClient();
 
@@ -36,12 +39,107 @@ const CustomCursorStyles = () => (
     }
     
     .magic-cursor-dot {
+      position: fixed;
+      width: 8px;
+      height: 8px;
+      background: #FF5EBA;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
       animation: cursor-pulse 2s infinite;
+      box-shadow: 0 0 10px rgba(255, 94, 186, 0.6);
+      mix-blend-mode: screen;
     }
     
-    @keyframes sparkle-rotate {
+    .magic-cursor-outline {
+      position: fixed;
+      width: 40px;
+      height: 40px;
+      border: 2px solid rgba(255, 94, 186, 0.5);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9998;
+      transform: translate(-50%, -50%);
+      transition: width 0.2s, height 0.2s, border-color 0.2s;
+      mix-blend-mode: exclusion;
+    }
+    
+    .magic-cursor-outline.hover {
+      width: 60px;
+      height: 60px;
+      border-color: rgba(255, 199, 44, 0.7);
+    }
+    
+    .magic-cursor-active {
+      cursor: none !important;
+    }
+    
+    /* Only show custom cursor on desktop */
+    @media (max-width: 768px) {
+      .magic-cursor-dot, .magic-cursor-outline {
+        display: none;
+      }
+    }
+    
+    /* Floating particles */
+    .floating-particle {
+      position: fixed;
+      border-radius: 50%;
+      z-index: 1;
+      pointer-events: none;
+      opacity: 0.7;
+      animation: floatParticle 15s linear infinite;
+    }
+    
+    @keyframes floatParticle {
+      0% {
+        transform: translateY(100vh) translateX(0) rotate(0deg);
+      }
+      
+      100% {
+        transform: translateY(-100px) translateX(var(--rand-x)) rotate(360deg);
+      }
+    }
+    
+    @keyframes sparkleRotate {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
+    }
+    
+    .spotlight-hover {
+      position: relative;
+    }
+    
+    .spotlight-hover::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(
+        circle 400px at var(--cursor-x) var(--cursor-y),
+        rgba(126, 48, 225, 0.1),
+        transparent 40%
+      );
+      pointer-events: none;
+      z-index: 2;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    .spotlight-hover:hover::before {
+      opacity: 1;
+    }
+    
+    .award-badge {
+      position: fixed;
+      top: 90px;
+      right: 20px;
+      background: linear-gradient(90deg, #FFE883 0%, #FFC72C 100%);
+      padding: 5px 10px;
+      border-radius: 20px;
+      z-index: 50;
+      box-shadow: 0 4px 10px rgba(255, 199, 44, 0.4);
+      transform: rotate(5deg);
     }
     
     @keyframes pop {

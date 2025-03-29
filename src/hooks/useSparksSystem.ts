@@ -8,6 +8,7 @@ export function useSparksSystem(childId: string | undefined) {
   const [streakDays, setStreakDays] = useState(0);
   const [streakBonusReceived, setStreakBonusReceived] = useState(false);
   const [streakBonusAmount, setStreakBonusAmount] = useState(0);
+  const [sparkAnimation, setSparkAnimation] = useState(false);
   
   useEffect(() => {
     if (!childId) return;
@@ -31,15 +32,22 @@ export function useSparksSystem(childId: string | undefined) {
           
           // If streak was updated, show a toast
           if (data.streak_updated) {
+            // Trigger the spark animation
+            setSparkAnimation(true);
+            setTimeout(() => setSparkAnimation(false), 2000);
+            
             toast.success(data.streak_bonus 
-              ? `${data.streak_days}-day streak! You earned ${data.streak_bonus_amount} bonus sparks! ✨`
-              : `${data.streak_days}-day streak! Keep it up! ✨`, 
-              { duration: 4000 }
+              ? `✨ ${data.streak_days}-day streak! You earned ${data.streak_bonus_amount} bonus sparks! ✨`
+              : `✨ ${data.streak_days}-day streak! Keep it up! ✨`, 
+              { 
+                duration: 4000,
+                className: 'streak-toast-success'
+              }
             );
           }
           
-          setStreakBonusReceived(data.streak_bonus);
-          setStreakBonusAmount(data.streak_bonus_amount);
+          setStreakBonusReceived(data.streak_bonus || false);
+          setStreakBonusAmount(data.streak_bonus_amount || 0);
         }
       } catch (err) {
         console.error('Error in tracking login streak:', err);
@@ -51,5 +59,11 @@ export function useSparksSystem(childId: string | undefined) {
     trackLoginStreak();
   }, [childId]);
   
-  return { streakDays, streakBonusReceived, streakBonusAmount, loading };
+  return { 
+    streakDays, 
+    streakBonusReceived, 
+    streakBonusAmount, 
+    loading,
+    sparkAnimation 
+  };
 }

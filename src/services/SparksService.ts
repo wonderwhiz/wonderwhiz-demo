@@ -74,14 +74,17 @@ export async function checkAndAwardStreakBonus(childId: string): Promise<boolean
     // Get current child profile to check streak
     const { data: profile, error: profileError } = await supabase
       .from('child_profiles')
-      .select('streak_days')
+      .select('*')
       .eq('id', childId)
       .single();
       
-    if (profileError) throw profileError;
+    if (profileError) {
+      console.error('Error fetching profile:', profileError);
+      return false;
+    }
     
     // If streak is divisible by 3, award the bonus
-    if (profile && profile.streak_days > 0 && profile.streak_days % 3 === 0) {
+    if (profile && profile.streak_days && profile.streak_days > 0 && profile.streak_days % 3 === 0) {
       await awardSparks(childId, 'streak', `${profile.streak_days}-day streak bonus`);
       return true;
     }
