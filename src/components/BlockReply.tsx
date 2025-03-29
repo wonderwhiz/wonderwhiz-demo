@@ -10,10 +10,11 @@ interface BlockReplyProps {
 }
 
 const BlockReply: React.FC<BlockReplyProps> = ({ content, fromUser, specialistId = 'nova', timestamp }) => {
+  // Parse the ISO string to a Date object and format it
   const formattedTime = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   
   return (
-    <div className={`flex ${fromUser ? 'justify-end' : 'justify-start'} mb-4`}>
+    <div className={`flex ${fromUser ? 'justify-end' : 'justify-start'}`}>
       <div className={`max-w-[80%] ${fromUser ? 'order-1' : 'order-2'}`}>
         <div className={`flex items-center ${fromUser ? 'justify-end' : 'justify-start'} mb-1`}>
           {!fromUser && <SpecialistAvatar specialistId={specialistId} size="sm" className="mr-2" />}

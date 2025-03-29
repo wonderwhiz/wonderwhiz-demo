@@ -18,10 +18,7 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { block_id, content, from_user, user_id, child_profile_id } = await req.json();
-
-    // Create timestamp
-    const timestamp = new Date().toISOString();
+    const { block_id, content, from_user, user_id, child_profile_id, specialist_id } = await req.json();
 
     // Insert reply using service role (bypasses RLS)
     const { data, error } = await supabase
@@ -30,7 +27,7 @@ serve(async (req) => {
         block_id,
         content,
         from_user,
-        timestamp,
+        specialist_id,
         user_id,
         child_profile_id
       })

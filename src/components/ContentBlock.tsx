@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { BookmarkIcon, ThumbsUpIcon, MessageCircleIcon } from 'lucide-react';
@@ -35,6 +34,15 @@ interface Reply {
   specialist_id?: string;
 }
 
+interface DbReply {
+  id: string;
+  block_id: string;
+  content: string;
+  from_user: boolean;
+  created_at: string;
+  specialist_id?: string;
+}
+
 const ContentBlock: React.FC<ContentBlockProps> = ({
   block,
   onToggleLike,
@@ -66,7 +74,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     description: 'General knowledge expert'
   };
 
-  // Fetch existing replies when the component mounts or block changes
   useEffect(() => {
     const fetchReplies = async () => {
       try {
@@ -74,7 +81,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
           .from('block_replies')
           .select('*')
           .eq('block_id', block.id)
-          .order('timestamp', { ascending: true });
+          .order('created_at', { ascending: true });
           
         if (error) {
           console.error('Error fetching replies:', error);
@@ -82,7 +89,16 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         }
         
         if (data) {
-          setReplies(data);
+          const mappedReplies: Reply[] = data.map((reply: DbReply) => ({
+            id: reply.id,
+            block_id: reply.block_id,
+            content: reply.content,
+            from_user: reply.from_user,
+            timestamp: reply.created_at,
+            specialist_id: reply.specialist_id
+          }));
+          
+          setReplies(mappedReplies);
         }
       } catch (err) {
         console.error('Error in fetchReplies:', err);
@@ -136,8 +152,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   const handleSubmitReply = async () => {
     if (!replyText.trim()) return;
     
-    // First add the user's message to the UI immediately
-    const userReply = {
+    const userReply: Reply = {
       id: `temp-${Date.now()}`,
       block_id: block.id,
       content: replyText,
@@ -150,7 +165,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     try {
       setIsLoading(true);
       
-      // Send the reply using our edge function instead of direct DB insert
       const response = await supabase.functions.invoke('handle-block-replies', {
         body: {
           block_id: block.id,
@@ -165,10 +179,8 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         throw new Error(response.error.message);
       }
       
-      // Call the handle reply function to get a specialist response
       await handleSpecialistReply(block.id, replyText);
       
-      // Call the parent component's onReply function
       onReply(block.id, replyText);
       
       setReplyText('');
@@ -180,16 +192,14 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         variant: "destructive"
       });
       
-      // Remove the temporary user reply if it failed
       setReplies(prev => prev.filter(r => r.id !== `temp-${Date.now()}`));
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   const handleSpecialistReply = async (blockId: string, messageContent: string) => {
     try {
-      // Get the child profile information from localStorage or context
       const childProfileString = localStorage.getItem('currentChildProfile');
       const childProfile = childProfileString ? JSON.parse(childProfileString) : {
         age: 8,
@@ -211,7 +221,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         throw new Error(response.error.message);
       }
       
-      // Insert the specialist's reply using our edge function
       await supabase.functions.invoke('handle-block-replies', {
         body: {
           block_id: blockId,
@@ -223,12 +232,11 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         }
       });
       
-      // Refresh the replies
       const { data, error } = await supabase
         .from('block_replies')
         .select('*')
         .eq('block_id', blockId)
-        .order('timestamp', { ascending: true });
+        .order('created_at', { ascending: true });
         
       if (error) {
         console.error('Error fetching replies after specialist response:', error);
@@ -236,14 +244,23 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       }
       
       if (data) {
-        setReplies(data);
+        const mappedReplies: Reply[] = data.map((reply: DbReply) => ({
+          id: reply.id,
+          block_id: reply.block_id,
+          content: reply.content,
+          from_user: reply.from_user,
+          timestamp: reply.created_at,
+          specialist_id: reply.specialist_id
+        }));
+        
+        setReplies(mappedReplies);
       }
       
     } catch (error) {
       console.error('Error getting specialist reply:', error);
     }
   };
-  
+
   const handleQuizOptionSelect = (idx: number) => {
     if (quizSubmitted) return;
     
@@ -255,21 +272,21 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       onQuizCorrect();
     }
   };
-  
+
   const handleReadNews = () => {
     if (!newsRead && onNewsRead) {
       setNewsRead(true);
       onNewsRead();
     }
   };
-  
+
   const handleCreativeUpload = () => {
     if (!creativeUploaded && onCreativeUpload) {
       setCreativeUploaded(true);
       onCreativeUpload();
     }
   };
-  
+
   const handleRabbitHoleClick = (question: string) => {
     if (onRabbitHoleFollow) {
       onRabbitHoleFollow(question);
@@ -277,7 +294,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       onSetQuery(question);
     }
   };
-  
+
   const renderBlockContent = () => {
     switch (block.type) {
       case 'fact':
@@ -474,7 +491,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         return <p className="text-white/70 text-sm">This content type is not supported yet.</p>;
     }
   };
-  
+
   return (
     <Card className={`${getBackgroundColor()} ${getBorderColor()} overflow-hidden transition-colors duration-300 hover:shadow-md w-full`}>
       <div className="p-2.5 sm:p-3 md:p-4">
@@ -490,7 +507,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         
         {renderBlockContent()}
         
-        {/* Replies section */}
         {replies.length > 0 && (
           <div className="mt-3 sm:mt-4 pt-2 sm:pt-3 border-t border-white/10">
             <h4 className="text-white text-xs sm:text-sm mb-2">Conversation</h4>
