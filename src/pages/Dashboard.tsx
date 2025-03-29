@@ -15,6 +15,8 @@ import { SPECIALISTS } from '@/components/SpecialistAvatar';
 import ChildDashboardTasks from '@/components/ChildDashboardTasks';
 import SparksBalance from '@/components/SparksBalance';
 import SparksHistory from '@/components/SparksHistory';
+import SparksOverview from '@/components/SparksOverview';
+import { useSparksSystem } from '@/hooks/useSparksSystem';
 
 interface ChildProfile {
   id: string;
@@ -63,6 +65,7 @@ const Dashboard = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [showSparksHistory, setShowSparksHistory] = useState(false);
   const feedEndRef = useRef<HTMLDivElement>(null);
+  const { streakBonusReceived, streakBonusAmount } = useSparksSystem(profileId);
   
   useEffect(() => {
     const loadProfileAndCurios = async () => {
@@ -119,6 +122,38 @@ const Dashboard = () => {
         .single();
         
       if (curioError) throw curioError;
+      
+      // Award sparks for starting a new curio
+      try {
+        const { data: sparkData } = await supabase.functions.invoke('increment-sparks-balance', {
+          body: JSON.stringify({ 
+            profileId: profileId, 
+            amount: 1
+          })
+        });
+        
+        // Update the local state with new sparks balance
+        if (childProfile) {
+          setChildProfile({
+            ...childProfile,
+            sparks_balance: (childProfile.sparks_balance || 0) + 1
+          });
+        }
+        
+        // Add the transaction record
+        await supabase.from('sparks_transactions').insert({
+          child_id: profileId,
+          amount: 1,
+          reason: 'Starting new Curio'
+        });
+        
+        toast.success('You earned 1 spark for your curiosity!', {
+          duration: 2000,
+          position: 'bottom-right'
+        });
+      } catch (error) {
+        console.error('Error awarding sparks for new curio:', error);
+      }
       
       const claudeResponse = await supabase.functions.invoke('generate-curiosity-blocks', {
         body: JSON.stringify({
@@ -240,6 +275,139 @@ const Dashboard = () => {
     } catch (error) {
       console.error('Error loading curio content:', error);
       toast.error("Failed to load content");
+    }
+  };
+  
+  const handleFollowRabbitHole = async (question: string) => {
+    setQuery(question);
+    
+    try {
+      const { data: sparkData } = await supabase.functions.invoke('increment-sparks-balance', {
+        body: JSON.stringify({ 
+          profileId: profileId, 
+          amount: 2
+        })
+      });
+      
+      if (childProfile) {
+        setChildProfile({
+          ...childProfile,
+          sparks_balance: (childProfile.sparks_balance || 0) + 2
+        });
+      }
+      
+      await supabase.from('sparks_transactions').insert({
+        child_id: profileId,
+        amount: 2,
+        reason: 'Following a rabbit hole'
+      });
+      
+      toast.success('You earned 2 sparks for exploring deeper!', {
+        duration: 2000,
+        position: 'bottom-right'
+      });
+    } catch (error) {
+      console.error('Error awarding sparks for rabbit hole:', error);
+    }
+    
+    setTimeout(() => {
+      handleSubmitQuery();
+    }, 100);
+  };
+  
+  const handleQuizCorrect = async (blockId: string) => {
+    try {
+      const { data: sparkData } = await supabase.functions.invoke('increment-sparks-balance', {
+        body: JSON.stringify({ 
+          profileId: profileId, 
+          amount: 5
+        })
+      });
+      
+      if (childProfile) {
+        setChildProfile({
+          ...childProfile,
+          sparks_balance: (childProfile.sparks_balance || 0) + 5
+        });
+      }
+      
+      await supabase.from('sparks_transactions').insert({
+        child_id: profileId,
+        amount: 5,
+        reason: 'Answering quiz correctly',
+        block_id: blockId
+      });
+      
+      toast.success('You earned 5 sparks for answering correctly!', {
+        duration: 2000,
+        position: 'bottom-right'
+      });
+    } catch (error) {
+      console.error('Error awarding sparks for correct quiz answer:', error);
+    }
+  };
+  
+  const handleNewsRead = async (blockId: string) => {
+    try {
+      const { data: sparkData } = await supabase.functions.invoke('increment-sparks-balance', {
+        body: JSON.stringify({ 
+          profileId: profileId, 
+          amount: 3
+        })
+      });
+      
+      if (childProfile) {
+        setChildProfile({
+          ...childProfile,
+          sparks_balance: (childProfile.sparks_balance || 0) + 3
+        });
+      }
+      
+      await supabase.from('sparks_transactions').insert({
+        child_id: profileId,
+        amount: 3,
+        reason: 'Reading a news card',
+        block_id: blockId
+      });
+      
+      toast.success('You earned 3 sparks for reading the news!', {
+        duration: 2000,
+        position: 'bottom-right'
+      });
+    } catch (error) {
+      console.error('Error awarding sparks for news read:', error);
+    }
+  };
+  
+  const handleCreativeUpload = async (blockId: string) => {
+    try {
+      const { data: sparkData } = await supabase.functions.invoke('increment-sparks-balance', {
+        body: JSON.stringify({ 
+          profileId: profileId, 
+          amount: 10
+        })
+      });
+      
+      if (childProfile) {
+        setChildProfile({
+          ...childProfile,
+          sparks_balance: (childProfile.sparks_balance || 0) + 10
+        });
+      }
+      
+      await supabase.from('sparks_transactions').insert({
+        child_id: profileId,
+        amount: 10,
+        reason: 'Uploading creative content',
+        block_id: blockId
+      });
+      
+      toast.success('You earned 10 sparks for your creativity!', {
+        duration: 2000,
+        position: 'bottom-right'
+      });
+    } catch (error) {
+      console.error('Error awarding sparks for creative upload:', error);
     }
   };
   
@@ -496,6 +664,19 @@ const Dashboard = () => {
         
         <div className="flex-1 overflow-y-auto py-4 px-4 md:px-6">
           <div className="max-w-6xl mx-auto space-y-6">
+            {childProfile && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+              >
+                <SparksOverview 
+                  childId={profileId || ''}
+                  sparksBalance={childProfile.sparks_balance || 0}
+                />
+              </motion.div>
+            )}
+            
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -570,6 +751,10 @@ const Dashboard = () => {
                             onToggleBookmark={handleToggleBookmark}
                             onReply={handleBlockReply}
                             onSetQuery={setQuery}
+                            onRabbitHoleFollow={handleFollowRabbitHole}
+                            onQuizCorrect={() => handleQuizCorrect(block.id)}
+                            onNewsRead={() => handleNewsRead(block.id)}
+                            onCreativeUpload={() => handleCreativeUpload(block.id)}
                           />
                           
                           {blockReplies[block.id] && blockReplies[block.id].length > 0 && (

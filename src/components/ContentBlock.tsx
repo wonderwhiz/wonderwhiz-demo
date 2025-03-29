@@ -1,722 +1,383 @@
-
 import React, { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
+import { BookmarkIcon, ThumbsUpIcon, MessageCircleIcon, ExternalLinkIcon } from 'lucide-react';
+import { SPECIALISTS } from './SpecialistAvatar';
 import { Button } from '@/components/ui/button';
-import { Star, MessageCircle, BookmarkPlus, CheckCircle2, XCircle, RotateCcw, Sparkles } from 'lucide-react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Input } from '@/components/ui/input';
 import { motion } from 'framer-motion';
-import SpecialistAvatar, { SPECIALISTS } from '@/components/SpecialistAvatar';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import ConfettiTrigger from '@/components/ConfettiTrigger';
-import { Switch } from '@/components/ui/switch';
-import { Slider } from '@/components/ui/slider';
-import { toast } from 'sonner';
+import { Send } from 'lucide-react';
 
-export interface ContentBlockProps {
-  block: {
-    id: string;
-    type: 'fact' | 'quiz' | 'flashcard' | 'creative' | 'task' | 'riddle' | 'funFact' | 'activity' | 'news' | 'mindfulness';
-    specialist_id: string;
-    content: any;
-    liked: boolean;
-    bookmarked: boolean;
-  };
-  onToggleLike: (blockId: string) => void;
-  onToggleBookmark: (blockId: string) => void;
-  onReply: (blockId: string, message: string) => void;
-  onSetQuery: (query: string) => void;
+interface ContentBlockProps {
+  block: any;
+  onToggleLike: (id: string) => void;
+  onToggleBookmark: (id: string) => void;
+  onReply: (id: string, message: string) => void;
+  onSetQuery?: (query: string) => void;
+  onRabbitHoleFollow?: (question: string) => void;
+  onQuizCorrect?: () => void;
+  onNewsRead?: () => void;
+  onCreativeUpload?: () => void;
 }
 
-const ContentBlock: React.FC<ContentBlockProps> = ({ 
-  block, 
-  onToggleLike, 
+const ContentBlock: React.FC<ContentBlockProps> = ({
+  block,
+  onToggleLike,
   onToggleBookmark,
   onReply,
-  onSetQuery
+  onSetQuery,
+  onRabbitHoleFollow,
+  onQuizCorrect,
+  onNewsRead,
+  onCreativeUpload
 }) => {
-  const [reply, setReply] = useState('');
-  const [chatOpen, setChatOpen] = useState(false);
-  const [timerActive, setTimerActive] = useState(false);
-  const [timeRemaining, setTimeRemaining] = useState(block.type === 'mindfulness' ? block.content.duration : 30);
-  const [uploadHover, setUploadHover] = useState(false);
-  const [isFlipped, setIsFlipped] = useState(false);
+  const [replyText, setReplyText] = useState('');
+  const [showReplyForm, setShowReplyForm] = useState(false);
+  const [selectedQuizOption, setSelectedQuizOption] = useState<number | null>(null);
+  const [quizSubmitted, setQuizSubmitted] = useState(false);
+  const [newsRead, setNewsRead] = useState(false);
+  const [creativeUploaded, setCreativeUploaded] = useState(false);
+  const [flipCard, setFlipCard] = useState(false);
   
-  let content;
-  switch (block.type) {
-    case 'fact':
-    case 'funFact':
-      content = (
-        <div className="space-y-3">
-          <motion.p 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-          >
-            {block.content.fact}
-          </motion.p>
-          {block.content.rabbitHoles && (
-            <motion.div 
-              className="pt-2"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-            >
-              <p className="text-sm font-medium mb-2 flex items-center">
-                <Sparkles className="h-4 w-4 mr-2 text-wonderwhiz-blue" /> 
-                Want to know more?
-              </p>
-              <div className="flex flex-col space-y-2">
-                {block.content.rabbitHoles.map((question: string, idx: number) => (
-                  <TooltipProvider key={idx}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button 
-                          variant="outline" 
-                          className="justify-start bg-white/10 hover:bg-white/20 border-white/20 text-white hover:scale-102 transition-all"
-                          onClick={() => {
-                            toast("Great question! Finding the answer...", {
-                              icon: "🔍",
-                            });
-                            onSetQuery(question);
-                          }}
-                        >
-                          {question}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="right">
-                        <p>Click to explore this!</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </div>
-      );
-      break;
-    
-    case 'quiz':
-      const [selectedOption, setSelectedOption] = useState<number | null>(null);
-      const [showAnswer, setShowAnswer] = useState(false);
-      
-      content = (
-        <div className="space-y-4">
-          <motion.p 
-            className="font-medium"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          >
-            {block.content.question}
-          </motion.p>
-          <div className="space-y-2">
-            {block.content.options.map((option: string, idx: number) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, delay: idx * 0.1 }}
-              >
-                <Button
-                  variant={showAnswer 
-                    ? (idx === block.content.correctIndex ? "default" : "outline")
-                    : (selectedOption === idx ? "secondary" : "outline")
-                  }
-                  className={`justify-start w-full ${
-                    showAnswer && idx === block.content.correctIndex 
-                      ? "bg-green-600 hover:bg-green-700 text-white" 
-                      : "bg-white/10 hover:bg-white/20 border-white/20 text-white"
-                  } ${
-                    !showAnswer ? "hover:scale-102 transition-all" : ""
-                  } ${
-                    showAnswer && idx === block.content.correctIndex ? "pulse-border" : ""
-                  }`}
-                  onClick={() => {
-                    if (!showAnswer) {
-                      setSelectedOption(idx);
-                    }
-                  }}
-                >
-                  {showAnswer && idx === block.content.correctIndex && (
-                    <CheckCircle2 className="h-4 w-4 mr-2 text-green-200" />
-                  )}
-                  {showAnswer && idx !== block.content.correctIndex && selectedOption === idx && (
-                    <XCircle className="h-4 w-4 mr-2 text-red-300" />
-                  )}
-                  {option}
-                </Button>
-              </motion.div>
-            ))}
-          </div>
-          {selectedOption !== null && !showAnswer ? (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <ConfettiTrigger>
-                <Button 
-                  className="mt-2 bg-wonderwhiz-purple hover:bg-wonderwhiz-purple/90 hover:scale-105 transition-all" 
-                  onClick={() => setShowAnswer(true)}
-                >
-                  Check Answer
-                </Button>
-              </ConfettiTrigger>
-            </motion.div>
-          ) : null}
-          {showAnswer && (
-            <motion.div 
-              className={`p-3 rounded-lg ${selectedOption === block.content.correctIndex ? "bg-green-600/30" : "bg-amber-600/30"}`}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-            >
-              {selectedOption === block.content.correctIndex ? (
-                <div className="flex items-center">
-                  <CheckCircle2 className="h-5 w-5 mr-2 text-green-300" />
-                  <p className="text-green-300">Correct! ✅</p>
-                </div>
-              ) : (
-                <div className="flex items-center">
-                  <XCircle className="h-5 w-5 mr-2 text-amber-300" />
-                  <p className="text-amber-300">
-                    Not quite! The correct answer is: {block.content.options[block.content.correctIndex]}
-                  </p>
-                </div>
-              )}
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="mt-2 bg-white/10 border-white/20 hover:bg-white/20 flex items-center"
-                onClick={() => {
-                  setShowAnswer(false);
-                  setSelectedOption(null);
-                }}
-              >
-                <RotateCcw className="h-3 w-3 mr-1" /> Try Again
-              </Button>
-            </motion.div>
-          )}
-        </div>
-      );
-      break;
-      
-    case 'flashcard':
-      content = (
-        <motion.div 
-          className="flip-card cursor-pointer"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3 }}
-          onClick={() => setIsFlipped(!isFlipped)}
-        >
-          <div className={`flip-card-inner ${isFlipped ? 'flipped' : ''}`}>
-            <div className="flip-card-front bg-white/20 p-6 flex items-center justify-center rounded-lg min-h-[120px]">
-              <p className="font-medium text-center">{block.content.front}</p>
-              <div className="absolute bottom-2 right-2 text-white/40 text-xs">Tap to flip</div>
-            </div>
-            <div className="flip-card-back bg-white/30 p-6 flex items-center justify-center rounded-lg min-h-[120px]">
-              <p className="text-center">{block.content.back}</p>
-              <div className="absolute bottom-2 right-2 text-white/40 text-xs">Tap to flip back</div>
-            </div>
-          </div>
-        </motion.div>
-      );
-      break;
-      
-    case 'creative':
-      content = (
-        <div className="space-y-4">
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          >
-            {block.content.prompt}
-          </motion.p>
-          <motion.div
-            className={`p-6 border-2 border-dashed ${uploadHover ? 'border-wonderwhiz-pink bg-white/10' : 'border-white/30'} rounded-lg flex flex-col items-center justify-center transition-colors cursor-pointer`}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            onMouseEnter={() => setUploadHover(true)}
-            onMouseLeave={() => setUploadHover(false)}
-            onClick={() => toast.success("Great job! Your creation is saved.", {
-              icon: "🎨",
-            })}
-          >
-            <Sparkles className={`h-8 w-8 mb-3 ${uploadHover ? 'text-wonderwhiz-pink animate-pulse' : 'text-white/60'}`} />
-            <p className={`${uploadHover ? 'text-white' : 'text-white/60'} text-sm text-center`}>
-              Tap to upload your {block.content.type}
-            </p>
-            <p className="text-white/40 text-xs mt-1">
-              (You can draw, take a photo, or upload a file!)
-            </p>
-          </motion.div>
-        </div>
-      );
-      break;
-      
-    case 'task':
-      const [taskComplete, setTaskComplete] = useState(false);
-      content = (
-        <div className="space-y-4">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className={`${taskComplete ? 'line-through text-white/60' : ''}`}
-          >
-            {block.content.task}
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="flex items-center space-x-3"
-          >
-            <Switch
-              checked={taskComplete}
-              onCheckedChange={(checked) => {
-                setTaskComplete(checked);
-                if (checked) {
-                  toast.success(`You earned ${block.content.reward} Sparks!`, {
-                    icon: "✨",
-                  });
-                }
-              }}
-            />
-            <span className="text-sm text-white/70">Mark as completed</span>
-          </motion.div>
-          
-          <ConfettiTrigger>
-            <Button 
-              className={`space-x-2 ${taskComplete ? 'bg-wonderwhiz-gold hover:bg-wonderwhiz-gold/90' : 'bg-wonderwhiz-purple hover:bg-wonderwhiz-purple/90'} hover:scale-105 transition-all`}
-              disabled={taskComplete}
-              onClick={() => {
-                setTaskComplete(true);
-                toast.success(`You earned ${block.content.reward} Sparks!`, {
-                  icon: "✨",
-                });
-              }}
-            >
-              <span>Complete Task</span>
-              <Sparkles className="h-4 w-4" />
-              <motion.span
-                initial={{ scale: 1 }}
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ repeat: Infinity, duration: 2 }}
-                className="text-xs bg-white/20 px-2 py-1 rounded-full"
-              >
-                +{block.content.reward} Sparks
-              </motion.span>
-            </Button>
-          </ConfettiTrigger>
-        </div>
-      );
-      break;
-      
-    case 'riddle':
-      const [riddleSolved, setRiddleSolved] = useState(false);
-      content = (
-        <div className="space-y-4">
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          >
-            {block.content.riddle}
-          </motion.p>
-          <Collapsible>
-            <CollapsibleTrigger asChild>
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                <Button 
-                  variant="outline" 
-                  className="bg-white/10 border-white/20 hover:bg-white/20 hover:scale-105 transition-all"
-                  onClick={() => !riddleSolved && setRiddleSolved(true)}
-                >
-                  {riddleSolved ? 'Show Answer' : 'I Give Up! Reveal Answer'}
-                </Button>
-              </motion.div>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                className="mt-2 p-3 bg-white/10 rounded-lg"
-              >
-                <Sparkles className="h-4 w-4 text-wonderwhiz-gold inline mr-2" />
-                {block.content.answer}
-              </motion.div>
-            </CollapsibleContent>
-          </Collapsible>
-          {!riddleSolved && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.4 }}
-              className="text-xs text-white/50 italic"
-            >
-              Try to solve it before revealing the answer!
-            </motion.div>
-          )}
-        </div>
-      );
-      break;
-      
-    case 'activity':
-      const [activityStarted, setActivityStarted] = useState(false);
-      content = (
-        <div className="space-y-3">
-          <motion.p 
-            className="font-medium"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          >
-            Try This Activity:
-          </motion.p>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            {block.content.activity}
-          </motion.p>
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <Button 
-              className={`${activityStarted ? 'bg-green-600 hover:bg-green-700' : 'bg-wonderwhiz-purple hover:bg-wonderwhiz-purple/90'} hover:scale-105 transition-all`}
-              onClick={() => {
-                setActivityStarted(!activityStarted);
-                toast(activityStarted ? "Activity paused!" : "Activity started! Have fun!", {
-                  icon: activityStarted ? "⏸️" : "🎮",
-                });
-              }}
-            >
-              {activityStarted ? 'I\'m Doing It!' : 'Start Activity'}
-            </Button>
-          </motion.div>
-        </div>
-      );
-      break;
-      
-    case 'news':
-      content = (
-        <div className="space-y-3">
-          <motion.h3 
-            className="text-lg font-bold"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          >
-            {block.content.headline}
-          </motion.h3>
-          <motion.p 
-            className="italic text-white/80"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            {block.content.summary}
-          </motion.p>
-          <motion.p 
-            className="text-xs text-white/60"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-          >
-            Source: {block.content.source}
-          </motion.p>
-        </div>
-      );
-      break;
-      
-    case 'mindfulness':
-      React.useEffect(() => {
-        let interval: ReturnType<typeof setInterval>;
-        if (timerActive && timeRemaining > 0) {
-          interval = setInterval(() => {
-            setTimeRemaining(prev => {
-              if (prev <= 1) {
-                setTimerActive(false);
-                toast.success("Great job completing the mindfulness exercise!", {
-                  icon: "🧘‍♂️",
-                });
-                return 0;
-              }
-              return prev - 1;
-            });
-          }, 1000);
-        }
-        return () => clearInterval(interval);
-      }, [timerActive, timeRemaining]);
+  // Get the right specialist
+  const specialist = SPECIALISTS.find(s => s.id === block.specialist_id) || SPECIALISTS[0];
 
-      content = (
-        <div className="space-y-3">
-          <motion.p 
-            className="font-medium"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          >
-            Mindfulness Exercise ({block.content.duration} seconds)
-          </motion.p>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            {block.content.exercise}
-          </motion.p>
-          
-          {timerActive ? (
-            <motion.div 
-              className="space-y-3"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-            >
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-white/70">Time remaining:</span>
-                <span className="font-bold text-wonderwhiz-blue">{timeRemaining}s</span>
-              </div>
-              <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                <motion.div 
-                  className="h-full bg-wonderwhiz-blue"
-                  initial={{ width: '100%' }}
-                  animate={{ width: `${(timeRemaining / block.content.duration) * 100}%` }}
-                  transition={{ duration: 0.5 }}
-                />
-              </div>
-              <Button 
-                variant="outline" 
-                className="w-full border-white/20 hover:bg-white/10"
-                onClick={() => {
-                  setTimerActive(false);
-                  setTimeRemaining(block.content.duration);
-                  toast("Exercise paused. You can restart anytime!", {
-                    icon: "⏸️",
-                  });
-                }}
-              >
-                Stop
-              </Button>
-            </motion.div>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <Button 
-                variant="outline" 
-                className="bg-white/10 border-white/20 hover:bg-white/20 hover:scale-105 transition-all"
-                onClick={() => {
-                  setTimerActive(true);
-                  toast("Mindfulness exercise started. Take a deep breath...", {
-                    icon: "🧘‍♂️",
-                  });
-                }}
-              >
-                Start Timer
-              </Button>
-            </motion.div>
-          )}
-        </div>
-      );
-      break;
-      
-    default:
-      content = <p>This content is still loading...</p>;
-  }
-  
   const handleSubmitReply = () => {
-    if (reply.trim()) {
-      onReply(block.id, reply);
-      setReply('');
-      setChatOpen(false);
+    if (!replyText.trim()) return;
+    
+    onReply(block.id, replyText);
+    setReplyText('');
+    setShowReplyForm(false);
+  };
+  
+  const handleQuizSubmit = () => {
+    if (selectedQuizOption === null) return;
+    
+    const isCorrect = selectedQuizOption === block.content.correctIndex;
+    setQuizSubmitted(true);
+    
+    if (isCorrect && onQuizCorrect) {
+      onQuizCorrect();
+    }
+  };
+  
+  const handleReadNews = () => {
+    if (!newsRead && onNewsRead) {
+      setNewsRead(true);
+      onNewsRead();
+    }
+  };
+  
+  const handleCreativeUpload = () => {
+    if (!creativeUploaded && onCreativeUpload) {
+      setCreativeUploaded(true);
+      onCreativeUpload();
+    }
+  };
+  
+  const handleRabbitHoleClick = (question: string) => {
+    if (onRabbitHoleFollow) {
+      onRabbitHoleFollow(question);
+    } else if (onSetQuery) {
+      onSetQuery(question);
+    }
+  };
+  
+  // Render different block types
+  const renderBlockContent = () => {
+    switch (block.type) {
+      case 'fact':
+        return (
+          <div>
+            <p className="text-white">{block.content.fact}</p>
+            {block.content.rabbitHoles && block.content.rabbitHoles.length > 0 && (
+              <div className="mt-3 space-y-2">
+                <p className="text-white/70 text-sm">Want to learn more?</p>
+                <div className="flex flex-wrap gap-2">
+                  {block.content.rabbitHoles.map((question: string, idx: number) => (
+                    <Button 
+                      key={idx} 
+                      variant="outline" 
+                      size="sm"
+                      className="bg-white/5 border-white/10 text-white hover:bg-white/10"
+                      onClick={() => handleRabbitHoleClick(question)}
+                    >
+                      {question}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+        
+      case 'funFact':
+        return (
+          <div>
+            <p className="text-white">{block.content.fact}</p>
+            {block.content.rabbitHoles && block.content.rabbitHoles.length > 0 && (
+              <div className="mt-3 space-y-2">
+                <p className="text-white/70 text-sm">Want to learn more?</p>
+                <div className="flex flex-wrap gap-2">
+                  {block.content.rabbitHoles.map((question: string, idx: number) => (
+                    <Button 
+                      key={idx} 
+                      variant="outline" 
+                      size="sm"
+                      className="bg-white/5 border-white/10 text-white hover:bg-white/10"
+                      onClick={() => handleRabbitHoleClick(question)}
+                    >
+                      {question}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+        
+      case 'quiz':
+        return (
+          <div>
+            <p className="text-white mb-3">{block.content.question}</p>
+            <div className="space-y-2">
+              {block.content.options.map((option: string, idx: number) => (
+                <button
+                  key={idx}
+                  onClick={() => !quizSubmitted && setSelectedQuizOption(idx)}
+                  disabled={quizSubmitted}
+                  className={`w-full p-3 rounded-lg text-left transition-colors ${
+                    quizSubmitted
+                      ? idx === block.content.correctIndex
+                        ? 'bg-green-500/20 border border-green-500'
+                        : idx === selectedQuizOption
+                          ? 'bg-red-500/20 border border-red-500'
+                          : 'bg-white/5 border border-white/10'
+                      : selectedQuizOption === idx
+                        ? 'bg-wonderwhiz-purple/20 border border-wonderwhiz-purple'
+                        : 'bg-white/5 border border-white/10 hover:bg-white/10'
+                  }`}
+                >
+                  <div className="flex items-center">
+                    <span className="h-6 w-6 rounded-full flex items-center justify-center mr-2 text-sm font-medium border border-white/20">
+                      {String.fromCharCode(65 + idx)}
+                    </span>
+                    <span>{option}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+            
+            {!quizSubmitted ? (
+              <Button 
+                onClick={handleQuizSubmit}
+                disabled={selectedQuizOption === null}
+                className="mt-3 bg-wonderwhiz-purple hover:bg-wonderwhiz-purple/80"
+              >
+                Submit Answer
+              </Button>
+            ) : selectedQuizOption === block.content.correctIndex ? (
+              <p className="mt-3 text-green-400">Correct! You earned 5 sparks!</p>
+            ) : (
+              <p className="mt-3 text-red-400">
+                Not quite! The correct answer is: {block.content.options[block.content.correctIndex]}
+              </p>
+            )}
+          </div>
+        );
+        
+      case 'flashcard':
+        return (
+          <div 
+            className="flip-card"
+            tabIndex={0}
+            onClick={() => setFlipCard(!flipCard)}
+            onKeyDown={(e) => e.key === 'Enter' && setFlipCard(!flipCard)}
+          >
+            <div className={`flip-card-inner ${flipCard ? 'flipped' : ''}`}>
+              <div className="flip-card-front p-4 bg-white/5 rounded-lg border border-white/10 flex items-center justify-center">
+                <p className="text-white text-center">{block.content.front}</p>
+              </div>
+              <div className="flip-card-back p-4 bg-wonderwhiz-purple/20 rounded-lg border border-wonderwhiz-purple/40 flex items-center justify-center">
+                <p className="text-white text-center">{block.content.back}</p>
+              </div>
+            </div>
+            <p className="text-white/60 text-xs mt-2 text-center">Click to flip</p>
+          </div>
+        );
+        
+      case 'creative':
+        return (
+          <div>
+            <p className="text-white mb-3">{block.content.prompt}</p>
+            {!creativeUploaded ? (
+              <div>
+                <p className="text-white/70 text-sm mb-3">
+                  When you're ready, upload your {block.content.type || 'creation'} to earn 10 sparks!
+                </p>
+                <Button
+                  onClick={handleCreativeUpload}
+                  className="bg-wonderwhiz-pink hover:bg-wonderwhiz-pink/80"
+                >
+                  Upload My {block.content.type === 'drawing' ? 'Drawing' : 'Creation'}
+                </Button>
+              </div>
+            ) : (
+              <p className="text-green-400">
+                Uploaded successfully! You earned 10 sparks for your creativity!
+              </p>
+            )}
+          </div>
+        );
+        
+      case 'task':
+        return (
+          <div>
+            <p className="text-white mb-1">{block.content.task}</p>
+            <p className="text-wonderwhiz-gold flex items-center text-sm">
+              <span className="inline-block mr-1">✨</span> 
+              Earn {block.content.reward} sparks by completing this task!
+            </p>
+          </div>
+        );
+        
+      case 'riddle':
+        return (
+          <div>
+            <p className="text-white mb-3">{block.content.riddle}</p>
+            <Button 
+              onClick={() => setFlipCard(!flipCard)}
+              variant="outline"
+              className="bg-white/5 border-white/10 text-white hover:bg-white/10"
+            >
+              {flipCard ? 'Hide Answer' : 'Reveal Answer'}
+            </Button>
+            
+            {flipCard && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="mt-3 p-3 bg-wonderwhiz-purple/20 rounded-lg border border-wonderwhiz-purple/40"
+              >
+                <p className="text-white">{block.content.answer}</p>
+              </motion.div>
+            )}
+          </div>
+        );
+        
+      case 'news':
+        return (
+          <div>
+            <h3 className="text-xl font-bold text-white mb-2">{block.content.headline}</h3>
+            <p className="text-white/90 mb-3">{block.content.summary}</p>
+            <div className="flex items-center justify-between">
+              <div className="text-white/60 text-sm">Source: {block.content.source}</div>
+              {!newsRead ? (
+                <Button 
+                  onClick={handleReadNews}
+                  size="sm"
+                  className="bg-wonderwhiz-purple hover:bg-wonderwhiz-purple/80"
+                >
+                  Mark as Read
+                </Button>
+              ) : (
+                <p className="text-green-400 text-sm">You earned 3 sparks for reading!</p>
+              )}
+            </div>
+          </div>
+        );
+        
+      case 'activity':
+        return (
+          <div>
+            <p className="text-white">{block.content.activity}</p>
+          </div>
+        );
+        
+      case 'mindfulness':
+        return (
+          <div>
+            <p className="text-white mb-2">{block.content.exercise}</p>
+            <p className="text-white/70 text-sm">
+              Take {block.content.duration} seconds for this exercise
+            </p>
+          </div>
+        );
+        
+      default:
+        return <p className="text-white/70">This content type is not supported yet.</p>;
     }
   };
   
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="mb-4"
-    >
-      <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
-        <CardContent className="p-0">
-          <div className={`p-3 flex items-center ${block.specialist_id ? SPECIALISTS[block.specialist_id]?.color : 'bg-gradient-to-r from-purple-500 to-pink-500'}`}>
-            <SpecialistAvatar specialistId={block.specialist_id} showName={true} />
+    <Card className="bg-white/5 border-white/10 overflow-hidden">
+      <div className="p-4">
+        <div className="flex items-center mb-3">
+          <div className="h-8 w-8 rounded-full bg-wonderwhiz-purple/30 flex items-center justify-center">
+            {specialist.icon}
           </div>
-          <div className="p-4 text-white bg-wonderwhiz-dark">
-            {content}
+          <div className="ml-2">
+            <h3 className="font-medium text-white">{specialist.name}</h3>
+            <p className="text-white/60 text-xs">{specialist.role}</p>
           </div>
-          <div className="p-2 bg-wonderwhiz-dark/80 flex justify-end space-x-1 border-t border-white/10">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className={`hover:bg-white/10 ${block.liked ? 'text-red-400' : 'text-white/70'} hover:scale-110 transition-all`}
-                    onClick={() => {
-                      onToggleLike(block.id);
-                      if (!block.liked) {
-                        toast("You liked this content!", {
-                          icon: "❤️",
-                        });
-                      }
-                    }}
-                  >
-                    <Star className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="top" align="center">
-                  <p>{block.liked ? 'Unlike this' : 'Like this!'}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+        </div>
+        
+        {renderBlockContent()}
+        
+        <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/10">
+          <div className="flex items-center space-x-2">
+            <button 
+              onClick={() => onToggleLike(block.id)}
+              className={`p-1 rounded-full hover:bg-white/10 transition-colors ${
+                block.liked ? 'text-wonderwhiz-pink' : 'text-white/60'
+              }`}
+            >
+              <ThumbsUpIcon className="h-4 w-4" />
+            </button>
             
-            <Dialog open={chatOpen} onOpenChange={setChatOpen}>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <DialogTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-white/70 hover:bg-white/10 hover:scale-110 transition-all"
-                      >
-                        <MessageCircle className="h-4 w-4" />
-                      </Button>
-                    </DialogTrigger>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Chat with {SPECIALISTS[block.specialist_id]?.name || 'Wonder Wizard'}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <DialogContent className="bg-wonderwhiz-dark text-white border-wonderwhiz-purple/30">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center">
-                    <SpecialistAvatar specialistId={block.specialist_id} size="sm" className="mr-2" />
-                    <span>Chat with {SPECIALISTS[block.specialist_id]?.name || 'Wonder Wizard'}</span>
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="bg-white/5 p-3 rounded-lg">
-                    <p className="text-sm text-white/80">
-                      {block.type === 'fact' || block.type === 'funFact' 
-                        ? block.content.fact 
-                        : block.type === 'quiz' 
-                          ? block.content.question
-                          : 'What would you like to know about this?'}
-                    </p>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Textarea 
-                      placeholder={`Ask ${SPECIALISTS[block.specialist_id]?.name || 'Wonder Wizard'} a question...`}
-                      value={reply}
-                      onChange={(e) => setReply(e.target.value)}
-                      className="bg-white/10 border-white/20 text-white placeholder:text-white/50 resize-none"
-                    />
-                    <Button 
-                      onClick={handleSubmitReply} 
-                      disabled={!reply.trim()}
-                      className="w-full bg-wonderwhiz-purple hover:bg-wonderwhiz-purple/80 hover:scale-102 transition-all"
-                    >
-                      Send
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
+            <button 
+              onClick={() => onToggleBookmark(block.id)}
+              className={`p-1 rounded-full hover:bg-white/10 transition-colors ${
+                block.bookmarked ? 'text-wonderwhiz-gold' : 'text-white/60'
+              }`}
+            >
+              <BookmarkIcon className="h-4 w-4" />
+            </button>
             
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className={`hover:bg-white/10 ${block.bookmarked ? 'text-wonderwhiz-blue' : 'text-white/70'} hover:scale-110 transition-all`}
-                    onClick={() => {
-                      onToggleBookmark(block.id);
-                      if (!block.bookmarked) {
-                        toast("Content saved to your bookmarks!", {
-                          icon: "📚",
-                        });
-                      }
-                    }}
-                  >
-                    <BookmarkPlus className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="top" align="center">
-                  <p>{block.bookmarked ? 'Remove bookmark' : 'Save this!'}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <button 
+              onClick={() => setShowReplyForm(prev => !prev)}
+              className="p-1 rounded-full hover:bg-white/10 transition-colors text-white/60"
+            >
+              <MessageCircleIcon className="h-4 w-4" />
+            </button>
           </div>
-        </CardContent>
-      </Card>
-      <style>{`
-        .flip-card {
-          background-color: transparent;
-          perspective: 1000px;
-          min-height: 120px;
-          cursor: pointer;
-        }
+          
+          <div className="text-white/60 text-xs">
+            {block.type === 'fact' || block.type === 'funFact' ? 'Fact' : 
+             block.type.charAt(0).toUpperCase() + block.type.slice(1)}
+          </div>
+        </div>
         
-        .flip-card-inner {
-          position: relative;
-          width: 100%;
-          height: 100%;
-          transition: transform 0.8s;
-          transform-style: preserve-3d;
-        }
-        
-        .flip-card-inner.flipped {
-          transform: rotateY(180deg);
-        }
-        
-        .flip-card-front, .flip-card-back {
-          position: absolute;
-          width: 100%;
-          height: 100%;
-          -webkit-backface-visibility: hidden;
-          backface-visibility: hidden;
-        }
-        
-        .flip-card-back {
-          transform: rotateY(180deg);
-        }
-        
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-          20%, 40%, 60%, 80% { transform: translateX(5px); }
-        }
-        
-        .animate-shake {
-          animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
-        }
-
-        .hover\:scale-102:hover {
-          transform: scale(1.02);
-        }
-        
-        .hover\:scale-105:hover {
-          transform: scale(1.05);
-        }
-        
-        .hover\:scale-110:hover {
-          transform: scale(1.1);
-        }
-      `}</style>
-    </motion.div>
+        {showReplyForm && (
+          <div className="mt-3 flex items-center space-x-2">
+            <Input 
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value)}
+              placeholder="Type your reply..."
+              className="bg-white/10 border-white/20 text-white"
+              onKeyDown={(e) => e.key === 'Enter' && handleSubmitReply()}
+            />
+            <Button 
+              onClick={handleSubmitReply}
+              size="icon"
+              className="bg-wonderwhiz-purple hover:bg-wonderwhiz-purple/80 text-white"
+              disabled={!replyText.trim()}
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+      </div>
+    </Card>
   );
 };
 
