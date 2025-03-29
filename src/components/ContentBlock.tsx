@@ -94,12 +94,13 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     setShowReplyForm(false);
   };
   
-  const handleQuizSubmit = () => {
-    if (selectedQuizOption === null) return;
+  const handleQuizOptionSelect = (idx: number) => {
+    if (quizSubmitted) return;
     
-    const isCorrect = selectedQuizOption === block.content.correctIndex;
+    setSelectedQuizOption(idx);
     setQuizSubmitted(true);
     
+    const isCorrect = idx === block.content.correctIndex;
     if (isCorrect && onQuizCorrect) {
       onQuizCorrect();
     }
@@ -163,7 +164,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
               {block.content.options.map((option: string, idx: number) => (
                 <button
                   key={idx}
-                  onClick={() => !quizSubmitted && setSelectedQuizOption(idx)}
+                  onClick={() => handleQuizOptionSelect(idx)}
                   disabled={quizSubmitted}
                   className={`w-full p-2 sm:p-3 rounded-lg text-left transition-colors ${
                     quizSubmitted
@@ -172,34 +173,29 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
                         : idx === selectedQuizOption
                           ? 'bg-red-500/20 border border-red-500'
                           : 'bg-white/5 border border-white/10'
-                      : selectedQuizOption === idx
-                        ? 'bg-wonderwhiz-purple/20 border border-wonderwhiz-purple'
-                        : 'bg-white/5 border border-white/10 hover:bg-white/10'
+                      : 'bg-white/5 border border-white/10 hover:bg-white/10'
                   }`}
                 >
                   <div className="flex items-center">
-                    <span className="h-5 w-5 sm:h-6 sm:w-6 rounded-full flex items-center justify-center mr-2 text-xs sm:text-sm font-medium border border-white/20 flex-shrink-0">
+                    <span className="h-5 w-5 sm:h-6 sm:w-6 rounded-full flex items-center justify-center mr-2 text-xs sm:text-sm font-medium border border-white/20 flex-shrink-0 text-white">
                       {String.fromCharCode(65 + idx)}
                     </span>
-                    <span className="text-xs sm:text-sm">{option}</span>
+                    <span className="text-xs sm:text-sm text-white">{option}</span>
                   </div>
                 </button>
               ))}
             </div>
             
-            {!quizSubmitted ? (
-              <Button 
-                onClick={handleQuizSubmit}
-                disabled={selectedQuizOption === null}
-                className="mt-3 bg-wonderwhiz-purple hover:bg-wonderwhiz-purple/80 text-xs sm:text-sm h-8 sm:h-10"
-              >
-                Submit Answer
-              </Button>
-            ) : selectedQuizOption === block.content.correctIndex ? (
-              <p className="mt-2 sm:mt-3 text-green-400 text-xs sm:text-sm">Correct! You earned 5 sparks!</p>
-            ) : (
-              <p className="mt-2 sm:mt-3 text-red-400 text-xs sm:text-sm">
-                Not quite! The correct answer is: {block.content.options[block.content.correctIndex]}
+            {quizSubmitted && (
+              <p className={`mt-2 sm:mt-3 text-xs sm:text-sm ${
+                selectedQuizOption === block.content.correctIndex 
+                  ? 'text-green-400' 
+                  : 'text-red-400'
+              }`}>
+                {selectedQuizOption === block.content.correctIndex 
+                  ? 'Correct! You earned 5 sparks!' 
+                  : `Not quite! The correct answer is: ${block.content.options[block.content.correctIndex]}`
+                }
               </p>
             )}
           </div>
