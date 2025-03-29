@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { BookmarkIcon, ThumbsUpIcon, MessageCircleIcon } from 'lucide-react';
@@ -74,6 +73,19 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     }
   };
 
+  const getTextColor = () => {
+    switch (colorVariant) {
+      case 0:
+        return 'text-white';
+      case 1:
+        return 'text-white';
+      case 2:
+        return 'text-white';
+      default:
+        return 'text-white';
+    }
+  };
+
   const handleSubmitReply = () => {
     if (!replyText.trim()) return;
     
@@ -118,34 +130,10 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   const renderBlockContent = () => {
     switch (block.type) {
       case 'fact':
-        return (
-          <div>
-            <p className="text-white text-sm sm:text-base">{block.content.fact}</p>
-            {block.content.rabbitHoles && block.content.rabbitHoles.length > 0 && (
-              <div className="mt-2 sm:mt-3 space-y-1.5 sm:space-y-2">
-                <p className="text-white/70 text-xs sm:text-sm">Want to learn more?</p>
-                <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                  {block.content.rabbitHoles.map((question: string, idx: number) => (
-                    <Button 
-                      key={idx} 
-                      variant="outline" 
-                      size="sm"
-                      className="bg-white/5 border-white/10 text-white hover:bg-white/10 text-xs sm:text-sm py-1 px-2 sm:px-3 h-auto min-h-[1.75rem]"
-                      onClick={() => handleRabbitHoleClick(question)}
-                    >
-                      {question}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        );
-        
       case 'funFact':
         return (
           <div>
-            <p className="text-white text-sm sm:text-base">{block.content.fact}</p>
+            <p className={`${getTextColor()} text-sm sm:text-base`}>{block.content.fact}</p>
             {block.content.rabbitHoles && block.content.rabbitHoles.length > 0 && (
               <div className="mt-2 sm:mt-3 space-y-1.5 sm:space-y-2">
                 <p className="text-white/70 text-xs sm:text-sm">Want to learn more?</p>
@@ -155,7 +143,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
                       key={idx} 
                       variant="outline" 
                       size="sm"
-                      className="bg-white/5 border-white/10 text-white hover:bg-white/10 text-xs sm:text-sm py-1 px-2 sm:px-3 h-auto min-h-[1.75rem]"
+                      className="bg-white/10 border-white/20 text-white hover:bg-white/20 text-xs sm:text-sm py-1 px-2 sm:px-3 h-auto min-h-[1.75rem]"
                       onClick={() => handleRabbitHoleClick(question)}
                     >
                       {question}
@@ -349,8 +337,8 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
             {specialist.emoji}
           </div>
           <div className="ml-2 min-w-0 flex-1">
-            <h3 className="font-medium text-white text-sm sm:text-base truncate">{specialist.name}</h3>
-            <p className="text-white/60 text-xs truncate">{specialist.description}</p>
+            <h3 className={`font-medium ${getTextColor()} text-sm sm:text-base truncate`}>{specialist.name}</h3>
+            <p className={`${getTextColor()} text-xs truncate opacity-70`}>{specialist.description}</p>
           </div>
         </div>
         
