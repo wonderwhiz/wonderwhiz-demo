@@ -76,6 +76,8 @@ const Dashboard = () => {
     'Tell me about penguins',
     'Show me cool dinosaurs'
   ]);
+  const [loadingBlocks, setLoadingBlocks] = useState(false);
+  const [visibleBlocksCount, setVisibleBlocksCount] = useState(3);
   
   const { streakDays, streakBonusReceived, streakBonusAmount } = useSparksSystem(profileId);
   
@@ -259,12 +261,16 @@ const Dashboard = () => {
   const handleLoadCurio = async (curio: Curio) => {
     setCurrentCurio(curio);
     setIsSidebarOpen(false);
+    setLoadingBlocks(true);
+    setContentBlocks([]);
+    setVisibleBlocksCount(3);
     
     try {
       const { data: blocks, error: blocksError } = await supabase
         .from('content_blocks')
         .select('*')
-        .eq('curio_id', curio.id);
+        .eq('curio_id', curio.id)
+        .order('created_at', { ascending: true });
         
       if (blocksError) throw blocksError;
       
@@ -327,6 +333,8 @@ const Dashboard = () => {
     } catch (error) {
       console.error('Error loading curio content:', error);
       toast.error("Failed to load content");
+    } finally {
+      setLoadingBlocks(false);
     }
   };
   
@@ -577,6 +585,35 @@ const Dashboard = () => {
       });
     }
   };
+
+  const handleLoadMoreBlocks = () => {
+    setVisibleBlocksCount(prev => Math.min(prev + 3, contentBlocks.length));
+  };
+
+  const observerTarget = useRef(null);
+  
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && 
+            !loadingBlocks && 
+            visibleBlocksCount < contentBlocks.length) {
+          handleLoadMoreBlocks();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+    
+    return () => {
+      if (observerTarget.current) {
+        observer.unobserve(observerTarget.current);
+      }
+    };
+  }, [observerTarget, loadingBlocks, visibleBlocksCount, contentBlocks.length]);
 
   if (isLoading) {
     return (
@@ -843,7 +880,7 @@ const Dashboard = () => {
                 {currentCurio && (
                   <div>
                     <AnimatePresence>
-                      {isGenerating && (
+                      {(isGenerating || loadingBlocks) && (
                         <motion.div
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
@@ -853,15 +890,25 @@ const Dashboard = () => {
                           <div className="mr-3">
                             <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
                           </div>
-                          <p className="text-white">Generating your personalized content...</p>
+                          <p className="text-white">
+                            {isGenerating 
+                              ? "Generating your personalized content..." 
+                              : "Loading content blocks..."}
+                          </p>
                         </motion.div>
                       )}
                     </AnimatePresence>
                     
                     <h2 className="text-2xl font-bold text-white mb-4 px-4 pt-4">{currentCurio.title}</h2>
                     <div className="space-y-4 px-4 pb-4">
-                      {contentBlocks.map(block => (
-                        <div key={block.id} className="space-y-2">
+                      {contentBlocks.slice(0, visibleBlocksCount).map((block, index) => (
+                        <motion.div 
+                          key={block.id} 
+                          className="space-y-2"
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.1, duration: 0.3 }}
+                        >
                           <ContentBlock 
                             block={block} 
                             onToggleLike={handleToggleLike}
@@ -887,8 +934,18 @@ const Dashboard = () => {
                               ))}
                             </div>
                           )}
-                        </div>
+                        </motion.div>
                       ))}
+                      
+                      {/* Load more target for intersection observer */}
+                      {visibleBlocksCount < contentBlocks.length && (
+                        <div 
+                          ref={observerTarget} 
+                          className="h-10 flex items-center justify-center text-white/50 text-sm"
+                        >
+                          <div className="animate-pulse">Loading more content...</div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
