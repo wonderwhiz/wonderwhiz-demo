@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -974,6 +975,7 @@ const Dashboard = () => {
                           suggestion={suggestion}
                           onClick={handleCurioSuggestionClick}
                           index={index}
+                          directGenerate={true}
                         />
                       ))}
                     </div>
