@@ -150,7 +150,16 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   };
 
   const handleSubmitReply = async () => {
-    if (!replyText.trim()) return;
+    if (!replyText.trim() || !userId || !childProfileId) {
+      if (!userId || !childProfileId) {
+        toast({
+          title: "Authentication Error",
+          description: "You need to be logged in to send messages.",
+          variant: "destructive"
+        });
+      }
+      return;
+    }
     
     const tempId = `temp-${Date.now()}`;
     const tempTimestamp = new Date().toISOString();
@@ -172,44 +181,31 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     try {
       setIsLoading(true);
       
-      // First, ensure the block exists in the database using the service role function
       console.log('Ensuring block exists in database:', block.id);
       
-      const { data: blockExists, error: blockCheckError } = await supabase
-        .from('content_blocks')
-        .select('id')
-        .eq('id', block.id)
-        .maybeSingle();
-      
-      if (blockCheckError) {
-        console.error('Error checking if block exists:', blockCheckError);
-      }
-      
-      // If block doesn't exist in the database yet, save it using the service role function
-      if (!blockExists) {
-        console.log('Block not found in database, saving first:', block.id);
-        const { data: ensureBlockData, error: ensureBlockError } = await supabase.functions.invoke('ensure-block-exists', {
-          body: {
-            block: {
-              id: block.id,
-              curio_id: block.curio_id || null,
-              type: block.type,
-              specialist_id: block.specialist_id,
-              content: block.content,
-              liked: block.liked,
-              bookmarked: block.bookmarked
-            }
+      // Always ensure the block exists in the database first using the edge function
+      const { data: ensureBlockData, error: ensureBlockError } = await supabase.functions.invoke('ensure-block-exists', {
+        body: {
+          block: {
+            id: block.id,
+            curio_id: block.curio_id || null,
+            type: block.type,
+            specialist_id: block.specialist_id,
+            content: block.content,
+            liked: block.liked,
+            bookmarked: block.bookmarked,
+            child_profile_id: childProfileId // Add this to support creating a temporary curio if needed
           }
-        });
-          
-        if (ensureBlockError) {
-          throw new Error(`Failed to save block: ${ensureBlockError}`);
         }
-        
-        console.log('Block saved successfully:', ensureBlockData);
+      });
+      
+      if (ensureBlockError) {
+        throw new Error(`Failed to save block: ${ensureBlockError}`);
       }
       
-      // Send the reply to the edge function
+      console.log('Block ensured in database:', ensureBlockData);
+      
+      // Now send the reply to the edge function
       const { data: replyData, error: replyError } = await supabase.functions.invoke('handle-block-replies', {
         body: {
           block_id: block.id,

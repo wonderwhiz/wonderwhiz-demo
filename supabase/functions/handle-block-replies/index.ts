@@ -31,26 +31,16 @@ serve(async (req) => {
     // Check if the block exists first
     const { data: blockData, error: blockCheckError } = await supabase
       .from('content_blocks')
-      .select('*')
+      .select('id')
       .eq('id', block_id)
       .single();
 
     if (blockCheckError || !blockData) {
-      // If block doesn't exist, try to save it first
-      console.log(`Block ${block_id} doesn't exist yet, trying to save it`);
-      
-      // Since we're using the service role, we can ignore RLS and insert directly
-      if (user_id && child_profile_id) {
-        // Additional context information passed from the client
-        const { data: contentBlockData, error: contentBlockError } = await req.json();
-        
-        if (contentBlockError) {
-          throw new Error(`Failed to save block: ${contentBlockError.message}`);
-        }
-      } else {
-        throw new Error(`Block with ID ${block_id} does not exist and insufficient data to create it`);
-      }
+      console.log(`Block ${block_id} not found, cannot create reply`);
+      throw new Error(`Block with ID ${block_id} does not exist. Please ensure the block exists before adding replies.`);
     }
+
+    console.log(`Block ${block_id} exists, proceeding with reply`);
 
     // Now save the reply using the service role to bypass RLS
     const { data, error } = await supabase
@@ -64,8 +54,11 @@ serve(async (req) => {
       .select();
 
     if (error) {
+      console.error('Error saving reply:', error);
       throw error;
     }
+    
+    console.log('Reply successfully saved');
     
     return new Response(JSON.stringify({ success: true, data }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
