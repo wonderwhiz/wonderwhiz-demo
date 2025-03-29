@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle, XCircle, Sparkles, Star, Rocket, Brain, Award, Zap } from 'lucide-react';
+import { CheckCircle, XCircle, Sparkles, Star, Rocket, Brain, Award, Zap, Globe } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 
 const features = [
@@ -44,6 +44,14 @@ const features = [
     schoolApps: true,
     icon: <Zap className="h-6 w-6 text-purple-400" />,
     description: "Follow your curiosity down exciting paths of discovery with related content."
+  },
+  { 
+    name: 'Speaks Your Language', 
+    wonderWhiz: true, 
+    chatGPT: false, 
+    schoolApps: false,
+    icon: <Globe className="h-6 w-6 text-wonderwhiz-blue" />,
+    description: "Fully multilingual experience that adapts to your child's preferred language."
   },
 ];
 
@@ -170,64 +178,6 @@ const FeaturesSection = () => {
             />
           ))}
         </div>
-
-        {/* Comparison table (visual upgrade from previous version) */}
-        <motion.div 
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="bg-white bg-opacity-5 backdrop-blur-sm rounded-3xl overflow-hidden border border-wonderwhiz-purple border-opacity-30 shadow-lg shadow-wonderwhiz-purple/20 mt-20"
-        >
-          <div className="grid grid-cols-4 text-center py-5 bg-wonderwhiz-dark bg-opacity-50">
-            <div className="font-bold text-white text-lg flex items-center justify-center"><Award className="mr-2 h-5 w-5 text-wonderwhiz-gold" /> Features</div>
-            <div className="font-bold text-wonderwhiz-blue text-lg">WonderWhiz</div>
-            <div className="font-bold text-red-400 text-lg">ChatGPT</div>
-            <div className="font-bold text-green-400 text-lg">School Apps</div>
-          </div>
-          
-          {features.map((feature, index) => (
-            <div 
-              key={index} 
-              className={`grid grid-cols-4 text-center py-5 ${index % 2 === 0 ? 'bg-wonderwhiz-dark bg-opacity-30' : 'bg-wonderwhiz-dark bg-opacity-10'} transition-colors duration-300 hover:bg-wonderwhiz-purple/10`}
-            >
-              <div className="flex items-center px-6 text-white font-medium">
-                {feature.icon}
-                <span className="ml-2">{feature.name}</span>
-              </div>
-              <div className="flex justify-center">
-                {feature.wonderWhiz ? 
-                  <div className="flex items-center gap-2 text-wonderwhiz-yellow font-bold px-4 py-1 rounded-full bg-wonderwhiz-purple bg-opacity-20">
-                    <span className="text-lg">✓</span> Yes
-                  </div> : 
-                  <div className="flex items-center gap-2 text-red-400 font-bold">
-                    <span className="text-lg">✕</span> No
-                  </div>
-                }
-              </div>
-              <div className="flex justify-center">
-                {feature.chatGPT ? 
-                  <div className="flex items-center gap-2 text-green-400 font-bold px-4 py-1 rounded-full bg-green-400 bg-opacity-20">
-                    <span className="text-lg">✓</span> Yes
-                  </div> : 
-                  <div className="flex items-center gap-2 text-red-400 font-bold">
-                    <span className="text-lg">✕</span> No
-                  </div>
-                }
-              </div>
-              <div className="flex justify-center">
-                {feature.schoolApps ? 
-                  <div className="flex items-center gap-2 text-green-400 font-bold px-4 py-1 rounded-full bg-green-400 bg-opacity-20">
-                    <span className="text-lg">✓</span> Yes
-                  </div> : 
-                  <div className="flex items-center gap-2 text-red-400 font-bold">
-                    <span className="text-lg">✕</span> No
-                  </div>
-                }
-              </div>
-            </div>
-          ))}
-        </motion.div>
       </div>
     </section>
   );
