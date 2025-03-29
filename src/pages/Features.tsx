@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import Navbar from '@/components/Navbar';
@@ -66,13 +65,13 @@ const Features = () => {
   return (
     <div className="min-h-screen bg-wonderwhiz-gradient">
       <Helmet>
-        <title>WonderWhiz Features</title>
-        <meta name="description" content="Explore the amazing features of WonderWhiz that make learning fun and engaging for children." />
+        <title>WonderWhiz Features | AI-Powered Learning Tools for Children</title>
+        <meta name="description" content="Discover WonderWhiz's innovative features: AI-powered discovery, educational content curated by experts, interactive challenges, and a comprehensive parent dashboard." />
+        <meta name="keywords" content="kids learning features, AI education tools, interactive learning platform, educational technology" />
       </Helmet>
       
       <Navbar />
       <main className="py-20 px-6 md:px-10 lg:px-20 relative overflow-hidden">
-        {/* Decorative elements */}
         <div className="absolute top-40 -left-20 w-64 h-64 rounded-full bg-wonderwhiz-purple opacity-10 blur-3xl"></div>
         <div className="absolute bottom-40 -right-20 w-64 h-64 rounded-full bg-wonderwhiz-pink opacity-10 blur-3xl"></div>
         

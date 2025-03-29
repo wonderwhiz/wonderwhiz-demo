@@ -11,8 +11,9 @@ const Pricing = () => {
   return (
     <div className="min-h-screen bg-wonderwhiz-gradient overflow-x-hidden">
       <Helmet>
-        <title>WonderWhiz Pricing</title>
-        <meta name="description" content="View pricing plans for WonderWhiz - affordable options to transform your child's screen time into learning time." />
+        <title>WonderWhiz Pricing | Affordable Learning Plans for Families</title>
+        <meta name="description" content="Explore WonderWhiz's flexible pricing plans designed for every family. Transform your child's screen time into valuable learning experiences with our affordable subscription options." />
+        <meta name="keywords" content="kids learning app pricing, educational platform subscription, affordable educational technology, family learning plans" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
       </Helmet>
       

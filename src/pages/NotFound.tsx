@@ -20,8 +20,9 @@ const NotFound = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-wonderwhiz-gradient overflow-hidden">
       <Helmet>
-        <title>Page Not Found - WonderWhiz</title>
-        <meta name="description" content="We couldn't find the page you were looking for. Let's explore something else!" />
+        <title>Page Not Found | WonderWhiz - Kids Learning Platform</title>
+        <meta name="description" content="Oops! We couldn't find the page you were looking for. Return to WonderWhiz to continue exploring our educational content for children." />
+        <meta name="robots" content="noindex, follow" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
       </Helmet>
       

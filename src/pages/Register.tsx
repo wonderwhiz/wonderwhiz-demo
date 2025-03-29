@@ -10,8 +10,9 @@ const Register = () => {
   return (
     <div className="min-h-screen bg-wonderwhiz-gradient overflow-x-hidden">
       <Helmet>
-        <title>Sign Up for WonderWhiz</title>
-        <meta name="description" content="Create your WonderWhiz account and start your child's journey of discovery and learning." />
+        <title>Sign Up for WonderWhiz | Start Your Child's Learning Adventure</title>
+        <meta name="description" content="Create a WonderWhiz account today and embark on a personalized learning journey for your child. Our AI-powered platform adapts to their interests and learning style." />
+        <meta name="keywords" content="kids learning app sign up, children's educational platform register, create learning account, educational technology registration" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
       </Helmet>
       

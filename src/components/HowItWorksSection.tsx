@@ -1,5 +1,8 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
+
 const steps = [{
   number: '01',
   title: 'Create a parent account',
@@ -16,6 +19,7 @@ const steps = [{
   description: 'Let your child explore topics they love while discovering new interests along the way.',
   color: 'from-wonderwhiz-gold to-yellow-400'
 }];
+
 const HowItWorksSection = () => {
   return <section className="py-20 px-6 md:px-10 lg:px-20 bg-wonderwhiz-gradient">
       <div className="max-w-7xl mx-auto">
@@ -75,9 +79,12 @@ const HowItWorksSection = () => {
         delay: 0.6
       }} className="text-center mt-16">
           <p className="text-lg text-wonderwhiz-blue mb-8">Ready to transform screen time into growth time?</p>
-          <button className="jelly-button text-lg px-10 py-4">Try WonderWhiz</button>
+          <Link to="/register" className="inline-block">
+            <button className="jelly-button text-lg px-10 py-4">Try WonderWhiz</button>
+          </Link>
         </motion.div>
       </div>
     </section>;
 };
+
 export default HowItWorksSection;

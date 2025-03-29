@@ -10,8 +10,9 @@ const Login = () => {
   return (
     <div className="min-h-screen bg-wonderwhiz-gradient overflow-x-hidden">
       <Helmet>
-        <title>Login to WonderWhiz</title>
-        <meta name="description" content="Log in to your WonderWhiz account to access your child's learning journey." />
+        <title>Login to WonderWhiz | Access Your Child's Learning Journey</title>
+        <meta name="description" content="Access your WonderWhiz account to manage your child's educational journey, track progress, and customize their learning experience with our adaptive AI platform." />
+        <meta name="keywords" content="kids learning app login, educational platform sign in, children's education account, parent dashboard access" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
       </Helmet>
       

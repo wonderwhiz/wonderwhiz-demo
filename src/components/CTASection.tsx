@@ -1,7 +1,9 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import WonderWhizLogo from './WonderWhizLogo';
+
 const CTASection = () => {
   return <section className="py-20 px-6 md:px-10 lg:px-20 relative overflow-hidden">
       {/* Background decorations */}
@@ -40,4 +42,5 @@ const CTASection = () => {
       </div>
     </section>;
 };
+
 export default CTASection;

@@ -12,6 +12,7 @@ import ParticleEffect from '@/components/ParticleEffect';
 import ConfettiTrigger from '@/components/ConfettiTrigger';
 import AnimatedTooltip from '@/components/AnimatedTooltip';
 import { useIsMobile } from '@/hooks/use-mobile';
+
 const Index = () => {
   const [cursorPosition, setCursorPosition] = useState({
     x: 0,
@@ -24,13 +25,11 @@ const Index = () => {
     y: 0
   });
   const isMobile = useIsMobile();
+
   useEffect(() => {
-    // Only enable custom cursor on non-mobile devices
     if (!isMobile) {
-      // Initialize custom cursor
       document.documentElement.classList.add('magic-cursor-active');
 
-      // Create cursor elements
       const cursorDot = document.createElement('div');
       cursorDot.classList.add('magic-cursor-dot');
       document.body.appendChild(cursorDot);
@@ -38,7 +37,6 @@ const Index = () => {
       cursorOutline.classList.add('magic-cursor-outline');
       document.body.appendChild(cursorOutline);
 
-      // Track cursor position
       const updateCursorPosition = (e: MouseEvent) => {
         setCursorPosition({
           x: e.clientX,
@@ -49,22 +47,18 @@ const Index = () => {
           y: e.clientY
         });
 
-        // Update CSS variables for spotlight effect
         document.documentElement.style.setProperty('--cursor-x', `${e.clientX}px`);
         document.documentElement.style.setProperty('--cursor-y', `${e.clientY}px`);
 
-        // Update cursor elements
         cursorDot.style.left = `${e.clientX}px`;
         cursorDot.style.top = `${e.clientY}px`;
 
-        // Add slight delay for outline for smooth effect
         setTimeout(() => {
           cursorOutline.style.left = `${e.clientX}px`;
           cursorOutline.style.top = `${e.clientY}px`;
         }, 50);
       };
 
-      // Handle hover state for interactive elements
       const handleMouseEnter = () => {
         setCursorHover(true);
         cursorOutline.classList.add('hover');
@@ -74,23 +68,19 @@ const Index = () => {
         cursorOutline.classList.remove('hover');
       };
 
-      // Add event listeners
       document.addEventListener('mousemove', updateCursorPosition);
 
-      // Add hover effect for all interactive elements
       const interactiveElements = document.querySelectorAll('a, button, [role="button"], input, .interactive-card');
       interactiveElements.forEach(el => {
         el.addEventListener('mouseenter', handleMouseEnter);
         el.addEventListener('mouseleave', handleMouseLeave);
       });
 
-      // Create floating particles
       setTimeout(() => {
         setShowParticles(true);
         createFloatingParticles();
       }, 1000);
 
-      // Cleanup
       return () => {
         document.removeEventListener('mousemove', updateCursorPosition);
         interactiveElements.forEach(el => {
@@ -101,7 +91,6 @@ const Index = () => {
         if (cursorDot.parentNode) document.body.removeChild(cursorDot);
         if (cursorOutline.parentNode) document.body.removeChild(cursorOutline);
 
-        // Remove particles
         const particles = document.querySelectorAll('.floating-particle');
         particles.forEach(particle => {
           if (particle.parentNode) document.body.removeChild(particle);
@@ -109,17 +98,15 @@ const Index = () => {
       };
     }
   }, [isMobile]);
+
   const createFloatingParticles = () => {
-    // Create fewer particles on mobile
     const particleCount = isMobile ? 8 : 15;
 
-    // Create floating particles
     for (let i = 0; i < particleCount; i++) {
       setTimeout(() => {
         const particle = document.createElement('div');
         particle.classList.add('floating-particle');
 
-        // Randomize particle properties
         const size = Math.random() * (isMobile ? 6 : 8) + (isMobile ? 3 : 4);
         const randomX = Math.random() * window.innerWidth;
         const randomColor = getRandomColor();
@@ -127,7 +114,6 @@ const Index = () => {
         const randomDuration = Math.random() * 15 + 10;
         const randomXMove = (Math.random() - 0.5) * 200;
 
-        // Set particle styles
         particle.style.width = `${size}px`;
         particle.style.height = `${size}px`;
         particle.style.left = `${randomX}px`;
@@ -139,43 +125,39 @@ const Index = () => {
         particle.style.setProperty('--rand-x', `${randomXMove}px`);
         document.body.appendChild(particle);
 
-        // Remove particle after animation
         setTimeout(() => {
           if (particle.parentNode) document.body.removeChild(particle);
         }, randomDuration * 1000 + randomDelay * 1000);
       }, i * 1000);
     }
   };
+
   const getRandomColor = () => {
     const colors = ['#FF5EBA',
-    // pink
-    '#7E30E1',
-    // purple
-    '#FFC72C',
-    // gold
-    '#00E0FF',
-    // blue
-    '#FFE883' // yellow
+      '#7E30E1',
+      '#FFC72C',
+      '#00E0FF',
+      '#FFE883'
     ];
     return colors[Math.floor(Math.random() * colors.length)];
   };
+
   return <div className="min-h-screen bg-wonderwhiz-gradient spotlight-hover relative overflow-x-hidden">
       <Helmet>
-        <title>WonderWhiz - Feed Your Child's Curiosity</title>
-        <meta name="description" content="WonderWhiz is an AI-powered learning platform that transforms screen time into growth time for kids. Turn curiosity into daily habits, smart thinking, and joyful learning." />
+        <title>WonderWhiz - AI-Powered Learning Platform for Kids | Feed Your Child's Curiosity</title>
+        <meta name="description" content="WonderWhiz transforms screen time into educational adventures for children. Our AI-powered learning platform adapts to your child's interests, making learning fun and engaging." />
+        <meta name="keywords" content="kids learning app, children AI education, educational platform, kids educational technology, interactive learning" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
       </Helmet>
       
-      {/* Background particles */}
       <ParticleEffect type="stars" intensity={isMobile ? "low" : "medium"} />
       
-      {/* Award-winning site badge - hide on small mobile */}
       {!isMobile && <AnimatedTooltip content={<div className="text-center">
               <p className="font-bold">Webby Award Nominee 2023</p>
               <p className="text-xs mt-1">For Excellence in Innovation</p>
             </div>}>
           <ConfettiTrigger>
-            
+            <Award className="fixed right-10 top-28 h-7 w-7 text-wonderwhiz-gold cursor-pointer z-40" />
           </ConfettiTrigger>
         </AnimatedTooltip>}
       
@@ -189,7 +171,6 @@ const Index = () => {
       </main>
       <Footer />
       
-      {/* Interactive sparkle that follows cursor with delay - only on non-mobile */}
       {!isMobile && <div className="fixed pointer-events-none z-50 transition-all duration-300 opacity-70" style={{
       left: `${mousePosition.x}px`,
       top: `${mousePosition.y}px`,
@@ -200,7 +181,6 @@ const Index = () => {
       }} />
         </div>}
       
-      {/* Add CSS Variables for cursor-following spotlight effect */}
       <style>
         {`
         .spotlight-hover::before {
@@ -211,4 +191,5 @@ const Index = () => {
       </style>
     </div>;
 };
+
 export default Index;
