@@ -333,7 +333,9 @@ export type Database = {
           id: string
           parent_user_id: string
           sparks_reward: number | null
+          status: string | null
           title: string
+          type: string | null
         }
         Insert: {
           created_at?: string
@@ -341,7 +343,9 @@ export type Database = {
           id?: string
           parent_user_id: string
           sparks_reward?: number | null
+          status?: string | null
           title: string
+          type?: string | null
         }
         Update: {
           created_at?: string
@@ -349,7 +353,9 @@ export type Database = {
           id?: string
           parent_user_id?: string
           sparks_reward?: number | null
+          status?: string | null
           title?: string
+          type?: string | null
         }
         Relationships: []
       }

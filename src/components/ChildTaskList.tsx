@@ -1,46 +1,59 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { CheckCircle, Clock, Award, Star, ChevronRight, Check, PlusCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { AnimatePresence, motion } from 'framer-motion';
 import { toast } from 'sonner';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 interface Task {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   sparks_reward: number;
-  status?: string;
-  assigned_at?: string;
-  completed_at?: string;
-  task_id?: string;
   child_task_id?: string;
+  completed_at?: string | null;
+  status?: string;
+  type?: string;
+}
+
+interface QuickTask {
+  title: string;
+  description?: string;
+  sparks_reward: number;
 }
 
 interface ChildTaskListProps {
   childId: string;
   onSparkEarned?: (amount: number) => void;
   onTaskComplete?: (amount: number) => void;
+  limit?: number;
 }
 
-const ChildTaskList: React.FC<ChildTaskListProps> = ({ childId, onSparkEarned, onTaskComplete }) => {
+const ChildTaskList = ({ childId, onSparkEarned, onTaskComplete, limit = 5 }: ChildTaskListProps) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [completingTask, setCompletingTask] = useState<string | null>(null);
   const [quickTaskOpen, setQuickTaskOpen] = useState(false);
-  const [newTask, setNewTask] = useState({
+  const [newTask, setNewTask] = useState<QuickTask>({
     title: '',
     description: '',
-    sparks_reward: 3 // Default reward for quick tasks
+    sparks_reward: 5
   });
   
   useEffect(() => {
-    if (!childId) return;
-    
     const fetchTasks = async () => {
       setLoading(true);
       
@@ -49,18 +62,23 @@ const ChildTaskList: React.FC<ChildTaskListProps> = ({ childId, onSparkEarned, o
           .from('child_tasks')
           .select(`
             id,
+            child_profile_id,
             task_id,
-            status,
-            assigned_at,
             completed_at,
+            status,
             tasks (
               id,
               title,
               description,
-              sparks_reward
+              sparks_reward,
+              status,
+              type
             )
           `)
-          .eq('child_profile_id', childId);
+          .eq('child_profile_id', childId)
+          .is('completed_at', null)
+          .order('assigned_at', { ascending: false })
+          .limit(limit);
           
         if (childTasksError) throw childTasksError;
         
@@ -68,26 +86,33 @@ const ChildTaskList: React.FC<ChildTaskListProps> = ({ childId, onSparkEarned, o
           id: ct.tasks.id,
           title: ct.tasks.title,
           description: ct.tasks.description,
-          sparks_reward: ct.tasks.sparks_reward,
-          status: ct.status,
-          assigned_at: ct.assigned_at,
+          sparks_reward: ct.tasks.sparks_reward || 0,
+          child_task_id: ct.id,
           completed_at: ct.completed_at,
-          task_id: ct.task_id,
-          child_task_id: ct.id
-        })) || [];
+          status: ct.tasks.status,
+          type: ct.tasks.type
+        }));
         
-        setTasks(formattedTasks);
+        setTasks(formattedTasks || []);
       } catch (error) {
         console.error('Error fetching tasks:', error);
+        toast.error('Failed to load tasks');
       } finally {
         setLoading(false);
       }
     };
     
-    fetchTasks();
-  }, [childId]);
+    if (childId) {
+      fetchTasks();
+    }
+  }, [childId, limit]);
   
-  const handleCompleteTask = async (taskId: string, childTaskId: string, sparksReward: number) => {
+  const handleCompleteTask = async (childTaskId: string, sparksReward: number) => {
+    if (!childTaskId) {
+      toast.error('Task completion failed: Missing child task ID');
+      return;
+    }
+    
     setCompletingTask(childTaskId);
     
     try {
@@ -104,7 +129,7 @@ const ChildTaskList: React.FC<ChildTaskListProps> = ({ childId, onSparkEarned, o
       setTasks(prev => 
         prev.map(task => 
           task.child_task_id === childTaskId
-            ? { ...task, status: 'completed', completed_at: new Date().toISOString() }
+            ? { ...task, completed_at: new Date().toISOString(), status: 'completed' }
             : task
         )
       );
@@ -112,12 +137,12 @@ const ChildTaskList: React.FC<ChildTaskListProps> = ({ childId, onSparkEarned, o
       const { error } = await supabase.functions.invoke('increment-sparks-balance', {
         body: JSON.stringify({ 
           profileId: childId, 
-          amount: sparksReward 
+          amount: sparksReward
         })
       });
       
       if (error) {
-        console.error('Error incrementing sparks balance:', error);
+        console.error('Error awarding sparks:', error);
         throw new Error('Failed to award sparks');
       }
       
@@ -126,9 +151,9 @@ const ChildTaskList: React.FC<ChildTaskListProps> = ({ childId, onSparkEarned, o
         .insert({
           child_id: childId,
           amount: sparksReward,
-          reason: `Completing task: ${tasks.find(t => t.child_task_id === childTaskId)?.title || 'Task'}`
+          reason: 'Completing task'
         });
-      
+        
       if (transactionError) {
         console.error('Error creating transaction record:', transactionError);
       }
@@ -136,14 +161,13 @@ const ChildTaskList: React.FC<ChildTaskListProps> = ({ childId, onSparkEarned, o
       if (onSparkEarned) onSparkEarned(sparksReward);
       if (onTaskComplete) onTaskComplete(sparksReward);
       
-      toast.success(`You earned ${sparksReward} sparks for completing this task! 🎉`, {
-        duration: 3000,
-        position: 'bottom-center'
+      toast.success(`Task completed! You earned ${sparksReward} sparks!`, {
+        position: 'bottom-right'
       });
       
     } catch (error) {
       console.error('Error completing task:', error);
-      toast.error('Failed to complete task. Please try again.');
+      toast.error('Failed to complete task');
     } finally {
       setCompletingTask(null);
     }
@@ -151,11 +175,17 @@ const ChildTaskList: React.FC<ChildTaskListProps> = ({ childId, onSparkEarned, o
 
   const handleAddQuickTask = async () => {
     if (!newTask.title.trim()) {
-      toast.error('Please enter a task title');
+      toast.error('Task title is required');
+      return;
+    }
+
+    if (newTask.sparks_reward < 1) {
+      toast.error('Sparks reward must be at least 1');
       return;
     }
 
     try {
+      // First, create the task
       const { data: taskData, error: taskError } = await supabase
         .from('tasks')
         .insert({
@@ -166,99 +196,156 @@ const ChildTaskList: React.FC<ChildTaskListProps> = ({ childId, onSparkEarned, o
           status: 'active',
           type: 'quick'
         })
-        .select('id')
+        .select()
         .single();
 
       if (taskError) throw taskError;
 
+      // Then, assign it to the child
       const { data: childTaskData, error: childTaskError } = await supabase
         .from('child_tasks')
         .insert({
           child_profile_id: childId,
           task_id: taskData.id,
-          status: 'assigned',
-          assigned_at: new Date().toISOString()
+          status: 'pending'
         })
-        .select('id')
+        .select()
         .single();
 
       if (childTaskError) throw childTaskError;
 
+      // Add the new task to the state
       const newTaskObj: Task = {
         id: taskData.id,
         title: newTask.title,
-        description: newTask.description || '',
+        description: newTask.description || null,
         sparks_reward: newTask.sparks_reward,
-        status: 'assigned',
-        assigned_at: new Date().toISOString(),
-        task_id: taskData.id,
-        child_task_id: childTaskData.id
+        child_task_id: childTaskData.id,
+        status: 'active',
+        type: 'quick'
       };
 
-      setTasks(prev => [...prev, newTaskObj]);
-      setQuickTaskOpen(false);
-      setNewTask({ title: '', description: '', sparks_reward: 3 });
-      
-      toast.success('Your task was added! Complete it to earn sparks.', {
-        duration: 3000,
-        position: 'bottom-center'
+      setTasks(prev => [newTaskObj, ...prev]);
+
+      toast.success('New task created successfully!');
+
+      // Reset the form and close the dialog
+      setNewTask({
+        title: '',
+        description: '',
+        sparks_reward: 5
       });
-      
+      setQuickTaskOpen(false);
+
     } catch (error) {
-      console.error('Error adding quick task:', error);
-      toast.error('Failed to add task. Please try again.');
+      console.error('Error creating task:', error);
+      toast.error('Failed to create task');
     }
   };
-  
-  const renderTaskIcon = (task: Task, isCompleting: boolean) => {
-    if (isCompleting) {
-      return (
-        <div className="relative">
-          <motion.div 
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-            className="absolute inset-0 flex items-center justify-center"
-          >
-            <div className="h-6 w-6 border-2 border-wonderwhiz-purple border-t-transparent rounded-full"></div>
-          </motion.div>
-          <Clock className="h-6 w-6 text-transparent" />
-        </div>
-      );
-    }
-    
-    if (task.status === 'completed') {
-      return (
-        <div className="relative">
-          <CheckCircle className="h-6 w-6 text-green-400" />
-          <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: [1.5, 1], opacity: [0, 1] }}
-            transition={{ duration: 0.3, delay: 0.2 }}
-            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
-          >
-            <Star className="h-3 w-3 text-yellow-300" />
-          </motion.div>
-        </div>
-      );
-    }
-    
-    return <Clock className="h-6 w-6 text-white/60" />;
-  };
-  
+
   if (loading) {
     return (
-      <div className="text-center p-6">
-        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-wonderwhiz-purple mx-auto"></div>
-        <p className="mt-4 text-white/70 font-baloo">Loading your tasks...</p>
-        
-        <div className="mt-6 flex justify-center">
-          <motion.div 
-            initial={{ width: 0 }}
-            animate={{ width: '70%' }}
-            transition={{ duration: 1.5, repeat: Infinity, repeatType: 'reverse', ease: "easeInOut" }}
-            className="h-1 bg-gradient-to-r from-wonderwhiz-purple via-wonderwhiz-pink to-wonderwhiz-purple rounded-full"
-          ></motion.div>
+      <div className="animate-pulse space-y-2">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="h-16 bg-white/5 rounded-xl"></div>
+        ))}
+      </div>
+    );
+  }
+  
+  if (tasks.length === 0) {
+    return (
+      <div className="space-y-4">
+        <div className="flex justify-end mb-2">
+          <Button 
+            onClick={() => setQuickTaskOpen(true)} 
+            variant="outline" 
+            size="sm"
+            className="text-wonderwhiz-gold border-wonderwhiz-gold/40 hover:bg-wonderwhiz-gold/10"
+          >
+            <PlusCircle className="h-4 w-4 mr-1" />
+            Add Quick Task
+          </Button>
         </div>
+        
+        <Card className="flex flex-col items-center justify-center p-6 bg-wonderwhiz-dark/50 border-white/10 text-center">
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="mb-4"
+          >
+            <Star className="h-12 w-12 text-wonderwhiz-gold opacity-70" />
+          </motion.div>
+          <h3 className="text-lg font-bold text-white mb-2">No Tasks Right Now</h3>
+          <p className="text-white/60 text-sm max-w-xs">
+            You don't have any active tasks. Create a quick task or ask your parent to assign you some tasks!
+          </p>
+          
+          <Button 
+            onClick={() => setQuickTaskOpen(true)}
+            className="mt-4 bg-gradient-to-r from-wonderwhiz-gold to-wonderwhiz-gold/80 text-wonderwhiz-dark hover:from-wonderwhiz-gold hover:to-wonderwhiz-gold/90"
+          >
+            <PlusCircle className="h-4 w-4 mr-1" />
+            Add a Quick Task
+          </Button>
+        </Card>
+
+        <Dialog open={quickTaskOpen} onOpenChange={setQuickTaskOpen}>
+          <DialogContent className="sm:max-w-[425px] bg-gray-900 text-white border-wonderwhiz-gold/30">
+            <DialogHeader>
+              <DialogTitle className="text-wonderwhiz-gold">Create Quick Task</DialogTitle>
+              <DialogDescription className="text-white/70">
+                Add a new task to complete and earn sparks!
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="title" className="text-white">Task Name</Label>
+                <Input
+                  id="title"
+                  value={newTask.title}
+                  onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                  className="bg-gray-800 border-gray-700 text-white"
+                  placeholder="What do you want to accomplish?"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="description" className="text-white">Description (Optional)</Label>
+                <Textarea
+                  id="description"
+                  value={newTask.description}
+                  onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                  className="bg-gray-800 border-gray-700 text-white h-20"
+                  placeholder="Add some details about your task"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="sparks" className="text-white">Sparks Reward</Label>
+                <Input
+                  id="sparks"
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={newTask.sparks_reward}
+                  onChange={(e) => setNewTask({ ...newTask, sparks_reward: parseInt(e.target.value) || 1 })}
+                  className="bg-gray-800 border-gray-700 text-white"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setQuickTaskOpen(false)} className="border-white/20 text-white hover:bg-white/10">
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleAddQuickTask} 
+                className="bg-gradient-to-r from-wonderwhiz-gold to-wonderwhiz-gold/80 text-wonderwhiz-dark hover:from-wonderwhiz-gold hover:to-wonderwhiz-gold/90"
+              >
+                Create Task
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
@@ -268,11 +355,12 @@ const ChildTaskList: React.FC<ChildTaskListProps> = ({ childId, onSparkEarned, o
       <div className="flex justify-end mb-2">
         <Button 
           onClick={() => setQuickTaskOpen(true)} 
+          variant="outline" 
           size="sm"
-          variant="outline"
-          className="bg-wonderwhiz-gold/20 text-wonderwhiz-gold border-wonderwhiz-gold/30 hover:bg-wonderwhiz-gold/30 hover:text-white"
+          className="text-wonderwhiz-gold border-wonderwhiz-gold/40 hover:bg-wonderwhiz-gold/10"
         >
-          <PlusCircle className="h-4 w-4 mr-1" /> Add Quick Task
+          <PlusCircle className="h-4 w-4 mr-1" />
+          Add Quick Task
         </Button>
       </div>
       
@@ -280,138 +368,123 @@ const ChildTaskList: React.FC<ChildTaskListProps> = ({ childId, onSparkEarned, o
         {tasks.map((task, index) => (
           <motion.div
             key={task.child_task_id}
-            initial={{ opacity: 0, y: 15 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ delay: index * 0.05 }}
-            className={`p-4 rounded-xl border ${
-              task.status === 'completed'
-                ? 'bg-green-500/10 border-green-500/30'
-                : 'bg-white/5 border-white/10 hover:bg-white/10'
-            } transition-all duration-300 relative overflow-hidden group`}
+            transition={{ delay: index * 0.1 }}
+            className="relative"
           >
-            {task.status === 'completed' && (
-              <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-green-400/10"></div>
-            )}
-            
-            <div className="flex items-center justify-between relative z-10">
-              <div className="flex items-center">
-                {renderTaskIcon(task, completingTask === task.child_task_id)}
+            <Card 
+              className={`
+                relative 
+                overflow-hidden 
+                border-white/10 
+                bg-white/5 
+                backdrop-blur-sm 
+                hover:bg-white/8 
+                transition-all 
+                group
+                ${task.type === 'quick' ? 'border-wonderwhiz-gold/20' : ''} 
+              `}
+            >
+              <div className="p-3 sm:p-4 flex justify-between items-center">
+                <div className="flex items-start space-x-3">
+                  <div className={`
+                    mt-1 rounded-full p-1.5 
+                    ${task.type === 'quick' ? 'bg-wonderwhiz-gold/20 text-wonderwhiz-gold' : 'bg-wonderwhiz-blue/20 text-wonderwhiz-blue'}
+                  `}>
+                    {task.completed_at ? (
+                      <CheckCircle className="h-4 w-4" />
+                    ) : (
+                      <Clock className="h-4 w-4" />
+                    )}
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-medium text-white group-hover:text-wonderwhiz-gold transition-colors">
+                      {task.title}
+                    </h4>
+                    {task.description && (
+                      <p className="text-sm text-white/70 mt-0.5 line-clamp-2">
+                        {task.description}
+                      </p>
+                    )}
+                  </div>
+                </div>
                 
-                <div className="ml-3">
-                  <h4 className={`font-semibold text-lg ${task.status === 'completed' ? 'text-green-300' : 'text-white'} font-baloo`}>
-                    {task.title}
-                  </h4>
-                  {task.description && (
-                    <p className={`text-sm ${task.status === 'completed' ? 'text-green-200/70' : 'text-white/70'}`}>
-                      {task.description}
-                    </p>
+                <div className="flex items-center space-x-2">
+                  {task.sparks_reward > 0 && (
+                    <motion.div 
+                      whileHover={{ scale: 1.1 }} 
+                      className="flex items-center bg-wonderwhiz-gold/20 text-wonderwhiz-gold rounded-full px-2 py-0.5"
+                    >
+                      <Star className="h-3.5 w-3.5 mr-1" />
+                      <span className="text-xs font-bold">{task.sparks_reward}</span>
+                    </motion.div>
                   )}
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={`
+                      min-w-20 border-wonderwhiz-blue/30 text-wonderwhiz-blue hover:bg-wonderwhiz-blue/10 
+                      ${completingTask === task.child_task_id ? 'opacity-50 pointer-events-none' : ''}
+                    `}
+                    onClick={() => task.child_task_id && handleCompleteTask(task.child_task_id, task.sparks_reward)}
+                    disabled={!!task.completed_at || completingTask === task.child_task_id}
+                  >
+                    {task.completed_at ? (
+                      <span className="flex items-center"><Check className="h-4 w-4 mr-1" /> Done</span>
+                    ) : completingTask === task.child_task_id ? (
+                      <span className="flex items-center">
+                        <svg className="animate-spin h-4 w-4 mr-1 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Processing
+                      </span>
+                    ) : (
+                      <span className="flex items-center">Complete <ChevronRight className="h-4 w-4 ml-1" /></span>
+                    )}
+                  </Button>
                 </div>
               </div>
               
-              <div className="flex items-center">
-                <div className={`flex items-center mr-3 ${task.status === 'completed' ? 'bg-green-500/20' : 'bg-amber-500/20'} px-3 py-1.5 rounded-full group-hover:scale-105 transition-transform`}>
-                  <Award className="h-4 w-4 text-amber-400 mr-1.5" />
-                  <span className={`${task.status === 'completed' ? 'text-green-300' : 'text-amber-300'} text-sm font-medium`}>
-                    +{task.sparks_reward}
-                  </span>
-                </div>
-                
-                {task.status !== 'completed' && (
-                  <Button
-                    size="sm"
-                    onClick={() => handleCompleteTask(task.id, task.child_task_id as string, task.sparks_reward)}
-                    className="bg-wonderwhiz-purple hover:bg-wonderwhiz-purple/80 px-4 group-hover:scale-105 transition-transform"
-                    disabled={completingTask === task.child_task_id}
-                  >
-                    {completingTask === task.child_task_id ? (
-                      <span>Working...</span>
-                    ) : (
-                      <span className="flex items-center">
-                        Complete <Check className="ml-1 h-4 w-4" />
-                      </span>
-                    )}
-                  </Button>
-                )}
-                
-                {task.status === 'completed' && (
-                  <motion.div
-                    animate={{ rotate: [0, -5, 5, 0] }}
-                    transition={{ duration: 0.5, delay: 0.2 }}
-                    className="h-8 w-8 bg-green-500/20 rounded-full flex items-center justify-center"
-                  >
-                    <Check className="h-5 w-5 text-green-400" />
-                  </motion.div>
-                )}
-              </div>
-            </div>
-            
-            {task.status === 'completed' && task.completed_at && (
-              <motion.p 
-                className="text-green-300/60 text-xs mt-2 flex items-center"
+              {task.type === 'quick' && (
+                <motion.p 
+                  initial={{ opacity: 0 }} 
+                  animate={{ opacity: 1 }}
+                  className="text-xs text-wonderwhiz-gold/60 absolute top-1 right-2"
+                >
+                  Quick Task
+                </motion.p>
+              )}
+              
+              <motion.div 
+                className="absolute bottom-0 right-0 h-8 w-16 bg-gradient-to-l from-white/5 to-transparent rounded-tl-xl"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
-              >
-                <Star className="h-3 w-3 mr-1.5 text-wonderwhiz-gold" />
-                Completed on {new Date(task.completed_at).toLocaleDateString()} - Great job!
-              </motion.p>
-            )}
-            
-            <motion.div 
-              className="absolute bottom-0 right-0 h-8 w-16 bg-gradient-to-l from-white/5 to-transparent rounded-tl-xl"
-              initial={{ opacity: 0 }}
-              whileHover={{ opacity: 1 }}
-            />
-            
-            {task.status === 'completed' && (
-              <motion.div
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.2, duration: 0.5 }}
-                className="absolute -right-1 -bottom-1 text-green-500/20 transform rotate-12"
-              >
-                <CheckCircle className="h-14 w-14" />
-              </motion.div>
-            )}
+              />
+            </Card>
           </motion.div>
         ))}
       </AnimatePresence>
       
-      {tasks.length === 0 && (
-        <motion.div 
-          className="text-center p-8 bg-white/5 rounded-xl border border-dashed border-white/20"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-3">
-            <motion.div
-              animate={{ 
-                rotate: [0, 10, -10, 0],
-                y: [0, -3, 0]
-              }}
-              transition={{ duration: 3, repeat: Infinity }}
-            >
-              <Award className="h-8 w-8 text-wonderwhiz-gold" />
-            </motion.div>
-          </div>
-          <h4 className="text-xl font-bold text-white font-baloo mb-2">No Tasks Yet</h4>
-          <p className="text-white/70">Create a quick task or wait for new tasks to be assigned!</p>
-          <Button 
-            onClick={() => setQuickTaskOpen(true)}
-            className="mt-4 bg-wonderwhiz-gold hover:bg-wonderwhiz-gold/80"
-          >
-            <PlusCircle className="mr-2 h-4 w-4" /> Create Your First Task
-          </Button>
-        </motion.div>
-      )}
-      
       <motion.div 
-        className="w-full h-1 bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-full mt-6"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5 }}
+        className="text-center text-white/60 text-sm pt-1"
+      >
+        {tasks.length === 1 ? '1 active task' : `${tasks.length} active tasks`}
+      </motion.div>
+      
+      <motion.div
+        className="absolute -z-10 top-12 right-6 w-20 h-20 rounded-full bg-wonderwhiz-gold/5"
         animate={{ 
-          opacity: [0.3, 0.7, 0.3],
-          backgroundPosition: ['100% 0%', '0% 100%']
+          scale: [1, 1.2, 1],
+          opacity: [0.3, 0.5, 0.3],
         }}
         transition={{ duration: 3, repeat: Infinity }}
       />
@@ -419,50 +492,54 @@ const ChildTaskList: React.FC<ChildTaskListProps> = ({ childId, onSparkEarned, o
       <Dialog open={quickTaskOpen} onOpenChange={setQuickTaskOpen}>
         <DialogContent className="sm:max-w-[425px] bg-gray-900 text-white border-wonderwhiz-gold/30">
           <DialogHeader>
-            <DialogTitle className="text-wonderwhiz-gold font-baloo text-xl">Add Your Own Task</DialogTitle>
+            <DialogTitle className="text-wonderwhiz-gold">Create Quick Task</DialogTitle>
+            <DialogDescription className="text-white/70">
+              Add a new task to complete and earn sparks!
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="task-title" className="text-right">
-                Task
-              </Label>
+            <div className="grid gap-2">
+              <Label htmlFor="title" className="text-white">Task Name</Label>
               <Input
-                id="task-title"
+                id="title"
                 value={newTask.title}
-                onChange={(e) => setNewTask({...newTask, title: e.target.value})}
-                className="col-span-3 bg-gray-800 border-gray-700"
+                onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                className="bg-gray-800 border-gray-700 text-white"
                 placeholder="What do you want to accomplish?"
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="task-description" className="text-right">
-                Details
-              </Label>
+            <div className="grid gap-2">
+              <Label htmlFor="description" className="text-white">Description (Optional)</Label>
               <Textarea
-                id="task-description"
+                id="description"
                 value={newTask.description}
-                onChange={(e) => setNewTask({...newTask, description: e.target.value})}
-                className="col-span-3 bg-gray-800 border-gray-700 min-h-[80px]"
-                placeholder="Add any details here (optional)"
+                onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                className="bg-gray-800 border-gray-700 text-white h-20"
+                placeholder="Add some details about your task"
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="sparks-reward" className="text-right">
-                Sparks
-              </Label>
-              <div className="col-span-3 flex items-center">
-                <Award className="h-5 w-5 text-wonderwhiz-gold mr-2" />
-                <span className="text-wonderwhiz-gold font-bold">{newTask.sparks_reward}</span>
-                <span className="ml-2 text-sm text-gray-400">(default for quick tasks)</span>
-              </div>
+            <div className="grid gap-2">
+              <Label htmlFor="sparks" className="text-white">Sparks Reward</Label>
+              <Input
+                id="sparks"
+                type="number"
+                min={1}
+                max={20}
+                value={newTask.sparks_reward}
+                onChange={(e) => setNewTask({ ...newTask, sparks_reward: parseInt(e.target.value) || 1 })}
+                className="bg-gray-800 border-gray-700 text-white"
+              />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setQuickTaskOpen(false)} className="border-gray-700 text-gray-300 hover:bg-gray-800">
+            <Button variant="outline" onClick={() => setQuickTaskOpen(false)} className="border-white/20 text-white hover:bg-white/10">
               Cancel
             </Button>
-            <Button onClick={handleAddQuickTask} className="bg-wonderwhiz-gold hover:bg-wonderwhiz-gold/80 text-black">
-              Add Task
+            <Button 
+              onClick={handleAddQuickTask} 
+              className="bg-gradient-to-r from-wonderwhiz-gold to-wonderwhiz-gold/80 text-wonderwhiz-dark hover:from-wonderwhiz-gold hover:to-wonderwhiz-gold/90"
+            >
+              Create Task
             </Button>
           </DialogFooter>
         </DialogContent>
