@@ -81,6 +81,7 @@ export const ChildTaskList = ({ childId, onTaskCompleted }: ChildTaskListProps) 
         // Add sparks to child's balance
         const sparksReward = taskData.task.sparks_reward;
         
+        // Fixed: Using the correct approach to increment sparks balance
         const { error: sparksError } = await supabase.rpc('increment', {
           row_id: childId,
           increment_amount: sparksReward
