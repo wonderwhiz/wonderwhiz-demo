@@ -7,21 +7,21 @@ const testimonials = [
     quote: "WonderWhiz has completely transformed how my child uses screen time. Instead of mindless videos, they're exploring science and asking thoughtful questions!",
     author: "Michelle K.",
     role: "Parent of 8-year-old",
-    image: "https://via.placeholder.com/64",
+    image: "https://i.pravatar.cc/150?img=48",
     stars: 5
   },
   {
     quote: "My daughter loves the 'sparks' system. She's motivated to complete educational tasks and feels proud when she earns rewards for learning.",
     author: "David T.",
     role: "Parent of 10-year-old",
-    image: "https://via.placeholder.com/64",
+    image: "https://i.pravatar.cc/150?img=33",
     stars: 5
   },
   {
     quote: "As a busy parent, I appreciate the weekly summaries that show me what topics my child has been exploring. It's a great conversation starter at dinner!",
     author: "Sarah L.",
     role: "Parent of 7-year-old",
-    image: "https://via.placeholder.com/64",
+    image: "https://i.pravatar.cc/150?img=5",
     stars: 5
   }
 ];

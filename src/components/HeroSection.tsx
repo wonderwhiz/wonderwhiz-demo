@@ -61,7 +61,7 @@ const HeroSection = () => {
                   {/* Card 1 */}
                   <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl p-4 transform hover:scale-[1.02] transition-transform">
                     <div className="flex items-start">
-                      <img src="https://via.placeholder.com/40" alt="Nova" className="rounded-full w-10 h-10 mr-3" />
+                      <img src="https://i.pravatar.cc/80?img=1" alt="Nova" className="rounded-full w-10 h-10 mr-3" />
                       <div>
                         <h4 className="font-bold text-white">Nova the Explorer</h4>
                         <p className="text-sm text-white">Did you know penguins can't fly but are amazing swimmers?</p>
@@ -72,7 +72,7 @@ const HeroSection = () => {
                   {/* Card 2 */}
                   <div className="bg-gradient-to-r from-blue-500 to-cyan-400 rounded-2xl p-4 transform hover:scale-[1.02] transition-transform">
                     <div className="flex items-start">
-                      <img src="https://via.placeholder.com/40" alt="Spark" className="rounded-full w-10 h-10 mr-3" />
+                      <img src="https://i.pravatar.cc/80?img=9" alt="Spark" className="rounded-full w-10 h-10 mr-3" />
                       <div>
                         <h4 className="font-bold text-white">Spark the Scientist</h4>
                         <p className="text-sm text-white">Let's test your penguin knowledge!</p>
@@ -91,7 +91,7 @@ const HeroSection = () => {
                   {/* Card 3 */}
                   <div className="bg-gradient-to-r from-amber-400 to-yellow-300 rounded-2xl p-4 transform hover:scale-[1.02] transition-transform">
                     <div className="flex items-start">
-                      <img src="https://via.placeholder.com/40" alt="Prism" className="rounded-full w-10 h-10 mr-3" />
+                      <img src="https://i.pravatar.cc/80?img=7" alt="Prism" className="rounded-full w-10 h-10 mr-3" />
                       <div>
                         <h4 className="font-bold text-gray-800">Prism the Artist</h4>
                         <p className="text-sm text-gray-800">Can you draw a penguin? Upload your art!</p>

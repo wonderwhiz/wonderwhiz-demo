@@ -34,7 +34,7 @@ const FeaturesSection = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <h2 className="text-lg text-wonderwhiz-blue uppercase tracking-wider mb-3">WELCOME TO THE CURIOSITY FEED</h2>
+          <h2 className="text-lg text-wonderwhiz-blue uppercase tracking-wider mb-3 font-bold">WELCOME TO THE CURIOSITY FEED</h2>
           <h3 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6">
             It feels like magic.<br />
             It's just exceptionally thoughtful AI.
@@ -50,7 +50,7 @@ const FeaturesSection = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="bg-white bg-opacity-5 backdrop-blur-sm rounded-3xl overflow-hidden border border-wonderwhiz-purple border-opacity-30"
+          className="bg-white bg-opacity-5 backdrop-blur-sm rounded-3xl overflow-hidden border border-wonderwhiz-purple border-opacity-30 shadow-lg shadow-wonderwhiz-purple/20"
         >
           <div className="grid grid-cols-4 text-center py-5 bg-wonderwhiz-dark bg-opacity-50">
             <div className="font-bold text-white text-lg">Feature</div>
@@ -64,15 +64,24 @@ const FeaturesSection = () => {
               key={index} 
               className={`grid grid-cols-4 text-center py-5 ${index % 2 === 0 ? 'bg-wonderwhiz-dark bg-opacity-30' : 'bg-wonderwhiz-dark bg-opacity-10'}`}
             >
-              <div className="flex items-center px-4 text-white">{feature.name}</div>
+              <div className="flex items-center px-4 text-white font-medium">{feature.name}</div>
               <div className="flex justify-center">
-                {feature.wonderWhiz ? <div className="text-green-400 font-bold">✓ Yes</div> : <div className="text-red-400 font-bold">✕ No</div>}
+                {feature.wonderWhiz ? 
+                  <div className="text-wonderwhiz-yellow font-bold px-4 py-1 rounded-full bg-wonderwhiz-purple bg-opacity-20">✓ Yes</div> : 
+                  <div className="text-red-400 font-bold">✕ No</div>
+                }
               </div>
               <div className="flex justify-center">
-                {feature.chatGPT ? <div className="text-green-400 font-bold">✓ Yes</div> : <div className="text-red-400 font-bold">✕ No</div>}
+                {feature.chatGPT ? 
+                  <div className="text-green-400 font-bold px-4 py-1 rounded-full bg-green-400 bg-opacity-20">✓ Yes</div> : 
+                  <div className="text-red-400 font-bold">✕ No</div>
+                }
               </div>
               <div className="flex justify-center">
-                {feature.schoolApps ? <div className="text-green-400 font-bold">✓ Yes</div> : <div className="text-red-400 font-bold">✕ No</div>}
+                {feature.schoolApps ? 
+                  <div className="text-green-400 font-bold px-4 py-1 rounded-full bg-green-400 bg-opacity-20">✓ Yes</div> : 
+                  <div className="text-red-400 font-bold">✕ No</div>
+                }
               </div>
             </div>
           ))}
