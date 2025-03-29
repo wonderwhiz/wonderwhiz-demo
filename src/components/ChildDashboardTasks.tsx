@@ -1,42 +1,42 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ChildTaskList from './ChildTaskList';
 import { Check, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-
 interface ChildDashboardTasksProps {
   childId: string;
   onSparkEarned?: (amount: number) => void;
 }
-
-const ChildDashboardTasks = ({ childId, onSparkEarned }: ChildDashboardTasksProps) => {
+const ChildDashboardTasks = ({
+  childId,
+  onSparkEarned
+}: ChildDashboardTasksProps) => {
   const [completedTasksCount, setCompletedTasksCount] = useState(0);
   const [pendingTasksCount, setPendingTasksCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-
   const fetchTaskCounts = async () => {
     setIsLoading(true);
     try {
       // Fetch pending tasks count
-      const { count: pendingCount, error: pendingError } = await supabase
-        .from('child_tasks')
-        .select('*', { count: 'exact', head: true })
-        .eq('child_profile_id', childId)
-        .eq('status', 'pending');
-      
+      const {
+        count: pendingCount,
+        error: pendingError
+      } = await supabase.from('child_tasks').select('*', {
+        count: 'exact',
+        head: true
+      }).eq('child_profile_id', childId).eq('status', 'pending');
       if (pendingError) throw pendingError;
-      
+
       // Fetch completed tasks count
-      const { count: completedCount, error: completedError } = await supabase
-        .from('child_tasks')
-        .select('*', { count: 'exact', head: true })
-        .eq('child_profile_id', childId)
-        .eq('status', 'completed');
-      
+      const {
+        count: completedCount,
+        error: completedError
+      } = await supabase.from('child_tasks').select('*', {
+        count: 'exact',
+        head: true
+      }).eq('child_profile_id', childId).eq('status', 'completed');
       if (completedError) throw completedError;
-      
       setPendingTasksCount(pendingCount || 0);
       setCompletedTasksCount(completedCount || 0);
     } catch (error) {
@@ -45,18 +45,14 @@ const ChildDashboardTasks = ({ childId, onSparkEarned }: ChildDashboardTasksProp
       setIsLoading(false);
     }
   };
-
   useEffect(() => {
     fetchTaskCounts();
   }, [childId]);
-
   const handleTaskCompleted = () => {
     fetchTaskCounts();
   };
-
-  return (
-    <Card className="bg-white border-white/10 shadow-lg">
-      <CardHeader className="pb-2">
+  return <Card className="border-white/10 shadow-lg bg-purple-900">
+      <CardHeader className="pb-2 bg-purple-300">
         <CardTitle className="text-lg flex items-center justify-between text-gray-800">
           <span>Tasks</span>
           <div className="flex gap-4 text-sm">
@@ -71,17 +67,14 @@ const ChildDashboardTasks = ({ childId, onSparkEarned }: ChildDashboardTasksProp
           </div>
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="bg-purple-900">
         <Tabs defaultValue="pending" className="mt-2">
-          <TabsList className="grid grid-cols-2 mb-4">
+          <TabsList className="grid grid-cols-2 mb-4 bg-purple-200">
             <TabsTrigger value="pending">Pending</TabsTrigger>
             <TabsTrigger value="completed">Completed</TabsTrigger>
           </TabsList>
           <TabsContent value="pending">
-            <ChildTaskList 
-              childId={childId}
-              onTaskCompleted={handleTaskCompleted}
-            />
+            <ChildTaskList childId={childId} onTaskCompleted={handleTaskCompleted} />
           </TabsContent>
           <TabsContent value="completed">
             <div className="py-4 text-center">
@@ -90,8 +83,6 @@ const ChildDashboardTasks = ({ childId, onSparkEarned }: ChildDashboardTasksProp
           </TabsContent>
         </Tabs>
       </CardContent>
-    </Card>
-  );
+    </Card>;
 };
-
 export default ChildDashboardTasks;
