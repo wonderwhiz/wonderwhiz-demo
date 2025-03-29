@@ -13,6 +13,8 @@ import ContentBlock from '@/components/ContentBlock';
 import BlockReply from '@/components/BlockReply';
 import { SPECIALISTS } from '@/components/SpecialistAvatar';
 import ChildDashboardTasks from '@/components/ChildDashboardTasks';
+import SparksBalance from '@/components/SparksBalance';
+import SparksHistory from '@/components/SparksHistory';
 
 interface ChildProfile {
   id: string;
@@ -59,6 +61,7 @@ const Dashboard = () => {
   const [pastCurios, setPastCurios] = useState<Curio[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showSparksHistory, setShowSparksHistory] = useState(false);
   const feedEndRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
@@ -382,11 +385,38 @@ const Dashboard = () => {
         
         <div className="p-4 border-b border-white/10">
           <h3 className="text-white font-medium mb-1">Welcome, {childProfile?.name}!</h3>
-          <div className="flex items-center text-wonderwhiz-gold">
-            <Sparkles className="h-4 w-4 mr-1" />
-            <span className="text-sm">0 Sparks</span>
+          <div className="flex items-center">
+            <SparksBalance 
+              childId={profileId || ''} 
+              initialBalance={childProfile?.sparks_balance} 
+              size="md"
+            />
+            <button 
+              onClick={() => setShowSparksHistory(prev => !prev)} 
+              className="ml-auto text-white/60 hover:text-white transition-colors"
+            >
+              {showSparksHistory ? 'Hide' : 'View'} History
+            </button>
           </div>
         </div>
+        
+        <AnimatePresence>
+          {showSparksHistory && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="p-4 border-b border-white/10">
+                <SparksHistory 
+                  childId={profileId || ''} 
+                  limit={5}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         
         <div className="p-4">
           <h3 className="text-white font-medium mb-2">Your Past Curios</h3>
@@ -446,7 +476,13 @@ const Dashboard = () => {
             </form>
           </div>
           
-          <div className="w-10">
+          <div className="flex items-center space-x-2">
+            <SparksBalance 
+              childId={profileId || ''} 
+              initialBalance={childProfile?.sparks_balance} 
+              size="sm"
+              className="hidden md:flex mr-2"
+            />
             <Button
               variant="ghost"
               size="icon"
