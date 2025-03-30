@@ -46,7 +46,7 @@ export async function awardSparks(childId: string, trigger: SparkTrigger, custom
     
     if (transactionError) throw transactionError;
 
-    // Call the edge function to update the child's balance
+    // Call the edge function to update the child's balance with correct parameter names
     const { data, error } = await supabase.functions.invoke('increment-sparks-balance', {
       body: JSON.stringify({ 
         profileId: childId, 

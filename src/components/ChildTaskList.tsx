@@ -4,6 +4,7 @@ import { Check, X, Award, TrendingUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { awardSparks } from '@/services/SparksService';
 
 interface Task {
   id: string;
@@ -83,16 +84,8 @@ const ChildTaskList = ({ childId, onTaskCompleted }: ChildTaskListProps) => {
         
       if (updateError) throw updateError;
       
-      // Increment sparks balance using RPC call with correct parameter names
-      const { error: rewardError } = await supabase.rpc(
-        'increment_sparks_balance',
-        { 
-          child_id: childId, 
-          amount: rewardAmount 
-        }
-      );
-      
-      if (rewardError) throw rewardError;
+      // Increment sparks balance using the awardSparks function instead of direct RPC call
+      await awardSparks(childId, 'task_completion');
       
       // Show success toast
       toast.success('Task completed! Sparks earned!', {
