@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -68,17 +69,11 @@ const Dashboard = () => {
   const [childProfile, setChildProfile] = useState<ChildProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [query, setQuery] = useState('');
-  const [currentCurio, setCurrentCurio] = useState<Curio | null>(null);
-  const [contentBlocks, setContentBlocks] = useState<ContentBlock[]>([]);
-  const [blockReplies, setBlockReplies] = useState<Record<string, BlockReply[]>>({});
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [curioSuggestions, setCurioSuggestions] = useState<string[]>(['How do volcanoes work?', 'What are black holes?', 'Tell me about penguins', 'Show me cool dinosaurs']);
   const [pastCurios, setPastCurios] = useState<Curio[]>([]);
   const [showSparksHistory, setShowSparksHistory] = useState(false);
   const [showQuickMenu, setShowQuickMenu] = useState(false);
-  const feedEndRef = useRef<HTMLDivElement>(null);
-  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
-  const [curioSuggestions, setCurioSuggestions] = useState<string[]>(['How do volcanoes work?', 'What are black holes?', 'Tell me about penguins', 'Show me cool dinosaurs']);
-  const [loadingBlocks, setLoadingBlocks] = useState(false);
-  const [visibleBlocksCount, setVisibleBlocksCount] = useState(3);
   const [curioPageSize] = useState(5);
   const [displayedCuriosCount, setDisplayedCuriosCount] = useState(curioPageSize);
   const isMobile = useIsMobile();
@@ -203,109 +198,23 @@ const Dashboard = () => {
       } catch (error) {
         console.error('Error awarding sparks for new curio:', error);
       }
-      const claudeResponse = await supabase.functions.invoke('generate-curiosity-blocks', {
-        body: JSON.stringify({
-          query: query.trim(),
-          childProfile: childProfile
-        })
-      });
-      if (claudeResponse.error) {
-        throw new Error(`Failed to generate content: ${claudeResponse.error.message}`);
-      }
-      const generatedBlocks = claudeResponse.data;
-      if (!Array.isArray(generatedBlocks)) {
-        throw new Error("Invalid response format from generate-curiosity-blocks");
-      }
-      console.log("Generated blocks:", generatedBlocks);
-      for (const block of generatedBlocks) {
-        await supabase.from('content_blocks').insert({
-          curio_id: newCurio.id,
-          type: block.type,
-          specialist_id: block.specialist_id,
-          content: block.content
-        });
-      }
+
+      // Update past curios list
       setPastCurios(prev => [newCurio, ...prev]);
-      setContentBlocks(generatedBlocks);
-      setCurrentCurio(newCurio);
+      
+      // Instead of generating content here, navigate to the dedicated curio page
+      navigate(`/curio/${profileId}/${newCurio.id}`);
       setQuery('');
-      setTimeout(() => {
-        feedEndRef.current?.scrollIntoView({
-          behavior: 'smooth'
-        });
-      }, 100);
     } catch (error) {
       console.error('Error creating curio:', error);
       toast.error("Oops! Something went wrong with your question.");
-    } finally {
       setIsGenerating(false);
     }
   };
 
-  const handleLoadCurio = async (curio: Curio) => {
-    setCurrentCurio(curio);
-    setLoadingBlocks(true);
-    setContentBlocks([]);
-    setVisibleBlocksCount(3);
-    try {
-      const {
-        data: blocks,
-        error: blocksError
-      } = await supabase.from('content_blocks').select('*').eq('curio_id', curio.id).order('created_at', {
-        ascending: true
-      });
-      if (blocksError) throw blocksError;
-      const blockIds = blocks?.map(block => block.id) || [];
-      let allReplies: Record<string, BlockReply[]> = {};
-      if (blockIds.length > 0) {
-        const {
-          data: replies,
-          error: repliesError
-        } = await supabase.from('block_replies').select('*').in('block_id', blockIds).order('created_at', {
-          ascending: true
-        });
-        if (repliesError) throw repliesError;
-        if (replies) {
-          allReplies = replies.reduce((acc: Record<string, BlockReply[]>, reply) => {
-            if (!acc[reply.block_id]) {
-              acc[reply.block_id] = [];
-            }
-            acc[reply.block_id].push(reply);
-            return acc;
-          }, {});
-        }
-      }
-      if (!blocks || blocks.length === 0) {
-        if (childProfile) {
-          setIsGenerating(true);
-          const claudeResponse = await supabase.functions.invoke('generate-curiosity-blocks', {
-            body: JSON.stringify({
-              query: curio.query,
-              childProfile: childProfile
-            })
-          });
-          const generatedBlocks = claudeResponse.data;
-          for (const block of generatedBlocks) {
-            await supabase.from('content_blocks').insert({
-              curio_id: curio.id,
-              type: block.type,
-              specialist_id: block.specialist_id,
-              content: block.content
-            });
-          }
-          setContentBlocks(generatedBlocks);
-          setIsGenerating(false);
-        }
-      } else {
-        setContentBlocks(blocks as ContentBlock[]);
-      }
-      setBlockReplies(allReplies);
-    } catch (error) {
-      console.error('Error loading curio content:', error);
-      toast.error("Failed to load content");
-    } finally {
-      setLoadingBlocks(false);
-    }
+  const handleLoadCurio = (curio: Curio) => {
+    // Navigate to the dedicated curio page instead of loading content in this component
+    navigate(`/curio/${profileId}/${curio.id}`);
   };
 
   const handleFollowRabbitHole = async (question: string) => {
@@ -342,214 +251,9 @@ const Dashboard = () => {
     }, 100);
   };
 
-  const handleQuizCorrect = async (blockId: string) => {
-    try {
-      const {
-        data: sparkData
-      } = await supabase.functions.invoke('increment-sparks-balance', {
-        body: JSON.stringify({
-          profileId: profileId,
-          amount: 5
-        })
-      });
-      if (childProfile) {
-        setChildProfile({
-          ...childProfile,
-          sparks_balance: (childProfile.sparks_balance || 0) + 5
-        });
-      }
-      await supabase.from('sparks_transactions').insert({
-        child_id: profileId,
-        amount: 5,
-        reason: 'Answering quiz correctly',
-        block_id: blockId
-      });
-      toast.success('You earned 5 sparks for answering correctly!', {
-        duration: 2000,
-        position: 'bottom-right'
-      });
-    } catch (error) {
-      console.error('Error awarding sparks for correct quiz answer:', error);
-    }
+  const handleLoadMoreCurios = () => {
+    setDisplayedCuriosCount(prev => Math.min(prev + curioPageSize, pastCurios.length));
   };
-
-  const handleNewsRead = async (blockId: string) => {
-    try {
-      const {
-        data: sparkData
-      } = await supabase.functions.invoke('increment-sparks-balance', {
-        body: JSON.stringify({
-          profileId: profileId,
-          amount: 3
-        })
-      });
-      if (childProfile) {
-        setChildProfile({
-          ...childProfile,
-          sparks_balance: (childProfile.sparks_balance || 0) + 3
-        });
-      }
-      await supabase.from('sparks_transactions').insert({
-        child_id: profileId,
-        amount: 3,
-        reason: 'Reading a news card',
-        block_id: blockId
-      });
-      toast.success('You earned 3 sparks for reading the news!', {
-        duration: 2000,
-        position: 'bottom-right'
-      });
-    } catch (error) {
-      console.error('Error awarding sparks for news read:', error);
-    }
-  };
-
-  const handleCreativeUpload = async (blockId: string) => {
-    try {
-      const {
-        data: sparkData
-      } = await supabase.functions.invoke('increment-sparks-balance', {
-        body: JSON.stringify({
-          profileId: profileId,
-          amount: 10
-        })
-      });
-      if (childProfile) {
-        setChildProfile({
-          ...childProfile,
-          sparks_balance: (childProfile.sparks_balance || 0) + 10
-        });
-      }
-      await supabase.from('sparks_transactions').insert({
-        child_id: profileId,
-        amount: 10,
-        reason: 'Uploading creative content',
-        block_id: blockId
-      });
-      toast.success('You earned 10 sparks for your creativity!', {
-        duration: 2000,
-        position: 'bottom-right'
-      });
-    } catch (error) {
-      console.error('Error awarding sparks for creative upload:', error);
-    }
-  };
-
-  const handleToggleLike = async (blockId: string) => {
-    setContentBlocks(prev => prev.map(block => block.id === blockId ? {
-      ...block,
-      liked: !block.liked
-    } : block));
-    try {
-      const blockToUpdate = contentBlocks.find(b => b.id === blockId);
-      if (blockToUpdate) {
-        await supabase.from('content_blocks').update({
-          liked: !blockToUpdate.liked
-        }).eq('id', blockId);
-      }
-    } catch (error) {
-      console.error('Error updating like status:', error);
-    }
-  };
-
-  const handleToggleBookmark = async (blockId: string) => {
-    setContentBlocks(prev => prev.map(block => block.id === blockId ? {
-      ...block,
-      bookmarked: !block.bookmarked
-    } : block));
-    try {
-      const blockToUpdate = contentBlocks.find(b => b.id === blockId);
-      if (blockToUpdate) {
-        await supabase.from('content_blocks').update({
-          bookmarked: !blockToUpdate.bookmarked
-        }).eq('id', blockId);
-      }
-    } catch (error) {
-      console.error('Error updating bookmark status:', error);
-    }
-  };
-
-  const handleBlockReply = async (blockId: string, message: string) => {
-    if (!message.trim() || !childProfile) return;
-    try {
-      const block = contentBlocks.find(b => b.id === blockId);
-      if (!block) return;
-      const {
-        data: replyData,
-        error: replyError
-      } = await supabase.from('block_replies').insert({
-        block_id: blockId,
-        content: message,
-        from_user: true
-      }).select().single();
-      if (replyError) throw replyError;
-      setBlockReplies(prev => ({
-        ...prev,
-        [blockId]: [...(prev[blockId] || []), replyData]
-      }));
-      const aiResponse = await supabase.functions.invoke('handle-block-chat', {
-        body: JSON.stringify({
-          blockId,
-          messageContent: message,
-          blockType: block.type,
-          blockContent: block.content,
-          childProfile,
-          specialistId: block.specialist_id
-        })
-      });
-      if (aiResponse.error) {
-        throw new Error(`Failed to get response: ${aiResponse.error.message}`);
-      }
-      const {
-        data: aiReplyData,
-        error: aiReplyError
-      } = await supabase.from('block_replies').insert({
-        block_id: blockId,
-        content: aiResponse.data.reply,
-        from_user: false
-      }).select().single();
-      if (aiReplyError) throw aiReplyError;
-      setBlockReplies(prev => ({
-        ...prev,
-        [blockId]: [...(prev[blockId] || []), aiReplyData]
-      }));
-    } catch (error) {
-      console.error('Error handling reply:', error);
-      toast.error("Failed to send message");
-    }
-  };
-
-  const handleSparkEarned = (amount: number) => {
-    if (childProfile) {
-      setChildProfile({
-        ...childProfile,
-        sparks_balance: (childProfile.sparks_balance || 0) + amount
-      });
-    }
-  };
-
-  const handleLoadMoreBlocks = () => {
-    setVisibleBlocksCount(prev => Math.min(prev + 3, contentBlocks.length));
-  };
-
-  const observerTarget = useRef(null);
-  useEffect(() => {
-    const observer = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && !loadingBlocks && visibleBlocksCount < contentBlocks.length) {
-        handleLoadMoreBlocks();
-      }
-    }, {
-      threshold: 0.1
-    });
-    if (observerTarget.current) {
-      observer.observe(observerTarget.current);
-    }
-    return () => {
-      if (observerTarget.current) {
-        observer.unobserve(observerTarget.current);
-      }
-    };
-  }, [observerTarget, loadingBlocks, visibleBlocksCount, contentBlocks.length]);
 
   const handleCurioSuggestionClick = async (suggestion: string) => {
     if (!childProfile || isGenerating) return;
@@ -597,47 +301,18 @@ const Dashboard = () => {
       } catch (error) {
         console.error('Error awarding sparks for new curio:', error);
       }
-      const claudeResponse = await supabase.functions.invoke('generate-curiosity-blocks', {
-        body: JSON.stringify({
-          query: suggestion.trim(),
-          childProfile: childProfile
-        })
-      });
-      if (claudeResponse.error) {
-        throw new Error(`Failed to generate content: ${claudeResponse.error.message}`);
-      }
-      const generatedBlocks = claudeResponse.data;
-      if (!Array.isArray(generatedBlocks)) {
-        throw new Error("Invalid response format from generate-curiosity-blocks");
-      }
-      console.log("Generated blocks:", generatedBlocks);
-      for (const block of generatedBlocks) {
-        await supabase.from('content_blocks').insert({
-          curio_id: newCurio.id,
-          type: block.type,
-          specialist_id: block.specialist_id,
-          content: block.content
-        });
-      }
+
+      // Update past curios list
       setPastCurios(prev => [newCurio, ...prev]);
-      setContentBlocks(generatedBlocks);
-      setCurrentCurio(newCurio);
-      setQuery('');
-      setTimeout(() => {
-        feedEndRef.current?.scrollIntoView({
-          behavior: 'smooth'
-        });
-      }, 100);
+      
+      // Navigate to the dedicated curio page instead of generating content here
+      navigate(`/curio/${profileId}/${newCurio.id}`);
     } catch (error) {
       console.error('Error creating curio:', error);
       toast.error("Oops! Something went wrong with your question.");
     } finally {
       setIsGenerating(false);
     }
-  };
-
-  const handleLoadMoreCurios = () => {
-    setDisplayedCuriosCount(prev => Math.min(prev + curioPageSize, pastCurios.length));
   };
 
   if (isLoading) {
@@ -709,7 +384,7 @@ const Dashboard = () => {
                           p-3 
                           flex 
                           items-center 
-                          ${currentCurio?.id === curio.id ? 'bg-white/10 text-white' : 'text-white/80'}
+                          text-white/80
                           line-clamp-2 
                           break-words 
                           overflow-hidden
@@ -889,7 +564,7 @@ const Dashboard = () => {
               delay: 0.4
             }}>
                 <Card className="bg-white/5 border-white/10">
-                  {!currentCurio && <div className="text-center py-8 sm:py-12">
+                  <div className="text-center py-8 sm:py-12">
                       <motion.div initial={{
                     opacity: 0,
                     scale: 0.9
@@ -924,53 +599,7 @@ const Dashboard = () => {
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 max-w-3xl mx-auto px-3 sm:px-4">
                         {curioSuggestions.map((suggestion, index) => <CurioSuggestion key={`${suggestion}-${index}`} suggestion={suggestion} onClick={handleCurioSuggestionClick} index={index} directGenerate={true} />)}
                       </div>
-                    </div>}
-                  
-                  {currentCurio && <div>
-                      <AnimatePresence>
-                        {(isGenerating || loadingBlocks) && <motion.div initial={{
-                      opacity: 0
-                    }} animate={{
-                      opacity: 1
-                    }} exit={{
-                      opacity: 0
-                    }} className="p-4 mb-6 bg-wonderwhiz-purple/20 backdrop-blur-sm rounded-lg border border-wonderwhiz-purple/30 flex items-center">
-                            <div className="mr-3">
-                              <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
-                            </div>
-                            <p className="text-white">
-                              {isGenerating ? "Generating your personalized content..." : "Loading content blocks..."}
-                            </p>
-                          </motion.div>}
-                      </AnimatePresence>
-                      
-                      <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 px-3 sm:px-4 pt-4">{currentCurio.title}</h2>
-                      <div className="space-y-4 px-3 sm:px-4 pb-4">
-                        {contentBlocks.slice(0, visibleBlocksCount).map((block, index) => <motion.div key={block.id} className="space-y-2" initial={{
-                      opacity: 0,
-                      y: 20
-                    }} animate={{
-                      opacity: 1,
-                      y: 0
-                    }} transition={{
-                      delay: index * 0.1,
-                      duration: 0.3
-                    }}>
-                            <ContentBlock block={block} onToggleLike={handleToggleLike} onToggleBookmark={handleToggleBookmark} onReply={handleBlockReply} onSetQuery={setQuery} onRabbitHoleFollow={handleFollowRabbitHole} onQuizCorrect={() => handleQuizCorrect(block.id)} onNewsRead={() => handleNewsRead(block.id)} onCreativeUpload={() => handleCreativeUpload(block.id)} colorVariant={index % 3} userId={profileId} childProfileId={profileId} />
-                            
-                            {blockReplies[block.id] && blockReplies[block.id].length > 0 && <div className="pl-3 sm:pl-4 border-l-2 border-white/20 ml-3 sm:ml-4">
-                                {blockReplies[block.id].map(reply => <BlockReply key={reply.id} content={reply.content} fromUser={reply.from_user} specialistId={block.specialist_id} timestamp={reply.created_at} />)}
-                              </div>}
-                          </motion.div>)}
-                        
-                        {/* Load more target for intersection observer */}
-                        {visibleBlocksCount < contentBlocks.length && <div ref={observerTarget} className="h-10 flex items-center justify-center text-white/50 text-sm">
-                            <div className="animate-pulse">Loading more content...</div>
-                          </div>}
-                      </div>
-                    </div>}
-                  
-                  <div ref={feedEndRef} />
+                    </div>
                 </Card>
               </motion.div>
               
