@@ -46,18 +46,22 @@ export async function awardSparks(childId: string, trigger: SparkTrigger, custom
     
     if (transactionError) throw transactionError;
 
-    // Update the child's sparks balance directly with a simple update operation
+    // Use RPC to get the new balance
+    const { data: newBalance, error: rpcError } = await supabase.rpc(
+      'get_new_balance', 
+      { 
+        profile_id: childId, 
+        add_amount: reward.amount 
+      }
+    );
+    
+    if (rpcError) throw rpcError;
+
+    // Update the child's sparks balance with the value returned from the RPC
     const { error: updateError } = await supabase
       .from('child_profiles')
       .update({ 
-        sparks_balance: supabase.rpc(
-          'get_new_balance', 
-          { 
-            profile_id: childId, 
-            add_amount: reward.amount 
-          },
-          { count: 'exact' }
-        ) 
+        sparks_balance: newBalance
       })
       .eq('id', childId);
     
