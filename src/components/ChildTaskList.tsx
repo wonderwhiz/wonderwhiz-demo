@@ -83,23 +83,14 @@ const ChildTaskList = ({ childId, onTaskCompleted }: ChildTaskListProps) => {
         // Continue with task completion even if sparks award fails
       }
 
-      // Use a direct SQL update for the task status via an edge function
-      // This avoids the RLS infinite recursion issue
-      const completedAt = new Date().toISOString();
-
-      // Manual update of the task status
-      const { error: updateError } = await supabase
-        .from('child_tasks')
-        .update({ 
-          status: 'completed',
-          completed_at: completedAt 
-        })
-        .eq('id', taskId)
-        .select();
-        
-      if (updateError) {
-        console.error('Error completing task:', updateError);
-        throw updateError;
+      // Use SQL RPC function to bypass RLS policy issues
+      const { error: rpcError } = await supabase.rpc('complete_child_task', {
+        task_id: taskId
+      });
+      
+      if (rpcError) {
+        console.error('Error completing task via RPC:', rpcError);
+        throw new Error('Failed to complete task');
       }
       
       // Show success toast
