@@ -85,11 +85,11 @@ const ChildTaskList = ({ childId, onTaskCompleted }: ChildTaskListProps) => {
       if (updateError) throw updateError;
       
       // Award sparks using our service function
-      await awardSparks(childId, 'task_completion');
+      const sparksAwarded = await awardSparks(childId, 'task_completion');
       
       // Show success toast
       toast.success('Task completed! Sparks earned!', {
-        description: `+${rewardAmount} sparks added to your balance.`
+        description: `+${sparksAwarded} sparks added to your balance.`
       });
       
       // Update task list
