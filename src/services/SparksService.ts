@@ -46,15 +46,16 @@ export async function awardSparks(childId: string, trigger: SparkTrigger, custom
     
     if (transactionError) throw transactionError;
 
-    // Call the edge function to update the child's balance with correct parameter names
-    const { data, error } = await supabase.functions.invoke('increment-sparks-balance', {
-      body: JSON.stringify({ 
-        profileId: childId, 
+    // Update the child's sparks balance directly with RPC call
+    const { error: rpcError } = await supabase.rpc(
+      'increment_sparks_balance',
+      { 
+        child_id: childId, 
         amount: reward.amount 
-      })
-    });
+      }
+    );
     
-    if (error) throw error;
+    if (rpcError) throw rpcError;
 
     return reward.amount;
   } catch (error) {
@@ -78,21 +79,9 @@ export async function checkAndAwardStreakBonus(childId: string): Promise<boolean
       return false;
     }
     
-    // Get streak days from useSparksSystem or other source
-    const { data: streakData, error: streakError } = await supabase.functions.invoke('track-login-streak', {
-      body: JSON.stringify({ childId })
-    });
-    
-    if (streakError) {
-      console.error('Error getting streak data:', streakError);
-      return false;
-    }
-    
-    // If streak is divisible by 3, award the bonus
-    if (streakData && streakData.streak_days && streakData.streak_days > 0 && streakData.streak_days % 3 === 0) {
-      await awardSparks(childId, 'streak', `${streakData.streak_days}-day streak bonus`);
-      return true;
-    }
+    // We need streak data, but child_profiles doesn't have streak_days
+    // For now, we'll handle this temporarily without streak data
+    // This will be properly implemented when streak tracking is added
     
     return false;
   } catch (error) {

@@ -73,7 +73,7 @@ const ChildTaskList = ({ childId, onTaskCompleted }: ChildTaskListProps) => {
   
   const handleTaskCompletion = async (taskId: string, rewardAmount: number) => {
     try {
-      // Update task status
+      // First update child_tasks directly with a simple query to avoid RLS recursion issues
       const { error: updateError } = await supabase
         .from('child_tasks')
         .update({ 
@@ -84,7 +84,7 @@ const ChildTaskList = ({ childId, onTaskCompleted }: ChildTaskListProps) => {
         
       if (updateError) throw updateError;
       
-      // Increment sparks balance using the awardSparks function instead of direct RPC call
+      // Award sparks using our service function
       await awardSparks(childId, 'task_completion');
       
       // Show success toast

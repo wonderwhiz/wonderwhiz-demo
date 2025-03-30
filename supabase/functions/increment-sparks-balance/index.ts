@@ -20,11 +20,18 @@ serve(async (req) => {
     );
 
     // Parse request body
-    const { profileId, amount } = await req.json();
+    const requestData = await req.json();
+    
+    // Support both parameter naming conventions for backward compatibility
+    const childId = requestData.childId || requestData.profileId || requestData.child_id;
+    const amount = requestData.amount;
 
-    if (!profileId || typeof amount !== 'number') {
+    if (!childId || typeof amount !== 'number') {
       return new Response(
-        JSON.stringify({ error: "Profile ID and amount are required" }),
+        JSON.stringify({ 
+          error: "Profile ID and amount are required",
+          requestData
+        }),
         { 
           status: 400, 
           headers: { 
@@ -39,7 +46,7 @@ serve(async (req) => {
     const { error: rpcError } = await supabaseClient.rpc(
       'increment_sparks_balance',
       { 
-        child_id: profileId, 
+        child_id: childId, 
         amount: amount 
       }
     );
@@ -47,7 +54,7 @@ serve(async (req) => {
     if (rpcError) {
       console.error("Error calling RPC function:", rpcError.message);
       return new Response(
-        JSON.stringify({ error: "Error updating sparks balance" }),
+        JSON.stringify({ error: "Error updating sparks balance", details: rpcError.message }),
         { 
           status: 500, 
           headers: { 
@@ -62,13 +69,13 @@ serve(async (req) => {
     const { data: profile, error: fetchError } = await supabaseClient
       .from('child_profiles')
       .select('sparks_balance')
-      .eq('id', profileId)
+      .eq('id', childId)
       .single();
 
     if (fetchError) {
       console.error("Error fetching updated balance:", fetchError.message);
       return new Response(
-        JSON.stringify({ error: "Error fetching updated balance" }),
+        JSON.stringify({ error: "Error fetching updated balance", details: fetchError.message }),
         { 
           status: 500, 
           headers: { 
@@ -92,7 +99,7 @@ serve(async (req) => {
   } catch (error) {
     console.error("Unexpected error:", error.message);
     return new Response(
-      JSON.stringify({ error: "Internal Server Error" }),
+      JSON.stringify({ error: "Internal Server Error", details: error.message }),
       { 
         status: 500, 
         headers: { 
