@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import { ThemeProvider } from "@/components/theme-provider"
-import { Toaster } from "@/components/ui/toaster"
-import Index from '@/pages';
+import { ThemeProvider } from "./components/theme-provider";
+import { Toaster } from "@/components/ui/toaster";
+import Index from './pages/Index';
 import About from '@/pages/About';
 import Features from '@/pages/Features';
 import Pricing from '@/pages/Pricing';
@@ -23,7 +24,6 @@ import CurioPage from './pages/CurioPage';
 
 const queryClient = new QueryClient()
 
-// Add the new CurioPage route to the router
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
