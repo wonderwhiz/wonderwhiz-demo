@@ -411,6 +411,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      complete_child_task: {
+        Args: {
+          task_id: string
+        }
+        Returns: undefined
+      }
       increment_sparks_balance: {
         Args: {
           child_id: string
