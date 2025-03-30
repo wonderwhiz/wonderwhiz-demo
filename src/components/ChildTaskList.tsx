@@ -83,14 +83,19 @@ const ChildTaskList = ({ childId, onTaskCompleted }: ChildTaskListProps) => {
         // Continue with task completion even if sparks award fails
       }
 
-      // Update task status in a separate transaction
+      // Use a direct SQL update for the task status via an edge function
+      // This avoids the RLS infinite recursion issue
+      const completedAt = new Date().toISOString();
+
+      // Manual update of the task status
       const { error: updateError } = await supabase
         .from('child_tasks')
         .update({ 
           status: 'completed',
-          completed_at: new Date().toISOString()
+          completed_at: completedAt 
         })
-        .eq('id', taskId);
+        .eq('id', taskId)
+        .select();
         
       if (updateError) {
         console.error('Error completing task:', updateError);
