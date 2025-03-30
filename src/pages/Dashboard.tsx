@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -83,6 +82,15 @@ const Dashboard = () => {
     streakBonusReceived,
     streakBonusAmount
   } = useSparksSystem(profileId);
+
+  const handleSparkEarned = (amount: number) => {
+    if (childProfile) {
+      setChildProfile({
+        ...childProfile,
+        sparks_balance: (childProfile.sparks_balance || 0) + amount
+      });
+    }
+  };
 
   useEffect(() => {
     const loadProfileAndCurios = async () => {

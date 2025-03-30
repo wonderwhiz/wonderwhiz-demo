@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useParams, useNavigate, Link } from 'react-router-dom';
@@ -37,6 +36,8 @@ interface ContentBlock {
   content: any;
   liked: boolean;
   bookmarked: boolean;
+  curio_id?: string;
+  created_at?: string;
 }
 
 interface BlockReply {
@@ -59,13 +60,11 @@ const CurioPage = () => {
   const [displayedBlocksCount, setDisplayedBlocksCount] = useState(2);
   const [totalBlocksCount, setTotalBlocksCount] = useState(0);
   
-  // Create a ref for the load more trigger
   const { ref: loadMoreRef, inView } = useInView({
     threshold: 0.1,
     triggerOnce: false
   });
 
-  // Load child profile and curio data
   useEffect(() => {
     const loadData = async () => {
       if (!profileId || !curioId) {
@@ -85,7 +84,6 @@ const CurioPage = () => {
         setChildProfile(profileResponse.data);
         setCurio(curioResponse.data);
 
-        // Load existing blocks or generate new ones
         await loadContentBlocks(curioResponse.data);
       } catch (error) {
         console.error('Error loading data:', error);
@@ -99,7 +97,6 @@ const CurioPage = () => {
     loadData();
   }, [profileId, curioId, navigate]);
 
-  // Load content blocks for the curio
   const loadContentBlocks = async (curioData: Curio) => {
     try {
       const { data: blocks, error: blocksError } = await supabase
@@ -115,14 +112,17 @@ const CurioPage = () => {
         return;
       }
 
-      // Set total blocks count
       setTotalBlocksCount(blocks.length);
       
-      // Load only the first 2 blocks initially
       const initialBlocks = blocks.slice(0, displayedBlocksCount);
-      setContentBlocks(initialBlocks);
+      
+      const typedBlocks = initialBlocks.map(block => ({
+        ...block,
+        type: block.type as 'fact' | 'quiz' | 'flashcard' | 'creative' | 'task' | 'riddle' | 'funFact' | 'activity' | 'news' | 'mindfulness'
+      }));
+      
+      setContentBlocks(typedBlocks);
 
-      // Load replies for initially loaded blocks
       const blockIds = initialBlocks.map(block => block.id);
       if (blockIds.length > 0) {
         await loadRepliesForBlocks(blockIds);
@@ -133,7 +133,6 @@ const CurioPage = () => {
     }
   };
 
-  // Load replies for specified blocks
   const loadRepliesForBlocks = async (blockIds: string[]) => {
     try {
       const { data: replies, error: repliesError } = await supabase
@@ -160,7 +159,6 @@ const CurioPage = () => {
     }
   };
 
-  // Generate new blocks for a curio
   const generateNewBlocks = async (curioData: Curio) => {
     if (!childProfile) return;
 
@@ -184,7 +182,6 @@ const CurioPage = () => {
 
       console.log("Generated blocks:", generatedBlocks);
       
-      // Save generated blocks to database
       for (const block of generatedBlocks) {
         await supabase.from('content_blocks').insert({
           curio_id: curioData.id,
@@ -194,11 +191,17 @@ const CurioPage = () => {
         });
       }
       
-      // Set total blocks count
       setTotalBlocksCount(generatedBlocks.length);
       
-      // Display only the first 2 blocks
-      setContentBlocks(generatedBlocks.slice(0, displayedBlocksCount));
+      const typedBlocks = generatedBlocks.slice(0, displayedBlocksCount).map(block => ({
+        ...block,
+        id: block.id || `temp-${Date.now()}-${Math.random()}`,
+        type: block.type as 'fact' | 'quiz' | 'flashcard' | 'creative' | 'task' | 'riddle' | 'funFact' | 'activity' | 'news' | 'mindfulness',
+        liked: false,
+        bookmarked: false
+      }));
+      
+      setContentBlocks(typedBlocks);
     } catch (error) {
       console.error('Error generating blocks:', error);
       toast.error("Failed to generate content");
@@ -207,14 +210,12 @@ const CurioPage = () => {
     }
   };
 
-  // Handle loading more blocks when scroll trigger is activated
   useEffect(() => {
     if (inView && !isLoading && contentBlocks.length < totalBlocksCount) {
       loadMoreBlocks();
     }
   }, [inView, isLoading, contentBlocks.length, totalBlocksCount]);
 
-  // Load more blocks
   const loadMoreBlocks = useCallback(async () => {
     if (contentBlocks.length >= totalBlocksCount) return;
 
@@ -233,11 +234,14 @@ const CurioPage = () => {
       if (blocksError) throw blocksError;
       
       if (nextBlocks && nextBlocks.length > 0) {
-        // Load replies for the new blocks
         await loadRepliesForBlocks(nextBlocks.map(block => block.id));
         
-        // Add new blocks to the list
-        setContentBlocks(prev => [...prev, ...nextBlocks]);
+        const typedNewBlocks = nextBlocks.map(block => ({
+          ...block,
+          type: block.type as 'fact' | 'quiz' | 'flashcard' | 'creative' | 'task' | 'riddle' | 'funFact' | 'activity' | 'news' | 'mindfulness'
+        }));
+        
+        setContentBlocks(prev => [...prev, ...typedNewBlocks]);
         setDisplayedBlocksCount(prev => prev + nextBlocks.length);
       }
     } catch (error) {
@@ -245,7 +249,6 @@ const CurioPage = () => {
     }
   }, [contentBlocks.length, totalBlocksCount, curioId]);
 
-  // Handle block interactions
   const handleToggleLike = async (blockId: string) => {
     setContentBlocks(prev => prev.map(block => 
       block.id === blockId ? {...block, liked: !block.liked} : block
@@ -466,7 +469,6 @@ const CurioPage = () => {
         position: 'bottom-right'
       });
       
-      // Create a new curio and navigate to it
       const { data: newCurio, error: curioError } = await supabase
         .from('curios')
         .insert({
@@ -588,7 +590,6 @@ const CurioPage = () => {
                   </motion.div>
                 ))}
                 
-                {/* Loading indicator and intersection observer target */}
                 {contentBlocks.length < totalBlocksCount && (
                   <div 
                     ref={loadMoreRef}
