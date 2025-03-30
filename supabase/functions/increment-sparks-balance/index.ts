@@ -35,39 +35,17 @@ serve(async (req) => {
       );
     }
 
-    // Get the current balance
-    const { data: profile, error: fetchError } = await supabaseClient
-      .from('child_profiles')
-      .select('sparks_balance')
-      .eq('id', profileId)
-      .single();
+    // Use RPC function to update the sparks balance
+    const { error: rpcError } = await supabaseClient.rpc(
+      'increment_sparks_balance',
+      { 
+        child_id: profileId, 
+        amount: amount 
+      }
+    );
 
-    if (fetchError) {
-      console.error("Error fetching child profile:", fetchError.message);
-      return new Response(
-        JSON.stringify({ error: "Error fetching child profile" }),
-        { 
-          status: 500, 
-          headers: { 
-            "Content-Type": "application/json",
-            ...corsHeaders
-          }
-        }
-      );
-    }
-
-    // Calculate new balance
-    const currentBalance = profile.sparks_balance || 0;
-    const newBalance = currentBalance + amount;
-
-    // Update the balance
-    const { error: updateError } = await supabaseClient
-      .from('child_profiles')
-      .update({ sparks_balance: newBalance })
-      .eq('id', profileId);
-
-    if (updateError) {
-      console.error("Error updating sparks balance:", updateError.message);
+    if (rpcError) {
+      console.error("Error calling RPC function:", rpcError.message);
       return new Response(
         JSON.stringify({ error: "Error updating sparks balance" }),
         { 
@@ -80,8 +58,29 @@ serve(async (req) => {
       );
     }
 
+    // Get the updated balance
+    const { data: profile, error: fetchError } = await supabaseClient
+      .from('child_profiles')
+      .select('sparks_balance')
+      .eq('id', profileId)
+      .single();
+
+    if (fetchError) {
+      console.error("Error fetching updated balance:", fetchError.message);
+      return new Response(
+        JSON.stringify({ error: "Error fetching updated balance" }),
+        { 
+          status: 500, 
+          headers: { 
+            "Content-Type": "application/json",
+            ...corsHeaders
+          }
+        }
+      );
+    }
+
     return new Response(
-      JSON.stringify({ success: true, newBalance }),
+      JSON.stringify({ success: true, newBalance: profile.sparks_balance }),
       { 
         status: 200, 
         headers: { 

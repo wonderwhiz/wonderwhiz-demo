@@ -47,19 +47,14 @@ export async function awardSparks(childId: string, trigger: SparkTrigger, custom
     if (transactionError) throw transactionError;
 
     // Call the edge function to update the child's balance
-    try {
-      const { error } = await supabase.functions.invoke('increment-sparks-balance', {
-        body: JSON.stringify({ 
-          profileId: childId, 
-          amount: reward.amount 
-        })
-      });
-      
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error calling increment-sparks-balance function:', error);
-      throw error;
-    }
+    const { data, error } = await supabase.functions.invoke('increment-sparks-balance', {
+      body: JSON.stringify({ 
+        profileId: childId, 
+        amount: reward.amount 
+      })
+    });
+    
+    if (error) throw error;
 
     return reward.amount;
   } catch (error) {

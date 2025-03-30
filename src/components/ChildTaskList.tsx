@@ -83,7 +83,7 @@ const ChildTaskList = ({ childId, onTaskCompleted }: ChildTaskListProps) => {
         
       if (updateError) throw updateError;
       
-      // Increment sparks balance using RPC call
+      // Increment sparks balance using RPC call with correct parameter names
       const { error: rewardError } = await supabase.rpc(
         'increment_sparks_balance',
         { 
