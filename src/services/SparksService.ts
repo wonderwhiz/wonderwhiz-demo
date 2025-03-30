@@ -46,18 +46,19 @@ export async function awardSparks(childId: string, trigger: SparkTrigger, custom
     
     if (transactionError) throw transactionError;
 
-    // Update the child's sparks balance directly with RPC call
-    // The function expects parameters as individual properties of an object
-    // TypeScript needs the parameters to be explicitly typed as a Record<string, any>
-    const { error: rpcError } = await supabase.rpc(
-      'increment_sparks_balance',
-      {
-        child_id: childId,
-        amount: reward.amount
-      } as Record<string, any> // Type assertion to avoid TypeScript errors
-    );
+    // Update the child's sparks balance using direct database update instead of RPC
+    // This avoids the TypeScript error and potential database recursion issues
+    const { error: updateError } = await supabase
+      .from('child_profiles')
+      .update({ 
+        sparks_balance: supabase.rpc('get_new_balance', { 
+          profile_id: childId, 
+          add_amount: reward.amount 
+        })
+      })
+      .eq('id', childId);
     
-    if (rpcError) throw rpcError;
+    if (updateError) throw updateError;
 
     return reward.amount;
   } catch (error) {

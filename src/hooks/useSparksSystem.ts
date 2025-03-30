@@ -18,39 +18,22 @@ export function useSparksSystem(childId: string | undefined) {
         setLoading(true);
         
         // Call the edge function to track login streak
-        const { data, error } = await supabase.functions.invoke('track-login-streak', {
-          body: JSON.stringify({ childId })
-        });
-        
-        if (error) {
-          console.error('Error tracking login streak:', error);
-          return;
-        }
-        
-        if (data) {
-          setStreakDays(data.streak_days);
+        try {
+          const { data, error } = await supabase.functions.invoke('track-login-streak', {
+            body: JSON.stringify({ childId })
+          });
           
-          // If streak was updated, show a toast
-          if (data.streak_updated) {
-            // Trigger the spark animation
-            setSparkAnimation(true);
-            setTimeout(() => setSparkAnimation(false), 2000);
-            
-            toast.success(data.streak_bonus 
-              ? `✨ ${data.streak_days}-day streak! You earned ${data.streak_bonus_amount} bonus sparks! ✨`
-              : `✨ ${data.streak_days}-day streak! Keep it up! ✨`, 
-              { 
-                duration: 4000,
-                className: 'streak-toast-success'
-              }
-            );
+          if (error) {
+            console.error('Error tracking login streak:', error);
+          } else if (data) {
+            // We're simplifying the streak functionality until database is updated
+            setStreakDays(data.streak_days || 0);
+            setStreakBonusReceived(data.streak_bonus || false);
+            setStreakBonusAmount(data.streak_bonus_amount || 0);
           }
-          
-          setStreakBonusReceived(data.streak_bonus || false);
-          setStreakBonusAmount(data.streak_bonus_amount || 0);
+        } catch (err) {
+          console.error('Error tracking login streak:', err);
         }
-      } catch (err) {
-        console.error('Error in tracking login streak:', err);
       } finally {
         setLoading(false);
       }

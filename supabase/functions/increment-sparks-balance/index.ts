@@ -22,7 +22,7 @@ serve(async (req) => {
     // Parse request body
     const requestData = await req.json();
     
-    // Support both parameter naming conventions for backward compatibility
+    // Support multiple parameter naming conventions for backward compatibility
     const childId = requestData.childId || requestData.profileId || requestData.child_id;
     const amount = requestData.amount;
 
@@ -42,19 +42,18 @@ serve(async (req) => {
       );
     }
 
-    // Use RPC function to update the sparks balance
-    const { error: rpcError } = await supabaseClient.rpc(
-      'increment_sparks_balance',
-      { 
-        child_id: childId, 
-        amount: amount 
-      }
-    );
+    // Instead of using RPC, directly update the balance
+    // This avoids potential infinite recursion issues
+    const { data: profile, error: fetchError } = await supabaseClient
+      .from('child_profiles')
+      .select('sparks_balance')
+      .eq('id', childId)
+      .single();
 
-    if (rpcError) {
-      console.error("Error calling RPC function:", rpcError.message);
+    if (fetchError) {
+      console.error("Error fetching profile:", fetchError.message);
       return new Response(
-        JSON.stringify({ error: "Error updating sparks balance", details: rpcError.message }),
+        JSON.stringify({ error: "Error fetching profile", details: fetchError.message }),
         { 
           status: 500, 
           headers: { 
@@ -65,17 +64,19 @@ serve(async (req) => {
       );
     }
 
-    // Get the updated balance
-    const { data: profile, error: fetchError } = await supabaseClient
-      .from('child_profiles')
-      .select('sparks_balance')
-      .eq('id', childId)
-      .single();
+    // Calculate new balance and update
+    const currentBalance = profile.sparks_balance || 0;
+    const newBalance = currentBalance + amount;
 
-    if (fetchError) {
-      console.error("Error fetching updated balance:", fetchError.message);
+    const { error: updateError } = await supabaseClient
+      .from('child_profiles')
+      .update({ sparks_balance: newBalance })
+      .eq('id', childId);
+
+    if (updateError) {
+      console.error("Error updating sparks balance:", updateError.message);
       return new Response(
-        JSON.stringify({ error: "Error fetching updated balance", details: fetchError.message }),
+        JSON.stringify({ error: "Error updating sparks balance", details: updateError.message }),
         { 
           status: 500, 
           headers: { 
@@ -87,7 +88,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, newBalance: profile.sparks_balance }),
+      JSON.stringify({ success: true, newBalance }),
       { 
         status: 200, 
         headers: { 
