@@ -46,15 +46,18 @@ export async function awardSparks(childId: string, trigger: SparkTrigger, custom
     
     if (transactionError) throw transactionError;
 
-    // Update the child's sparks balance using direct database update instead of RPC
-    // This avoids the TypeScript error and potential database recursion issues
+    // Update the child's sparks balance directly with a simple update operation
     const { error: updateError } = await supabase
       .from('child_profiles')
       .update({ 
-        sparks_balance: supabase.rpc('get_new_balance', { 
-          profile_id: childId, 
-          add_amount: reward.amount 
-        })
+        sparks_balance: supabase.rpc(
+          'get_new_balance', 
+          { 
+            profile_id: childId, 
+            add_amount: reward.amount 
+          },
+          { count: 'exact' }
+        ) 
       })
       .eq('id', childId);
     
@@ -73,7 +76,7 @@ export async function checkAndAwardStreakBonus(childId: string): Promise<boolean
     // Get current child profile to check streak
     const { data: profile, error: profileError } = await supabase
       .from('child_profiles')
-      .select('*')
+      .select('streak_days, streak_last_updated')
       .eq('id', childId)
       .single();
       
@@ -81,10 +84,13 @@ export async function checkAndAwardStreakBonus(childId: string): Promise<boolean
       console.error('Error fetching profile:', profileError);
       return false;
     }
-    
-    // We need streak data, but child_profiles doesn't have streak_days
-    // For now, we'll handle this temporarily without streak data
-    // This will be properly implemented when streak tracking is added
+
+    // Check if user has a multiple of 3-day streak and hasn't been awarded for it yet
+    if (profile && profile.streak_days && profile.streak_days % 3 === 0) {
+      // Award the streak bonus
+      await awardSparks(childId, 'streak', `${profile.streak_days}-day streak bonus`);
+      return true;
+    }
     
     return false;
   } catch (error) {

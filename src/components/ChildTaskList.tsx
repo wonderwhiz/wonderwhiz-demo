@@ -73,11 +73,17 @@ const ChildTaskList = ({ childId, onTaskCompleted }: ChildTaskListProps) => {
   
   const handleTaskCompletion = async (taskId: string, rewardAmount: number) => {
     try {
-      // First add the sparks transaction to avoid double counting issues
-      const sparksAwarded = await awardSparks(childId, 'task_completion');
+      // First, award the sparks directly
+      let sparksAwarded = 0;
+      
+      try {
+        sparksAwarded = await awardSparks(childId, 'task_completion');
+      } catch (sparkError) {
+        console.error('Error awarding sparks:', sparkError);
+        // Continue with task completion even if sparks award fails
+      }
 
-      // Update task status directly without using RPC
-      // This avoids the infinite recursion in policy error
+      // Update task status in a separate transaction
       const { error: updateError } = await supabase
         .from('child_tasks')
         .update({ 
@@ -92,8 +98,10 @@ const ChildTaskList = ({ childId, onTaskCompleted }: ChildTaskListProps) => {
       }
       
       // Show success toast
-      toast.success('Task completed! Sparks earned!', {
-        description: `+${sparksAwarded} sparks added to your balance.`
+      toast.success('Task completed!', {
+        description: sparksAwarded > 0 
+          ? `+${sparksAwarded} sparks added to your balance.` 
+          : 'Good job completing your task!'
       });
       
       // Update task list

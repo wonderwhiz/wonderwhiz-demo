@@ -88,10 +88,13 @@ export type Database = {
           id: string
           interests: string[] | null
           language: string | null
+          last_active: string | null
           name: string
           parent_user_id: string
           pin: string
           sparks_balance: number | null
+          streak_days: number | null
+          streak_last_updated: string | null
         }
         Insert: {
           age?: number | null
@@ -101,10 +104,13 @@ export type Database = {
           id?: string
           interests?: string[] | null
           language?: string | null
+          last_active?: string | null
           name: string
           parent_user_id: string
           pin: string
           sparks_balance?: number | null
+          streak_days?: number | null
+          streak_last_updated?: string | null
         }
         Update: {
           age?: number | null
@@ -114,10 +120,13 @@ export type Database = {
           id?: string
           interests?: string[] | null
           language?: string | null
+          last_active?: string | null
           name?: string
           parent_user_id?: string
           pin?: string
           sparks_balance?: number | null
+          streak_days?: number | null
+          streak_last_updated?: string | null
         }
         Relationships: []
       }
