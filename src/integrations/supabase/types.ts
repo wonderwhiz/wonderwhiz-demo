@@ -411,7 +411,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_sparks_balance: {
+        Args: {
+          child_id: string
+          amount: number
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

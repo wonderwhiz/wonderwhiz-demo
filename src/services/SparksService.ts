@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export type SparkTrigger = 
@@ -47,14 +46,14 @@ export async function awardSparks(childId: string, trigger: SparkTrigger, custom
     if (transactionError) throw transactionError;
 
     // Directly use the RPC function to increment sparks balance
-    const { data, error: rpcError } = await supabase.rpc('increment_sparks_balance', {
+    const { error: rpcError } = await supabase.rpc('increment_sparks_balance', {
       child_id: childId,
       amount: reward.amount
     });
     
     if (rpcError) throw rpcError;
 
-    // The RPC function updates the balance, so we return the awarded amount
+    // Return the awarded amount
     return reward.amount;
   } catch (error) {
     console.error('Error awarding sparks:', error);
