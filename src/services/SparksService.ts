@@ -47,11 +47,12 @@ export async function awardSparks(childId: string, trigger: SparkTrigger, custom
     if (transactionError) throw transactionError;
 
     // Update the child's sparks balance directly with RPC call
+    // We need to use object parameter passing to correctly format the RPC call
     const { error: rpcError } = await supabase.rpc(
       'increment_sparks_balance',
-      { 
-        child_id: childId, 
-        amount: reward.amount 
+      {
+        child_id: childId,
+        amount: reward.amount
       }
     );
     
