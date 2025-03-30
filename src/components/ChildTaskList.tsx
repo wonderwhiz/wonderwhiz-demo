@@ -10,7 +10,7 @@ interface Task {
   title: string;
   description: string;
   status: 'pending' | 'completed';
-  sparks_reward: number; // Changed from reward_sparks to sparks_reward
+  sparks_reward: number;
 }
 
 interface ChildTask {
@@ -22,7 +22,7 @@ interface ChildTask {
   completed_at: string;
   title?: string;
   description?: string;
-  sparks_reward?: number; // Changed from reward_sparks to sparks_reward
+  sparks_reward?: number;
 }
 
 interface ChildTaskListProps {
@@ -39,7 +39,7 @@ const ChildTaskList = ({ childId, onTaskCompleted }: ChildTaskListProps) => {
     try {
       const { data, error } = await supabase
         .from('child_tasks')
-        .select('*, tasks:task_id(title, description, sparks_reward)') // Changed from reward_sparks to sparks_reward
+        .select('*, tasks:task_id(title, description, sparks_reward)')
         .eq('child_profile_id', childId)
         .eq('status', 'pending')
         .order('assigned_at', { ascending: false });
@@ -53,7 +53,7 @@ const ChildTaskList = ({ childId, onTaskCompleted }: ChildTaskListProps) => {
           title: item.tasks?.title || 'Unnamed Task',
           description: item.tasks?.description || '',
           status: item.status as 'pending' | 'completed',
-          sparks_reward: item.tasks?.sparks_reward || 0 // Changed from reward_sparks to sparks_reward
+          sparks_reward: item.tasks?.sparks_reward || 0
         }));
         
         setTasks(formattedTasks);
@@ -86,7 +86,10 @@ const ChildTaskList = ({ childId, onTaskCompleted }: ChildTaskListProps) => {
       // Increment sparks balance using RPC call
       const { error: rewardError } = await supabase.rpc(
         'increment_sparks_balance',
-        { child_id: childId, amount: rewardAmount }
+        { 
+          child_id: childId, 
+          amount: rewardAmount 
+        }
       );
       
       if (rewardError) throw rewardError;
@@ -129,13 +132,13 @@ const ChildTaskList = ({ childId, onTaskCompleted }: ChildTaskListProps) => {
           <div className="flex items-center gap-2">
             <div className="flex items-center bg-wonderwhiz-gold/20 px-2 py-1 rounded text-wonderwhiz-gold text-sm">
               <Award className="h-3 w-3 mr-1" />
-              <span>{task.sparks_reward}</span> {/* Changed from reward_sparks to sparks_reward */}
+              <span>{task.sparks_reward}</span>
             </div>
             <Button 
               size="icon" 
               variant="ghost"
               className="h-8 w-8 rounded-full bg-green-500/20 hover:bg-green-500/30"
-              onClick={() => handleTaskCompletion(task.id, task.sparks_reward)} // Changed from reward_sparks to sparks_reward
+              onClick={() => handleTaskCompletion(task.id, task.sparks_reward)}
             >
               <Check className="h-4 w-4 text-green-400" />
             </Button>
