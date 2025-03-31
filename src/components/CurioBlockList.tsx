@@ -215,6 +215,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
                 onTaskComplete={handleTaskComplete}
                 onActivityComplete={handleActivityComplete}
                 onMindfulnessComplete={handleMindfulnessComplete}
+                isFirstBlock={index === 0}
               />
             </motion.div>
           ))

@@ -41,3 +41,7 @@ export const getTextSize = (type: string): string => {
       return 'text-sm sm:text-base';
   }
 };
+
+export const getContextualImageStyle = (): string => {
+  return 'rounded-lg overflow-hidden w-full h-40 sm:h-48 md:h-56 object-cover mb-4 bg-gray-800/40';
+};

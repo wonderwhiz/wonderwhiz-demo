@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
-import { BookmarkIcon, ThumbsUpIcon, MessageCircleIcon } from 'lucide-react';
+import { BookmarkIcon, ThumbsUpIcon, MessageCircleIcon, ImageIcon } from 'lucide-react';
 import { SPECIALISTS } from './SpecialistAvatar';
 import BlockReply from './BlockReply';
 import BlockReplyForm from './BlockReplyForm';
-import { getBackgroundColor, getBorderColor, getTextColor, getTextSize } from './BlockStyleUtils';
+import { getBackgroundColor, getBorderColor, getTextColor, getTextSize, getContextualImageStyle } from './BlockStyleUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
@@ -36,6 +37,7 @@ interface ContentBlockProps {
   colorVariant?: number;
   userId?: string;
   childProfileId?: string;
+  isFirstBlock?: boolean;
 }
 
 interface Reply {
@@ -144,12 +146,16 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   onMindfulnessComplete,
   colorVariant = 0,
   userId,
-  childProfileId
+  childProfileId,
+  isFirstBlock = false
 }) => {
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replies, setReplies] = useState<Reply[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [contextualImage, setContextualImage] = useState<string | null>(null);
+  const [imageLoading, setImageLoading] = useState(false);
+  const [imageError, setImageError] = useState(false);
   
   const specialist = SPECIALISTS[block.specialist_id] || {
     name: 'Wonder Wizard',
@@ -161,6 +167,38 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   const specialistStyle = getSpecialistStyle(block.specialist_id);
   const blockTitle = getBlockTitle(block);
   const contentTooLong = block.type === 'fact' && block.content.fact.length > 120;
+  
+  // Fetch contextual image for first block
+  useEffect(() => {
+    const generateImage = async () => {
+      // Only generate for the first block
+      if (!isFirstBlock || contextualImage || imageLoading || imageError) return;
+      
+      try {
+        setImageLoading(true);
+        
+        const { data, error } = await supabase.functions.invoke('generate-contextual-image', {
+          body: {
+            blockContent: block.content,
+            blockType: block.type
+          }
+        });
+        
+        if (error) throw error;
+        
+        if (data && data.image) {
+          setContextualImage(data.image);
+        }
+      } catch (err) {
+        console.error('Error generating contextual image:', err);
+        setImageError(true);
+      } finally {
+        setImageLoading(false);
+      }
+    };
+    
+    generateImage();
+  }, [isFirstBlock, block, contextualImage, imageLoading, imageError]);
   
   useEffect(() => {
     const fetchReplies = async () => {
@@ -427,6 +465,40 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         >
           {blockTitle}
         </motion.h4>
+        
+        {/* Contextual Image - Only for first block */}
+        {isFirstBlock && (
+          <div className="mb-4">
+            {imageLoading ? (
+              <div className={`${getContextualImageStyle()} flex items-center justify-center`}>
+                <div className="animate-pulse flex flex-col items-center">
+                  <ImageIcon className="h-8 w-8 text-white/40 mb-2" />
+                  <p className="text-white/60 text-sm">Generating image...</p>
+                </div>
+              </div>
+            ) : contextualImage ? (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                <img 
+                  src={contextualImage} 
+                  alt={`Illustration for ${blockTitle}`} 
+                  className={`${getContextualImageStyle()}`}
+                  loading="lazy"
+                />
+              </motion.div>
+            ) : imageError ? (
+              <div className={`${getContextualImageStyle()} flex items-center justify-center border border-dashed border-white/20`}>
+                <div className="flex flex-col items-center">
+                  <ImageIcon className="h-6 w-6 text-white/30 mb-1" />
+                  <p className="text-white/50 text-xs">Could not load image</p>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        )}
         
         {/* Core Content */}
         <div className="mb-4">
