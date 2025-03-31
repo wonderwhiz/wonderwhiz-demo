@@ -161,6 +161,8 @@ const Dashboard = () => {
     if (!query.trim() || isGenerating || !childProfile) return;
     
     try {
+      setIsGenerating(true);
+      
       // Create the curio first
       const { data: newCurio, error: curioError } = await supabase
         .from('curios')
@@ -211,6 +213,8 @@ const Dashboard = () => {
     if (!childProfile || isGenerating) return;
 
     try {
+      setIsGenerating(true);
+      
       // Create the curio first
       const { data: newCurio, error: curioError } = await supabase
         .from('curios')
@@ -247,6 +251,7 @@ const Dashboard = () => {
       // Redirect to curio page immediately
       navigate(`/curio/${profileId}/${newCurio.id}`);
     } catch (error) {
+      setIsGenerating(false);
       console.error('Error creating curio:', error);
       toast.error("Oops! Something went wrong with your question.");
     }

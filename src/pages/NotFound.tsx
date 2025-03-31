@@ -1,5 +1,5 @@
 
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
@@ -9,13 +9,24 @@ import ParticleEffect from "@/components/ParticleEffect";
 
 const NotFound = () => {
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     console.error(
       "404 Error: User attempted to access non-existent route:",
       location.pathname
     );
-  }, [location.pathname]);
+
+    // Check if the route is a curio route that doesn't exist
+    const curioRouteMatch = location.pathname.match(/\/curio\/([^/]+)\/([^/]+)/);
+    if (curioRouteMatch) {
+      const profileId = curioRouteMatch[1];
+      // Redirect to dashboard if it's a curio route that doesn't exist
+      setTimeout(() => {
+        navigate(`/dashboard/${profileId}`);
+      }, 3000);
+    }
+  }, [location.pathname, navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-wonderwhiz-gradient overflow-hidden">
