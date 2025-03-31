@@ -28,8 +28,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <HelmetProvider>
-        <ThemeProvider defaultTheme="dark" storageKey="wonderwhiz-theme">
-          <Toaster />
+        <ThemeProvider defaultTheme="dark" storageKey="wonderwhiz-theme" enableSystem={false}>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/about" element={<About />} />
@@ -45,6 +44,7 @@ function App() {
             <Route path="/demo" element={<Demo />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <Toaster />
         </ThemeProvider>
       </HelmetProvider>
     </QueryClientProvider>
