@@ -27,41 +27,39 @@ const CreativeBlock: React.FC<CreativeBlockProps> = ({ content, onCreativeUpload
     try {
       setUploading(true);
       
-      // Create a unique file name
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-      const filePath = `creative-uploads/${fileName}`;
+      // Use base64 encoding instead of storage bucket
+      const reader = new FileReader();
       
-      // Upload to Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from('creative-uploads')
-        .upload(filePath, file);
+      reader.onload = async (e) => {
+        const base64Image = e.target?.result as string;
         
-      if (uploadError) {
-        throw uploadError;
-      }
-      
-      // Get public URL for the uploaded file
-      const { data: publicUrlData } = supabase.storage
-        .from('creative-uploads')
-        .getPublicUrl(filePath);
-        
-      // Send to Claude for analysis
-      const response = await supabase.functions.invoke('analyze-creative-work', {
-        body: { 
-          imageUrl: publicUrlData.publicUrl,
-          prompt: content.prompt,
-          type: content.type || 'creation'
+        if (!base64Image) {
+          throw new Error('Failed to encode image');
         }
-      });
+        
+        // Send to Claude for analysis through our Edge Function
+        const response = await supabase.functions.invoke('analyze-creative-work', {
+          body: { 
+            imageUrl: base64Image,
+            prompt: content.prompt,
+            type: content.type || 'creation'
+          }
+        });
+        
+        if (response.error) {
+          throw new Error(response.error.message);
+        }
+        
+        setAnalysis(response.data.analysis);
+        setCreativeUploaded(true);
+        onCreativeUpload();
+      };
       
-      if (response.error) {
-        throw new Error(response.error.message);
-      }
+      reader.onerror = () => {
+        throw new Error('Error reading file');
+      };
       
-      setAnalysis(response.data.analysis);
-      setCreativeUploaded(true);
-      onCreativeUpload();
+      reader.readAsDataURL(file);
       
     } catch (error) {
       console.error('Error uploading creative work:', error);
