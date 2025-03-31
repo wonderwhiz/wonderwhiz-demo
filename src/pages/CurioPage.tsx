@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import { Loader2 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Define the ContentBlock type
 type ContentBlockType = "fact" | "quiz" | "flashcard" | "creative" | "task" | "riddle" | "funFact" | "activity" | "news" | "mindfulness";
@@ -42,6 +42,7 @@ const CurioPage: React.FC = () => {
     false
   );
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [animateBlocks, setAnimateBlocks] = useState(false);
 
   // Fetch curio data
   useEffect(() => {
@@ -89,9 +90,17 @@ const CurioPage: React.FC = () => {
     if (blocks.length > 0 && !isLoading && !initialLoadComplete) {
       setInitialLoadComplete(true);
       
+      // Ensure blocks animate in sequence before scrolling
+      setAnimateBlocks(true);
+      
+      // Scroll to top with a slight delay to allow animation to start
       if (scrollAreaRef.current) {
         console.log('Auto-scrolling to top');
-        scrollAreaRef.current.scrollTop = 0;
+        setTimeout(() => {
+          if (scrollAreaRef.current) {
+            scrollAreaRef.current.scrollTop = 0;
+          }
+        }, 100);
       }
     }
   }, [blocks.length, isLoading, initialLoadComplete]);
@@ -392,18 +401,27 @@ const CurioPage: React.FC = () => {
     }
   }, [profileId]);
 
+  // Animation variants for sequential loading
+  const containerVariants = {
+    hidden: {},
+    visible: {
+      transition: {
+        staggerChildren: 0.2
+      }
+    }
+  };
+
   // Animation variants for blocks
-  const blockVariants = useMemo(() => ({
+  const blockVariants = {
     hidden: { opacity: 0, y: 20 },
-    visible: (i: number) => ({
-      opacity: 1,
+    visible: { 
+      opacity: 1, 
       y: 0,
       transition: {
-        delay: i * 0.1,
         duration: 0.5
       }
-    })
-  }), []);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -423,51 +441,55 @@ const CurioPage: React.FC = () => {
         
         <Card className="bg-black/40 border-white/10 p-2 sm:p-4 md:p-6">
           <ScrollArea ref={scrollAreaRef} className="h-[calc(100vh-180px)]">
-            <div className="space-y-4 px-1">
-              {blocks.map((block, index) => (
-                <motion.div
-                  key={block.id}
-                  custom={index}
-                  initial="hidden"
-                  animate="visible"
-                  variants={blockVariants}
-                >
-                  <ContentBlock
-                    block={block}
-                    onToggleLike={handleToggleLike}
-                    onToggleBookmark={handleToggleBookmark}
-                    onReply={handleReply}
-                    colorVariant={index % 3}
-                    userId={profileId}
-                    childProfileId={profileId}
-                    onQuizCorrect={handleQuizCorrect}
-                    onNewsRead={handleNewsRead}
-                    onCreativeUpload={handleCreativeUpload}
-                  />
-                </motion.div>
-              ))}
-              
-              {/* Intersection observer trigger element */}
-              {hasMoreBlocks && (
-                <div 
-                  ref={loadTriggerRef} 
-                  className="h-10 flex items-center justify-center my-8"
-                >
-                  {loadingMoreBlocks && (
-                    <div className="flex flex-col items-center">
-                      <Loader2 className="h-6 w-6 animate-spin text-wonderwhiz-purple" />
-                      <p className="text-white/70 text-xs mt-2">Loading more...</p>
-                    </div>
-                  )}
-                </div>
-              )}
-              
-              {!hasMoreBlocks && blocks.length > 0 && (
-                <p className="text-center text-white/50 text-xs py-4">
-                  You've reached the end of this curio!
-                </p>
-              )}
-            </div>
+            <AnimatePresence>
+              <motion.div 
+                className="space-y-4 px-1"
+                variants={containerVariants}
+                initial="hidden"
+                animate={animateBlocks ? "visible" : "hidden"}
+              >
+                {blocks.map((block) => (
+                  <motion.div
+                    key={block.id}
+                    variants={blockVariants}
+                  >
+                    <ContentBlock
+                      block={block}
+                      onToggleLike={handleToggleLike}
+                      onToggleBookmark={handleToggleBookmark}
+                      onReply={handleReply}
+                      colorVariant={parseInt(block.id.charAt(0), 16) % 3}
+                      userId={profileId}
+                      childProfileId={profileId}
+                      onQuizCorrect={handleQuizCorrect}
+                      onNewsRead={handleNewsRead}
+                      onCreativeUpload={handleCreativeUpload}
+                    />
+                  </motion.div>
+                ))}
+                
+                {/* Intersection observer trigger element */}
+                {hasMoreBlocks && (
+                  <div 
+                    ref={loadTriggerRef} 
+                    className="h-10 flex items-center justify-center my-8"
+                  >
+                    {loadingMoreBlocks && (
+                      <div className="flex flex-col items-center">
+                        <Loader2 className="h-6 w-6 animate-spin text-wonderwhiz-purple" />
+                        <p className="text-white/70 text-xs mt-2">Loading more...</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {!hasMoreBlocks && blocks.length > 0 && (
+                  <p className="text-center text-white/50 text-xs py-4">
+                    You've reached the end of this curio!
+                  </p>
+                )}
+              </motion.div>
+            </AnimatePresence>
           </ScrollArea>
         </Card>
       </div>
