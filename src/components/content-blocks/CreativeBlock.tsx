@@ -1,8 +1,8 @@
 
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
-import { Camera, Upload, Check, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Camera, Upload, Check, Loader2, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -19,13 +19,20 @@ const CreativeBlock: React.FC<CreativeBlockProps> = ({ content, onCreativeUpload
   const [showUploadOptions, setShowUploadOptions] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [analysis, setAnalysis] = useState<string | null>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleCreativeUpload = async (file: File) => {
     if (!file) return;
     
     try {
+      // Generate a preview immediately for perceived speed
+      const previewUrl = URL.createObjectURL(file);
+      setPreviewImage(previewUrl);
       setUploading(true);
+      
+      // Start with a placeholder analysis for immediate feedback
+      setAnalysis("Analyzing your creative work...");
       
       // Use base64 encoding instead of storage bucket
       const reader = new FileReader();
@@ -38,21 +45,29 @@ const CreativeBlock: React.FC<CreativeBlockProps> = ({ content, onCreativeUpload
         }
         
         // Send to Claude for analysis through our Edge Function
-        const response = await supabase.functions.invoke('analyze-creative-work', {
-          body: { 
-            imageUrl: base64Image,
-            prompt: content.prompt,
-            type: content.type || 'creation'
+        toast.promise(
+          supabase.functions.invoke('analyze-creative-work', {
+            body: { 
+              imageUrl: base64Image,
+              prompt: content.prompt,
+              type: content.type || 'creation'
+            }
+          }),
+          {
+            loading: 'Analyzing your creation...',
+            success: (response) => {
+              if (response.error) {
+                throw new Error(response.error.message);
+              }
+              
+              setAnalysis(response.data.analysis);
+              setCreativeUploaded(true);
+              onCreativeUpload();
+              return 'Analysis complete!';
+            },
+            error: 'Could not analyze your creation'
           }
-        });
-        
-        if (response.error) {
-          throw new Error(response.error.message);
-        }
-        
-        setAnalysis(response.data.analysis);
-        setCreativeUploaded(true);
-        onCreativeUpload();
+        );
       };
       
       reader.onerror = () => {
@@ -65,7 +80,6 @@ const CreativeBlock: React.FC<CreativeBlockProps> = ({ content, onCreativeUpload
       console.error('Error uploading creative work:', error);
       toast.error('Something went wrong with your upload. Please try again.');
     } finally {
-      setUploading(false);
       setShowUploadOptions(false);
     }
   };
@@ -83,11 +97,15 @@ const CreativeBlock: React.FC<CreativeBlockProps> = ({ content, onCreativeUpload
       const videoElement = document.createElement('video');
       const canvasElement = document.createElement('canvas');
       
+      // Show the user feedback that camera is initializing
+      toast.loading('Preparing camera...', { id: 'camera-init' });
+      
       videoElement.srcObject = stream;
       videoElement.play();
       
       // Take the picture after a short delay to allow camera to initialize
       setTimeout(() => {
+        toast.dismiss('camera-init');
         // Set canvas dimensions to match video
         canvasElement.width = videoElement.videoWidth;
         canvasElement.height = videoElement.videoHeight;
@@ -119,6 +137,12 @@ const CreativeBlock: React.FC<CreativeBlockProps> = ({ content, onCreativeUpload
   const triggerFileInput = () => {
     fileInputRef.current?.click();
   };
+
+  const cancelUpload = () => {
+    setUploading(false);
+    setPreviewImage(null);
+    setShowUploadOptions(false);
+  };
   
   return (
     <div>
@@ -131,96 +155,137 @@ const CreativeBlock: React.FC<CreativeBlockProps> = ({ content, onCreativeUpload
         {content.prompt}
       </motion.p>
       
-      {!creativeUploaded ? (
-        <>
-          {!showUploadOptions ? (
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <Button
-                onClick={() => setShowUploadOptions(true)}
-                className="bg-wonderwhiz-pink hover:bg-wonderwhiz-pink/80 text-xs sm:text-sm h-8 sm:h-10"
+      <AnimatePresence mode="wait">
+        {!creativeUploaded ? (
+          <>
+            {!showUploadOptions && !uploading ? (
+              <motion.div
+                key="upload-button"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
               >
-                Upload My {content.type === 'drawing' ? 'Drawing' : 'Creation'}
-              </Button>
-            </motion.div>
-          ) : (
-            <motion.div 
-              className="flex flex-col sm:flex-row gap-2 mt-2"
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Button
-                onClick={handleCameraCapture}
-                className="bg-wonderwhiz-purple hover:bg-wonderwhiz-purple/80 text-xs sm:text-sm h-8 sm:h-10"
-                disabled={uploading}
+                <Button
+                  onClick={() => setShowUploadOptions(true)}
+                  className="bg-wonderwhiz-pink hover:bg-wonderwhiz-pink/80 text-xs sm:text-sm h-8 sm:h-10"
+                >
+                  Upload My {content.type === 'drawing' ? 'Drawing' : 'Creation'}
+                </Button>
+              </motion.div>
+            ) : uploading && previewImage ? (
+              <motion.div
+                key="uploading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="space-y-3"
               >
-                <Camera className="mr-1 h-4 w-4" />
-                Take Picture
-              </Button>
-              
-              <Button
-                onClick={triggerFileInput}
-                className="bg-wonderwhiz-pink hover:bg-wonderwhiz-pink/80 text-xs sm:text-sm h-8 sm:h-10"
-                disabled={uploading}
+                <div className="relative rounded-lg overflow-hidden border-2 border-wonderwhiz-purple/50 max-w-xs mx-auto">
+                  <img 
+                    src={previewImage} 
+                    alt="Your creation" 
+                    className="w-full object-contain max-h-60"
+                  />
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                    <div className="bg-black/60 p-3 rounded-full">
+                      <Loader2 className="animate-spin h-6 w-6 text-wonderwhiz-gold" />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-center gap-2">
+                  <Button
+                    onClick={cancelUpload}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs border-white/20 text-white/70 hover:bg-white/10"
+                  >
+                    <X className="h-3 w-3 mr-1" /> Cancel
+                  </Button>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div 
+                key="upload-options"
+                className="flex flex-col sm:flex-row gap-2 mt-2"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 5 }}
+                transition={{ duration: 0.3 }}
               >
-                <Upload className="mr-1 h-4 w-4" />
-                Upload File
-              </Button>
-              
-              <input
-                type="file"
-                accept="image/*"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                className="hidden"
-              />
-              
-              <Button
-                onClick={() => setShowUploadOptions(false)}
-                variant="outline"
-                className="text-xs sm:text-sm border-white/20 text-white/70 hover:bg-white/10 h-8 sm:h-10"
-                disabled={uploading}
+                <Button
+                  onClick={handleCameraCapture}
+                  className="bg-wonderwhiz-purple hover:bg-wonderwhiz-purple/80 text-xs sm:text-sm h-8 sm:h-10"
+                >
+                  <Camera className="mr-1 h-4 w-4" />
+                  Take Picture
+                </Button>
+                
+                <Button
+                  onClick={triggerFileInput}
+                  className="bg-wonderwhiz-pink hover:bg-wonderwhiz-pink/80 text-xs sm:text-sm h-8 sm:h-10"
+                >
+                  <Upload className="mr-1 h-4 w-4" />
+                  Upload File
+                </Button>
+                
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                
+                <Button
+                  onClick={() => setShowUploadOptions(false)}
+                  variant="outline"
+                  className="text-xs sm:text-sm border-white/20 text-white/70 hover:bg-white/10 h-8 sm:h-10"
+                >
+                  Cancel
+                </Button>
+              </motion.div>
+            )}
+          </>
+        ) : (
+          <motion.div
+            key="analysis"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            {previewImage && (
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="mb-3 rounded-lg overflow-hidden border border-wonderwhiz-pink/30 max-w-xs"
               >
-                Cancel
-              </Button>
-            </motion.div>
-          )}
-          
-          {uploading && (
-            <motion.div 
-              className="flex items-center mt-2 text-xs sm:text-sm text-white/70"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-            >
-              <Loader2 className="animate-spin h-4 w-4 mr-2" />
-              Processing your creation...
-            </motion.div>
-          )}
-        </>
-      ) : (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="bg-wonderwhiz-pink/20 rounded-lg p-3 sm:p-4 border border-wonderwhiz-pink/30 mt-2">
-            <div className="flex items-center mb-2">
-              <div className="h-6 w-6 rounded-full bg-gradient-to-r from-wonderwhiz-pink to-wonderwhiz-purple flex items-center justify-center mr-2">
-                <Check className="h-3 w-3 text-white" />
+                <img 
+                  src={previewImage} 
+                  alt="Your creation" 
+                  className="w-full object-contain max-h-48"
+                />
+              </motion.div>
+            )}
+            
+            <div className="bg-wonderwhiz-pink/20 rounded-lg p-3 sm:p-4 border border-wonderwhiz-pink/30 mt-2">
+              <div className="flex items-center mb-2">
+                <div className="h-6 w-6 rounded-full bg-gradient-to-r from-wonderwhiz-pink to-wonderwhiz-purple flex items-center justify-center mr-2">
+                  <Check className="h-3 w-3 text-white" />
+                </div>
+                <p className="text-white font-medium text-sm">Prism's Feedback</p>
               </div>
-              <p className="text-white font-medium text-sm">Prism's Feedback</p>
+              <p className="text-white/90 text-xs sm:text-sm">{analysis || "Amazing work! Your creativity is absolutely wonderful! You've earned 10 sparks for your artistic talents!"}</p>
             </div>
-            <p className="text-white/90 text-xs sm:text-sm">{analysis || "Amazing work! Your creativity is absolutely wonderful! You've earned 10 sparks for your artistic talents!"}</p>
-          </div>
-          <p className="text-green-400 text-xs sm:text-sm mt-2 flex items-center">
-            <Check className="h-4 w-4 mr-1" />
-            Uploaded successfully! You earned 10 sparks for your creativity!
-          </p>
-        </motion.div>
-      )}
+            <p className="text-green-400 text-xs sm:text-sm mt-2 flex items-center">
+              <Check className="h-4 w-4 mr-1" />
+              Uploaded successfully! You earned 10 sparks for your creativity!
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
