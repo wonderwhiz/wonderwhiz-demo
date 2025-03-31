@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { BookmarkIcon, ThumbsUpIcon, MessageCircleIcon } from 'lucide-react';
@@ -7,6 +8,7 @@ import BlockReplyForm from './BlockReplyForm';
 import { getBackgroundColor, getBorderColor, getTextColor } from './BlockStyleUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { motion } from 'framer-motion';
 
 // Import Block Type Components
 import FactBlock from './content-blocks/FactBlock';
@@ -55,6 +57,79 @@ interface DbReply {
   specialist_id?: string;
 }
 
+const getSpecialistStyle = (specialistId: string) => {
+  switch (specialistId) {
+    case 'nova':
+      return {
+        gradient: 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500',
+        introPhrase: 'Did you know...',
+        tone: 'soft wonder'
+      };
+    case 'spark':
+      return {
+        gradient: 'bg-gradient-to-r from-yellow-400 via-yellow-300 to-amber-300',
+        introPhrase: 'Let\'s find out!',
+        tone: 'energetic'
+      };
+    case 'prism':
+      return {
+        gradient: 'bg-gradient-to-r from-pink-300 via-purple-300 to-indigo-400',
+        introPhrase: 'Imagine this...',
+        tone: 'dreamy'
+      };
+    case 'lotus':
+      return {
+        gradient: 'bg-gradient-to-r from-pink-200 via-pink-300 to-purple-300',
+        introPhrase: 'Take a breath...',
+        tone: 'gentle mindfulness'
+      };
+    case 'pixel':
+      return {
+        gradient: 'bg-gradient-to-r from-blue-300 via-blue-400 to-teal-400',
+        introPhrase: 'According to the latest research...',
+        tone: 'snappy & newsy'
+      };
+    case 'atlas':
+      return {
+        gradient: 'bg-gradient-to-r from-amber-500 via-orange-400 to-amber-400',
+        introPhrase: 'Here\'s a mission for you...',
+        tone: 'exploratory'
+      };
+    default:
+      return {
+        gradient: 'bg-gradient-to-r from-gray-400 to-gray-300',
+        introPhrase: 'Let\'s explore...',
+        tone: 'friendly'
+      };
+  }
+};
+
+const getBlockTitle = (block: any) => {
+  switch (block.type) {
+    case 'fact':
+    case 'funFact':
+      return block.content.fact.split('.')[0] + '.';
+    case 'quiz':
+      return block.content.question;
+    case 'flashcard':
+      return block.content.front;
+    case 'creative':
+      return block.content.prompt.split('.')[0] + '.';
+    case 'task':
+      return block.content.task.split('.')[0] + '.';
+    case 'riddle':
+      return block.content.riddle.split('?')[0] + '?';
+    case 'news':
+      return block.content.headline;
+    case 'activity':
+      return block.content.activity.split('.')[0] + '.';
+    case 'mindfulness':
+      return block.content.exercise.split('.')[0] + '.';
+    default:
+      return '';
+  }
+};
+
 const ContentBlock: React.FC<ContentBlockProps> = ({
   block,
   onToggleLike,
@@ -75,6 +150,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replies, setReplies] = useState<Reply[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   
   const specialist = SPECIALISTS[block.specialist_id] || {
     name: 'Wonder Wizard',
@@ -82,6 +158,10 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     emoji: '✨',
     description: 'General knowledge expert'
   };
+
+  const specialistStyle = getSpecialistStyle(block.specialist_id);
+  const blockTitle = getBlockTitle(block);
+  const contentTooLong = block.type === 'fact' && block.content.fact.length > 120;
 
   useEffect(() => {
     const fetchReplies = async () => {
@@ -293,7 +373,9 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         return (
           <FactBlock 
             content={block.content} 
-            onRabbitHoleClick={handleRabbitHoleClick} 
+            onRabbitHoleClick={handleRabbitHoleClick}
+            expanded={expanded}
+            setExpanded={setExpanded} 
           />
         );
         
@@ -361,19 +443,43 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   };
 
   return (
-    <Card className={`${getBackgroundColor(colorVariant)} ${getBorderColor(colorVariant)} overflow-hidden transition-colors duration-300 hover:shadow-md w-full`}>
+    <Card className={`overflow-hidden transition-colors duration-300 hover:shadow-md w-full ${specialistStyle.gradient} bg-opacity-10`}>
       <div className="p-2.5 sm:p-3 md:p-4">
-        <div className="flex items-center mb-2 sm:mb-3">
-          <div className={`h-7 w-7 sm:h-8 sm:w-8 rounded-full ${specialist.color} flex items-center justify-center flex-shrink-0`}>
+        {/* Persona Icon Row */}
+        <div className="flex items-center mb-3 sm:mb-4">
+          <motion.div 
+            className={`h-8 w-8 sm:h-10 sm:w-10 rounded-full ${specialist.color} flex items-center justify-center flex-shrink-0 shadow-md`}
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ 
+              type: "spring", 
+              stiffness: 260, 
+              damping: 20,
+              delay: 0.1 
+            }}
+          >
             {specialist.emoji}
-          </div>
+          </motion.div>
           <div className="ml-2 min-w-0 flex-1">
-            <h3 className={`font-medium ${getTextColor()} text-sm sm:text-base truncate`}>{specialist.name}</h3>
-            <p className={`${getTextColor()} text-xs truncate opacity-70`}>{specialist.description}</p>
+            <h3 className="font-medium text-white text-sm sm:text-base truncate">{specialist.name}</h3>
+            <p className="text-white/70 text-xs truncate">{specialist.description}</p>
           </div>
         </div>
         
-        {renderBlockContent()}
+        {/* Title / Hook */}
+        <motion.h4 
+          className="text-base sm:text-lg font-bold text-white mb-3"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.2 }}
+        >
+          {blockTitle}
+        </motion.h4>
+        
+        {/* Core Content */}
+        <div className="mb-4">
+          {renderBlockContent()}
+        </div>
         
         {replies.length > 0 && (
           <div className="mt-3 sm:mt-4 pt-2 sm:pt-3 border-t border-white/10">
@@ -394,36 +500,42 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         
         <div className="flex items-center justify-between mt-3 sm:mt-4 pt-2 sm:pt-3 border-t border-white/10">
           <div className="flex items-center space-x-1 sm:space-x-2">
-            <button 
+            <motion.button 
               onClick={() => onToggleLike(block.id)}
-              className={`p-1 rounded-full hover:bg-white/10 transition-colors ${
-                block.liked ? 'text-wonderwhiz-pink' : 'text-white/60'
+              className={`p-1.5 rounded-full hover:bg-white/10 transition-colors ${
+                block.liked ? 'text-wonderwhiz-pink' : 'text-white/70'
               }`}
               aria-label={block.liked ? "Unlike" : "Like"}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
             >
-              <ThumbsUpIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            </button>
+              <ThumbsUpIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+            </motion.button>
             
-            <button 
+            <motion.button 
               onClick={() => onToggleBookmark(block.id)}
-              className={`p-1 rounded-full hover:bg-white/10 transition-colors ${
-                block.bookmarked ? 'text-wonderwhiz-gold' : 'text-white/60'
+              className={`p-1.5 rounded-full hover:bg-white/10 transition-colors ${
+                block.bookmarked ? 'text-wonderwhiz-gold' : 'text-white/70'
               }`}
               aria-label={block.bookmarked ? "Remove bookmark" : "Bookmark"}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
             >
-              <BookmarkIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            </button>
+              <BookmarkIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+            </motion.button>
             
-            <button 
+            <motion.button 
               onClick={() => setShowReplyForm(prev => !prev)}
-              className="p-1 rounded-full hover:bg-white/10 transition-colors text-white/60"
+              className="p-1.5 rounded-full hover:bg-white/10 transition-colors text-white/70"
               aria-label={showReplyForm ? "Hide reply form" : "Reply"}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
             >
-              <MessageCircleIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            </button>
+              <MessageCircleIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+            </motion.button>
           </div>
           
-          <div className="text-white/60 text-xs">
+          <div className="text-white/70 text-xs px-2 py-1 rounded-full bg-black/20">
             {block.type === 'fact' || block.type === 'funFact' ? 'Fact' : 
              block.type.charAt(0).toUpperCase() + block.type.slice(1)}
           </div>

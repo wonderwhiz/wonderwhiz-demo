@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import { Check, Star } from 'lucide-react';
+import { Check, Star, Trophy } from 'lucide-react';
 
 interface TaskBlockProps {
   content: {
@@ -15,11 +15,16 @@ interface TaskBlockProps {
 const TaskBlock: React.FC<TaskBlockProps> = ({ content, onTaskComplete }) => {
   const [completed, setCompleted] = useState(false);
   const [showReward, setShowReward] = useState(false);
+  const [showSparkles, setShowSparkles] = useState(false);
   
   const handleComplete = () => {
     if (!completed) {
       setCompleted(true);
-      setTimeout(() => setShowReward(true), 300);
+      setTimeout(() => {
+        setShowReward(true);
+        setShowSparkles(true);
+        setTimeout(() => setShowSparkles(false), 2000);
+      }, 300);
       if (onTaskComplete) {
         onTaskComplete();
       }
@@ -28,29 +33,43 @@ const TaskBlock: React.FC<TaskBlockProps> = ({ content, onTaskComplete }) => {
   
   return (
     <div>
-      <motion.p 
-        className="text-white mb-2 sm:mb-3 text-sm sm:text-base"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        {content.task}
-      </motion.p>
+      <div className="flex items-start space-x-3 mb-3">
+        <div className="flex-shrink-0 mt-1">
+          <motion.div 
+            className="h-6 w-6 rounded-full bg-gradient-to-br from-wonderwhiz-gold to-amber-500 flex items-center justify-center"
+            animate={
+              completed ? { scale: [1, 1.3, 1], rotate: [0, 10, -10, 0] } : {}
+            }
+            transition={{ duration: 0.5 }}
+          >
+            <Trophy className="h-3.5 w-3.5 text-black" />
+          </motion.div>
+        </div>
+        <motion.p 
+          className="flex-1 text-white mb-2 sm:mb-3 text-sm sm:text-base"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          {content.task}
+        </motion.p>
+      </div>
       
       {!completed ? (
-        <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 sm:gap-4">
-          <p className="text-wonderwhiz-gold flex items-center text-xs sm:text-sm">
-            <Star className="inline-block mr-1 h-3.5 w-3.5 fill-wonderwhiz-gold text-wonderwhiz-gold" /> 
-            Earn {content.reward} sparks by completing this task!
-          </p>
+        <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 sm:gap-4">
+          <div className="flex items-center space-x-1.5 text-wonderwhiz-gold text-xs sm:text-sm">
+            <Star className="h-4 w-4 fill-wonderwhiz-gold text-wonderwhiz-gold" /> 
+            <span>Earn {content.reward} sparks by completing this task!</span>
+          </div>
           <motion.div
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
             <Button 
               onClick={handleComplete}
-              className="bg-wonderwhiz-gold hover:bg-wonderwhiz-gold/80 text-black font-medium text-xs sm:text-sm w-full sm:w-auto"
+              className="bg-gradient-to-r from-wonderwhiz-gold to-amber-400 hover:from-amber-400 hover:to-wonderwhiz-gold text-black font-medium text-xs sm:text-sm px-4 py-2 rounded-full shadow-lg w-full sm:w-auto flex items-center justify-center"
             >
+              <Check className="h-4 w-4 mr-1.5" />
               Mark Complete
             </Button>
           </motion.div>
@@ -62,41 +81,61 @@ const TaskBlock: React.FC<TaskBlockProps> = ({ content, onTaskComplete }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
           >
-            <Check className="mr-1 h-4 w-4" />
-            Task completed! 
+            <div className="h-5 w-5 bg-green-500 rounded-full flex items-center justify-center mr-2">
+              <Check className="h-3 w-3 text-black" />
+            </div>
+            <span>Task completed!</span>
           </motion.div>
           
           {showReward && (
             <motion.div
-              className="mt-1.5 flex items-center text-wonderwhiz-gold text-xs sm:text-sm"
-              initial={{ opacity: 0, y: -10, scale: 0.8 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ type: "spring", stiffness: 200, damping: 15 }}
+              className="mt-2 flex items-center"
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, type: "spring" }}
             >
-              <Star className="mr-1 h-4 w-4 fill-wonderwhiz-gold text-wonderwhiz-gold" /> 
+              <div className="relative mr-2">
+                <Star className="h-5 w-5 fill-wonderwhiz-gold text-wonderwhiz-gold" />
+                {showSparkles && (
+                  <>
+                    <motion.div
+                      className="absolute -top-2 -right-2 text-lg"
+                      animate={{ 
+                        opacity: [0, 1, 0],
+                        scale: [0.5, 1.5, 0.8],
+                        y: [0, -15, -25],
+                        x: [0, 10, 15]
+                      }}
+                      transition={{ duration: 2, times: [0, 0.5, 1] }}
+                    >
+                      ✨
+                    </motion.div>
+                    <motion.div
+                      className="absolute -bottom-2 -left-2 text-lg"
+                      animate={{ 
+                        opacity: [0, 1, 0],
+                        scale: [0.5, 1.2, 0.7],
+                        y: [0, 10, 20],
+                        x: [0, -8, -12]
+                      }}
+                      transition={{ duration: 1.8, times: [0, 0.5, 1], delay: 0.2 }}
+                    >
+                      ✨
+                    </motion.div>
+                  </>
+                )}
+              </div>
               <motion.span
+                className="text-wonderwhiz-gold text-xs sm:text-sm font-semibold"
                 initial={{ fontWeight: 400 }}
-                animate={{ fontWeight: 600 }}
-                transition={{ duration: 0.2, delay: 0.1 }}
+                animate={{ 
+                  fontWeight: 700,
+                  scale: showSparkles ? [1, 1.15, 1] : 1
+                }}
+                transition={{ duration: 0.5, delay: 0.1 }}
               >
                 You earned {content.reward} sparks!
               </motion.span>
-            </motion.div>
-          )}
-          
-          {showReward && (
-            <motion.div
-              className="absolute -top-8 -right-4 text-3xl"
-              initial={{ opacity: 0, scale: 0.5, y: 10 }}
-              animate={{ 
-                opacity: [0, 1, 1, 0], 
-                scale: [0.5, 1.2, 1.2, 0.8], 
-                y: [10, -20, -40, -60],
-                x: [0, 10, -10, 0]
-              }}
-              transition={{ duration: 2, times: [0, 0.2, 0.8, 1] }}
-            >
-              ✨
             </motion.div>
           )}
         </div>
