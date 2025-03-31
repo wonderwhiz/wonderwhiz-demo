@@ -7,8 +7,11 @@ import ContentBlock from '@/components/ContentBlock';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { debounce } from 'lodash';
 
 // Define the ContentBlock type
 type ContentBlockType = "fact" | "quiz" | "flashcard" | "creative" | "task" | "riddle" | "funFact" | "activity" | "news" | "mindfulness";
@@ -32,6 +35,7 @@ const CurioPage: React.FC = () => {
   const [blocks, setBlocks] = useState<ContentBlock[]>([]);
   const [title, setTitle] = useState<string>('');
   const [query, setQuery] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [hasMoreBlocks, setHasMoreBlocks] = useState<boolean>(true);
   const [loadingMoreBlocks, setLoadingMoreBlocks] = useState<boolean>(false);
@@ -43,6 +47,7 @@ const CurioPage: React.FC = () => {
   );
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [animateBlocks, setAnimateBlocks] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch curio data
   useEffect(() => {
@@ -51,6 +56,7 @@ const CurioPage: React.FC = () => {
       
       try {
         setIsLoading(true);
+        console.log('Fetching curio data for ID:', curioId);
         
         const { data: curioData, error: curioError } = await supabase
           .from('curios')
@@ -65,6 +71,7 @@ const CurioPage: React.FC = () => {
         if (curioData) {
           setTitle(curioData.title);
           setQuery(curioData.query);
+          console.log('Curio data loaded:', curioData.title);
         }
         
         // Fetch initial batch of blocks or generate them if they don't exist
@@ -88,6 +95,7 @@ const CurioPage: React.FC = () => {
   // Auto-scroll to top after initial blocks load
   useEffect(() => {
     if (blocks.length > 0 && !isLoading && !initialLoadComplete) {
+      console.log('Initial blocks loaded, preparing to auto-scroll');
       setInitialLoadComplete(true);
       
       // Ensure blocks animate in sequence before scrolling
@@ -108,7 +116,7 @@ const CurioPage: React.FC = () => {
   // Fetch initial blocks
   const fetchInitialBlocks = async (curioId: string) => {
     try {
-      console.log('Fetching initial blocks...');
+      console.log(`Fetching initial ${INITIAL_BLOCKS_TO_LOAD} blocks...`);
       
       // First check if we already have blocks for this curio
       const { data: existingBlocks, error: blocksError } = await supabase
@@ -231,11 +239,11 @@ const CurioPage: React.FC = () => {
 
   // Load more blocks when the trigger element is visible
   useEffect(() => {
-    if (isLoadTriggerVisible && hasMoreBlocks && !loadingMoreBlocks && !isLoading) {
+    if (isLoadTriggerVisible && hasMoreBlocks && !loadingMoreBlocks && !isLoading && initialLoadComplete) {
       console.log('Load trigger visible, loading more blocks');
       loadMoreBlocks();
     }
-  }, [isLoadTriggerVisible, hasMoreBlocks, loadingMoreBlocks, isLoading]);
+  }, [isLoadTriggerVisible, hasMoreBlocks, loadingMoreBlocks, isLoading, initialLoadComplete]);
 
   const loadMoreBlocks = useCallback(async () => {
     if (!hasMoreBlocks || loadingMoreBlocks || !curioId) return;
@@ -291,6 +299,79 @@ const CurioPage: React.FC = () => {
       setLoadingMoreBlocks(false);
     }
   }, [hasMoreBlocks, loadingMoreBlocks, totalBlocksLoaded, curioId]);
+
+  // Search function with debounce for performance
+  const handleSearch = debounce(async (value: string) => {
+    if (!curioId || value.trim() === '') return;
+    
+    console.log('Searching for:', value);
+    setIsLoading(true);
+    
+    try {
+      const { data: searchResults, error } = await supabase
+        .from('content_blocks')
+        .select('*')
+        .eq('curio_id', curioId)
+        .textSearch('content', value, {
+          type: 'websearch',
+          config: 'english'
+        })
+        .limit(INITIAL_BLOCKS_TO_LOAD);
+        
+      if (error) throw error;
+      
+      if (searchResults && searchResults.length > 0) {
+        const mappedBlocks = searchResults.map(block => ({
+          ...block,
+          type: block.type as ContentBlockType
+        }));
+        
+        setBlocks(mappedBlocks);
+        setTotalBlocksLoaded(mappedBlocks.length);
+        setHasMoreBlocks(false); // Disable infinite scroll in search mode
+      } else {
+        setBlocks([]);
+        toast({
+          title: "No results",
+          description: `No content found for "${value}"`,
+          variant: "default"
+        });
+      }
+    } catch (error) {
+      console.error('Error searching blocks:', error);
+      toast({
+        title: "Search error",
+        description: "Could not search content blocks",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, 300);
+  
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleSearch(searchQuery);
+  };
+  
+  const clearSearch = () => {
+    setSearchQuery('');
+    fetchInitialBlocks(curioId || '');
+  };
+  
+  // Focus search input with keyboard shortcut
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+K or Command+K to focus search
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Handle like toggle
   const handleToggleLike = useCallback(async (blockId: string) => {
@@ -423,7 +504,7 @@ const CurioPage: React.FC = () => {
     }
   };
 
-  if (isLoading) {
+  if (isLoading && blocks.length === 0) {
     return (
       <div className="flex items-center justify-center h-screen bg-gradient-to-b from-gray-900 to-black">
         <div className="text-center">
@@ -437,10 +518,49 @@ const CurioPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black pb-20">
       <div className="container px-4 py-3 sm:py-5">
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-4 text-center">{title}</h1>
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2 sm:mb-3 text-center">{title}</h1>
+        
+        {/* Search box */}
+        <div className="mb-3 sm:mb-4">
+          <form onSubmit={handleSearchSubmit} className="relative">
+            <Input
+              ref={searchInputRef}
+              type="text"
+              placeholder="Search in this curio (Ctrl+K)"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="bg-black/40 border-white/10 text-white pl-9 pr-12 py-2 h-10"
+            />
+            <Search className="absolute left-2.5 top-2.5 h-5 w-5 text-white/60" />
+            
+            <div className="absolute right-2 top-1.5 flex items-center gap-1">
+              {searchQuery && (
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-7 px-2 text-white/60 hover:text-white"
+                  onClick={clearSearch}
+                >
+                  Clear
+                </Button>
+              )}
+              <Button 
+                type="submit" 
+                size="sm" 
+                className="h-7 px-3 bg-wonderwhiz-purple hover:bg-wonderwhiz-purple/80"
+              >
+                Search
+              </Button>
+            </div>
+          </form>
+          <div className="text-xs text-white/50 mt-1 text-right">
+            {searchQuery ? 'Searching for results...' : `${blocks.length} blocks loaded`}
+          </div>
+        </div>
         
         <Card className="bg-black/40 border-white/10 p-2 sm:p-4 md:p-6">
-          <ScrollArea ref={scrollAreaRef} className="h-[calc(100vh-180px)]">
+          <ScrollArea ref={scrollAreaRef} className="h-[calc(100vh-230px)]">
             <AnimatePresence>
               <motion.div 
                 className="space-y-4 px-1"
@@ -469,24 +589,30 @@ const CurioPage: React.FC = () => {
                 ))}
                 
                 {/* Intersection observer trigger element */}
-                {hasMoreBlocks && (
+                {(hasMoreBlocks && !searchQuery) && (
                   <div 
                     ref={loadTriggerRef} 
-                    className="h-10 flex items-center justify-center my-8"
+                    className="h-10 flex items-center justify-center my-4"
                   >
                     {loadingMoreBlocks && (
                       <div className="flex flex-col items-center">
                         <Loader2 className="h-6 w-6 animate-spin text-wonderwhiz-purple" />
-                        <p className="text-white/70 text-xs mt-2">Loading more...</p>
+                        <p className="text-white/70 text-xs mt-1">Loading more content...</p>
                       </div>
                     )}
                   </div>
                 )}
                 
-                {!hasMoreBlocks && blocks.length > 0 && (
+                {(!hasMoreBlocks && blocks.length > 0) && (
                   <p className="text-center text-white/50 text-xs py-4">
-                    You've reached the end of this curio!
+                    {searchQuery ? 'End of search results' : 'You\'ve reached the end of this curio!'}
                   </p>
+                )}
+                
+                {(blocks.length === 0 && !isLoading) && (
+                  <div className="text-center py-8">
+                    <p className="text-white/70">No content blocks found.</p>
+                  </div>
                 )}
               </motion.div>
             </AnimatePresence>
