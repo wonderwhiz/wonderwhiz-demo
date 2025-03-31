@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -41,6 +42,75 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
     });
   };
 
+  // Extract fetchInitialBlocks as a standalone function to be used elsewhere in the hook
+  const fetchInitialBlocks = useCallback(async (curioId: string) => {
+    if (!curioId) return;
+    
+    try {
+      setIsLoading(true);
+      console.log(`Fetching initial ${INITIAL_BLOCKS_TO_LOAD} blocks...`);
+      
+      // First check if we already have blocks for this curio
+      const { data: existingBlocks, error: blocksError } = await supabase
+        .from('content_blocks')
+        .select('*')
+        .eq('curio_id', curioId)
+        .order('created_at', { ascending: true })
+        .limit(INITIAL_BLOCKS_TO_LOAD);
+      
+      if (blocksError) {
+        throw blocksError;
+      }
+      
+      if (existingBlocks && existingBlocks.length > 0) {
+        // We have existing blocks, use them
+        console.log(`Found ${existingBlocks.length} existing blocks`);
+        
+        const mappedBlocks = convertToContentBlocks(existingBlocks);
+        
+        setBlocks(mappedBlocks);
+        setTotalBlocksLoaded(mappedBlocks.length);
+        
+        // Check if there are potentially more blocks to load
+        const { count, error: countError } = await supabase
+          .from('content_blocks')
+          .select('*', { count: 'exact', head: true })
+          .eq('curio_id', curioId);
+          
+        if (!countError && count !== null) {
+          console.log(`Total blocks available: ${count}`);
+          setHasMoreBlocks(count > INITIAL_BLOCKS_TO_LOAD);
+        }
+      } else {
+        // No existing blocks, generate new ones
+        console.log('No existing blocks found, generating new ones');
+        setIsGeneratingContent(true);
+        setBlocks([
+          {
+            id: 'generating-1',
+            curio_id: curioId,
+            specialist_id: 'nova',
+            type: 'fact',
+            content: { fact: "Generating interesting content for you...", rabbitHoles: [] },
+            liked: false,
+            bookmarked: false,
+            created_at: new Date().toISOString()
+          } as ContentBlock
+        ]);
+        await generateNewBlocks(curioId, query);
+      }
+    } catch (error) {
+      console.error('Error fetching initial blocks:', error);
+      toast({
+        title: "Error",
+        description: "Could not load content blocks",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [query]);
+
   // Fetch curio basic info
   useEffect(() => {
     const fetchCurioBasicInfo = async () => {
@@ -82,78 +152,10 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
 
   // Fetch curio content blocks separately after basic info
   useEffect(() => {
-    const fetchInitialBlocks = async () => {
-      if (!curioId) return;
-      
-      try {
-        setIsLoading(true);
-        console.log(`Fetching initial ${INITIAL_BLOCKS_TO_LOAD} blocks...`);
-        
-        // First check if we already have blocks for this curio
-        const { data: existingBlocks, error: blocksError } = await supabase
-          .from('content_blocks')
-          .select('*')
-          .eq('curio_id', curioId)
-          .order('created_at', { ascending: true })
-          .limit(INITIAL_BLOCKS_TO_LOAD);
-        
-        if (blocksError) {
-          throw blocksError;
-        }
-        
-        if (existingBlocks && existingBlocks.length > 0) {
-          // We have existing blocks, use them
-          console.log(`Found ${existingBlocks.length} existing blocks`);
-          
-          const mappedBlocks = convertToContentBlocks(existingBlocks);
-          
-          setBlocks(mappedBlocks);
-          setTotalBlocksLoaded(mappedBlocks.length);
-          
-          // Check if there are potentially more blocks to load
-          const { count, error: countError } = await supabase
-            .from('content_blocks')
-            .select('*', { count: 'exact', head: true })
-            .eq('curio_id', curioId);
-            
-          if (!countError && count !== null) {
-            console.log(`Total blocks available: ${count}`);
-            setHasMoreBlocks(count > INITIAL_BLOCKS_TO_LOAD);
-          }
-        } else {
-          // No existing blocks, generate new ones
-          console.log('No existing blocks found, generating new ones');
-          setIsGeneratingContent(true);
-          setBlocks([
-            {
-              id: 'generating-1',
-              curio_id: curioId,
-              specialist_id: 'nova',
-              type: 'fact',
-              content: { fact: "Generating interesting content for you...", rabbitHoles: [] },
-              liked: false,
-              bookmarked: false,
-              created_at: new Date().toISOString()
-            } as ContentBlock
-          ]);
-          await generateNewBlocks(curioId, query);
-        }
-      } catch (error) {
-        console.error('Error fetching initial blocks:', error);
-        toast({
-          title: "Error",
-          description: "Could not load content blocks",
-          variant: "destructive"
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
     if (!isLoadingBasicInfo && curioId && query) {
-      fetchInitialBlocks();
+      fetchInitialBlocks(curioId);
     }
-  }, [curioId, query, isLoadingBasicInfo]);
+  }, [curioId, query, isLoadingBasicInfo, fetchInitialBlocks]);
 
   // Generate new blocks from Claude
   const generateNewBlocks = async (curioId: string, query: string) => {
