@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ContentBlock from '@/components/ContentBlock';
@@ -26,11 +26,9 @@ interface ContentBlock {
 
 const INITIAL_BLOCKS_TO_FETCH = 2;
 const ADDITIONAL_BLOCKS_TO_FETCH = 2;
-const MAX_TOTAL_BLOCKS = 10;
 
 const CurioPage: React.FC = () => {
   const { profileId, curioId } = useParams<{ profileId: string; curioId: string }>();
-  const navigate = useNavigate();
   const [blocks, setBlocks] = useState<ContentBlock[]>([]);
   const [title, setTitle] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -92,7 +90,7 @@ const CurioPage: React.FC = () => {
           
           setBlocks(initialBlocks);
           setTotalBlocksGenerated(existingBlocks.length);
-          setHasMoreBlocksToGenerate(existingBlocks.length < MAX_TOTAL_BLOCKS);
+          setHasMoreBlocksToGenerate(false);
         } else {
           // No blocks yet, generate the initial ones
           await generateBlocks(curioData.query, profileData, INITIAL_BLOCKS_TO_FETCH);
@@ -114,7 +112,7 @@ const CurioPage: React.FC = () => {
 
   // Generate blocks function
   const generateBlocks = async (query: string, profile: any, count: number, startIndex: number = 0) => {
-    if (!curioId || !profile) return [];
+    if (!curioId || !profile) return;
     
     try {
       const claudeResponse = await supabase.functions.invoke('generate-curiosity-blocks-partial', {
@@ -157,8 +155,8 @@ const CurioPage: React.FC = () => {
       setBlocks(prev => [...prev, ...typedBlocks]);
       setTotalBlocksGenerated(prev => prev + generatedBlocks.length);
       
-      // Check if we should stop generating (assuming MAX_TOTAL_BLOCKS total blocks maximum)
-      if (startIndex + count >= MAX_TOTAL_BLOCKS) {
+      // Check if we should stop generating (assuming 10 total blocks maximum)
+      if (startIndex + count >= 10) {
         setHasMoreBlocksToGenerate(false);
       }
       
@@ -183,20 +181,61 @@ const CurioPage: React.FC = () => {
       setIsLoadingMore(true);
       
       try {
-        // Get the curio query
-        const { data: curioData } = await supabase
-          .from('curios')
-          .select('query')
-          .eq('id', curioId)
-          .single();
+        // First try to fetch existing blocks
+        const { data: existingBlocks, error: blocksError } = await supabase
+          .from('content_blocks')
+          .select('*')
+          .eq('curio_id', curioId)
+          .order('created_at', { ascending: true })
+          .range(blocks.length, blocks.length + ADDITIONAL_BLOCKS_TO_FETCH - 1);
           
-        if (curioData) {
-          await generateBlocks(
-            curioData.query, 
-            childProfile, 
-            ADDITIONAL_BLOCKS_TO_FETCH,
-            totalBlocksGenerated
-          );
+        if (blocksError) throw blocksError;
+        
+        if (existingBlocks && existingBlocks.length > 0) {
+          // We have more existing blocks to display
+          const typedBlocks = existingBlocks.map(block => ({
+            ...block,
+            type: block.type as ContentBlockType
+          }));
+          
+          setBlocks(prev => [...prev, ...typedBlocks]);
+          
+          // Check if we might have more blocks
+          if (existingBlocks.length < ADDITIONAL_BLOCKS_TO_FETCH) {
+            const { data: curioData } = await supabase
+              .from('curios')
+              .select('query')
+              .eq('id', curioId)
+              .single();
+              
+            if (curioData && totalBlocksGenerated < 10) {
+              // Generate more blocks if needed
+              await generateBlocks(
+                curioData.query, 
+                childProfile, 
+                ADDITIONAL_BLOCKS_TO_FETCH - existingBlocks.length,
+                totalBlocksGenerated
+              );
+            } else {
+              setHasMoreBlocksToGenerate(false);
+            }
+          }
+        } else {
+          // No more existing blocks, generate new ones
+          const { data: curioData } = await supabase
+            .from('curios')
+            .select('query')
+            .eq('id', curioId)
+            .single();
+            
+          if (curioData) {
+            await generateBlocks(
+              curioData.query, 
+              childProfile, 
+              ADDITIONAL_BLOCKS_TO_FETCH,
+              totalBlocksGenerated
+            );
+          }
         }
       } catch (error) {
         console.error('Error loading more blocks:', error);
@@ -211,7 +250,7 @@ const CurioPage: React.FC = () => {
       }
     };
     
-    if (isLoadTriggerVisible && !isLoadingMore) {
+    if (isLoadTriggerVisible) {
       loadMoreBlocks();
     }
   }, [isLoadTriggerVisible, blocks.length, hasMoreBlocksToGenerate, totalBlocksGenerated, curioId, childProfile, isLoadingMore]);
