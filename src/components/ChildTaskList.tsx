@@ -83,13 +83,13 @@ const ChildTaskList = ({ childId, onTaskCompleted }: ChildTaskListProps) => {
         // Continue with task completion even if sparks award fails
       }
 
-      // Use SQL RPC function to bypass RLS policy issues
-      const { error: rpcError } = await supabase.rpc('complete_child_task', {
-        task_id: taskId
+      // Call the edge function to complete the task
+      const { data, error } = await supabase.functions.invoke('complete-task', {
+        body: { taskId, childId }
       });
       
-      if (rpcError) {
-        console.error('Error completing task via RPC:', rpcError);
+      if (error) {
+        console.error('Error calling complete-task function:', error);
         throw new Error('Failed to complete task');
       }
       
