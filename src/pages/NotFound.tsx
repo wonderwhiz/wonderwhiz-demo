@@ -1,21 +1,40 @@
 
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import WonderWhizLogo from "@/components/WonderWhizLogo";
 import { motion } from "framer-motion";
 import ParticleEffect from "@/components/ParticleEffect";
+import { Button } from "@/components/ui/button";
 
 const NotFound = () => {
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     console.error(
       "404 Error: User attempted to access non-existent route:",
       location.pathname
     );
-  }, [location.pathname]);
+
+    // Check if this is a curio page with wrong format
+    if (location.pathname.includes('/curio/')) {
+      // Extract the profileId if possible, to redirect back to dashboard
+      const pathParts = location.pathname.split('/');
+      if (pathParts.length > 2) {
+        const possibleProfileId = pathParts[2];
+        if (possibleProfileId && possibleProfileId.length > 10) {
+          // After a delay, redirect to dashboard
+          const timer = setTimeout(() => {
+            navigate(`/dashboard/${possibleProfileId}`);
+          }, 3000);
+          
+          return () => clearTimeout(timer);
+        }
+      }
+    }
+  }, [location.pathname, navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-wonderwhiz-gradient overflow-hidden">
@@ -60,19 +79,38 @@ const NotFound = () => {
             Oops! This page has gone on an adventure.
           </p>
           
+          {location.pathname.includes('/curio/') && (
+            <p className="text-amber-300 mb-6 text-lg">
+              We're taking you back to your dashboard in a few seconds...
+            </p>
+          )}
+          
           <p className="text-gray-300 mb-10 text-lg">
             The page you're looking for seems to have wandered off. Let's find something more magical!
           </p>
           
-          <Link to="/">
-            <motion.button 
-              className="jelly-button inline-block text-lg px-8 py-3"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              Back to Wonder
-            </motion.button>
-          </Link>
+          <div className="flex space-x-4 justify-center">
+            <Link to="/">
+              <motion.button 
+                className="jelly-button inline-block text-lg px-8 py-3"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Back to Wonder
+              </motion.button>
+            </Link>
+            
+            {location.pathname.includes('/curio/') && (
+              <Link to="/profiles">
+                <Button
+                  variant="outline"
+                  className="inline-block text-lg px-8 py-3 bg-transparent border border-white/30 text-white hover:bg-white/10"
+                >
+                  Choose Profile
+                </Button>
+              </Link>
+            )}
+          </div>
         </motion.div>
         
         {/* Animation: floating stars */}
