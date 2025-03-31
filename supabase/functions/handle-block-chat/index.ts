@@ -30,7 +30,7 @@ serve(async (req) => {
     
     const specialist = specialists[specialistId] || specialists.nova;
     
-    // Create a prompt for Claude based on the block content and user message
+    // Create a more detailed context based on the block content
     let contextInfo = "";
     if (blockType === 'fact' || blockType === 'funFact') {
       contextInfo = `The child was exploring this fact: "${blockContent.fact}"`;
@@ -64,13 +64,17 @@ VERY IMPORTANT: You must respond in ${language} language.
 
 Please respond to their message in a friendly, educational way that:
 1. Is age-appropriate for a ${childProfile.age}-year-old
-2. Provides helpful information related to their question
-3. Encourages curiosity and further exploration
-4. Is concise (2-3 sentences only)
+2. Provides helpful, accurate information related to their question
+3. Encourages curiosity and deeper exploration of the topic
+4. Expands their knowledge with 1-2 interesting new facts they might not know
 5. Uses simple language a child would understand
 6. Has an encouraging, enthusiastic tone
+7. Connects the topic to real-world examples they can relate to
+8. Gently corrects any misconceptions in a supportive way
 
-You must keep your response brief and engaging - no more than 2-3 sentences total.`;
+While being educational, maintain a warm and friendly character voice that aligns with your specialist personality. Make the child feel their questions are valued and important.
+
+Keep your response relatively brief (3-4 sentences) and engaging - just enough to spark further curiosity and provide useful knowledge.`;
 
     console.log("Sending request to Claude API for chat response");
     
