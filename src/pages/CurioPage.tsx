@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
@@ -23,66 +24,79 @@ interface ContentBlock {
   created_at?: string;
 }
 
-const BATCH_SIZE = 2;
-const INITIAL_BLOCKS_TO_LOAD = 2;
+const INITIAL_BLOCKS_TO_FETCH = 2;
+const ADDITIONAL_BLOCKS_TO_FETCH = 2;
 
 const CurioPage: React.FC = () => {
   const { profileId, curioId } = useParams<{ profileId: string; curioId: string }>();
   const [blocks, setBlocks] = useState<ContentBlock[]>([]);
-  const [allBlocks, setAllBlocks] = useState<ContentBlock[]>([]);
   const [title, setTitle] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [hasMoreBlocks, setHasMoreBlocks] = useState<boolean>(true);
-  const [loadingMoreBlocks, setLoadingMoreBlocks] = useState<boolean>(false);
+  const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
+  const [hasMoreBlocksToGenerate, setHasMoreBlocksToGenerate] = useState<boolean>(true);
+  const [totalBlocksGenerated, setTotalBlocksGenerated] = useState<number>(0);
+  const [childProfile, setChildProfile] = useState<any>(null);
   const [loadTriggerRef, isLoadTriggerVisible] = useIntersectionObserver(
     { rootMargin: '200px' },
     false
   );
 
-  // Fetch curio data
+  // Fetch curio data and child profile
   useEffect(() => {
-    const fetchCurio = async () => {
-      if (!curioId) return;
+    const fetchInitialData = async () => {
+      if (!curioId || !profileId) return;
+      
+      setIsLoading(true);
       
       try {
+        // Fetch the curio data
         const { data: curioData, error: curioError } = await supabase
           .from('curios')
           .select('*')
           .eq('id', curioId)
           .single();
         
-        if (curioError) {
-          throw curioError;
-        }
+        if (curioError) throw curioError;
         
         if (curioData) {
           setTitle(curioData.title);
         }
         
-        // Fetch all blocks but only display the initial batch
-        const { data: blocksData, error: blocksError } = await supabase
+        // Fetch child profile for Claude API
+        const { data: profileData, error: profileError } = await supabase
+          .from('child_profiles')
+          .select('*')
+          .eq('id', profileId)
+          .single();
+          
+        if (profileError) throw profileError;
+        setChildProfile(profileData);
+        
+        // Check if we already have blocks for this curio
+        const { data: existingBlocks, error: blocksCheckError } = await supabase
           .from('content_blocks')
           .select('*')
           .eq('curio_id', curioId)
           .order('created_at', { ascending: true });
           
-        if (blocksError) {
-          throw blocksError;
-        }
+        if (blocksCheckError) throw blocksCheckError;
         
-        if (blocksData) {
-          // Store all blocks but only show the initial batch
-          const mappedBlocks = blocksData.map(block => ({
+        if (existingBlocks && existingBlocks.length > 0) {
+          // We already have some blocks, fetch the initial ones
+          const initialBlocks = existingBlocks.slice(0, INITIAL_BLOCKS_TO_FETCH).map(block => ({
             ...block,
             type: block.type as ContentBlockType
           }));
           
-          setAllBlocks(mappedBlocks);
-          setBlocks(mappedBlocks.slice(0, INITIAL_BLOCKS_TO_LOAD));
-          setHasMoreBlocks(mappedBlocks.length > INITIAL_BLOCKS_TO_LOAD);
+          setBlocks(initialBlocks);
+          setTotalBlocksGenerated(existingBlocks.length);
+          setHasMoreBlocksToGenerate(false);
+        } else {
+          // No blocks yet, generate the initial ones
+          await generateBlocks(curioData.query, profileData, INITIAL_BLOCKS_TO_FETCH);
         }
       } catch (error) {
-        console.error('Error fetching curio:', error);
+        console.error('Error fetching initial data:', error);
         toast({
           title: "Error",
           description: "Could not load curio data",
@@ -93,46 +107,157 @@ const CurioPage: React.FC = () => {
       }
     };
     
-    fetchCurio();
-  }, [curioId]);
+    fetchInitialData();
+  }, [curioId, profileId]);
+
+  // Generate blocks function
+  const generateBlocks = async (query: string, profile: any, count: number, startIndex: number = 0) => {
+    if (!curioId || !profile) return;
+    
+    try {
+      const claudeResponse = await supabase.functions.invoke('generate-curiosity-blocks-partial', {
+        body: JSON.stringify({
+          query: query,
+          childProfile: profile,
+          count: count,
+          startIndex: startIndex
+        })
+      });
+      
+      if (claudeResponse.error) {
+        throw new Error(`Failed to generate content: ${claudeResponse.error.message}`);
+      }
+      
+      const generatedBlocks = claudeResponse.data;
+      if (!Array.isArray(generatedBlocks)) {
+        throw new Error("Invalid response format from generate-curiosity-blocks-partial");
+      }
+      
+      console.log(`Generated ${generatedBlocks.length} blocks starting at index ${startIndex}`);
+      
+      // Save blocks to database
+      for (const block of generatedBlocks) {
+        await supabase.from('content_blocks').insert({
+          curio_id: curioId,
+          type: block.type,
+          specialist_id: block.specialist_id,
+          content: block.content
+        });
+      }
+      
+      // Update state
+      const typedBlocks = generatedBlocks.map(block => ({
+        ...block,
+        type: block.type as ContentBlockType,
+        curio_id: curioId
+      }));
+      
+      setBlocks(prev => [...prev, ...typedBlocks]);
+      setTotalBlocksGenerated(prev => prev + generatedBlocks.length);
+      
+      // Check if we should stop generating (assuming 10 total blocks maximum)
+      if (startIndex + count >= 10) {
+        setHasMoreBlocksToGenerate(false);
+      }
+      
+      return typedBlocks;
+    } catch (error) {
+      console.error('Error generating blocks:', error);
+      toast({
+        title: "Error",
+        description: "Could not generate content blocks",
+        variant: "destructive"
+      });
+      setHasMoreBlocksToGenerate(false);
+      return [];
+    }
+  };
 
   // Load more blocks when the trigger element is visible
   useEffect(() => {
-    if (isLoadTriggerVisible && hasMoreBlocks && !loadingMoreBlocks) {
+    const loadMoreBlocks = async () => {
+      if (isLoadingMore || !hasMoreBlocksToGenerate || !childProfile || !curioId) return;
+      
+      setIsLoadingMore(true);
+      
+      try {
+        // First try to fetch existing blocks
+        const { data: existingBlocks, error: blocksError } = await supabase
+          .from('content_blocks')
+          .select('*')
+          .eq('curio_id', curioId)
+          .order('created_at', { ascending: true })
+          .range(blocks.length, blocks.length + ADDITIONAL_BLOCKS_TO_FETCH - 1);
+          
+        if (blocksError) throw blocksError;
+        
+        if (existingBlocks && existingBlocks.length > 0) {
+          // We have more existing blocks to display
+          const typedBlocks = existingBlocks.map(block => ({
+            ...block,
+            type: block.type as ContentBlockType
+          }));
+          
+          setBlocks(prev => [...prev, ...typedBlocks]);
+          
+          // Check if we might have more blocks
+          if (existingBlocks.length < ADDITIONAL_BLOCKS_TO_FETCH) {
+            const { data: curioData } = await supabase
+              .from('curios')
+              .select('query')
+              .eq('id', curioId)
+              .single();
+              
+            if (curioData && totalBlocksGenerated < 10) {
+              // Generate more blocks if needed
+              await generateBlocks(
+                curioData.query, 
+                childProfile, 
+                ADDITIONAL_BLOCKS_TO_FETCH - existingBlocks.length,
+                totalBlocksGenerated
+              );
+            } else {
+              setHasMoreBlocksToGenerate(false);
+            }
+          }
+        } else {
+          // No more existing blocks, generate new ones
+          const { data: curioData } = await supabase
+            .from('curios')
+            .select('query')
+            .eq('id', curioId)
+            .single();
+            
+          if (curioData) {
+            await generateBlocks(
+              curioData.query, 
+              childProfile, 
+              ADDITIONAL_BLOCKS_TO_FETCH,
+              totalBlocksGenerated
+            );
+          }
+        }
+      } catch (error) {
+        console.error('Error loading more blocks:', error);
+        toast({
+          title: "Error",
+          description: "Could not load more content blocks",
+          variant: "destructive"
+        });
+        setHasMoreBlocksToGenerate(false);
+      } finally {
+        setIsLoadingMore(false);
+      }
+    };
+    
+    if (isLoadTriggerVisible) {
       loadMoreBlocks();
     }
-  }, [isLoadTriggerVisible, hasMoreBlocks, loadingMoreBlocks]);
-
-  const loadMoreBlocks = useCallback(() => {
-    if (!hasMoreBlocks || loadingMoreBlocks) return;
-    
-    setLoadingMoreBlocks(true);
-    
-    // Simulate a small delay for a smoother loading experience
-    setTimeout(() => {
-      const currentBlocksCount = blocks.length;
-      const nextBatch = allBlocks.slice(
-        currentBlocksCount,
-        currentBlocksCount + BATCH_SIZE
-      );
-      
-      setBlocks(prev => [...prev, ...nextBatch]);
-      setHasMoreBlocks(currentBlocksCount + nextBatch.length < allBlocks.length);
-      setLoadingMoreBlocks(false);
-    }, 300);
-  }, [blocks.length, allBlocks, hasMoreBlocks, loadingMoreBlocks]);
+  }, [isLoadTriggerVisible, blocks.length, hasMoreBlocksToGenerate, totalBlocksGenerated, curioId, childProfile, isLoadingMore]);
 
   // Handle like toggle
   const handleToggleLike = useCallback(async (blockId: string) => {
     setBlocks(prev => 
-      prev.map(block => 
-        block.id === blockId 
-          ? { ...block, liked: !block.liked }
-          : block
-      )
-    );
-    
-    setAllBlocks(prev => 
       prev.map(block => 
         block.id === blockId 
           ? { ...block, liked: !block.liked }
@@ -160,14 +285,6 @@ const CurioPage: React.FC = () => {
   // Handle bookmark toggle
   const handleToggleBookmark = useCallback(async (blockId: string) => {
     setBlocks(prev => 
-      prev.map(block => 
-        block.id === blockId 
-          ? { ...block, bookmarked: !block.bookmarked }
-          : block
-      )
-    );
-    
-    setAllBlocks(prev => 
       prev.map(block => 
         block.id === blockId 
           ? { ...block, bookmarked: !block.bookmarked }
@@ -303,21 +420,21 @@ const CurioPage: React.FC = () => {
               ))}
               
               {/* Intersection observer trigger element */}
-              {hasMoreBlocks && (
+              {hasMoreBlocksToGenerate && (
                 <div 
                   ref={loadTriggerRef} 
                   className="h-10 flex items-center justify-center my-8"
                 >
-                  {loadingMoreBlocks && (
+                  {isLoadingMore && (
                     <div className="flex flex-col items-center">
                       <Loader2 className="h-6 w-6 animate-spin text-wonderwhiz-purple" />
-                      <p className="text-white/70 text-xs mt-2">Loading more...</p>
+                      <p className="text-white/70 text-xs mt-2">Loading more content...</p>
                     </div>
                   )}
                 </div>
               )}
               
-              {!hasMoreBlocks && blocks.length > 0 && (
+              {!hasMoreBlocksToGenerate && blocks.length > 0 && !isLoadingMore && (
                 <p className="text-center text-white/50 text-xs py-4">
                   You've reached the end of this curio!
                 </p>
