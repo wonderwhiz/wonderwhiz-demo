@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { BookmarkIcon, ThumbsUpIcon, MessageCircleIcon, ImageIcon } from 'lucide-react';
@@ -155,7 +154,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   const [expanded, setExpanded] = useState(false);
   const [contextualImage, setContextualImage] = useState<string | null>(null);
   const [imageLoading, setImageLoading] = useState(false);
-  const [imageError, setImageError] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
   
   const specialist = SPECIALISTS[block.specialist_id] || {
     name: 'Wonder Wizard',
@@ -172,10 +171,12 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   useEffect(() => {
     const generateImage = async () => {
       // Only generate for the first block
-      if (!isFirstBlock || contextualImage || imageLoading || imageError) return;
+      if (!isFirstBlock || contextualImage || imageLoading) return;
       
       try {
+        console.log("Attempting to generate image for block type:", block.type);
         setImageLoading(true);
+        setImageError(null);
         
         const { data, error } = await supabase.functions.invoke('generate-contextual-image', {
           body: {
@@ -184,21 +185,38 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
           }
         });
         
-        if (error) throw error;
+        console.log("Image generation response:", { data, error });
+        
+        if (error) {
+          console.error("Supabase function error:", error);
+          throw new Error(`Edge function error: ${error.message}`);
+        }
+        
+        if (!data) {
+          throw new Error("No data returned from image generation function");
+        }
+        
+        if (data.error) {
+          console.error("Image generation error:", data.error);
+          throw new Error(data.error);
+        }
         
         if (data && data.image) {
+          console.log("Image generated successfully");
           setContextualImage(data.image);
+        } else {
+          throw new Error("No image data in response");
         }
       } catch (err) {
         console.error('Error generating contextual image:', err);
-        setImageError(true);
+        setImageError(err instanceof Error ? err.message : "Unknown error occurred");
       } finally {
         setImageLoading(false);
       }
     };
     
     generateImage();
-  }, [isFirstBlock, block, contextualImage, imageLoading, imageError]);
+  }, [isFirstBlock, block, contextualImage, imageLoading]);
   
   useEffect(() => {
     const fetchReplies = async () => {
@@ -487,16 +505,22 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
                   alt={`Illustration for ${blockTitle}`} 
                   className={`${getContextualImageStyle()}`}
                   loading="lazy"
+                  onError={() => {
+                    console.error("Image failed to load");
+                    setImageError("Image failed to load");
+                  }}
                 />
               </motion.div>
-            ) : imageError ? (
+            ) : (
               <div className={`${getContextualImageStyle()} flex items-center justify-center border border-dashed border-white/20`}>
                 <div className="flex flex-col items-center">
                   <ImageIcon className="h-6 w-6 text-white/30 mb-1" />
-                  <p className="text-white/50 text-xs">Could not load image</p>
+                  <p className="text-white/50 text-xs">
+                    {imageError ? `Error: ${imageError}` : "Could not load image"}
+                  </p>
                 </div>
               </div>
-            ) : null}
+            )}
           </div>
         )}
         

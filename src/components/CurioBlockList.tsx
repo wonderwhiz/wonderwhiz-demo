@@ -89,7 +89,6 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
             opacity: 1, 
             rotateY: 0,
             transition: {
-              ...baseVariants.visible.transition,
               type: "spring",
             }
           }
@@ -178,6 +177,8 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
         return baseVariants;
     }
   };
+
+  console.log("Rendering blocks:", blocks.length, "Search query:", searchQuery);
 
   return (
     <AnimatePresence mode="wait">
