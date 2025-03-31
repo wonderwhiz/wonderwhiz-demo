@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ContentBlock from '@/components/ContentBlock';
@@ -77,7 +76,6 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
           visible: {
             ...baseVariants.visible,
             transition: {
-              ...baseVariants.visible.transition,
               type: "spring",
               stiffness: 100,
             }
@@ -257,7 +255,6 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
           </motion.div>
         )}
         
-        {/* Intersection observer trigger element */}
         {(hasMoreBlocks && !searchQuery && blocks.length > 0) && (
           <CurioLoadMore 
             loadingMoreBlocks={loadingMoreBlocks} 
