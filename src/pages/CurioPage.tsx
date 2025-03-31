@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
@@ -16,20 +16,7 @@ import { Helmet } from 'react-helmet-async';
 
 const CurioPage: React.FC = () => {
   const { profileId, curioId } = useParams<{ profileId: string; curioId: string }>();
-  const navigate = useNavigate();
   const [animateBlocks, setAnimateBlocks] = useState(false);
-  
-  console.log('CurioPage mounted with params:', { profileId, curioId }); // Debug log
-  
-  // Add fallback if parameters are missing
-  useEffect(() => {
-    if (!profileId || !curioId) {
-      console.error('Missing required parameters:', { profileId, curioId });
-      navigate('/profiles');
-      toast.error('Missing required parameters for the curiosity page');
-      return;
-    }
-  }, [profileId, curioId, navigate]);
   
   const {
     blocks,
@@ -146,34 +133,10 @@ const CurioPage: React.FC = () => {
     }
   }, [isLoadTriggerVisible, hasMoreBlocks, loadingMoreBlocks, isLoading, initialLoadComplete, loadMoreBlocks]);
 
-  // For debugging purposes
   useEffect(() => {
-    console.log('CurioPage rendering with state:', {
-      blocksLength: blocks.length,
-      isLoading,
-      isGeneratingContent,
-      hasMoreBlocks,
-      loadingMoreBlocks,
-      totalBlocksLoaded,
-      initialLoadComplete
-    });
-    
     return () => {
-      console.log('CurioPage unmounting');
     };
-  }, [blocks.length, isLoading, isGeneratingContent, hasMoreBlocks, loadingMoreBlocks, totalBlocksLoaded, initialLoadComplete]);
-
-  // Create a simpler initial state for testing
-  if (!profileId || !curioId) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex items-center justify-center">
-        <div className="text-white text-center p-6">
-          <h1 className="text-2xl font-bold mb-4">Missing Parameters</h1>
-          <p>Required parameters are missing. Redirecting to profiles...</p>
-        </div>
-      </div>
-    );
-  }
+  }, []);
 
   if (isLoading && blocks.length === 0) {
     return <CurioLoading />;
@@ -182,7 +145,6 @@ const CurioPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black pb-20">
       <Helmet>
-        <title>WonderWhiz - Curiosity Explorer</title>
         <script src="https://elevenlabs.io/convai-widget/index.js" async type="text/javascript"></script>
       </Helmet>
       
@@ -263,13 +225,10 @@ const CurioPage: React.FC = () => {
         </Card>
       </div>
 
-      {/* Floating container for ElevenLabs Convai widget */}
       <div className="fixed bottom-4 right-4 z-50">
-        <div className="bg-black/60 backdrop-blur-sm rounded-2xl p-2 shadow-xl border border-white/10 hover:border-wonderwhiz-purple/50 transition-all duration-300">
-          <div dangerouslySetInnerHTML={{ 
-            __html: '<elevenlabs-convai agent-id="zmQ4IMOTcaVnB64g8OYl"></elevenlabs-convai>'
-          }} />
-        </div>
+        <div dangerouslySetInnerHTML={{ 
+          __html: '<elevenlabs-convai agent-id="zmQ4IMOTcaVnB64g8OYl"></elevenlabs-convai>'
+        }} />
       </div>
     </div>
   );
