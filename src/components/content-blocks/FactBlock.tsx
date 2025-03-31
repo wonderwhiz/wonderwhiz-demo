@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
@@ -12,13 +11,15 @@ interface FactBlockProps {
   onRabbitHoleClick: (question: string) => void;
   expanded?: boolean;
   setExpanded?: (expanded: boolean) => void;
+  textSize?: string;  // New prop
 }
 
 const FactBlock: React.FC<FactBlockProps> = ({ 
   content, 
   onRabbitHoleClick, 
   expanded = false,
-  setExpanded = () => {}
+  setExpanded = () => {},
+  textSize = 'text-sm sm:text-base'  // Default if not provided
 }) => {
   const factIsTooLong = content.fact.length > 120;
 
@@ -36,7 +37,7 @@ const FactBlock: React.FC<FactBlockProps> = ({
           <div className="flex-1">
             {factIsTooLong && !expanded ? (
               <>
-                <p className="text-white text-sm sm:text-base">
+                <p className={`text-white/90 ${textSize}`}>
                   {content.fact.substring(0, 120)}...
                 </p>
                 <Button
@@ -50,7 +51,7 @@ const FactBlock: React.FC<FactBlockProps> = ({
               </>
             ) : (
               <>
-                <p className="text-white text-sm sm:text-base">{content.fact}</p>
+                <p className={`text-white/90 ${textSize}`}>{content.fact}</p>
                 {factIsTooLong && expanded && (
                   <Button
                     variant="ghost"

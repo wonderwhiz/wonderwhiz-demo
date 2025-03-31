@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { BookmarkIcon, ThumbsUpIcon, MessageCircleIcon } from 'lucide-react';
 import { SPECIALISTS } from './SpecialistAvatar';
 import BlockReply from './BlockReply';
 import BlockReplyForm from './BlockReplyForm';
-import { getBackgroundColor, getBorderColor, getTextColor } from './BlockStyleUtils';
+import { getBackgroundColor, getBorderColor, getTextColor, getTextSize } from './BlockStyleUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
@@ -376,6 +375,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
             onRabbitHoleClick={handleRabbitHoleClick}
             expanded={expanded}
             setExpanded={setExpanded} 
+            textSize={getTextSize(block.type)}
           />
         );
         
