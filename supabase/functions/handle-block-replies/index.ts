@@ -19,7 +19,7 @@ serve(async (req) => {
   try {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    const { block_id, content, from_user, specialist_id, user_id, child_profile_id } = await req.json();
+    const { block_id, content, from_user, user_id, child_profile_id } = await req.json();
     
     // Validate required fields
     if (!block_id || !content) {
@@ -43,13 +43,13 @@ serve(async (req) => {
     console.log(`Block ${block_id} exists, proceeding with reply`);
 
     // Now save the reply using the service role to bypass RLS
+    // Remove specialist_id from the insert operation
     const { data, error } = await supabase
       .from('block_replies')
       .insert({
         block_id,
         content,
-        from_user,
-        specialist_id
+        from_user
       })
       .select();
 
