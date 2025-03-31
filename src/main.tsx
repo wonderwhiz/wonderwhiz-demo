@@ -16,6 +16,27 @@ const LoadingFallback = () => (
   </div>
 )
 
+// Add default OG meta tags to ensure they're always present
+const addDefaultOgTags = () => {
+  // Only add if not already present
+  if (!document.querySelector('meta[property="og:image"]')) {
+    const ogImage = document.createElement('meta');
+    ogImage.setAttribute('property', 'og:image');
+    ogImage.setAttribute('content', 'https://wonderwhiz.lovable.app/wonderwhiz-og.png');
+    document.head.appendChild(ogImage);
+  }
+  
+  if (!document.querySelector('meta[name="twitter:image"]')) {
+    const twitterImage = document.createElement('meta');
+    twitterImage.setAttribute('name', 'twitter:image');
+    twitterImage.setAttribute('content', 'https://wonderwhiz.lovable.app/wonderwhiz-og.png');
+    document.head.appendChild(twitterImage);
+  }
+};
+
+// Add default OG tags
+addDefaultOgTags();
+
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("Root element not found");
 
