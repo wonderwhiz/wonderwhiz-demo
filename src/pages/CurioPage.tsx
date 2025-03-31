@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
@@ -48,7 +47,6 @@ const CurioPage: React.FC = () => {
     if (!profileId) return;
     
     try {
-      // Award sparks for task completion
       await supabase.functions.invoke('increment-sparks-balance', {
         body: { childId: profileId, amount: 8 }
       });
@@ -68,7 +66,6 @@ const CurioPage: React.FC = () => {
     if (!profileId) return;
     
     try {
-      // Award sparks for activity completion
       await supabase.functions.invoke('increment-sparks-balance', {
         body: { childId: profileId, amount: 3 }
       });
@@ -88,7 +85,6 @@ const CurioPage: React.FC = () => {
     if (!profileId) return;
     
     try {
-      // Award sparks for mindfulness completion
       await supabase.functions.invoke('increment-sparks-balance', {
         body: { childId: profileId, amount: 5 }
       });
@@ -111,16 +107,13 @@ const CurioPage: React.FC = () => {
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   
-  // Auto-scroll to top after initial blocks load
   useEffect(() => {
     if (blocks.length > 0 && !isLoading && !initialLoadComplete) {
       console.log('Initial blocks loaded, preparing to auto-scroll');
       setInitialLoadComplete(true);
       
-      // Ensure blocks animate in sequence before scrolling
       setAnimateBlocks(true);
       
-      // Scroll to top with a slight delay to allow animation to start
       if (scrollAreaRef.current) {
         console.log('Auto-scrolling to top');
         setTimeout(() => {
@@ -132,7 +125,6 @@ const CurioPage: React.FC = () => {
     }
   }, [blocks.length, isLoading, initialLoadComplete, setInitialLoadComplete]);
 
-  // Load more blocks when the trigger element is visible
   useEffect(() => {
     if (isLoadTriggerVisible && hasMoreBlocks && !loadingMoreBlocks && !isLoading && initialLoadComplete) {
       console.log('Load trigger visible, loading more blocks');
@@ -140,11 +132,8 @@ const CurioPage: React.FC = () => {
     }
   }, [isLoadTriggerVisible, hasMoreBlocks, loadingMoreBlocks, isLoading, initialLoadComplete, loadMoreBlocks]);
 
-  // Effect to add ElevenLabs widget script
   useEffect(() => {
-    // We'll use Helmet for the widget script to ensure it loads properly
     return () => {
-      // Cleanup if needed
     };
   }, []);
 
@@ -155,7 +144,6 @@ const CurioPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black pb-20">
       <Helmet>
-        {/* Add ElevenLabs Convai widget script */}
         <script src="https://elevenlabs.io/convai-widget/index.js" async type="text/javascript"></script>
       </Helmet>
       
@@ -171,7 +159,6 @@ const CurioPage: React.FC = () => {
           )}
         </h1>
         
-        {/* Search component */}
         <CurioSearch
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
@@ -183,7 +170,6 @@ const CurioPage: React.FC = () => {
         
         <Card className="bg-black/40 border-white/10 p-2 sm:p-4 md:p-6">
           <ScrollArea ref={scrollAreaRef} className="h-[calc(100vh-230px)]">
-            {/* Content generation indicator */}
             {isGeneratingContent && (
               <motion.div 
                 className="flex items-center justify-center py-4 mb-4 bg-purple-900/20 rounded-lg border border-purple-500/30"
@@ -216,7 +202,6 @@ const CurioPage: React.FC = () => {
               </motion.div>
             )}
             
-            {/* Content blocks list */}
             <CurioBlockList
               blocks={blocks}
               animateBlocks={animateBlocks}
@@ -239,9 +224,10 @@ const CurioPage: React.FC = () => {
         </Card>
       </div>
 
-      {/* ElevenLabs Conversational AI Widget */}
       <div className="fixed bottom-4 right-4 z-50">
-        <elevenlabs-convai agent-id="zmQ4IMOTcaVnB64g8OYl"></elevenlabs-convai>
+        <div dangerouslySetInnerHTML={{ 
+          __html: '<elevenlabs-convai agent-id="zmQ4IMOTcaVnB64g8OYl"></elevenlabs-convai>'
+        }} />
       </div>
     </div>
   );
