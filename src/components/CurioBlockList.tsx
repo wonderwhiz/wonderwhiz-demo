@@ -36,58 +36,149 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
   handleCreativeUpload,
   profileId,
 }) => {
-  // Animation variants for sequential loading
+  // Container animation variants
   const containerVariants = {
     hidden: {},
     visible: {
       transition: {
-        staggerChildren: 0.2
+        staggerChildren: 0.15
       }
     }
   };
 
-  // Animation variants for blocks
-  const blockVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { 
-      opacity: 1, 
-      y: 0,
-      transition: {
-        duration: 0.5
+  // Block animation variants with different entrance effects based on block type
+  const getBlockVariants = (block: ContentBlockType, index: number) => {
+    // Base animation
+    const baseVariants = {
+      hidden: { opacity: 0, y: 20 },
+      visible: { 
+        opacity: 1, 
+        y: 0,
+        transition: {
+          type: "spring",
+          duration: 0.7,
+          delay: index * 0.08,
+          damping: 12
+        }
       }
+    };
+
+    // Add special animations based on block type
+    switch(block.type) {
+      case 'quiz':
+        return {
+          ...baseVariants,
+          visible: {
+            ...baseVariants.visible,
+            transition: {
+              ...baseVariants.visible.transition,
+              type: "spring",
+              stiffness: 100,
+            }
+          }
+        };
+      case 'flashcard':
+        return {
+          ...baseVariants,
+          hidden: { opacity: 0, rotateY: 90 },
+          visible: { 
+            opacity: 1, 
+            rotateY: 0,
+            transition: {
+              ...baseVariants.visible.transition,
+              type: "spring",
+            }
+          }
+        };
+      case 'creative':
+        return {
+          ...baseVariants,
+          hidden: { opacity: 0, scale: 0.8 },
+          visible: { 
+            opacity: 1, 
+            scale: 1,
+            transition: {
+              ...baseVariants.visible.transition,
+              type: "spring",
+            }
+          }
+        };
+      default:
+        return baseVariants;
     }
   };
 
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       <motion.div 
-        className="space-y-4 px-1"
+        className="space-y-5 px-1"
         variants={containerVariants}
         initial="hidden"
         animate={animateBlocks ? "visible" : "hidden"}
       >
-        {blocks.map((block) => (
+        {blocks.length > 0 ? (
+          blocks.map((block, index) => (
+            <motion.div
+              key={block.id}
+              className="block-container"
+              variants={getBlockVariants(block, index)}
+              whileHover={{ scale: 1.01 }}
+              transition={{ duration: 0.2 }}
+            >
+              <ContentBlock
+                block={block}
+                onToggleLike={handleToggleLike}
+                onToggleBookmark={handleToggleBookmark}
+                onReply={handleReply}
+                colorVariant={parseInt(block.id.charAt(0), 16) % 3}
+                userId={profileId}
+                childProfileId={profileId}
+                onQuizCorrect={handleQuizCorrect}
+                onNewsRead={handleNewsRead}
+                onCreativeUpload={handleCreativeUpload}
+              />
+            </motion.div>
+          ))
+        ) : (
           <motion.div
-            key={block.id}
-            variants={blockVariants}
+            className="text-center py-12 px-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
           >
-            <ContentBlock
-              block={block}
-              onToggleLike={handleToggleLike}
-              onToggleBookmark={handleToggleBookmark}
-              onReply={handleReply}
-              colorVariant={parseInt(block.id.charAt(0), 16) % 3}
-              userId={profileId}
-              childProfileId={profileId}
-              onQuizCorrect={handleQuizCorrect}
-              onNewsRead={handleNewsRead}
-              onCreativeUpload={handleCreativeUpload}
-            />
+            {searchQuery ? (
+              <>
+                <motion.div 
+                  className="text-wonderwhiz-purple/80 text-5xl mb-4"
+                  animate={{ rotate: [0, 10, -10, 0] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  🔍
+                </motion.div>
+                <h3 className="text-white text-xl font-medium">No results found</h3>
+                <p className="text-white/60 mt-2">
+                  We couldn't find any content matching "{searchQuery}"
+                </p>
+              </>
+            ) : (
+              <>
+                <motion.div 
+                  className="text-wonderwhiz-purple/80 text-5xl mb-4"
+                  animate={{ y: [0, -10, 0] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  ✨
+                </motion.div>
+                <h3 className="text-white text-xl font-medium">No content blocks yet</h3>
+                <p className="text-white/60 mt-2">
+                  Start exploring by asking a question above!
+                </p>
+              </>
+            )}
           </motion.div>
-        ))}
+        )}
         
         {/* Intersection observer trigger element */}
-        {(hasMoreBlocks && !searchQuery) && (
+        {(hasMoreBlocks && !searchQuery && blocks.length > 0) && (
           <CurioLoadMore 
             loadingMoreBlocks={loadingMoreBlocks} 
             loadTriggerRef={loadTriggerRef} 
@@ -95,15 +186,22 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
         )}
         
         {(!hasMoreBlocks && blocks.length > 0) && (
-          <p className="text-center text-white/50 text-xs py-4">
-            {searchQuery ? 'End of search results' : 'You\'ve reached the end of this curio!'}
-          </p>
-        )}
-        
-        {(blocks.length === 0) && (
-          <div className="text-center py-8">
-            <p className="text-white/70">No content blocks found.</p>
-          </div>
+          <motion.div 
+            className="text-center py-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            <motion.div 
+              className="mx-auto text-3xl mb-2"
+              animate={{ rotate: [0, 10, -10, 0] }}
+              transition={{ duration: 4, repeat: Infinity }}
+            >
+              🎉
+            </motion.div>
+            <p className="text-white/70 text-sm">
+              {searchQuery ? 'End of search results' : 'You\'ve reached the end of this curio!'}
+            </p>
+          </motion.div>
         )}
       </motion.div>
     </AnimatePresence>
