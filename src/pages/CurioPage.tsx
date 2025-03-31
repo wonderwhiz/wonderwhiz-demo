@@ -145,6 +145,7 @@ const CurioPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black pb-20">
       <Helmet>
+        <title>WonderWhiz - Curiosity Explorer</title>
         <script src="https://elevenlabs.io/convai-widget/index.js" async type="text/javascript"></script>
       </Helmet>
       

@@ -1,11 +1,8 @@
 
-import { createRoot } from 'react-dom/client'
-import './index.css'
+import { createRoot } from 'react-dom/client';
+import './index.css';
+import App from './App.tsx';
 
-// Remove lazy loading and Suspense
-import App from './App.tsx'
-
-// Remove the LoadingFallback component
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("Root element not found");
 
