@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -14,13 +15,16 @@ serve(async (req) => {
   }
 
   try {
-    // Forward the request to the main function
+    // Parse request body
     const reqBody = await req.json();
     
     // Ensure count and startIndex are defined in the request
     if (!reqBody.count) reqBody.count = 2;
-    if (!reqBody.startIndex) reqBody.startIndex = 0;
+    if (!reqBody.startIndex === undefined) reqBody.startIndex = 0;
     
+    console.log(`Requesting ${reqBody.count} blocks from Claude API starting at index ${reqBody.startIndex}`);
+    
+    // Forward the request to the main generate-curiosity-blocks function
     const response = await fetch(
       `${req.url.replace('generate-curiosity-blocks-partial', 'generate-curiosity-blocks')}`,
       {
@@ -33,9 +37,17 @@ serve(async (req) => {
       }
     );
     
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Error from generate-curiosity-blocks: ${errorText}`);
+      throw new Error(`Failed to generate content: ${response.status} ${errorText}`);
+    }
+    
     const data = await response.json();
+    console.log(`Processed ${reqBody.count} content blocks`);
+    
     return new Response(JSON.stringify(data), {
-      status: response.status,
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   } catch (error) {
