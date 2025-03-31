@@ -129,6 +129,8 @@ const CurioPage: React.FC = () => {
     if (!curioId || !profile) return [];
     
     try {
+      console.log(`Generating ${count} blocks starting at index ${startIndex}`);
+      
       const claudeResponse = await supabase.functions.invoke('generate-curiosity-blocks-partial', {
         body: JSON.stringify({
           query: query,
