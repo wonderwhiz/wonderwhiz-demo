@@ -12,6 +12,7 @@ import { useBlockInteractions } from '@/hooks/useBlockInteractions';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import { Helmet } from 'react-helmet-async';
 
 const CurioPage: React.FC = () => {
   const { profileId, curioId } = useParams<{ profileId: string; curioId: string }>();
@@ -139,12 +140,25 @@ const CurioPage: React.FC = () => {
     }
   }, [isLoadTriggerVisible, hasMoreBlocks, loadingMoreBlocks, isLoading, initialLoadComplete, loadMoreBlocks]);
 
+  // Effect to add ElevenLabs widget script
+  useEffect(() => {
+    // We'll use Helmet for the widget script to ensure it loads properly
+    return () => {
+      // Cleanup if needed
+    };
+  }, []);
+
   if (isLoading && blocks.length === 0) {
     return <CurioLoading />;
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black pb-20">
+      <Helmet>
+        {/* Add ElevenLabs Convai widget script */}
+        <script src="https://elevenlabs.io/convai-widget/index.js" async type="text/javascript"></script>
+      </Helmet>
+      
       <div className="container px-4 py-3 sm:py-5">
         <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2 sm:mb-3 text-center">
           {title || (
@@ -223,6 +237,11 @@ const CurioPage: React.FC = () => {
             />
           </ScrollArea>
         </Card>
+      </div>
+
+      {/* ElevenLabs Conversational AI Widget */}
+      <div className="fixed bottom-4 right-4 z-50">
+        <elevenlabs-convai agent-id="zmQ4IMOTcaVnB64g8OYl"></elevenlabs-convai>
       </div>
     </div>
   );
