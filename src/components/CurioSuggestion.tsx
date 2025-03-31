@@ -7,7 +7,7 @@ interface CurioSuggestionProps {
   suggestion: string;
   onClick: (suggestion: string) => void;
   index: number;
-  directGenerate?: boolean;
+  directGenerate?: boolean; // Made optional with a default value
 }
 
 const COLOR_VARIANTS = [
@@ -18,13 +18,9 @@ const CurioSuggestion: React.FC<CurioSuggestionProps> = ({
   suggestion, 
   onClick,
   index,
-  directGenerate = true 
+  directGenerate = true // Default value provided
 }) => {
   const colorVariant = COLOR_VARIANTS[index % COLOR_VARIANTS.length];
-  
-  const handleClick = () => {
-    onClick(suggestion);
-  };
   
   return (
     <motion.div
@@ -41,7 +37,7 @@ const CurioSuggestion: React.FC<CurioSuggestionProps> = ({
         className="rounded-2xl h-full"
       >
         <button
-          onClick={handleClick}
+          onClick={() => onClick(suggestion)}
           className="w-full h-full p-4 bg-white/10 text-white text-left rounded-2xl border-white/20 hover:bg-white/20 transition-colors"
         >
           <span className="block font-medium line-clamp-2">{suggestion}</span>
