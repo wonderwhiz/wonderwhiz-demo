@@ -11,3 +11,8 @@ export interface ContentBlock {
   bookmarked: boolean;
   created_at?: string;
 }
+
+// Add a type guard to validate ContentBlockType
+export function isValidContentBlockType(type: string): type is ContentBlockType {
+  return ["fact", "quiz", "flashcard", "creative", "task", "riddle", "funFact", "activity", "news", "mindfulness"].includes(type);
+}

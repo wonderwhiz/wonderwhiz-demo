@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { ContentBlock } from '@/types/curio';
+import { ContentBlock, isValidContentBlockType } from '@/types/curio';
 import { debounce } from 'lodash';
 
 const BATCH_SIZE = 2;
@@ -18,6 +18,30 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
   const [totalBlocksLoaded, setTotalBlocksLoaded] = useState(0);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  // Helper function to convert database blocks to ContentBlock type
+  const convertToContentBlocks = (dbBlocks: any[]): ContentBlock[] => {
+    return dbBlocks.map(block => {
+      // Validate that the block.type is one of our ContentBlockType values
+      if (!isValidContentBlockType(block.type)) {
+        console.warn(`Invalid content block type: ${block.type}`);
+        // Default to "fact" if type isn't recognized
+        block.type = "fact";
+      }
+      
+      // Return the block as a ContentBlock with typed properties
+      return {
+        id: block.id,
+        curio_id: block.curio_id,
+        specialist_id: block.specialist_id,
+        type: block.type as ContentBlock['type'],
+        content: block.content,
+        liked: block.liked,
+        bookmarked: block.bookmarked,
+        created_at: block.created_at
+      };
+    });
+  };
 
   // Fetch curio data
   useEffect(() => {
@@ -83,10 +107,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
         // We have existing blocks, use them
         console.log(`Found ${existingBlocks.length} existing blocks`);
         
-        const mappedBlocks = existingBlocks.map(block => ({
-          ...block,
-          type: block.type
-        }));
+        const mappedBlocks = convertToContentBlocks(existingBlocks);
         
         setBlocks(mappedBlocks);
         setTotalBlocksLoaded(mappedBlocks.length);
@@ -173,7 +194,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
       }
       
       // Set the blocks in state
-      setBlocks(blocksWithCurioId);
+      setBlocks(convertToContentBlocks(blocksWithCurioId));
       setTotalBlocksLoaded(INITIAL_BLOCKS_TO_LOAD);
       setHasMoreBlocks(generatedBlocks.length > INITIAL_BLOCKS_TO_LOAD);
     } catch (error) {
@@ -207,10 +228,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
         // We got more existing blocks
         console.log(`Loaded ${nextBlocks.length} more blocks`);
         
-        const mappedBlocks = nextBlocks.map(block => ({
-          ...block,
-          type: block.type
-        }));
+        const mappedBlocks = convertToContentBlocks(nextBlocks);
         
         setBlocks(prev => [...prev, ...mappedBlocks]);
         setTotalBlocksLoaded(prev => prev + mappedBlocks.length);
@@ -316,10 +334,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
       if (error) throw error;
       
       if (searchResults && searchResults.length > 0) {
-        const mappedBlocks = searchResults.map(block => ({
-          ...block,
-          type: block.type
-        }));
+        const mappedBlocks = convertToContentBlocks(searchResults);
         
         setBlocks(mappedBlocks);
         setTotalBlocksLoaded(mappedBlocks.length);
