@@ -225,10 +225,13 @@ const CurioPage: React.FC = () => {
         </Card>
       </div>
 
+      {/* Floating container for ElevenLabs Convai widget */}
       <div className="fixed bottom-4 right-4 z-50">
-        <div dangerouslySetInnerHTML={{ 
-          __html: '<elevenlabs-convai agent-id="zmQ4IMOTcaVnB64g8OYl"></elevenlabs-convai>'
-        }} />
+        <div className="bg-black/60 backdrop-blur-sm rounded-2xl p-2 shadow-xl border border-white/10 hover:border-wonderwhiz-purple/50 transition-all duration-300">
+          <div dangerouslySetInnerHTML={{ 
+            __html: '<elevenlabs-convai agent-id="zmQ4IMOTcaVnB64g8OYl"></elevenlabs-convai>'
+          }} />
+        </div>
       </div>
     </div>
   );
