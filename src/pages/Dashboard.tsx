@@ -68,17 +68,11 @@ const Dashboard = () => {
   const [childProfile, setChildProfile] = useState<ChildProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [query, setQuery] = useState('');
-  const [currentCurio, setCurrentCurio] = useState<Curio | null>(null);
-  const [contentBlocks, setContentBlocks] = useState<ContentBlock[]>([]);
-  const [blockReplies, setBlockReplies] = useState<Record<string, BlockReply[]>>({});
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [curioSuggestions, setCurioSuggestions] = useState<string[]>(['How do volcanoes work?', 'What are black holes?', 'Tell me about penguins', 'Show me cool dinosaurs']);
   const [pastCurios, setPastCurios] = useState<Curio[]>([]);
   const [showSparksHistory, setShowSparksHistory] = useState(false);
   const [showQuickMenu, setShowQuickMenu] = useState(false);
-  const feedEndRef = useRef<HTMLDivElement>(null);
-  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
-  const [curioSuggestions, setCurioSuggestions] = useState<string[]>(['How do volcanoes work?', 'What are black holes?', 'Tell me about penguins', 'Show me cool dinosaurs']);
-  const [loadingBlocks, setLoadingBlocks] = useState(false);
-  const [visibleBlocksCount, setVisibleBlocksCount] = useState(3);
   const [curioPageSize] = useState(5);
   const [displayedCuriosCount, setDisplayedCuriosCount] = useState(curioPageSize);
   const isMobile = useIsMobile();
@@ -88,6 +82,15 @@ const Dashboard = () => {
     streakBonusReceived,
     streakBonusAmount
   } = useSparksSystem(profileId);
+
+  const handleSparkEarned = (amount: number) => {
+    if (childProfile) {
+      setChildProfile({
+        ...childProfile,
+        sparks_balance: (childProfile.sparks_balance || 0) + amount
+      });
+    }
+  };
 
   useEffect(() => {
     const loadProfileAndCurios = async () => {
@@ -159,105 +162,66 @@ const Dashboard = () => {
 
   const handleSubmitQuery = async () => {
     if (!query.trim() || isGenerating || !childProfile) return;
-    
+    setIsGenerating(true);
     try {
-      setIsGenerating(true);
-      
-      // Create the curio first
-      const { data: newCurio, error: curioError } = await supabase
-        .from('curios')
-        .insert({
-          child_id: profileId,
-          query: query.trim(),
-          title: query.trim()
-        })
-        .select()
-        .single();
-      
+      const {
+        data: newCurio,
+        error: curioError
+      } = await supabase.from('curios').insert({
+        child_id: profileId,
+        query: query.trim(),
+        title: query.trim()
+      }).select().single();
       if (curioError) throw curioError;
 
-      // Award sparks for starting a new curio (in the background)
-      setTimeout(async () => {
-        try {
-          await supabase.functions.invoke('increment-sparks-balance', {
-            body: JSON.stringify({
-              profileId: profileId,
-              amount: 1
-            })
-          });
-          
-          await supabase.from('sparks_transactions').insert({
-            child_id: profileId,
-            amount: 1,
-            reason: 'Starting new Curio'
-          });
-        } catch (error) {
-          console.error('Error awarding sparks for new curio:', error);
-        }
-      }, 0);
+      // Award sparks for starting a new curio
+      try {
+        const {
+          data: sparkData
+        } = await supabase.functions.invoke('increment-sparks-balance', {
+          body: JSON.stringify({
+            profileId: profileId,
+            amount: 1
+          })
+        });
 
-      // Redirect to curio page immediately
-      navigate(`/curio/${profileId}/${newCurio.id}`);
+        // Update the local state with new sparks balance
+        if (childProfile) {
+          setChildProfile({
+            ...childProfile,
+            sparks_balance: (childProfile.sparks_balance || 0) + 1
+          });
+        }
+
+        // Add the transaction record
+        await supabase.from('sparks_transactions').insert({
+          child_id: profileId,
+          amount: 1,
+          reason: 'Starting new Curio'
+        });
+        toast.success('You earned 1 spark for your curiosity!', {
+          duration: 2000,
+          position: 'bottom-right'
+        });
+      } catch (error) {
+        console.error('Error awarding sparks for new curio:', error);
+      }
+
+      // Update past curios list
+      setPastCurios(prev => [newCurio, ...prev]);
       
-      // Set query to empty for when user comes back
+      // Instead of generating content here, navigate to the dedicated curio page
+      navigate(`/curio/${profileId}/${newCurio.id}`);
       setQuery('');
-      
     } catch (error) {
-      setIsGenerating(false);
       console.error('Error creating curio:', error);
       toast.error("Oops! Something went wrong with your question.");
-    }
-  };
-
-  const handleCurioSuggestionClick = async (suggestion: string) => {
-    if (!childProfile || isGenerating) return;
-
-    try {
-      setIsGenerating(true);
-      
-      // Create the curio first
-      const { data: newCurio, error: curioError } = await supabase
-        .from('curios')
-        .insert({
-          child_id: profileId,
-          query: suggestion.trim(),
-          title: suggestion.trim()
-        })
-        .select()
-        .single();
-      
-      if (curioError) throw curioError;
-
-      // Award sparks for starting a new curio (in the background)
-      setTimeout(async () => {
-        try {
-          await supabase.functions.invoke('increment-sparks-balance', {
-            body: JSON.stringify({
-              profileId: profileId,
-              amount: 1
-            })
-          });
-          
-          await supabase.from('sparks_transactions').insert({
-            child_id: profileId,
-            amount: 1,
-            reason: 'Starting new Curio'
-          });
-        } catch (error) {
-          console.error('Error awarding sparks for new curio:', error);
-        }
-      }, 0);
-
-      // Redirect to curio page immediately
-      navigate(`/curio/${profileId}/${newCurio.id}`);
-    } catch (error) {
       setIsGenerating(false);
-      console.error('Error creating curio:', error);
-      toast.error("Oops! Something went wrong with your question.");
     }
   };
 
   const handleLoadCurio = (curio: Curio) => {
+    // Navigate to the dedicated curio page instead of loading content in this component
     navigate(`/curio/${profileId}/${curio.id}`);
   };
 
@@ -295,261 +259,68 @@ const Dashboard = () => {
     }, 100);
   };
 
-  const handleQuizCorrect = async (blockId: string) => {
-    try {
-      const {
-        data: sparkData
-      } = await supabase.functions.invoke('increment-sparks-balance', {
-        body: JSON.stringify({
-          profileId: profileId,
-          amount: 5
-        })
-      });
-      if (childProfile) {
-        setChildProfile({
-          ...childProfile,
-          sparks_balance: (childProfile.sparks_balance || 0) + 5
-        });
-      }
-      await supabase.from('sparks_transactions').insert({
-        child_id: profileId,
-        amount: 5,
-        reason: 'Answering quiz correctly',
-        block_id: blockId
-      });
-      toast.success('You earned 5 sparks for answering correctly!', {
-        duration: 2000,
-        position: 'bottom-right'
-      });
-    } catch (error) {
-      console.error('Error awarding sparks for correct quiz answer:', error);
-    }
-  };
-
-  const handleNewsRead = async (blockId: string) => {
-    try {
-      const {
-        data: sparkData
-      } = await supabase.functions.invoke('increment-sparks-balance', {
-        body: JSON.stringify({
-          profileId: profileId,
-          amount: 3
-        })
-      });
-      if (childProfile) {
-        setChildProfile({
-          ...childProfile,
-          sparks_balance: (childProfile.sparks_balance || 0) + 3
-        });
-      }
-      await supabase.from('sparks_transactions').insert({
-        child_id: profileId,
-        amount: 3,
-        reason: 'Reading a news card',
-        block_id: blockId
-      });
-      toast.success('You earned 3 sparks for reading the news!', {
-        duration: 2000,
-        position: 'bottom-right'
-      });
-    } catch (error) {
-      console.error('Error awarding sparks for news read:', error);
-    }
-  };
-
-  const handleCreativeUpload = async (blockId: string) => {
-    try {
-      const {
-        data: sparkData
-      } = await supabase.functions.invoke('increment-sparks-balance', {
-        body: JSON.stringify({
-          profileId: profileId,
-          amount: 10
-        })
-      });
-      if (childProfile) {
-        setChildProfile({
-          ...childProfile,
-          sparks_balance: (childProfile.sparks_balance || 0) + 10
-        });
-      }
-      await supabase.from('sparks_transactions').insert({
-        child_id: profileId,
-        amount: 10,
-        reason: 'Uploading creative content',
-        block_id: blockId
-      });
-      toast.success('You earned 10 sparks for your creativity!', {
-        duration: 2000,
-        position: 'bottom-right'
-      });
-    } catch (error) {
-      console.error('Error awarding sparks for creative upload:', error);
-    }
-  };
-
-  const handleToggleLike = async (blockId: string) => {
-    setContentBlocks(prev => prev.map(block => block.id === blockId ? {
-      ...block,
-      liked: !block.liked
-    } : block));
-    try {
-      const blockToUpdate = contentBlocks.find(b => b.id === blockId);
-      if (blockToUpdate) {
-        await supabase.from('content_blocks').update({
-          liked: !blockToUpdate.liked
-        }).eq('id', blockId);
-      }
-    } catch (error) {
-      console.error('Error updating like status:', error);
-    }
-  };
-
-  const handleToggleBookmark = async (blockId: string) => {
-    setContentBlocks(prev => prev.map(block => block.id === blockId ? {
-      ...block,
-      bookmarked: !block.bookmarked
-    } : block));
-    try {
-      const blockToUpdate = contentBlocks.find(b => b.id === blockId);
-      if (blockToUpdate) {
-        await supabase.from('content_blocks').update({
-          bookmarked: !blockToUpdate.bookmarked
-        }).eq('id', blockId);
-      }
-    } catch (error) {
-      console.error('Error updating bookmark status:', error);
-    }
-  };
-
-  const handleBlockReply = async (blockId: string, message: string) => {
-    if (!message.trim() || !childProfile) return;
-    try {
-      const block = contentBlocks.find(b => b.id === blockId);
-      if (!block) return;
-      const {
-        data: replyData,
-        error: replyError
-      } = await supabase.from('block_replies').insert({
-        block_id: blockId,
-        content: message,
-        from_user: true
-      }).select().single();
-      if (replyError) throw replyError;
-      setBlockReplies(prev => ({
-        ...prev,
-        [blockId]: [...(prev[blockId] || []), replyData]
-      }));
-      const aiResponse = await supabase.functions.invoke('handle-block-chat', {
-        body: JSON.stringify({
-          blockId,
-          messageContent: message,
-          blockType: block.type,
-          blockContent: block.content,
-          childProfile,
-          specialistId: block.specialist_id
-        })
-      });
-      if (aiResponse.error) {
-        throw new Error(`Failed to get response: ${aiResponse.error.message}`);
-      }
-      const {
-        data: aiReplyData,
-        error: aiReplyError
-      } = await supabase.from('block_replies').insert({
-        block_id: blockId,
-        content: aiResponse.data.reply,
-        from_user: false
-      }).select().single();
-      if (aiReplyError) throw aiReplyError;
-      setBlockReplies(prev => ({
-        ...prev,
-        [blockId]: [...(prev[blockId] || []), aiReplyData]
-      }));
-    } catch (error) {
-      console.error('Error handling reply:', error);
-      toast.error("Failed to send message");
-    }
-  };
-
-  const handleSparkEarned = (amount: number) => {
-    if (childProfile) {
-      setChildProfile({
-        ...childProfile,
-        sparks_balance: (childProfile.sparks_balance || 0) + amount
-      });
-    }
-  };
-
-  const handleLoadMoreBlocks = async () => {
-    if (loadingBlocks || !currentCurio || !childProfile) return;
-    
-    setLoadingBlocks(true);
-    try {
-      // First check if we need to generate more blocks
-      if (visibleBlocksCount >= contentBlocks.length) {
-        // Generate more blocks using the partial generation function
-        const claudeResponse = await supabase.functions.invoke('generate-curiosity-blocks', {
-          body: JSON.stringify({
-            query: currentCurio.query,
-            childProfile: childProfile,
-            count: 2,
-            startIndex: contentBlocks.length
-          })
-        });
-        
-        if (claudeResponse.error) {
-          throw new Error(`Failed to generate more content: ${claudeResponse.error.message}`);
-        }
-        
-        const newBlocks = claudeResponse.data;
-        if (Array.isArray(newBlocks) && newBlocks.length > 0) {
-          // Save blocks to database
-          for (const block of newBlocks) {
-            await supabase.from('content_blocks').insert({
-              curio_id: currentCurio.id,
-              type: block.type,
-              specialist_id: block.specialist_id,
-              content: block.content
-            });
-          }
-          
-          // Update state with new blocks
-          setContentBlocks(prev => [...prev, ...newBlocks]);
-        }
-      }
-      
-      // Increase visible blocks count
-      setVisibleBlocksCount(prev => Math.min(prev + 2, contentBlocks.length + 2));
-    } catch (error) {
-      console.error('Error loading more blocks:', error);
-      toast.error("Failed to load more content");
-    } finally {
-      setLoadingBlocks(false);
-    }
-  };
-
-  const observerTarget = useRef(null);
-  useEffect(() => {
-    const observer = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && !loadingBlocks && currentCurio) {
-        handleLoadMoreBlocks();
-      }
-    }, {
-      threshold: 0.1
-    });
-    if (observerTarget.current) {
-      observer.observe(observerTarget.current);
-    }
-    return () => {
-      if (observerTarget.current) {
-        observer.unobserve(observerTarget.current);
-      }
-    };
-  }, [observerTarget, loadingBlocks, visibleBlocksCount, contentBlocks.length, currentCurio]);
-
   const handleLoadMoreCurios = () => {
     setDisplayedCuriosCount(prev => Math.min(prev + curioPageSize, pastCurios.length));
+  };
+
+  const handleCurioSuggestionClick = async (suggestion: string) => {
+    if (!childProfile || isGenerating) return;
+    setIsGenerating(true);
+    try {
+      const {
+        data: newCurio,
+        error: curioError
+      } = await supabase.from('curios').insert({
+        child_id: profileId,
+        query: suggestion.trim(),
+        title: suggestion.trim()
+      }).select().single();
+      if (curioError) throw curioError;
+
+      // Award sparks for starting a new curio
+      try {
+        const {
+          data: sparkData
+        } = await supabase.functions.invoke('increment-sparks-balance', {
+          body: JSON.stringify({
+            profileId: profileId,
+            amount: 1
+          })
+        });
+
+        // Update the local state with new sparks balance
+        if (childProfile) {
+          setChildProfile({
+            ...childProfile,
+            sparks_balance: (childProfile.sparks_balance || 0) + 1
+          });
+        }
+
+        // Add the transaction record
+        await supabase.from('sparks_transactions').insert({
+          child_id: profileId,
+          amount: 1,
+          reason: 'Starting new Curio'
+        });
+        toast.success('You earned 1 spark for your curiosity!', {
+          duration: 2000,
+          position: 'bottom-right'
+        });
+      } catch (error) {
+        console.error('Error awarding sparks for new curio:', error);
+      }
+
+      // Update past curios list
+      setPastCurios(prev => [newCurio, ...prev]);
+      
+      // Navigate to the dedicated curio page instead of generating content here
+      navigate(`/curio/${profileId}/${newCurio.id}`);
+    } catch (error) {
+      console.error('Error creating curio:', error);
+      toast.error("Oops! Something went wrong with your question.");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   if (isLoading) {
@@ -621,7 +392,7 @@ const Dashboard = () => {
                           p-3 
                           flex 
                           items-center 
-                          ${currentCurio?.id === curio.id ? 'bg-white/10 text-white' : 'text-white/80'}
+                          text-white/80
                           line-clamp-2 
                           break-words 
                           overflow-hidden
@@ -801,7 +572,7 @@ const Dashboard = () => {
               delay: 0.4
             }}>
                 <Card className="bg-white/5 border-white/10">
-                  {!currentCurio && <div className="text-center py-8 sm:py-12">
+                  <div className="text-center py-8 sm:py-12">
                       <motion.div initial={{
                     opacity: 0,
                     scale: 0.9
@@ -834,55 +605,9 @@ const Dashboard = () => {
                       </div>
                       
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 max-w-3xl mx-auto px-3 sm:px-4">
-                        {curioSuggestions.map((suggestion, index) => <CurioSuggestion key={`${suggestion}-${index}`} suggestion={suggestion} onClick={handleCurioSuggestionClick} index={index} />)}
+                        {curioSuggestions.map((suggestion, index) => <CurioSuggestion key={`${suggestion}-${index}`} suggestion={suggestion} onClick={handleCurioSuggestionClick} index={index} directGenerate={true} />)}
                       </div>
-                    </div>}
-                  
-                  {currentCurio && <div>
-                      <AnimatePresence>
-                        {(isGenerating || loadingBlocks) && <motion.div initial={{
-                      opacity: 0
-                    }} animate={{
-                      opacity: 1
-                    }} exit={{
-                      opacity: 0
-                    }} className="p-4 mb-6 bg-wonderwhiz-purple/20 backdrop-blur-sm rounded-lg border border-wonderwhiz-purple/30 flex items-center">
-                            <div className="mr-3">
-                              <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
-                            </div>
-                            <p className="text-white">
-                              {isGenerating ? "Generating your personalized content..." : "Loading content blocks..."}
-                            </p>
-                          </motion.div>}
-                      </AnimatePresence>
-                      
-                      <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 px-3 sm:px-4 pt-4">{currentCurio.title}</h2>
-                      <div className="space-y-4 px-3 sm:px-4 pb-4">
-                        {contentBlocks.slice(0, visibleBlocksCount).map((block, index) => <motion.div key={block.id} className="space-y-2" initial={{
-                      opacity: 0,
-                      y: 20
-                    }} animate={{
-                      opacity: 1,
-                      y: 0
-                    }} transition={{
-                      delay: index * 0.1,
-                      duration: 0.3
-                    }}>
-                            <ContentBlock block={block} onToggleLike={handleToggleLike} onToggleBookmark={handleToggleBookmark} onReply={handleBlockReply} onSetQuery={setQuery} onRabbitHoleFollow={handleFollowRabbitHole} onQuizCorrect={() => handleQuizCorrect(block.id)} onNewsRead={() => handleNewsRead(block.id)} onCreativeUpload={() => handleCreativeUpload(block.id)} colorVariant={index % 3} userId={profileId} childProfileId={profileId} />
-                            
-                            {blockReplies[block.id] && blockReplies[block.id].length > 0 && <div className="pl-3 sm:pl-4 border-l-2 border-white/20 ml-3 sm:ml-4">
-                                {blockReplies[block.id].map(reply => <BlockReply key={reply.id} content={reply.content} fromUser={reply.from_user} specialistId={block.specialist_id} timestamp={reply.created_at} />)}
-                              </div>}
-                          </motion.div>)}
-                        
-                        {/* Load more target for intersection observer */}
-                        {visibleBlocksCount < contentBlocks.length && <div ref={observerTarget} className="h-10 flex items-center justify-center text-white/50 text-sm">
-                            <div className="animate-pulse">Loading more content...</div>
-                          </div>}
-                      </div>
-                    </div>}
-                  
-                  <div ref={feedEndRef} />
+                    </div>
                 </Card>
               </motion.div>
               

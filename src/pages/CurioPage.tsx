@@ -1,464 +1,610 @@
-
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Helmet } from 'react-helmet-async';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import ContentBlock from '@/components/ContentBlock';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
-import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
-import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import { supabase } from '@/integrations/supabase/client';
+import { ArrowLeft, MessageSquare, Sparkles } from 'lucide-react';
+import ContentBlock from '@/components/ContentBlock';
+import BlockReply from '@/components/BlockReply';
+import WonderWhizLogo from '@/components/WonderWhizLogo';
+import SparksBalance from '@/components/SparksBalance';
+import { useInView } from 'react-intersection-observer';
 
-// Define the ContentBlock type
-type ContentBlockType = "fact" | "quiz" | "flashcard" | "creative" | "task" | "riddle" | "funFact" | "activity" | "news" | "mindfulness";
+interface ChildProfile {
+  id: string;
+  name: string;
+  avatar_url: string;
+  interests: string[];
+  age: number;
+  sparks_balance: number;
+}
+
+interface Curio {
+  id: string;
+  title: string;
+  query: string;
+  created_at: string;
+}
 
 interface ContentBlock {
   id: string;
-  curio_id: string;
+  type: 'fact' | 'quiz' | 'flashcard' | 'creative' | 'task' | 'riddle' | 'funFact' | 'activity' | 'news' | 'mindfulness';
   specialist_id: string;
-  type: ContentBlockType;
   content: any;
   liked: boolean;
   bookmarked: boolean;
+  curio_id?: string;
   created_at?: string;
 }
 
-const INITIAL_BLOCKS_TO_FETCH = 2;
-const ADDITIONAL_BLOCKS_TO_FETCH = 2;
-const MAX_BLOCKS_TOTAL = 10;
+interface BlockReply {
+  id: string;
+  block_id: string;
+  content: string;
+  from_user: boolean;
+  created_at: string;
+}
 
-const CurioPage: React.FC = () => {
-  const { profileId, curioId } = useParams<{ profileId: string; curioId: string }>();
+const CurioPage = () => {
   const navigate = useNavigate();
-  const [blocks, setBlocks] = useState<ContentBlock[]>([]);
-  const [title, setTitle] = useState<string>('');
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
-  const [hasMoreBlocksToGenerate, setHasMoreBlocksToGenerate] = useState<boolean>(true);
-  const [totalBlocksGenerated, setTotalBlocksGenerated] = useState<number>(0);
-  const [childProfile, setChildProfile] = useState<any>(null);
-  const [loadTriggerRef, isLoadTriggerVisible] = useIntersectionObserver(
-    { rootMargin: '200px' },
-    false
-  );
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const { profileId, curioId } = useParams<{ profileId: string; curioId: string }>();
+  const [childProfile, setChildProfile] = useState<ChildProfile | null>(null);
+  const [curio, setCurio] = useState<Curio | null>(null);
+  const [contentBlocks, setContentBlocks] = useState<ContentBlock[]>([]);
+  const [blockReplies, setBlockReplies] = useState<Record<string, BlockReply[]>>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [isGeneratingContent, setIsGeneratingContent] = useState(false);
+  const [displayedBlocksCount, setDisplayedBlocksCount] = useState(2);
+  const [totalBlocksCount, setTotalBlocksCount] = useState(0);
+  
+  const { ref: loadMoreRef, inView } = useInView({
+    threshold: 0.1,
+    triggerOnce: false
+  });
 
-  // Fetch curio data and child profile
   useEffect(() => {
-    const fetchInitialData = async () => {
-      if (!curioId || !profileId) {
-        navigate(`/dashboard/${profileId}`);
+    const loadData = async () => {
+      if (!profileId || !curioId) {
+        navigate('/profiles');
         return;
       }
-      
-      setIsLoading(true);
-      
+
       try {
-        // Fetch the curio data
-        const { data: curioData, error: curioError } = await supabase
-          .from('curios')
-          .select('*')
-          .eq('id', curioId)
-          .single();
-        
-        if (curioError) throw curioError;
-        
-        if (curioData) {
-          setTitle(curioData.title);
-        }
-        
-        // Fetch child profile for Claude API
-        const { data: profileData, error: profileError } = await supabase
-          .from('child_profiles')
-          .select('*')
-          .eq('id', profileId)
-          .single();
-          
-        if (profileError) throw profileError;
-        setChildProfile(profileData);
-        
-        // Check if we already have blocks for this curio
-        const { data: existingBlocks, error: blocksCheckError } = await supabase
-          .from('content_blocks')
-          .select('*')
-          .eq('curio_id', curioId)
-          .order('created_at', { ascending: true });
-          
-        if (blocksCheckError) throw blocksCheckError;
-        
-        if (existingBlocks && existingBlocks.length > 0) {
-          // We already have some blocks, fetch the initial ones
-          const initialBlocks = existingBlocks.slice(0, INITIAL_BLOCKS_TO_FETCH).map(block => ({
-            ...block,
-            type: block.type as ContentBlockType
-          }));
-          
-          setBlocks(initialBlocks);
-          setTotalBlocksGenerated(existingBlocks.length);
-          
-          // We still may have more blocks to load, but not generate
-          setHasMoreBlocksToGenerate(existingBlocks.length < MAX_BLOCKS_TOTAL);
-        } else {
-          // No blocks yet, generate the initial ones
-          await generateBlocks(curioData.query, profileData, INITIAL_BLOCKS_TO_FETCH);
-        }
+        const [profileResponse, curioResponse] = await Promise.all([
+          supabase.from('child_profiles').select('*').eq('id', profileId).single(),
+          supabase.from('curios').select('*').eq('id', curioId).single()
+        ]);
+
+        if (profileResponse.error) throw profileResponse.error;
+        if (curioResponse.error) throw curioResponse.error;
+
+        setChildProfile(profileResponse.data);
+        setCurio(curioResponse.data);
+
+        await loadContentBlocks(curioResponse.data);
       } catch (error) {
-        console.error('Error fetching initial data:', error);
-        toast({
-          title: "Error",
-          description: "Could not load curio data",
-          variant: "destructive"
-        });
+        console.error('Error loading data:', error);
+        toast.error("Failed to load content");
         navigate(`/dashboard/${profileId}`);
       } finally {
         setIsLoading(false);
-        
-        // Scroll to top after initial load
-        setTimeout(() => {
-          scrollAreaRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
-        }, 300);
       }
     };
-    
-    fetchInitialData();
-  }, [curioId, profileId, navigate]);
 
-  // Generate blocks function
-  const generateBlocks = async (query: string, profile: any, count: number, startIndex: number = 0) => {
-    if (!curioId || !profile) return [];
-    
+    loadData();
+  }, [profileId, curioId, navigate]);
+
+  const loadContentBlocks = async (curioData: Curio) => {
     try {
-      console.log(`Generating ${count} blocks starting at index ${startIndex}`);
+      const { data: blocks, error: blocksError } = await supabase
+        .from('content_blocks')
+        .select('*')
+        .eq('curio_id', curioData.id)
+        .order('created_at', { ascending: true });
+
+      if (blocksError) throw blocksError;
+
+      if (!blocks || blocks.length === 0) {
+        await generateNewBlocks(curioData);
+        return;
+      }
+
+      setTotalBlocksCount(blocks.length);
       
-      const claudeResponse = await supabase.functions.invoke('generate-curiosity-blocks-partial', {
+      const initialBlocks = blocks.slice(0, displayedBlocksCount);
+      
+      const typedBlocks = initialBlocks.map(block => ({
+        ...block,
+        type: block.type as 'fact' | 'quiz' | 'flashcard' | 'creative' | 'task' | 'riddle' | 'funFact' | 'activity' | 'news' | 'mindfulness'
+      }));
+      
+      setContentBlocks(typedBlocks);
+
+      const blockIds = initialBlocks.map(block => block.id);
+      if (blockIds.length > 0) {
+        await loadRepliesForBlocks(blockIds);
+      }
+    } catch (error) {
+      console.error('Error loading content blocks:', error);
+      toast.error("Failed to load content blocks");
+    }
+  };
+
+  const loadRepliesForBlocks = async (blockIds: string[]) => {
+    try {
+      const { data: replies, error: repliesError } = await supabase
+        .from('block_replies')
+        .select('*')
+        .in('block_id', blockIds)
+        .order('created_at', { ascending: true });
+
+      if (repliesError) throw repliesError;
+
+      if (replies) {
+        const allReplies = replies.reduce((acc: Record<string, BlockReply[]>, reply) => {
+          if (!acc[reply.block_id]) {
+            acc[reply.block_id] = [];
+          }
+          acc[reply.block_id].push(reply);
+          return acc;
+        }, {});
+
+        setBlockReplies(prev => ({ ...prev, ...allReplies }));
+      }
+    } catch (error) {
+      console.error('Error loading block replies:', error);
+    }
+  };
+
+  const generateNewBlocks = async (curioData: Curio) => {
+    if (!childProfile) return;
+
+    setIsGeneratingContent(true);
+    try {
+      const claudeResponse = await supabase.functions.invoke('generate-curiosity-blocks', {
         body: JSON.stringify({
-          query: query,
-          childProfile: profile,
-          count: count,
-          startIndex: startIndex
+          query: curioData.query,
+          childProfile: childProfile
         })
       });
-      
+
       if (claudeResponse.error) {
         throw new Error(`Failed to generate content: ${claudeResponse.error.message}`);
       }
-      
+
       const generatedBlocks = claudeResponse.data;
       if (!Array.isArray(generatedBlocks)) {
-        throw new Error("Invalid response format from generate-curiosity-blocks-partial");
+        throw new Error("Invalid response format from generate-curiosity-blocks");
       }
+
+      console.log("Generated blocks:", generatedBlocks);
       
-      console.log(`Generated ${generatedBlocks.length} blocks starting at index ${startIndex}`);
-      
-      // Save blocks to database
       for (const block of generatedBlocks) {
         await supabase.from('content_blocks').insert({
-          curio_id: curioId,
+          curio_id: curioData.id,
           type: block.type,
           specialist_id: block.specialist_id,
           content: block.content
         });
       }
       
-      // Update state
-      const typedBlocks = generatedBlocks.map(block => ({
+      setTotalBlocksCount(generatedBlocks.length);
+      
+      const typedBlocks = generatedBlocks.slice(0, displayedBlocksCount).map(block => ({
         ...block,
-        type: block.type as ContentBlockType,
-        curio_id: curioId
+        id: block.id || `temp-${Date.now()}-${Math.random()}`,
+        type: block.type as 'fact' | 'quiz' | 'flashcard' | 'creative' | 'task' | 'riddle' | 'funFact' | 'activity' | 'news' | 'mindfulness',
+        liked: false,
+        bookmarked: false
       }));
       
-      setBlocks(prev => [...prev, ...typedBlocks]);
-      setTotalBlocksGenerated(prev => prev + generatedBlocks.length);
-      
-      // Check if we should stop generating (MAX_BLOCKS_TOTAL total blocks maximum)
-      if (startIndex + count >= MAX_BLOCKS_TOTAL) {
-        setHasMoreBlocksToGenerate(false);
-      }
-      
-      return typedBlocks;
+      setContentBlocks(typedBlocks);
     } catch (error) {
       console.error('Error generating blocks:', error);
-      toast({
-        title: "Error",
-        description: "Could not generate content blocks",
-        variant: "destructive"
-      });
-      setHasMoreBlocksToGenerate(false);
-      return [];
+      toast.error("Failed to generate content");
+    } finally {
+      setIsGeneratingContent(false);
     }
   };
 
-  // Load more blocks when the trigger element is visible
   useEffect(() => {
-    const loadMoreBlocks = async () => {
-      if (isLoadingMore || !hasMoreBlocksToGenerate || !childProfile || !curioId) return;
-      
-      setIsLoadingMore(true);
-      
-      try {
-        // First try to fetch existing blocks
-        const existingCount = blocks.length;
-        const { data: existingBlocks, error: blocksError } = await supabase
-          .from('content_blocks')
-          .select('*')
-          .eq('curio_id', curioId)
-          .order('created_at', { ascending: true })
-          .range(existingCount, existingCount + ADDITIONAL_BLOCKS_TO_FETCH - 1);
-          
-        if (blocksError) throw blocksError;
-        
-        if (existingBlocks && existingBlocks.length > 0) {
-          // We have more existing blocks to display
-          const typedBlocks = existingBlocks.map(block => ({
-            ...block,
-            type: block.type as ContentBlockType
-          }));
-          
-          setBlocks(prev => [...prev, ...typedBlocks]);
-          
-          // Check if we might have more blocks
-          if (existingBlocks.length < ADDITIONAL_BLOCKS_TO_FETCH) {
-            const { data: curioData } = await supabase
-              .from('curios')
-              .select('query')
-              .eq('id', curioId)
-              .single();
-              
-            if (curioData && totalBlocksGenerated < MAX_BLOCKS_TOTAL) {
-              // Generate more blocks if needed
-              await generateBlocks(
-                curioData.query, 
-                childProfile, 
-                ADDITIONAL_BLOCKS_TO_FETCH - existingBlocks.length,
-                totalBlocksGenerated
-              );
-            } else {
-              setHasMoreBlocksToGenerate(false);
-            }
-          }
-        } else {
-          // No more existing blocks, generate new ones
-          const { data: curioData } = await supabase
-            .from('curios')
-            .select('query')
-            .eq('id', curioId)
-            .single();
-            
-          if (curioData) {
-            await generateBlocks(
-              curioData.query, 
-              childProfile, 
-              ADDITIONAL_BLOCKS_TO_FETCH,
-              totalBlocksGenerated
-            );
-          }
-        }
-      } catch (error) {
-        console.error('Error loading more blocks:', error);
-        toast({
-          title: "Error",
-          description: "Could not load more content blocks",
-          variant: "destructive"
-        });
-        setHasMoreBlocksToGenerate(false);
-      } finally {
-        setIsLoadingMore(false);
-      }
-    };
-    
-    if (isLoadTriggerVisible) {
+    if (inView && !isLoading && contentBlocks.length < totalBlocksCount) {
       loadMoreBlocks();
     }
-  }, [isLoadTriggerVisible, blocks.length, hasMoreBlocksToGenerate, totalBlocksGenerated, curioId, childProfile, isLoadingMore]);
+  }, [inView, isLoading, contentBlocks.length, totalBlocksCount]);
 
-  // Handle like toggle
-  const handleToggleLike = useCallback(async (blockId: string) => {
-    setBlocks(prev => 
-      prev.map(block => 
-        block.id === blockId 
-          ? { ...block, liked: !block.liked }
-          : block
-      )
-    );
+  const loadMoreBlocks = useCallback(async () => {
+    if (contentBlocks.length >= totalBlocksCount) return;
 
     try {
-      const { error } = await supabase
+      const nextBatchSize = 2; // Load 2 blocks at a time
+      const nextBlocksStartIndex = contentBlocks.length;
+      const nextBlocksEndIndex = Math.min(nextBlocksStartIndex + nextBatchSize, totalBlocksCount);
+
+      const { data: nextBlocks, error: blocksError } = await supabase
         .from('content_blocks')
-        .update({ liked: blocks.find(b => b.id === blockId)?.liked ? false : true })
-        .eq('id', blockId);
+        .select('*')
+        .eq('curio_id', curioId)
+        .order('created_at', { ascending: true })
+        .range(nextBlocksStartIndex, nextBlocksEndIndex - 1);
+
+      if (blocksError) throw blocksError;
+      
+      if (nextBlocks && nextBlocks.length > 0) {
+        await loadRepliesForBlocks(nextBlocks.map(block => block.id));
         
-      if (error) throw error;
+        const typedNewBlocks = nextBlocks.map(block => ({
+          ...block,
+          type: block.type as 'fact' | 'quiz' | 'flashcard' | 'creative' | 'task' | 'riddle' | 'funFact' | 'activity' | 'news' | 'mindfulness'
+        }));
+        
+        setContentBlocks(prev => [...prev, ...typedNewBlocks]);
+        setDisplayedBlocksCount(prev => prev + nextBlocks.length);
+      }
+    } catch (error) {
+      console.error('Error loading more blocks:', error);
+    }
+  }, [contentBlocks.length, totalBlocksCount, curioId]);
+
+  const handleToggleLike = async (blockId: string) => {
+    setContentBlocks(prev => prev.map(block => 
+      block.id === blockId ? {...block, liked: !block.liked} : block
+    ));
+    
+    try {
+      const blockToUpdate = contentBlocks.find(b => b.id === blockId);
+      if (blockToUpdate) {
+        await supabase
+          .from('content_blocks')
+          .update({ liked: !blockToUpdate.liked })
+          .eq('id', blockId);
+      }
     } catch (error) {
       console.error('Error updating like status:', error);
-      toast({
-        title: "Error",
-        description: "Could not update like status",
-        variant: "destructive"
-      });
     }
-  }, [blocks]);
+  };
 
-  // Handle bookmark toggle
-  const handleToggleBookmark = useCallback(async (blockId: string) => {
-    setBlocks(prev => 
-      prev.map(block => 
-        block.id === blockId 
-          ? { ...block, bookmarked: !block.bookmarked }
-          : block
-      )
-    );
-
+  const handleToggleBookmark = async (blockId: string) => {
+    setContentBlocks(prev => prev.map(block => 
+      block.id === blockId ? {...block, bookmarked: !block.bookmarked} : block
+    ));
+    
     try {
-      const { error } = await supabase
-        .from('content_blocks')
-        .update({ bookmarked: blocks.find(b => b.id === blockId)?.bookmarked ? false : true })
-        .eq('id', blockId);
-        
-      if (error) throw error;
+      const blockToUpdate = contentBlocks.find(b => b.id === blockId);
+      if (blockToUpdate) {
+        await supabase
+          .from('content_blocks')
+          .update({ bookmarked: !blockToUpdate.bookmarked })
+          .eq('id', blockId);
+      }
     } catch (error) {
       console.error('Error updating bookmark status:', error);
-      toast({
-        title: "Error",
-        description: "Could not update bookmark status",
-        variant: "destructive"
-      });
     }
-  }, [blocks]);
+  };
 
-  // Handle reply to block
-  const handleReply = useCallback((blockId: string, message: string) => {
-    console.log(`Reply to block ${blockId}: ${message}`);
-    // In a real app, you would send this to your backend
-    // For now, we'll just log it
+  const handleBlockReply = async (blockId: string, message: string) => {
+    if (!message.trim() || !childProfile) return;
     
-    // You could also update local state to show the reply immediately
-    // before it's confirmed by the backend
-    
-    // Example of how you might update points for the child profile
-    if (profileId) {
-      // Award points for engagement
-      console.log(`Awarding points to profile ${profileId} for engagement`);
-    }
-  }, [profileId]);
-  
-  // Handle quiz correct
-  const handleQuizCorrect = useCallback(() => {
-    if (profileId) {
-      console.log(`Quiz answered correctly by profile ${profileId}`);
-      // Award points for correct quiz answer
-      toast({
-        title: "Great job!",
-        description: "You earned 5 sparks for answering correctly!",
-        variant: "default",
+    try {
+      const block = contentBlocks.find(b => b.id === blockId);
+      if (!block) return;
+      
+      const { data: replyData, error: replyError } = await supabase
+        .from('block_replies')
+        .insert({
+          block_id: blockId,
+          content: message,
+          from_user: true
+        })
+        .select()
+        .single();
+        
+      if (replyError) throw replyError;
+      
+      setBlockReplies(prev => ({
+        ...prev,
+        [blockId]: [...(prev[blockId] || []), replyData]
+      }));
+      
+      const aiResponse = await supabase.functions.invoke('handle-block-chat', {
+        body: JSON.stringify({
+          blockId,
+          messageContent: message,
+          blockType: block.type,
+          blockContent: block.content,
+          childProfile,
+          specialistId: block.specialist_id
+        })
       });
-    }
-  }, [profileId]);
-  
-  // Handle news read
-  const handleNewsRead = useCallback(() => {
-    if (profileId) {
-      console.log(`News read by profile ${profileId}`);
-      // Award points for reading news
-      toast({
-        title: "Thanks for reading!",
-        description: "You earned 3 sparks for staying informed!",
-        variant: "default",
-      });
-    }
-  }, [profileId]);
-  
-  // Handle creative upload
-  const handleCreativeUpload = useCallback(() => {
-    if (profileId) {
-      console.log(`Creative content uploaded by profile ${profileId}`);
-      // Award points for creative upload
-      toast({
-        title: "Amazing creativity!",
-        description: "You earned 10 sparks for your creative work!",
-        variant: "default",
-      });
-    }
-  }, [profileId]);
-
-  // Animation variants for blocks
-  const blockVariants = useMemo(() => ({
-    hidden: { opacity: 0, y: 20 },
-    visible: (i: number) => ({
-      opacity: 1,
-      y: 0,
-      transition: {
-        delay: i * 0.1,
-        duration: 0.5
+      
+      if (aiResponse.error) {
+        throw new Error(`Failed to get response: ${aiResponse.error.message}`);
       }
-    })
-  }), []);
+      
+      const { data: aiReplyData, error: aiReplyError } = await supabase
+        .from('block_replies')
+        .insert({
+          block_id: blockId,
+          content: aiResponse.data.reply,
+          from_user: false
+        })
+        .select()
+        .single();
+        
+      if (aiReplyError) throw aiReplyError;
+      
+      setBlockReplies(prev => ({
+        ...prev,
+        [blockId]: [...(prev[blockId] || []), aiReplyData]
+      }));
+    } catch (error) {
+      console.error('Error handling reply:', error);
+      toast.error("Failed to send message");
+    }
+  };
+
+  const handleQuizCorrect = async (blockId: string) => {
+    try {
+      await supabase.functions.invoke('increment-sparks-balance', {
+        body: JSON.stringify({
+          profileId: profileId,
+          amount: 5
+        })
+      });
+      
+      if (childProfile) {
+        setChildProfile({
+          ...childProfile,
+          sparks_balance: (childProfile.sparks_balance || 0) + 5
+        });
+      }
+      
+      await supabase.from('sparks_transactions').insert({
+        child_id: profileId,
+        amount: 5,
+        reason: 'Answering quiz correctly',
+        block_id: blockId
+      });
+      
+      toast.success('You earned 5 sparks for answering correctly!', {
+        duration: 2000,
+        position: 'bottom-right'
+      });
+    } catch (error) {
+      console.error('Error awarding sparks for correct quiz answer:', error);
+    }
+  };
+
+  const handleNewsRead = async (blockId: string) => {
+    try {
+      await supabase.functions.invoke('increment-sparks-balance', {
+        body: JSON.stringify({
+          profileId: profileId,
+          amount: 3
+        })
+      });
+      
+      if (childProfile) {
+        setChildProfile({
+          ...childProfile,
+          sparks_balance: (childProfile.sparks_balance || 0) + 3
+        });
+      }
+      
+      await supabase.from('sparks_transactions').insert({
+        child_id: profileId,
+        amount: 3,
+        reason: 'Reading a news card',
+        block_id: blockId
+      });
+      
+      toast.success('You earned 3 sparks for reading the news!', {
+        duration: 2000,
+        position: 'bottom-right'
+      });
+    } catch (error) {
+      console.error('Error awarding sparks for news read:', error);
+    }
+  };
+
+  const handleCreativeUpload = async (blockId: string) => {
+    try {
+      await supabase.functions.invoke('increment-sparks-balance', {
+        body: JSON.stringify({
+          profileId: profileId,
+          amount: 10
+        })
+      });
+      
+      if (childProfile) {
+        setChildProfile({
+          ...childProfile,
+          sparks_balance: (childProfile.sparks_balance || 0) + 10
+        });
+      }
+      
+      await supabase.from('sparks_transactions').insert({
+        child_id: profileId,
+        amount: 10,
+        reason: 'Uploading creative content',
+        block_id: blockId
+      });
+      
+      toast.success('You earned 10 sparks for your creativity!', {
+        duration: 2000,
+        position: 'bottom-right'
+      });
+    } catch (error) {
+      console.error('Error awarding sparks for creative upload:', error);
+    }
+  };
+
+  const handleFollowRabbitHole = async (question: string) => {
+    try {
+      await supabase.functions.invoke('increment-sparks-balance', {
+        body: JSON.stringify({
+          profileId: profileId,
+          amount: 2
+        })
+      });
+      
+      if (childProfile) {
+        setChildProfile({
+          ...childProfile,
+          sparks_balance: (childProfile.sparks_balance || 0) + 2
+        });
+      }
+      
+      await supabase.from('sparks_transactions').insert({
+        child_id: profileId,
+        amount: 2,
+        reason: 'Following a rabbit hole'
+      });
+      
+      toast.success('You earned 2 sparks for exploring deeper!', {
+        duration: 2000,
+        position: 'bottom-right'
+      });
+      
+      const { data: newCurio, error: curioError } = await supabase
+        .from('curios')
+        .insert({
+          child_id: profileId,
+          query: question.trim(),
+          title: question.trim()
+        })
+        .select()
+        .single();
+        
+      if (curioError) throw curioError;
+      
+      navigate(`/curio/${profileId}/${newCurio.id}`);
+    } catch (error) {
+      console.error('Error following rabbit hole:', error);
+      toast.error("Oops! Something went wrong.");
+    }
+  };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-b from-gray-900 to-black">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-3 text-wonderwhiz-purple" />
-          <p className="text-white text-sm">Loading your curio...</p>
-        </div>
+      <div className="min-h-screen bg-wonderwhiz-gradient flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-wonderwhiz-pink"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black pb-20">
-      <div className="container px-4 py-3 sm:py-5">
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-4 text-center">{title}</h1>
+    <div className="min-h-screen bg-wonderwhiz-gradient flex flex-col">
+      <Helmet>
+        <title>{curio?.title || 'Loading...'} | WonderWhiz</title>
+        <meta name="description" content={`Exploring: ${curio?.query || 'Loading...'}`} />
+      </Helmet>
+      
+      <header className="sticky top-0 z-10 bg-wonderwhiz-dark/80 backdrop-blur-md border-b border-white/10 p-3 flex items-center justify-between">
+        <div className="flex items-center">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="text-white hover:bg-white/10 rounded-full"
+            onClick={() => navigate(`/dashboard/${profileId}`)}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+        </div>
         
-        <Card className="bg-black/40 border-white/10 p-2 sm:p-4 md:p-6">
-          <ScrollArea ref={scrollAreaRef} className="h-[calc(100vh-180px)]">
-            <div className="space-y-4 px-1">
-              {blocks.map((block, index) => (
-                <motion.div
-                  key={block.id}
-                  custom={index}
-                  initial="hidden"
-                  animate="visible"
-                  variants={blockVariants}
-                >
-                  <ContentBlock
-                    block={block}
-                    onToggleLike={handleToggleLike}
-                    onToggleBookmark={handleToggleBookmark}
-                    onReply={handleReply}
-                    colorVariant={index % 3}
-                    userId={profileId}
-                    childProfileId={profileId}
-                    onQuizCorrect={handleQuizCorrect}
-                    onNewsRead={handleNewsRead}
-                    onCreativeUpload={handleCreativeUpload}
-                  />
-                </motion.div>
-              ))}
+        <div className="flex-1 flex justify-center">
+          <Link to={`/dashboard/${profileId}`} className="flex items-center">
+            <WonderWhizLogo className="h-8" />
+            <h1 className="ml-2 font-baloo text-xl text-white hidden sm:block">WonderWhiz</h1>
+          </Link>
+        </div>
+        
+        <div className="flex items-center">
+          {childProfile && (
+            <SparksBalance 
+              childId={profileId || ''} 
+              initialBalance={childProfile.sparks_balance} 
+              size="sm" 
+            />
+          )}
+        </div>
+      </header>
+      
+      <div className="flex-1 overflow-y-auto py-4 px-3 sm:px-4 md:px-6">
+        <div className="max-w-4xl mx-auto">
+          <Card className="bg-white/5 border-white/10 overflow-hidden mb-6">
+            <div className="p-4 sm:p-6">
+              <div className="flex items-start gap-3 mb-4">
+                <MessageSquare className="h-6 w-6 text-wonderwhiz-gold mt-1 flex-shrink-0" />
+                <h1 className="text-xl sm:text-2xl font-bold text-white">{curio?.title}</h1>
+              </div>
               
-              {/* Intersection observer trigger element */}
-              {hasMoreBlocksToGenerate && (
-                <div 
-                  ref={loadTriggerRef} 
-                  className="h-10 flex items-center justify-center my-8"
-                >
-                  {isLoadingMore && (
-                    <div className="flex flex-col items-center">
-                      <Loader2 className="h-6 w-6 animate-spin text-wonderwhiz-purple" />
-                      <p className="text-white/70 text-xs mt-2">Loading more content...</p>
-                    </div>
-                  )}
+              {isGeneratingContent && (
+                <div className="p-4 mb-6 bg-wonderwhiz-purple/20 backdrop-blur-sm rounded-lg border border-wonderwhiz-purple/30 flex items-center">
+                  <div className="mr-3">
+                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+                  </div>
+                  <p className="text-white">Generating your personalized content...</p>
                 </div>
               )}
               
-              {!hasMoreBlocksToGenerate && blocks.length > 0 && !isLoadingMore && (
-                <p className="text-center text-white/50 text-xs py-4">
-                  You've reached the end of this curio!
-                </p>
-              )}
+              <div className="space-y-6">
+                {contentBlocks.map((block, index) => (
+                  <motion.div 
+                    key={block.id} 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1, duration: 0.3 }}
+                    className="space-y-2"
+                  >
+                    <ContentBlock 
+                      block={block}
+                      onToggleLike={handleToggleLike}
+                      onToggleBookmark={handleToggleBookmark}
+                      onReply={handleBlockReply}
+                      onRabbitHoleFollow={handleFollowRabbitHole}
+                      onQuizCorrect={() => handleQuizCorrect(block.id)}
+                      onNewsRead={() => handleNewsRead(block.id)}
+                      onCreativeUpload={() => handleCreativeUpload(block.id)}
+                      colorVariant={index % 3}
+                      userId={profileId}
+                      childProfileId={profileId}
+                    />
+                    
+                    {blockReplies[block.id] && blockReplies[block.id].length > 0 && (
+                      <div className="pl-3 sm:pl-4 border-l-2 border-white/20 ml-3 sm:ml-4">
+                        {blockReplies[block.id].map(reply => (
+                          <BlockReply 
+                            key={reply.id}
+                            content={reply.content}
+                            fromUser={reply.from_user}
+                            specialistId={block.specialist_id}
+                            timestamp={reply.created_at}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </motion.div>
+                ))}
+                
+                {contentBlocks.length < totalBlocksCount && (
+                  <div 
+                    ref={loadMoreRef}
+                    className="h-20 flex items-center justify-center text-white/50 text-sm"
+                  >
+                    <div className="animate-pulse flex items-center">
+                      <Sparkles className="h-4 w-4 mr-2 text-wonderwhiz-gold" />
+                      <span>Loading more wonders...</span>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-          </ScrollArea>
-        </Card>
+          </Card>
+        </div>
       </div>
     </div>
   );

@@ -15,25 +15,18 @@ serve(async (req) => {
   }
 
   try {
-    const { query, childProfile, count = 10, startIndex = 0 } = await req.json();
+    const { query, childProfile } = await req.json();
     const language = childProfile.language || 'English';
-    const isPartial = startIndex > 0 || count < 10;
-    
-    console.log(`Sending request to Claude API${isPartial ? ' for partial content' : ''}`);
-    
+
     // Construct prompt for Claude to generate content blocks in a specific format and language
     const systemPrompt = `You are an AI assistant creating educational content for children aged ${childProfile.age}. 
-    Generate ${count} diverse, engaging content blocks about the topic: "${query}". 
-    ${isPartial ? `These blocks should be the next set of blocks starting from index ${startIndex} (0-based).` : ''}
+    Generate 10 diverse, engaging content blocks about the topic: "${query}". 
 
     Each block should be appropriate for the age group and aligned with these interests: ${childProfile.interests.join(', ')}.
 
-    VERY IMPORTANT: 
-    - All content must be in ${language} language.
-    - Only generate ${count} blocks, not more, not less.
-    ${isPartial ? '- These blocks are part of a larger set that is being generated progressively, so make them diverse but coherent.\n    - The blocks should flow naturally from the previous ones if this isn\'t the first batch (startIndex > 0).' : ''}
+    VERY IMPORTANT: All content must be in ${language} language.
 
-    Return your response as a JSON array with ${count} objects, each having this structure:
+    Return your response as a JSON array with 10 objects, each having this structure:
     {
       "type": "one of: fact, quiz, flashcard, creative, task, riddle, funFact, activity, news, mindfulness",
       "specialist_id": "one of: nova, spark, prism, pixel, atlas, lotus",
@@ -64,7 +57,7 @@ serve(async (req) => {
 
     Make the content educational, engaging, and fun in ${language} language!`;
 
-    console.log(`Requesting ${count} blocks from Claude API starting at index ${startIndex}`);
+    console.log("Sending request to Claude API");
     
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -89,7 +82,7 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    console.log("Claude response received");
+    console.log("Claude response received:", data);
     
     if (!data.content || !data.content[0] || !data.content[0].text) {
       throw new Error("Invalid response format from Claude API");
@@ -123,7 +116,7 @@ serve(async (req) => {
       bookmarked: false
     }));
 
-    console.log(`Processed ${contentBlocks.length} content blocks`);
+    console.log("Processed content blocks:", contentBlocks);
 
     return new Response(JSON.stringify(contentBlocks), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
