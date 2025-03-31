@@ -36,6 +36,7 @@ const CurioPage: React.FC = () => {
   const [hasMoreBlocks, setHasMoreBlocks] = useState<boolean>(true);
   const [loadingMoreBlocks, setLoadingMoreBlocks] = useState<boolean>(false);
   const [totalBlocksLoaded, setTotalBlocksLoaded] = useState(0);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const [loadTriggerRef, isLoadTriggerVisible] = useIntersectionObserver(
     { rootMargin: '200px' },
     false
@@ -48,6 +49,8 @@ const CurioPage: React.FC = () => {
       if (!curioId) return;
       
       try {
+        setIsLoading(true);
+        
         const { data: curioData, error: curioError } = await supabase
           .from('curios')
           .select('*')
@@ -65,6 +68,7 @@ const CurioPage: React.FC = () => {
         
         // Fetch initial batch of blocks or generate them if they don't exist
         await fetchInitialBlocks(curioId);
+        
       } catch (error) {
         console.error('Error fetching curio:', error);
         toast({
@@ -82,16 +86,21 @@ const CurioPage: React.FC = () => {
   
   // Auto-scroll to top after initial blocks load
   useEffect(() => {
-    if (blocks.length > 0 && !isLoading) {
+    if (blocks.length > 0 && !isLoading && !initialLoadComplete) {
+      setInitialLoadComplete(true);
+      
       if (scrollAreaRef.current) {
+        console.log('Auto-scrolling to top');
         scrollAreaRef.current.scrollTop = 0;
       }
     }
-  }, [blocks.length, isLoading]);
+  }, [blocks.length, isLoading, initialLoadComplete]);
 
   // Fetch initial blocks
   const fetchInitialBlocks = async (curioId: string) => {
     try {
+      console.log('Fetching initial blocks...');
+      
       // First check if we already have blocks for this curio
       const { data: existingBlocks, error: blocksError } = await supabase
         .from('content_blocks')
@@ -106,6 +115,8 @@ const CurioPage: React.FC = () => {
       
       if (existingBlocks && existingBlocks.length > 0) {
         // We have existing blocks, use them
+        console.log(`Found ${existingBlocks.length} existing blocks`);
+        
         const mappedBlocks = existingBlocks.map(block => ({
           ...block,
           type: block.type as ContentBlockType
@@ -121,10 +132,12 @@ const CurioPage: React.FC = () => {
           .eq('curio_id', curioId);
           
         if (!countError && count !== null) {
+          console.log(`Total blocks available: ${count}`);
           setHasMoreBlocks(count > INITIAL_BLOCKS_TO_LOAD);
         }
       } else {
         // No existing blocks, generate new ones
+        console.log('No existing blocks found, generating new ones');
         await generateNewBlocks(curioId, query);
       }
     } catch (error) {
@@ -142,6 +155,8 @@ const CurioPage: React.FC = () => {
     if (!query || !profileId) return;
     
     try {
+      console.log('Generating new blocks from Claude API');
+      
       // Get child profile data for generation
       const { data: profileData, error: profileError } = await supabase
         .from('child_profiles')
@@ -168,6 +183,7 @@ const CurioPage: React.FC = () => {
       }
       
       const generatedBlocks = response.data || [];
+      console.log('Generated blocks:', generatedBlocks);
       
       if (!generatedBlocks.length) {
         throw new Error('No content blocks were generated');
@@ -207,6 +223,7 @@ const CurioPage: React.FC = () => {
   // Load more blocks when the trigger element is visible
   useEffect(() => {
     if (isLoadTriggerVisible && hasMoreBlocks && !loadingMoreBlocks && !isLoading) {
+      console.log('Load trigger visible, loading more blocks');
       loadMoreBlocks();
     }
   }, [isLoadTriggerVisible, hasMoreBlocks, loadingMoreBlocks, isLoading]);
@@ -214,6 +231,7 @@ const CurioPage: React.FC = () => {
   const loadMoreBlocks = useCallback(async () => {
     if (!hasMoreBlocks || loadingMoreBlocks || !curioId) return;
     
+    console.log('Loading more blocks...');
     setLoadingMoreBlocks(true);
     
     try {
@@ -229,6 +247,8 @@ const CurioPage: React.FC = () => {
       
       if (nextBlocks && nextBlocks.length > 0) {
         // We got more existing blocks
+        console.log(`Loaded ${nextBlocks.length} more blocks`);
+        
         const mappedBlocks = nextBlocks.map(block => ({
           ...block,
           type: block.type as ContentBlockType
@@ -248,6 +268,7 @@ const CurioPage: React.FC = () => {
         }
       } else {
         // No more blocks in the database
+        console.log('No more blocks available');
         setHasMoreBlocks(false);
       }
     } catch (error) {
