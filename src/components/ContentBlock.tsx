@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { BookmarkIcon, ThumbsUpIcon, MessageCircleIcon } from 'lucide-react';
@@ -30,6 +29,9 @@ interface ContentBlockProps {
   onQuizCorrect?: () => void;
   onNewsRead?: () => void;
   onCreativeUpload?: () => void;
+  onTaskComplete?: () => void;
+  onActivityComplete?: () => void;
+  onMindfulnessComplete?: () => void;
   colorVariant?: number;
   userId?: string;
   childProfileId?: string;
@@ -63,6 +65,9 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   onQuizCorrect,
   onNewsRead,
   onCreativeUpload,
+  onTaskComplete,
+  onActivityComplete,
+  onMindfulnessComplete,
   colorVariant = 0,
   userId,
   childProfileId
@@ -315,7 +320,10 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         
       case 'task':
         return (
-          <TaskBlock content={block.content} />
+          <TaskBlock 
+            content={block.content} 
+            onTaskComplete={onTaskComplete || (() => {})}
+          />
         );
         
       case 'riddle':
@@ -333,12 +341,18 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         
       case 'activity':
         return (
-          <ActivityBlock content={block.content} />
+          <ActivityBlock 
+            content={block.content} 
+            onActivityComplete={onActivityComplete || (() => {})}
+          />
         );
         
       case 'mindfulness':
         return (
-          <MindfulnessBlock content={block.content} />
+          <MindfulnessBlock 
+            content={block.content} 
+            onMindfulnessComplete={onMindfulnessComplete || (() => {})}
+          />
         );
         
       default:

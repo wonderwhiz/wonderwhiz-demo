@@ -9,6 +9,8 @@ import CurioLoading from '@/components/CurioLoading';
 import CurioBlockList from '@/components/CurioBlockList';
 import { useCurioData } from '@/hooks/useCurioData';
 import { useBlockInteractions } from '@/hooks/useBlockInteractions';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const CurioPage: React.FC = () => {
   const { profileId, curioId } = useParams<{ profileId: string; curioId: string }>();
@@ -38,6 +40,66 @@ const CurioPage: React.FC = () => {
     handleNewsRead,
     handleCreativeUpload
   } = useBlockInteractions(profileId);
+
+  const handleTaskComplete = async () => {
+    if (!profileId) return;
+    
+    try {
+      // Award sparks for task completion
+      await supabase.functions.invoke('increment-sparks-balance', {
+        body: { childId: profileId, amount: 8 }
+      });
+      
+      toast.success("Task completed! +8 sparks", {
+        position: 'top-center',
+        classNames: {
+          toast: 'bg-wonderwhiz-purple text-white'
+        }
+      });
+    } catch (error) {
+      console.error('Error handling task completion:', error);
+    }
+  };
+
+  const handleActivityComplete = async () => {
+    if (!profileId) return;
+    
+    try {
+      // Award sparks for activity completion
+      await supabase.functions.invoke('increment-sparks-balance', {
+        body: { childId: profileId, amount: 3 }
+      });
+      
+      toast.success("Activity completed! +3 sparks", {
+        position: 'top-center',
+        classNames: {
+          toast: 'bg-wonderwhiz-purple text-white'
+        }
+      });
+    } catch (error) {
+      console.error('Error handling activity completion:', error);
+    }
+  };
+
+  const handleMindfulnessComplete = async () => {
+    if (!profileId) return;
+    
+    try {
+      // Award sparks for mindfulness completion
+      await supabase.functions.invoke('increment-sparks-balance', {
+        body: { childId: profileId, amount: 5 }
+      });
+      
+      toast.success("Mindfulness exercise completed! +5 sparks", {
+        position: 'top-center',
+        classNames: {
+          toast: 'bg-wonderwhiz-purple text-white'
+        }
+      });
+    } catch (error) {
+      console.error('Error handling mindfulness completion:', error);
+    }
+  };
 
   const [loadTriggerRef, isLoadTriggerVisible] = useIntersectionObserver(
     { rootMargin: '200px' },
@@ -110,6 +172,9 @@ const CurioPage: React.FC = () => {
               handleQuizCorrect={handleQuizCorrect}
               handleNewsRead={handleNewsRead}
               handleCreativeUpload={handleCreativeUpload}
+              handleTaskComplete={handleTaskComplete}
+              handleActivityComplete={handleActivityComplete}
+              handleMindfulnessComplete={handleMindfulnessComplete}
               profileId={profileId}
             />
           </ScrollArea>
