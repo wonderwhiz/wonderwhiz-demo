@@ -20,7 +20,22 @@ const CreativeBlock: React.FC<CreativeBlockProps> = ({ content, onCreativeUpload
   const [uploading, setUploading] = useState(false);
   const [analysis, setAnalysis] = useState<string | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const progressIntervalRef = useRef<number | null>(null);
+
+  // Function to simulate progress for better UX
+  const simulateProgress = () => {
+    let progress = 0;
+    const interval = window.setInterval(() => {
+      progress += Math.random() * 10;
+      if (progress > 95) {
+        progress = 95; // Cap at 95% until actual completion
+      }
+      setUploadProgress(progress);
+    }, 300);
+    return interval;
+  };
 
   const handleCreativeUpload = async (file: File) => {
     if (!file) return;
@@ -30,6 +45,10 @@ const CreativeBlock: React.FC<CreativeBlockProps> = ({ content, onCreativeUpload
       const previewUrl = URL.createObjectURL(file);
       setPreviewImage(previewUrl);
       setUploading(true);
+      
+      // Start simulated progress
+      const progressInterval = simulateProgress();
+      progressIntervalRef.current = progressInterval;
       
       // Start with a placeholder analysis for immediate feedback
       setAnalysis("Analyzing your creative work...");
@@ -56,6 +75,12 @@ const CreativeBlock: React.FC<CreativeBlockProps> = ({ content, onCreativeUpload
           {
             loading: 'Analyzing your creation...',
             success: (response) => {
+              // Clear the progress simulation
+              if (progressIntervalRef.current) {
+                clearInterval(progressIntervalRef.current);
+                setUploadProgress(100);
+              }
+              
               if (response.error) {
                 throw new Error(response.error.message);
               }
@@ -65,7 +90,16 @@ const CreativeBlock: React.FC<CreativeBlockProps> = ({ content, onCreativeUpload
               onCreativeUpload();
               return 'Analysis complete!';
             },
-            error: 'Could not analyze your creation'
+            error: (err) => {
+              console.error('Error analyzing creative work:', err);
+              // Provide a fallback analysis if Claude fails
+              setTimeout(() => {
+                setAnalysis("Amazing work! You've put a lot of creativity into this. Keep exploring and creating!");
+                setCreativeUploaded(true);
+                onCreativeUpload();
+              }, 500);
+              return 'Could not analyze your creation, but we still love it!';
+            }
           }
         );
       };
@@ -79,8 +113,19 @@ const CreativeBlock: React.FC<CreativeBlockProps> = ({ content, onCreativeUpload
     } catch (error) {
       console.error('Error uploading creative work:', error);
       toast.error('Something went wrong with your upload. Please try again.');
+      
+      // Still provide a positive experience even if there's an error
+      setTimeout(() => {
+        setAnalysis("Wonderful creation! Even though we had some technical issues, we can see your amazing talent!");
+        setCreativeUploaded(true);
+        onCreativeUpload();
+      }, 1000);
     } finally {
       setShowUploadOptions(false);
+      // Clear interval if it exists
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
     }
   };
 
@@ -142,6 +187,12 @@ const CreativeBlock: React.FC<CreativeBlockProps> = ({ content, onCreativeUpload
     setUploading(false);
     setPreviewImage(null);
     setShowUploadOptions(false);
+    setUploadProgress(0);
+    // Clear interval if it exists
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+      progressIntervalRef.current = null;
+    }
   };
   
   return (
@@ -193,6 +244,16 @@ const CreativeBlock: React.FC<CreativeBlockProps> = ({ content, onCreativeUpload
                       <Loader2 className="animate-spin h-6 w-6 text-wonderwhiz-gold" />
                     </div>
                   </div>
+                </div>
+                
+                {/* Progress bar */}
+                <div className="w-full bg-gray-700 rounded-full h-2.5 mb-2">
+                  <motion.div
+                    className="bg-wonderwhiz-purple h-2.5 rounded-full"
+                    initial={{ width: '5%' }}
+                    animate={{ width: `${uploadProgress}%` }}
+                    transition={{ ease: "easeInOut", duration: 0.3 }}
+                  ></motion.div>
                 </div>
                 
                 <div className="flex items-center justify-center gap-2">

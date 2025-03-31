@@ -11,6 +11,7 @@ import { useCurioData } from '@/hooks/useCurioData';
 import { useBlockInteractions } from '@/hooks/useBlockInteractions';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { motion } from 'framer-motion';
 
 const CurioPage: React.FC = () => {
   const { profileId, curioId } = useParams<{ profileId: string; curioId: string }>();
@@ -20,6 +21,7 @@ const CurioPage: React.FC = () => {
     blocks,
     title,
     isLoading,
+    isGeneratingContent,
     hasMoreBlocks,
     loadingMoreBlocks,
     totalBlocksLoaded,
@@ -144,7 +146,16 @@ const CurioPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black pb-20">
       <div className="container px-4 py-3 sm:py-5">
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2 sm:mb-3 text-center">{title}</h1>
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2 sm:mb-3 text-center">
+          {title || (
+            <motion.div
+              className="h-8 w-3/5 mx-auto bg-white/10 rounded animate-pulse"
+              initial={{ opacity: 0.6 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 1, repeat: Infinity, repeatType: "reverse" }}
+            ></motion.div>
+          )}
+        </h1>
         
         {/* Search component */}
         <CurioSearch
@@ -158,6 +169,39 @@ const CurioPage: React.FC = () => {
         
         <Card className="bg-black/40 border-white/10 p-2 sm:p-4 md:p-6">
           <ScrollArea ref={scrollAreaRef} className="h-[calc(100vh-230px)]">
+            {/* Content generation indicator */}
+            {isGeneratingContent && (
+              <motion.div 
+                className="flex items-center justify-center py-4 mb-4 bg-purple-900/20 rounded-lg border border-purple-500/30"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                <div className="flex flex-col items-center">
+                  <div className="flex space-x-2 mb-2">
+                    {[0, 1, 2].map((i) => (
+                      <motion.div
+                        key={i}
+                        className="w-3 h-3 rounded-full bg-wonderwhiz-purple"
+                        animate={{
+                          y: [0, -10, 0],
+                        }}
+                        transition={{
+                          duration: 0.6,
+                          repeat: Infinity,
+                          repeatType: "loop",
+                          delay: i * 0.2,
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-sm text-white/80">
+                    Generating amazing content for you...
+                  </p>
+                </div>
+              </motion.div>
+            )}
+            
             {/* Content blocks list */}
             <CurioBlockList
               blocks={blocks}
