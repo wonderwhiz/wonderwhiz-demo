@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
@@ -280,6 +279,21 @@ const ProfileSelector = () => {
                         <div className="flex items-center justify-center text-wonderwhiz-gold">
                           <span className="text-sm opacity-80">Tap to continue your adventure!</span>
                         </div>
+                        {process.env.NODE_ENV === 'development' && (
+                          <div className="mt-2">
+                            <Button 
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation(); // Prevent the profile selection dialog
+                                navigate(`/curio/${profile.id}/test-curio-id`);
+                              }}
+                              variant="outline" 
+                              className="bg-purple-500/30 text-white hover:bg-purple-500/50 text-xs"
+                            >
+                              Test Curio Page
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </motion.div>
                   </button>
