@@ -109,16 +109,92 @@ export const useBlockInteractions = (childProfileId?: string) => {
       
       console.log('Creative content uploaded successfully');
       
-      toast.success("Creative work shared! +10 sparks", {
-        position: 'top-center',
-        classNames: {
-          toast: 'bg-wonderwhiz-pink text-white'
-        }
-      });
+      // We don't show a toast here as the CreativeBlock component now handles its own feedback
     } catch (error) {
       console.error('Error handling creative upload:', error);
     } finally {
       setLoadingStates(prev => ({ ...prev, creative: false }));
+    }
+  };
+
+  // Handle activity completion
+  const handleActivityComplete = async () => {
+    if (!childProfileId) return;
+    
+    setLoadingStates(prev => ({ ...prev, activity: true }));
+    
+    try {
+      // Award sparks for activity completion
+      await supabase.functions.invoke('increment-sparks-balance', {
+        body: { childId: childProfileId, amount: 3 }
+      });
+      
+      console.log('Activity completed successfully');
+      
+      toast.success("Activity completed! +3 sparks", {
+        position: 'top-center',
+        classNames: {
+          toast: 'bg-wonderwhiz-purple text-white'
+        }
+      });
+    } catch (error) {
+      console.error('Error handling activity completion:', error);
+    } finally {
+      setLoadingStates(prev => ({ ...prev, activity: false }));
+    }
+  };
+
+  // Handle mindfulness completion
+  const handleMindfulnessComplete = async () => {
+    if (!childProfileId) return;
+    
+    setLoadingStates(prev => ({ ...prev, mindfulness: true }));
+    
+    try {
+      // Award sparks for mindfulness completion
+      await supabase.functions.invoke('increment-sparks-balance', {
+        body: { childId: childProfileId, amount: 5 }
+      });
+      
+      console.log('Mindfulness exercise completed successfully');
+      
+      toast.success("Mindfulness exercise completed! +5 sparks", {
+        position: 'top-center',
+        classNames: {
+          toast: 'bg-wonderwhiz-purple text-white'
+        }
+      });
+    } catch (error) {
+      console.error('Error handling mindfulness completion:', error);
+    } finally {
+      setLoadingStates(prev => ({ ...prev, mindfulness: false }));
+    }
+  };
+
+  // Handle task completion  
+  const handleTaskComplete = async () => {
+    if (!childProfileId) return;
+    
+    setLoadingStates(prev => ({ ...prev, task: true }));
+    
+    try {
+      // Award sparks for task completion
+      await supabase.functions.invoke('increment-sparks-balance', {
+        body: { childId: childProfileId, amount: 8 }
+      });
+      
+      console.log('Task completed successfully');
+      
+      toast.success("Task completed! +8 sparks", {
+        position: 'top-center',
+        classNames: {
+          toast: 'bg-wonderwhiz-purple text-white'
+        }
+      });
+    } catch (error) {
+      console.error('Error handling task completion:', error);
+    } finally {
+      setLoadingStates(prev => ({ ...prev, task: false }));
     }
   };
 
@@ -127,6 +203,9 @@ export const useBlockInteractions = (childProfileId?: string) => {
     handleQuizCorrect,
     handleNewsRead,
     handleCreativeUpload,
+    handleActivityComplete,
+    handleMindfulnessComplete,
+    handleTaskComplete,
     loadingStates
   };
 };
