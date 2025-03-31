@@ -1,11 +1,10 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-const CLAUDE_API_KEY = Deno.env.get('CLAUDE_API_KEY')!;
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -27,7 +26,8 @@ serve(async (req) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': req.headers.get('Authorization') || ''
+          'Authorization': req.headers.get('Authorization') || '',
+          'x-deno-subhost': req.headers.get('x-deno-subhost') || ''
         },
         body: JSON.stringify(reqBody)
       }

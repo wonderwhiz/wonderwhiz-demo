@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ContentBlock from '@/components/ContentBlock';
@@ -26,9 +26,11 @@ interface ContentBlock {
 
 const INITIAL_BLOCKS_TO_FETCH = 2;
 const ADDITIONAL_BLOCKS_TO_FETCH = 2;
+const MAX_BLOCKS_TOTAL = 10;
 
 const CurioPage: React.FC = () => {
   const { profileId, curioId } = useParams<{ profileId: string; curioId: string }>();
+  const navigate = useNavigate();
   const [blocks, setBlocks] = useState<ContentBlock[]>([]);
   const [title, setTitle] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -40,11 +42,15 @@ const CurioPage: React.FC = () => {
     { rootMargin: '200px' },
     false
   );
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   // Fetch curio data and child profile
   useEffect(() => {
     const fetchInitialData = async () => {
-      if (!curioId || !profileId) return;
+      if (!curioId || !profileId) {
+        navigate(`/dashboard/${profileId}`);
+        return;
+      }
       
       setIsLoading(true);
       
@@ -90,7 +96,9 @@ const CurioPage: React.FC = () => {
           
           setBlocks(initialBlocks);
           setTotalBlocksGenerated(existingBlocks.length);
-          setHasMoreBlocksToGenerate(false);
+          
+          // We still may have more blocks to load, but not generate
+          setHasMoreBlocksToGenerate(existingBlocks.length < MAX_BLOCKS_TOTAL);
         } else {
           // No blocks yet, generate the initial ones
           await generateBlocks(curioData.query, profileData, INITIAL_BLOCKS_TO_FETCH);
@@ -102,17 +110,23 @@ const CurioPage: React.FC = () => {
           description: "Could not load curio data",
           variant: "destructive"
         });
+        navigate(`/dashboard/${profileId}`);
       } finally {
         setIsLoading(false);
+        
+        // Scroll to top after initial load
+        setTimeout(() => {
+          scrollAreaRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 300);
       }
     };
     
     fetchInitialData();
-  }, [curioId, profileId]);
+  }, [curioId, profileId, navigate]);
 
   // Generate blocks function
   const generateBlocks = async (query: string, profile: any, count: number, startIndex: number = 0) => {
-    if (!curioId || !profile) return;
+    if (!curioId || !profile) return [];
     
     try {
       const claudeResponse = await supabase.functions.invoke('generate-curiosity-blocks-partial', {
@@ -155,8 +169,8 @@ const CurioPage: React.FC = () => {
       setBlocks(prev => [...prev, ...typedBlocks]);
       setTotalBlocksGenerated(prev => prev + generatedBlocks.length);
       
-      // Check if we should stop generating (assuming 10 total blocks maximum)
-      if (startIndex + count >= 10) {
+      // Check if we should stop generating (MAX_BLOCKS_TOTAL total blocks maximum)
+      if (startIndex + count >= MAX_BLOCKS_TOTAL) {
         setHasMoreBlocksToGenerate(false);
       }
       
@@ -182,12 +196,13 @@ const CurioPage: React.FC = () => {
       
       try {
         // First try to fetch existing blocks
+        const existingCount = blocks.length;
         const { data: existingBlocks, error: blocksError } = await supabase
           .from('content_blocks')
           .select('*')
           .eq('curio_id', curioId)
           .order('created_at', { ascending: true })
-          .range(blocks.length, blocks.length + ADDITIONAL_BLOCKS_TO_FETCH - 1);
+          .range(existingCount, existingCount + ADDITIONAL_BLOCKS_TO_FETCH - 1);
           
         if (blocksError) throw blocksError;
         
@@ -208,7 +223,7 @@ const CurioPage: React.FC = () => {
               .eq('id', curioId)
               .single();
               
-            if (curioData && totalBlocksGenerated < 10) {
+            if (curioData && totalBlocksGenerated < MAX_BLOCKS_TOTAL) {
               // Generate more blocks if needed
               await generateBlocks(
                 curioData.query, 
@@ -394,7 +409,7 @@ const CurioPage: React.FC = () => {
         <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-4 text-center">{title}</h1>
         
         <Card className="bg-black/40 border-white/10 p-2 sm:p-4 md:p-6">
-          <ScrollArea className="h-[calc(100vh-180px)]">
+          <ScrollArea ref={scrollAreaRef} className="h-[calc(100vh-180px)]">
             <div className="space-y-4 px-1">
               {blocks.map((block, index) => (
                 <motion.div
