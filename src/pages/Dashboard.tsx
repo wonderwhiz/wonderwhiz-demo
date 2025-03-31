@@ -206,7 +206,9 @@ const Dashboard = () => {
       const claudeResponse = await supabase.functions.invoke('generate-curiosity-blocks', {
         body: JSON.stringify({
           query: query.trim(),
-          childProfile: childProfile
+          childProfile: childProfile,
+          count: 2,
+          startIndex: 0
         })
       });
       if (claudeResponse.error) {
@@ -281,7 +283,9 @@ const Dashboard = () => {
           const claudeResponse = await supabase.functions.invoke('generate-curiosity-blocks', {
             body: JSON.stringify({
               query: curio.query,
-              childProfile: childProfile
+              childProfile: childProfile,
+              count: 2,
+              startIndex: 0
             })
           });
           const generatedBlocks = claudeResponse.data;
@@ -528,14 +532,58 @@ const Dashboard = () => {
     }
   };
 
-  const handleLoadMoreBlocks = () => {
-    setVisibleBlocksCount(prev => Math.min(prev + 3, contentBlocks.length));
+  const handleLoadMoreBlocks = async () => {
+    if (loadingBlocks || !currentCurio || !childProfile) return;
+    
+    setLoadingBlocks(true);
+    try {
+      // First check if we need to generate more blocks
+      if (visibleBlocksCount >= contentBlocks.length) {
+        // Generate more blocks using the partial generation function
+        const claudeResponse = await supabase.functions.invoke('generate-curiosity-blocks', {
+          body: JSON.stringify({
+            query: currentCurio.query,
+            childProfile: childProfile,
+            count: 2,
+            startIndex: contentBlocks.length
+          })
+        });
+        
+        if (claudeResponse.error) {
+          throw new Error(`Failed to generate more content: ${claudeResponse.error.message}`);
+        }
+        
+        const newBlocks = claudeResponse.data;
+        if (Array.isArray(newBlocks) && newBlocks.length > 0) {
+          // Save blocks to database
+          for (const block of newBlocks) {
+            await supabase.from('content_blocks').insert({
+              curio_id: currentCurio.id,
+              type: block.type,
+              specialist_id: block.specialist_id,
+              content: block.content
+            });
+          }
+          
+          // Update state with new blocks
+          setContentBlocks(prev => [...prev, ...newBlocks]);
+        }
+      }
+      
+      // Increase visible blocks count
+      setVisibleBlocksCount(prev => Math.min(prev + 2, contentBlocks.length + 2));
+    } catch (error) {
+      console.error('Error loading more blocks:', error);
+      toast.error("Failed to load more content");
+    } finally {
+      setLoadingBlocks(false);
+    }
   };
 
   const observerTarget = useRef(null);
   useEffect(() => {
     const observer = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && !loadingBlocks && visibleBlocksCount < contentBlocks.length) {
+      if (entries[0].isIntersecting && !loadingBlocks && currentCurio) {
         handleLoadMoreBlocks();
       }
     }, {
@@ -549,7 +597,7 @@ const Dashboard = () => {
         observer.unobserve(observerTarget.current);
       }
     };
-  }, [observerTarget, loadingBlocks, visibleBlocksCount, contentBlocks.length]);
+  }, [observerTarget, loadingBlocks, visibleBlocksCount, contentBlocks.length, currentCurio]);
 
   const handleCurioSuggestionClick = async (suggestion: string) => {
     if (!childProfile || isGenerating) return;
@@ -600,7 +648,9 @@ const Dashboard = () => {
       const claudeResponse = await supabase.functions.invoke('generate-curiosity-blocks', {
         body: JSON.stringify({
           query: suggestion.trim(),
-          childProfile: childProfile
+          childProfile: childProfile,
+          count: 2,
+          startIndex: 0
         })
       });
       if (claudeResponse.error) {
