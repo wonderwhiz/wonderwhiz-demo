@@ -41,7 +41,6 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
   handleMindfulnessComplete,
   profileId,
 }) => {
-  // Container animation variants
   const containerVariants = {
     hidden: {},
     visible: {
@@ -51,9 +50,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
     }
   };
 
-  // Block animation variants with different entrance effects based on block type
   const getBlockVariants = (block: ContentBlockType, index: number) => {
-    // Base animation
     const baseVariants = {
       hidden: { opacity: 0, y: 20 },
       visible: { 
@@ -68,7 +65,6 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
       }
     };
 
-    // Add special animations based on block type
     switch(block.type) {
       case 'quiz':
         return {
@@ -178,7 +174,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
     }
   };
 
-  console.log("Rendering blocks:", blocks.length, "Search query:", searchQuery);
+  console.log("Rendering blocks:", blocks.length, "Search query:", searchQuery, "Animating:", animateBlocks);
 
   return (
     <AnimatePresence mode="wait">

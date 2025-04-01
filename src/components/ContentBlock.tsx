@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
-import { BookmarkIcon, ThumbsUpIcon, MessageCircleIcon, ImageIcon } from 'lucide-react';
+import { BookmarkIcon, ThumbsUpIcon, MessageCircleIcon, ImageIcon, Loader, AlertCircle, Image, ImageOff } from 'lucide-react';
 import { SPECIALISTS } from './SpecialistAvatar';
 import BlockReply from './BlockReply';
 import BlockReplyForm from './BlockReplyForm';
@@ -155,6 +155,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   const [contextualImage, setContextualImage] = useState<string | null>(null);
   const [imageLoading, setImageLoading] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [imageRetryCount, setImageRetryCount] = useState(0);
   
   const specialist = SPECIALISTS[block.specialist_id] || {
     name: 'Wonder Wizard',
@@ -167,10 +168,8 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   const blockTitle = getBlockTitle(block);
   const contentTooLong = block.type === 'fact' && block.content.fact.length > 120;
   
-  // Fetch contextual image for first block
   useEffect(() => {
     const generateImage = async () => {
-      // Only generate for the first block
       if (!isFirstBlock || contextualImage || imageLoading) return;
       
       try {
@@ -185,7 +184,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
           }
         });
         
-        console.log("Image generation response:", { data, error });
+        console.log("Image generation response:", { success: !!data, hasError: !!error });
         
         if (error) {
           console.error("Supabase function error:", error);
@@ -210,13 +209,21 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       } catch (err) {
         console.error('Error generating contextual image:', err);
         setImageError(err instanceof Error ? err.message : "Unknown error occurred");
+        
+        if (imageRetryCount < 1) {
+          console.log("Retrying image generation...");
+          setImageRetryCount(prev => prev + 1);
+          setTimeout(() => {
+            setImageLoading(false);
+          }, 1000);
+        }
       } finally {
         setImageLoading(false);
       }
     };
     
     generateImage();
-  }, [isFirstBlock, block, contextualImage, imageLoading]);
+  }, [isFirstBlock, block, contextualImage, imageLoading, imageRetryCount]);
   
   useEffect(() => {
     const fetchReplies = async () => {
@@ -269,22 +276,18 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     const tempId = `temp-${Date.now()}`;
     const tempTimestamp = new Date().toISOString();
 
-    // Optimistically add the reply to the UI
-    const userReply: Reply = {
+    setReplies(prev => [...prev, {
       id: tempId,
       block_id: block.id,
       content: replyText,
       from_user: true,
       timestamp: tempTimestamp
-    };
-    
-    setReplies(prev => [...prev, userReply]);
+    }]);
     
     try {
       setIsLoading(true);
       console.log('Ensuring block exists in database:', block.id);
 
-      // Always ensure the block exists in the database first using the edge function
       const {
         data: ensureBlockData,
         error: ensureBlockError
@@ -298,7 +301,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
             content: block.content,
             liked: block.liked,
             bookmarked: block.bookmarked,
-            child_profile_id: childProfileId // Add this to support creating a temporary curio if needed
+            child_profile_id: childProfileId
           }
         }
       });
@@ -309,7 +312,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       
       console.log('Block ensured in database:', ensureBlockData);
 
-      // Now send the reply to the edge function - REMOVED specialist_id from the request
       const {
         data: replyData,
         error: replyError
@@ -327,15 +329,12 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         throw new Error(`Reply error: ${replyError}`);
       }
 
-      // Handle specialist reply
       await handleSpecialistReply(block.id, replyText);
 
-      // Notify parent component
       onReply(block.id, replyText);
     } catch (error) {
       console.error('Error handling reply:', error);
 
-      // Remove the optimistically added reply
       setReplies(prev => prev.filter(r => r.id !== tempId));
       
       toast({
@@ -371,7 +370,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         throw new Error(response.error.message);
       }
       
-      // Update this to match the handle-block-replies function that doesn't expect specialist_id
       const {
         data: aiReplyData,
         error: aiReplyError
@@ -387,7 +385,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       
       if (aiReplyError) throw aiReplyError;
       
-      // Refresh the replies from the database after adding specialist response
       const {
         data,
         error
@@ -455,10 +452,16 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     }
   };
   
+  const handleRetryImage = () => {
+    setContextualImage(null);
+    setImageError(null);
+    setImageRetryCount(0);
+    setImageLoading(false);
+  };
+  
   return (
     <Card className={`overflow-hidden transition-colors duration-300 hover:shadow-md w-full ${specialistStyle.gradient} bg-opacity-10`}>
       <div className="p-2.5 sm:p-3 md:p-4 bg-wonderwhiz-purple">
-        {/* Persona Icon Row */}
         <div className="flex items-center mb-3 sm:mb-4">
           <motion.div 
             className={`h-8 w-8 sm:h-10 sm:w-10 rounded-full ${specialist.color} flex items-center justify-center flex-shrink-0 shadow-md`}
@@ -474,7 +477,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
           </div>
         </div>
         
-        {/* Title / Hook */}
         <motion.h4 
           className="text-base sm:text-lg font-bold text-white mb-3"
           initial={{ opacity: 0, y: 10 }}
@@ -484,14 +486,13 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
           {blockTitle}
         </motion.h4>
         
-        {/* Contextual Image - Only for first block */}
         {isFirstBlock && (
-          <div className="mb-4">
+          <div className="mb-4 relative">
             {imageLoading ? (
-              <div className={`${getContextualImageStyle()} flex items-center justify-center`}>
-                <div className="animate-pulse flex flex-col items-center">
-                  <ImageIcon className="h-8 w-8 text-white/40 mb-2" />
-                  <p className="text-white/60 text-sm">Generating image...</p>
+              <div className={`${getContextualImageStyle()} flex items-center justify-center bg-gradient-to-r from-purple-900/30 to-indigo-900/30 animate-pulse`}>
+                <div className="flex flex-col items-center">
+                  <Loader className="h-8 w-8 text-white/60 mb-2 animate-spin" />
+                  <p className="text-white/80 text-sm">Creating illustration...</p>
                 </div>
               </div>
             ) : contextualImage ? (
@@ -499,32 +500,52 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
+                className="relative group"
               >
                 <img 
                   src={contextualImage} 
                   alt={`Illustration for ${blockTitle}`} 
-                  className={`${getContextualImageStyle()}`}
+                  className={`${getContextualImageStyle()} shadow-lg`}
                   loading="lazy"
                   onError={() => {
                     console.error("Image failed to load");
                     setImageError("Image failed to load");
                   }}
                 />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center p-2">
+                  <div className="text-xs bg-black/50 px-2 py-1 rounded-full text-white/90 backdrop-blur-sm">
+                    AI-generated illustration
+                  </div>
+                </div>
               </motion.div>
             ) : (
-              <div className={`${getContextualImageStyle()} flex items-center justify-center border border-dashed border-white/20`}>
-                <div className="flex flex-col items-center">
-                  <ImageIcon className="h-6 w-6 text-white/30 mb-1" />
-                  <p className="text-white/50 text-xs">
-                    {imageError ? `Error: ${imageError}` : "Could not load image"}
-                  </p>
-                </div>
+              <div className={`${getContextualImageStyle()} flex flex-col items-center justify-center bg-gradient-to-r from-purple-900/20 to-indigo-900/20 border border-dashed border-white/20 p-4`}>
+                {imageError ? (
+                  <div className="flex flex-col items-center text-center">
+                    <ImageOff className="h-7 w-7 text-white/40 mb-2" />
+                    <p className="text-white/70 text-sm mb-2">
+                      {imageError.includes("API") ? "Could not generate image" : "Failed to load image"}
+                    </p>
+                    <button 
+                      onClick={handleRetryImage}
+                      className="text-xs bg-white/10 hover:bg-white/20 px-3 py-1 rounded-full text-white/90 transition-colors"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center">
+                    <Image className="h-6 w-6 text-white/30 mb-1" />
+                    <p className="text-white/50 text-xs">
+                      No illustration available
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>
         )}
         
-        {/* Core Content */}
         <div className="mb-4">
           {renderBlockContent()}
         </div>
