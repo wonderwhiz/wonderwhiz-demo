@@ -15,135 +15,160 @@ serve(async (req) => {
   }
 
   try {
-    const requestStart = new Date().getTime();
-    console.log(`[${requestStart}] Received image generation request`);
+    const requestId = crypto.randomUUID();
+    console.log(`[${requestId}] Starting image generation request`);
     
-    // Parse request body
+    // Parse request body with better error handling
     let blockContent, blockType;
     try {
       const requestData = await req.json();
       blockContent = requestData.blockContent;
       blockType = requestData.blockType;
       
-      console.log(`[${requestStart}] Request data received:`, { blockType, contentSample: JSON.stringify(blockContent).substring(0, 50) + "..." });
+      console.log(`[${requestId}] Received request for ${blockType} content`);
     } catch (parseError) {
-      console.error(`[${requestStart}] Error parsing request body:`, parseError);
+      console.error(`[${requestId}] Error parsing request body:`, parseError);
       throw new Error(`Invalid request format: ${parseError.message}`);
     }
     
     if (!blockContent || !blockType) {
-      console.error(`[${requestStart}] Missing required parameters`);
+      console.error(`[${requestId}] Missing required parameters`);
       throw new Error('Missing required parameters: blockContent and blockType');
     }
     
     // Get the HF token from environment variables
     const HUGGING_FACE_ACCESS_TOKEN = Deno.env.get('HUGGING_FACE_ACCESS_TOKEN');
     if (!HUGGING_FACE_ACCESS_TOKEN) {
-      console.error(`[${requestStart}] HUGGING_FACE_ACCESS_TOKEN is not set`);
+      console.error(`[${requestId}] HUGGING_FACE_ACCESS_TOKEN is not set`);
       throw new Error('HUGGING_FACE_ACCESS_TOKEN is not set');
     }
     
-    console.log(`[${requestStart}] Initializing Hugging Face client`);
+    console.log(`[${requestId}] Initializing Hugging Face client`);
     const hf = new HfInference(HUGGING_FACE_ACCESS_TOKEN);
 
     // Generate an appropriate prompt based on block type and content
     let prompt = '';
     
+    const getContentString = (content) => {
+      if (!content) return '';
+      try {
+        if (typeof content === 'string') return content.substring(0, 150);
+        if (typeof content === 'object') {
+          // Extract the most relevant text based on block type
+          if (blockType === 'fact' || blockType === 'funFact') return content.fact?.substring(0, 150) || '';
+          if (blockType === 'quiz') return content.question?.substring(0, 150) || '';
+          if (blockType === 'flashcard') return content.front?.substring(0, 150) || '';
+          if (blockType === 'creative') return content.prompt?.substring(0, 150) || '';
+          if (blockType === 'task') return content.task?.substring(0, 150) || '';
+          if (blockType === 'riddle') return content.riddle?.substring(0, 100) || content.answer?.substring(0, 50) || '';
+          if (blockType === 'news') return content.headline?.substring(0, 150) || '';
+          if (blockType === 'activity') return content.activity?.substring(0, 150) || '';
+          if (blockType === 'mindfulness') return content.exercise?.substring(0, 150) || '';
+          
+          // If none of the above, try to get any text property
+          const firstTextProp = Object.values(content).find(v => typeof v === 'string');
+          return firstTextProp?.substring(0, 150) || JSON.stringify(content).substring(0, 100);
+        }
+        return '';
+      } catch (e) {
+        console.error(`[${requestId}] Error extracting content:`, e);
+        return '';
+      }
+    };
+    
+    const contentText = getContentString(blockContent);
+    
+    // Default prompt if we can't extract better content
+    prompt = `A child-friendly, educational illustration about: ${contentText || blockType}`;
+    
+    // Try to make a more specific prompt based on block type
     switch(blockType) {
       case 'fact':
       case 'funFact':
-        // Extract the key concept from the fact
-        prompt = `A child-friendly, educational illustration showing: ${blockContent.fact?.substring(0, 100) || 'educational fact'}`;
+        prompt = `A child-friendly, educational illustration showing: ${getContentString(blockContent.fact)}`;
         break;
       case 'quiz':
-        prompt = `A child-friendly, educational illustration related to: ${blockContent.question || 'quiz question'}`;
+        prompt = `A child-friendly, educational illustration related to: ${getContentString(blockContent.question)}`;
         break;
       case 'flashcard':
-        prompt = `A child-friendly, educational illustration showing: ${blockContent.front || 'flashcard concept'}`;
+        prompt = `A child-friendly, educational illustration showing: ${getContentString(blockContent.front)}`;
         break;
       case 'creative':
-        prompt = `A child-friendly, inspiring illustration about: ${blockContent.prompt?.substring(0, 100) || 'creative prompt'}`;
+        prompt = `A child-friendly, inspiring illustration about: ${getContentString(blockContent.prompt)}`;
         break;
       case 'task':
-        prompt = `A child-friendly illustration showing a child doing: ${blockContent.task?.substring(0, 100) || 'educational task'}`;
+        prompt = `A child-friendly illustration showing a child doing: ${getContentString(blockContent.task)}`;
         break;
       case 'riddle':
-        prompt = `A child-friendly, mysterious illustration hinting at: ${blockContent.answer || 'riddle answer'}`;
+        prompt = `A child-friendly, mysterious illustration hinting at: ${
+          blockContent.answer ? getContentString(blockContent.answer) : getContentString(blockContent.riddle)
+        }`;
         break;
       case 'news':
-        prompt = `A child-friendly, informative illustration about: ${blockContent.headline || 'news topic'}`;
+        prompt = `A child-friendly, informative illustration about: ${getContentString(blockContent.headline)}`;
         break;
       case 'activity':
-        prompt = `A child-friendly illustration showing kids doing: ${blockContent.activity?.substring(0, 100) || 'fun activity'}`;
+        prompt = `A child-friendly illustration showing kids doing: ${getContentString(blockContent.activity)}`;
         break;
       case 'mindfulness':
-        prompt = `A child-friendly, calming illustration showing: ${blockContent.exercise?.substring(0, 100) || 'mindfulness exercise'}`;
+        prompt = `A child-friendly, calming illustration showing: ${getContentString(blockContent.exercise)}`;
         break;
-      default:
-        prompt = `A child-friendly, educational illustration`;
     }
     
     // Make sure the prompt is safe for kids and has appropriate style
     prompt += ", digital art style, bright colors, educational, safe for kids, no text, no words";
-
-    console.log(`[${requestStart}] Generated prompt for image:`, prompt);
     
-    // Generate the image using the Hugging Face API
-    console.log(`[${requestStart}] Calling Hugging Face API...`);
+    console.log(`[${requestId}] Generated prompt: ${prompt.substring(0, 100)}...`);
+    
+    // Improved error handling for the Hugging Face API call
+    console.log(`[${requestId}] Calling Hugging Face API...`);
     
     try {
-      const apiCallStart = new Date().getTime();
-      console.log(`[${requestStart}] HF API call started at: ${apiCallStart}`);
+      const apiCallStart = Date.now();
       
       const image = await hf.textToImage({
         inputs: prompt,
         model: "black-forest-labs/FLUX.1-schnell", // Fast and high quality model
         parameters: {
           guidance_scale: 7.5,
-          num_inference_steps: 25, // Reduced slightly for faster generation while maintaining quality
+          num_inference_steps: 20, // Reduced for faster generation while maintaining quality
         }
       });
 
-      const apiCallEnd = new Date().getTime();
+      const apiCallEnd = Date.now();
       const apiDuration = (apiCallEnd - apiCallStart) / 1000;
-      console.log(`[${requestStart}] HF API call finished after ${apiDuration} seconds`);
+      console.log(`[${requestId}] HF API call finished after ${apiDuration} seconds`);
 
       // Convert the blob to a base64 string
       const arrayBuffer = await image.arrayBuffer();
       const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-      const imageSize = base64.length;
-      console.log(`[${requestStart}] Image successfully converted to base64, size: ${imageSize} bytes`);
-
-      const requestEnd = new Date().getTime();
-      const totalDuration = (requestEnd - requestStart) / 1000;
-      console.log(`[${requestStart}] Total request processed in ${totalDuration} seconds`);
+      console.log(`[${requestId}] Image successfully converted to base64, length: ${base64.length}`);
 
       return new Response(
         JSON.stringify({ 
           image: `data:image/png;base64,${base64}`,
-          stats: { 
+          requestId,
+          prompt: prompt.substring(0, 100),
+          blockType,
+          timing: { 
             apiDuration, 
-            totalDuration,
-            imageSize,
+            totalDuration: (Date.now() - apiCallStart) / 1000,
             timestamp: new Date().toISOString() 
           }
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     } catch (hfError) {
-      console.error(`[${requestStart}] Error from Hugging Face API:`, hfError);
-      console.error(`[${requestStart}] Error details:`, JSON.stringify(hfError));
+      console.error(`[${requestId}] Error from Hugging Face API:`, hfError);
       throw new Error(`Hugging Face API error: ${hfError.message || 'Unknown error'}`);
     }
   } catch (error) {
     console.error('Error generating image:', error);
-    console.error('Error stack:', error.stack);
     
     // Return a structured error response
     return new Response(
       JSON.stringify({ 
         error: error.message, 
-        stack: error.stack,
         timestamp: new Date().toISOString(),
         message: "Failed to generate image"
       }),

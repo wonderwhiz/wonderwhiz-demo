@@ -25,6 +25,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
   
   const claudeResponseRef = useRef<any>(null);
   const blockLoadingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const generationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const convertToContentBlocks = (dbBlocks: any[]): ContentBlock[] => {
     return dbBlocks.map(block => {
@@ -88,6 +89,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
         setIsGeneratingContent(true);
         setGenerationStartTime(Date.now());
         
+        // Start with a placeholder block immediately
         setBlocks([
           {
             id: `generating-${Date.now()}-1`,
@@ -102,6 +104,22 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
         ]);
         
         setInitialLoadComplete(true);
+        
+        // Set a maximum time for content generation
+        if (generationTimeoutRef.current) {
+          clearTimeout(generationTimeoutRef.current);
+        }
+        
+        generationTimeoutRef.current = setTimeout(() => {
+          if (isGeneratingContent) {
+            setIsGeneratingContent(false);
+            toast({
+              title: "Content generation taking longer than expected",
+              description: "Please try refreshing the page if content doesn't appear soon.",
+              variant: "default"
+            });
+          }
+        }, 30000); // 30 seconds timeout
         
         generateNewBlocks(curioId, query);
       }
@@ -159,15 +177,18 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
     if (!isLoadingBasicInfo && curioId && query) {
       fetchInitialBlocks(curioId);
     }
-  }, [curioId, query, isLoadingBasicInfo, fetchInitialBlocks]);
-
-  useEffect(() => {
+    
     return () => {
+      // Clean up all timers when unmounting
       if (blockLoadingTimerRef.current) {
         clearTimeout(blockLoadingTimerRef.current);
       }
+      
+      if (generationTimeoutRef.current) {
+        clearTimeout(generationTimeoutRef.current);
+      }
     };
-  }, []);
+  }, [curioId, query, isLoadingBasicInfo, fetchInitialBlocks]);
 
   const generateNewBlocks = async (curioId: string, query: string) => {
     if (!query || !profileId) return;
@@ -183,6 +204,9 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
         
       if (profileError) throw profileError;
       
+      const apiStartTime = Date.now();
+      console.log(`API call started at ${new Date().toISOString()}`);
+      
       const response = await supabase.functions.invoke('generate-curiosity-blocks', {
         body: {
           query,
@@ -193,6 +217,9 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
           }
         }
       });
+      
+      const apiEndTime = Date.now();
+      console.log(`API call finished after ${(apiEndTime - apiStartTime) / 1000} seconds`);
       
       if (response.error) {
         throw new Error(response.error.message || 'Error generating content blocks');
@@ -219,7 +246,6 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
       setHasMoreBlocks(generatedBlocks.length > 1);
       
       try {
-        // Fix #1: Add proper error handling for the Supabase insert operation
         const { error } = await supabase.from('content_blocks').insert({
           ...initialBlock,
           curio_id: curioId
@@ -232,7 +258,12 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
         console.error('Error saving first block:', saveError);
       }
       
-      loadRemainingBlocksProgressively(curioId, generatedBlocks);
+      // Load the second block almost immediately for better UX
+      setTimeout(() => {
+        if (generatedBlocks.length > 1) {
+          loadRemainingBlocksProgressively(curioId, generatedBlocks);
+        }
+      }, 500);
       
       if (generationStartTime) {
         const generationTime = Math.round((Date.now() - generationStartTime) / 1000);
@@ -241,6 +272,12 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
       
       setIsFirstLoad(false);
       setIsGeneratingContent(false);
+      
+      // Clear the generation timeout as we've successfully generated content
+      if (generationTimeoutRef.current) {
+        clearTimeout(generationTimeoutRef.current);
+        generationTimeoutRef.current = null;
+      }
     } catch (error) {
       console.error('Error generating content blocks:', error);
       toast({
@@ -286,7 +323,6 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
         
         setHasMoreBlocks(currentIndex < generatedBlocks.length - 1);
         
-        // Fix #2: Use proper Promise handling for the Supabase insert operation
         const { error } = await supabase.from('content_blocks').insert({
           ...nextBlock,
           curio_id: curioId
@@ -300,7 +336,9 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
         
         currentIndex++;
         
-        const nextDelay = 1000 + (currentIndex * 500);
+        // Increase the loading speed progressively for better UX
+        // First few blocks load faster, then the pace slows down
+        const nextDelay = currentIndex <= 3 ? 800 : 1200 + (Math.min(currentIndex, 8) * 200);
         blockLoadingTimerRef.current = setTimeout(loadNextBlock, nextDelay);
       } catch (error) {
         console.error('Error during progressive block loading:', error);
@@ -308,7 +346,8 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
       }
     };
     
-    blockLoadingTimerRef.current = setTimeout(loadNextBlock, 1000);
+    // Start loading immediately for better UX
+    blockLoadingTimerRef.current = setTimeout(loadNextBlock, 300);
   };
 
   const loadMoreBlocks = useCallback(async () => {
@@ -334,7 +373,6 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
           setHasMoreBlocks(totalBlocksLoaded + nextBatch.length < claudeResponseRef.current.length);
           
           for (const block of nextBatch) {
-            // Fix #3: Use proper Promise handling for the Supabase insert operations
             const { error } = await supabase.from('content_blocks').insert({
               ...block,
               curio_id: curioId

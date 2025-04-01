@@ -160,6 +160,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   const [imageRetryCount, setImageRetryCount] = useState(0);
   const [imageTimeout, setImageTimeout] = useState<NodeJS.Timeout | null>(null);
   const [imageRequestId, setImageRequestId] = useState<string>(`img-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`);
+  const [initialImageLoadAttempted, setInitialImageLoadAttempted] = useState(false);
   
   const specialist = SPECIALISTS[block.specialist_id] || {
     name: 'Wonder Wizard',
@@ -180,12 +181,12 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       setImageLoading(true);
       setImageError(null);
       
-      // Set timeout for image generation (15 seconds)
+      // Set timeout for image generation (12 seconds)
       const timeoutId = setTimeout(() => {
-        console.log(`[${reqId}][${block.id}] Image generation timed out after 15 seconds`);
+        console.log(`[${reqId}][${block.id}] Image generation timed out after 12 seconds`);
         setImageError("Generation timed out. Please try again.");
         setImageLoading(false);
-      }, 15000);
+      }, 12000);
       
       setImageTimeout(timeoutId);
       
@@ -234,13 +235,28 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       setImageError(err instanceof Error ? err.message : "Unknown error occurred");
     } finally {
       setImageLoading(false);
+      setInitialImageLoadAttempted(true);
     }
   }, [isFirstBlock, block, contextualImage, imageLoading, imageRetryCount, imageRequestId]);
   
-  // Set up retry logic
+  // Initial image generation - load immediately for first block
   useEffect(() => {
-    if (imageError && imageRetryCount < 2 && !contextualImage && !imageLoading) {
-      const retryDelay = 3000;
+    if (isFirstBlock && !initialImageLoadAttempted && !contextualImage && !imageLoading) {
+      console.log(`[${block.id}] Initial image generation triggering immediately`);
+      generateImage();
+    }
+    
+    return () => {
+      if (imageTimeout) {
+        clearTimeout(imageTimeout);
+      }
+    };
+  }, [isFirstBlock, contextualImage, imageLoading, generateImage, block.id, imageTimeout, initialImageLoadAttempted]);
+  
+  // Set up retry logic with shorter timeout (1.5s) for better UX
+  useEffect(() => {
+    if (imageError && imageRetryCount < 3 && !contextualImage && !imageLoading) {
+      const retryDelay = 1500; // Shorter retry delay: 1.5 seconds
       console.log(`[${block.id}] Setting up retry ${imageRetryCount + 1} in ${retryDelay}ms`);
       
       const retryTimer = setTimeout(() => {
@@ -255,20 +271,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       return () => clearTimeout(retryTimer);
     }
   }, [imageError, imageRetryCount, contextualImage, imageLoading, block.id, generateImage]);
-  
-  // Initial image generation
-  useEffect(() => {
-    if (isFirstBlock && !contextualImage && !imageLoading && imageRetryCount === 0) {
-      console.log(`[${block.id}] Initial image generation triggering`);
-      generateImage();
-    }
-    
-    return () => {
-      if (imageTimeout) {
-        clearTimeout(imageTimeout);
-      }
-    };
-  }, [isFirstBlock, contextualImage, imageLoading, imageRetryCount, generateImage, block.id, imageTimeout]);
   
   // Fetch replies
   useEffect(() => {
@@ -504,6 +506,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     setImageError(null);
     setImageRetryCount(0);
     setImageLoading(false);
+    setInitialImageLoadAttempted(false);
     setImageRequestId(`img-manual-retry-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`);
     setTimeout(() => {
       generateImage();
@@ -562,7 +565,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
                         className="h-full bg-wonderwhiz-purple"
                         initial={{ width: "0%" }}
                         animate={{ width: "100%" }}
-                        transition={{ duration: 12, ease: "linear" }}
+                        transition={{ duration: 10, ease: "linear" }}
                       />
                     </div>
                   </div>
@@ -614,6 +617,20 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
                       >
                         <RefreshCw className="h-3 w-3" />
                         Try Again
+                      </button>
+                    </div>
+                  ) : initialImageLoadAttempted ? (
+                    <div className="flex flex-col items-center text-center">
+                      <ImageOff className="h-7 w-7 text-white/30 mb-2" />
+                      <p className="text-white/50 text-xs mb-2">
+                        Illustration not available
+                      </p>
+                      <button 
+                        onClick={handleRetryImage}
+                        className="text-xs flex items-center gap-1.5 bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-full text-white transition-colors"
+                      >
+                        <RefreshCw className="h-3 w-3" />
+                        Generate Image
                       </button>
                     </div>
                   ) : (
