@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ContentBlock from '@/components/ContentBlock';
 import CurioLoadMore from '@/components/CurioLoadMore';
@@ -44,11 +44,37 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
   profileId,
   isFirstLoad = false,
 }) => {
+  const [renderedBlocks, setRenderedBlocks] = useState<ContentBlockType[]>([]);
+  
+  // Progressive rendering of blocks for better UX
+  useEffect(() => {
+    if (blocks.length === 0) {
+      setRenderedBlocks([]);
+      return;
+    }
+    
+    // Always show at least the first block immediately
+    if (blocks.length > 0 && renderedBlocks.length === 0) {
+      setRenderedBlocks([blocks[0]]);
+      
+      // Then add remaining blocks progressively
+      if (blocks.length > 1) {
+        const timer = setTimeout(() => {
+          setRenderedBlocks(blocks);
+        }, 300);
+        return () => clearTimeout(timer);
+      }
+    } else if (blocks.length !== renderedBlocks.length) {
+      // Update all blocks when array length changes
+      setRenderedBlocks(blocks);
+    }
+  }, [blocks]);
+  
   const containerVariants = {
     hidden: {},
     visible: {
       transition: {
-        staggerChildren: 0.15
+        staggerChildren: 0.12
       }
     }
   };
@@ -61,9 +87,9 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
         y: 0,
         transition: {
           type: "spring",
-          duration: 0.7,
-          delay: index * 0.08,
-          damping: 12
+          duration: 0.6,
+          delay: index * 0.07,
+          damping: 14
         }
       }
     };
@@ -177,7 +203,50 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
     }
   };
 
-  console.log("Rendering blocks:", blocks.length, "Search query:", searchQuery, "Animating:", animateBlocks);
+  // Empty state variants
+  const emptyStateVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { duration: 0.5 } }
+  };
+
+  const renderEmptyState = () => (
+    <motion.div
+      className="text-center py-12 px-4"
+      variants={emptyStateVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      {searchQuery ? (
+        <>
+          <motion.div 
+            className="text-wonderwhiz-purple/80 text-5xl mb-4"
+            animate={{ rotate: [0, 10, -10, 0] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            🔍
+          </motion.div>
+          <h3 className="text-white text-xl font-medium">No results found</h3>
+          <p className="text-white/60 mt-2">
+            We couldn't find any content matching "{searchQuery}"
+          </p>
+        </>
+      ) : (
+        <>
+          <motion.div 
+            className="text-wonderwhiz-purple/80 text-5xl mb-4"
+            animate={{ y: [0, -10, 0] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            ✨
+          </motion.div>
+          <h3 className="text-white text-xl font-medium">No content blocks yet</h3>
+          <p className="text-white/60 mt-2">
+            Start exploring by asking a question above!
+          </p>
+        </>
+      )}
+    </motion.div>
+  );
 
   return (
     <AnimatePresence mode="wait">
@@ -187,8 +256,8 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
         initial="hidden"
         animate={animateBlocks ? "visible" : "hidden"}
       >
-        {blocks.length > 0 ? (
-          blocks.map((block, index) => (
+        {renderedBlocks.length > 0 ? (
+          renderedBlocks.map((block, index) => (
             <motion.div
               key={block.id}
               className="block-container"
@@ -218,51 +287,17 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
             </motion.div>
           ))
         ) : (
-          <motion.div
-            className="text-center py-12 px-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          >
-            {searchQuery ? (
-              <>
-                <motion.div 
-                  className="text-wonderwhiz-purple/80 text-5xl mb-4"
-                  animate={{ rotate: [0, 10, -10, 0] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                >
-                  🔍
-                </motion.div>
-                <h3 className="text-white text-xl font-medium">No results found</h3>
-                <p className="text-white/60 mt-2">
-                  We couldn't find any content matching "{searchQuery}"
-                </p>
-              </>
-            ) : (
-              <>
-                <motion.div 
-                  className="text-wonderwhiz-purple/80 text-5xl mb-4"
-                  animate={{ y: [0, -10, 0] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                >
-                  ✨
-                </motion.div>
-                <h3 className="text-white text-xl font-medium">No content blocks yet</h3>
-                <p className="text-white/60 mt-2">
-                  Start exploring by asking a question above!
-                </p>
-              </>
-            )}
-          </motion.div>
+          renderEmptyState()
         )}
         
-        {(hasMoreBlocks && !searchQuery && blocks.length > 0) && (
+        {(hasMoreBlocks && !searchQuery && renderedBlocks.length > 0) && (
           <CurioLoadMore 
             loadingMoreBlocks={loadingMoreBlocks} 
             loadTriggerRef={loadTriggerRef} 
           />
         )}
         
-        {(!hasMoreBlocks && blocks.length > 0) && (
+        {(!hasMoreBlocks && renderedBlocks.length > 0) && (
           <motion.div 
             className="text-center py-6"
             initial={{ opacity: 0 }}

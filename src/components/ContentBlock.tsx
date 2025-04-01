@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { BookmarkIcon, ThumbsUpIcon, MessageCircleIcon, ImageIcon, Loader, AlertCircle, Image, ImageOff, RefreshCw } from 'lucide-react';
@@ -158,6 +159,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   const [imageError, setImageError] = useState<string | null>(null);
   const [imageRetryCount, setImageRetryCount] = useState(0);
   const [imageTimeout, setImageTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [imageRequestId, setImageRequestId] = useState<string>(`img-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`);
   
   const specialist = SPECIALISTS[block.specialist_id] || {
     name: 'Wonder Wizard',
@@ -170,38 +172,45 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   const blockTitle = getBlockTitle(block);
   
   const generateImage = useCallback(async () => {
-    if (!isFirstBlock || contextualImage || imageLoading) return;
+    if (!isFirstBlock || contextualImage || imageLoading || imageRetryCount > 2) return;
     
     try {
-      console.log(`[${block.id}] Attempting to generate image for block type:`, block.type);
+      const reqId = imageRequestId;
+      console.log(`[${reqId}][${block.id}] Starting image generation for block type:`, block.type);
       setImageLoading(true);
       setImageError(null);
       
+      // Set timeout for image generation (15 seconds)
       const timeoutId = setTimeout(() => {
-        console.log(`[${block.id}] Image generation timeout after 15 seconds`);
-        setImageError("Image generation timed out. Please try again.");
+        console.log(`[${reqId}][${block.id}] Image generation timed out after 15 seconds`);
+        setImageError("Generation timed out. Please try again.");
         setImageLoading(false);
       }, 15000);
       
       setImageTimeout(timeoutId);
       
+      // Call the Supabase Edge Function to generate the image
+      const startTime = Date.now();
       const { data, error } = await supabase.functions.invoke('generate-contextual-image', {
         body: {
           blockContent: block.content,
           blockType: block.type,
+          requestId: reqId,
           timestamp: new Date().toISOString()
         }
       });
       
+      // Clear timeout as we got a response (either success or error)
       if (imageTimeout) {
         clearTimeout(imageTimeout);
         setImageTimeout(null);
       }
       
-      console.log(`[${block.id}] Image generation response:`, { success: !!data, hasError: !!error });
+      const duration = (Date.now() - startTime) / 1000;
+      console.log(`[${reqId}][${block.id}] Image generation response received after ${duration}s:`, { success: !!data, hasError: !!error });
       
       if (error) {
-        console.error(`[${block.id}] Supabase function error:`, error);
+        console.error(`[${reqId}][${block.id}] Supabase function error:`, error);
         throw new Error(`Edge function error: ${error.message}`);
       }
       
@@ -210,12 +219,12 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       }
       
       if (data.error) {
-        console.error(`[${block.id}] Image generation error:`, data.error);
+        console.error(`[${reqId}][${block.id}] Image generation error:`, data.error);
         throw new Error(data.error);
       }
       
       if (data && data.image) {
-        console.log(`[${block.id}] Image generated successfully`);
+        console.log(`[${reqId}][${block.id}] Image generated successfully, size: ${data.image.length} chars`);
         setContextualImage(data.image);
       } else {
         throw new Error("No image data in response");
@@ -223,15 +232,12 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     } catch (err) {
       console.error(`[${block.id}] Error generating contextual image:`, err);
       setImageError(err instanceof Error ? err.message : "Unknown error occurred");
-      
-      if (imageRetryCount < 2) {
-        console.log(`[${block.id}] Will retry image generation...`);
-      }
     } finally {
       setImageLoading(false);
     }
-  }, [isFirstBlock, block, contextualImage, imageLoading, imageRetryCount]);
+  }, [isFirstBlock, block, contextualImage, imageLoading, imageRetryCount, imageRequestId]);
   
+  // Set up retry logic
   useEffect(() => {
     if (imageError && imageRetryCount < 2 && !contextualImage && !imageLoading) {
       const retryDelay = 3000;
@@ -241,6 +247,8 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         console.log(`[${block.id}] Retrying image generation (attempt ${imageRetryCount + 1})`);
         setImageRetryCount(prev => prev + 1);
         setImageError(null);
+        // Generate a new request ID for this retry
+        setImageRequestId(`img-retry-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`);
         generateImage();
       }, retryDelay);
       
@@ -248,6 +256,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     }
   }, [imageError, imageRetryCount, contextualImage, imageLoading, block.id, generateImage]);
   
+  // Initial image generation
   useEffect(() => {
     if (isFirstBlock && !contextualImage && !imageLoading && imageRetryCount === 0) {
       console.log(`[${block.id}] Initial image generation triggering`);
@@ -261,6 +270,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     };
   }, [isFirstBlock, contextualImage, imageLoading, imageRetryCount, generateImage, block.id, imageTimeout]);
   
+  // Fetch replies
   useEffect(() => {
     const fetchReplies = async () => {
       try {
@@ -292,7 +302,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       }
     };
     
-    if (block.id) {
+    if (block.id && !block.id.startsWith('generating-')) {
       fetchReplies();
     }
   }, [block.id]);
@@ -494,11 +504,17 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     setImageError(null);
     setImageRetryCount(0);
     setImageLoading(false);
+    setImageRequestId(`img-manual-retry-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`);
     setTimeout(() => {
       generateImage();
     }, 100);
   };
   
+  // Skip rendering temporarily generated blocks
+  if (block.id.startsWith('generating-') && !isFirstBlock) {
+    return null;
+  }
+
   return (
     <Card className={`overflow-hidden transition-colors duration-300 hover:shadow-md w-full ${specialistStyle.gradient} bg-opacity-10`}>
       <div className="p-2.5 sm:p-3 md:p-4 bg-wonderwhiz-purple">
@@ -535,7 +551,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ duration: 0.3 }}
                   className={`${getContextualImageStyle()} flex items-center justify-center bg-gradient-to-r from-purple-900/30 to-indigo-900/30`}
                 >
                   <div className="flex flex-col items-center">
@@ -568,6 +584,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
                     onError={() => {
                       console.error(`[${block.id}] Image failed to load from data URL`);
                       setImageError("Image failed to load");
+                      setContextualImage(null);
                     }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center p-2">
@@ -582,7 +599,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ duration: 0.3 }}
                   className={`${getContextualImageStyle()} flex flex-col items-center justify-center bg-gradient-to-r from-purple-900/20 to-indigo-900/20 border border-dashed border-white/20 p-4`}
                 >
                   {imageError ? (

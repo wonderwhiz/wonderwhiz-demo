@@ -1,11 +1,10 @@
-
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { ContentBlock, isValidContentBlockType } from '@/types/curio';
 import { debounce } from 'lodash';
 
-const BATCH_SIZE = 2;
+const BATCH_SIZE = 3;
 const INITIAL_BLOCKS_TO_LOAD = 2;
 
 export const useCurioData = (curioId?: string, profileId?: string) => {
@@ -22,8 +21,10 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const [generationStartTime, setGenerationStartTime] = useState<number | null>(null);
+  
+  const claudeResponseRef = useRef<any>(null);
+  const blockLoadingTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Helper function to convert database blocks to ContentBlock type
   const convertToContentBlocks = (dbBlocks: any[]): ContentBlock[] => {
     return dbBlocks.map(block => {
       if (!isValidContentBlockType(block.type)) {
@@ -44,15 +45,13 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
     });
   };
 
-  // Extract fetchInitialBlocks as a standalone function to be used elsewhere in the hook
   const fetchInitialBlocks = useCallback(async (curioId: string) => {
     if (!curioId) return;
     
     try {
       setIsLoading(true);
-      console.log(`Fetching initial ${INITIAL_BLOCKS_TO_LOAD} blocks...`);
+      console.log(`Fetching initial ${INITIAL_BLOCKS_TO_LOAD} blocks for curio: ${curioId}`);
       
-      // First check if we already have blocks for this curio
       const { data: existingBlocks, error: blocksError } = await supabase
         .from('content_blocks')
         .select('*')
@@ -65,7 +64,6 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
       }
       
       if (existingBlocks && existingBlocks.length > 0) {
-        // We have existing blocks, use them
         console.log(`Found ${existingBlocks.length} existing blocks`);
         
         const mappedBlocks = convertToContentBlocks(existingBlocks);
@@ -73,7 +71,6 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
         setBlocks(mappedBlocks);
         setTotalBlocksLoaded(mappedBlocks.length);
         
-        // Check if there are potentially more blocks to load
         const { count, error: countError } = await supabase
           .from('content_blocks')
           .select('*', { count: 'exact', head: true })
@@ -84,18 +81,15 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
           setHasMoreBlocks(count > INITIAL_BLOCKS_TO_LOAD);
         }
         
-        // Since we're loading existing blocks, we're not in the first load anymore
         setIsFirstLoad(false);
       } else {
-        // No existing blocks, generate new ones
         console.log('No existing blocks found, generating new ones');
         setIsGeneratingContent(true);
         setGenerationStartTime(Date.now());
         
-        // Create placeholder blocks for better UX
         setBlocks([
           {
-            id: 'generating-1',
+            id: `generating-${Date.now()}-1`,
             curio_id: curioId,
             specialist_id: 'nova',
             type: 'fact',
@@ -106,10 +100,8 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
           } as ContentBlock
         ]);
         
-        // Set initial load as complete so UI can show the placeholder
         setInitialLoadComplete(true);
         
-        // Start generating new blocks in background
         generateNewBlocks(curioId, query);
       }
     } catch (error) {
@@ -124,7 +116,6 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
     }
   }, [query]);
 
-  // Fetch curio basic info
   useEffect(() => {
     const fetchCurioBasicInfo = async () => {
       if (!curioId) return;
@@ -163,21 +154,26 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
     fetchCurioBasicInfo();
   }, [curioId]);
 
-  // Fetch curio content blocks separately after basic info
   useEffect(() => {
     if (!isLoadingBasicInfo && curioId && query) {
       fetchInitialBlocks(curioId);
     }
   }, [curioId, query, isLoadingBasicInfo, fetchInitialBlocks]);
 
-  // Generate new blocks from Claude
+  useEffect(() => {
+    return () => {
+      if (blockLoadingTimerRef.current) {
+        clearTimeout(blockLoadingTimerRef.current);
+      }
+    };
+  }, []);
+
   const generateNewBlocks = async (curioId: string, query: string) => {
     if (!query || !profileId) return;
     
     try {
       console.log('Generating new blocks from Claude API');
       
-      // Get child profile data for generation
       const { data: profileData, error: profileError } = await supabase
         .from('child_profiles')
         .select('*')
@@ -186,7 +182,6 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
         
       if (profileError) throw profileError;
       
-      // Call Claude to generate content blocks
       const response = await supabase.functions.invoke('generate-curiosity-blocks', {
         body: {
           query,
@@ -203,43 +198,43 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
       }
       
       const generatedBlocks = response.data || [];
-      console.log('Generated blocks:', generatedBlocks);
+      console.log('Generated blocks from Claude:', generatedBlocks.length);
       
       if (!generatedBlocks.length) {
         throw new Error('No content blocks were generated');
       }
       
-      // Take only the first batch for immediate display
-      const initialBlocks = generatedBlocks.slice(0, INITIAL_BLOCKS_TO_LOAD);
+      claudeResponseRef.current = generatedBlocks;
       
-      // Add curio_id to each block
-      const blocksWithCurioId = initialBlocks.map(block => ({
-        ...block,
+      const initialBlock = generatedBlocks[0];
+      
+      const blockWithCurioId = {
+        ...initialBlock,
         curio_id: curioId
-      }));
+      };
       
-      // Save all generated blocks to the database in the background
-      setTimeout(async () => {
-        for (const block of generatedBlocks) {
-          await supabase.from('content_blocks').insert({
-            ...block,
-            curio_id: curioId
-          });
-        }
-      }, 100);
+      setBlocks([convertToContentBlocks([blockWithCurioId])[0]]);
+      setTotalBlocksLoaded(1);
+      setHasMoreBlocks(generatedBlocks.length > 1);
       
-      // Set the blocks in state
-      setBlocks(convertToContentBlocks(blocksWithCurioId));
-      setTotalBlocksLoaded(INITIAL_BLOCKS_TO_LOAD);
-      setHasMoreBlocks(generatedBlocks.length > INITIAL_BLOCKS_TO_LOAD);
+      try {
+        await supabase.from('content_blocks').insert({
+          ...initialBlock,
+          curio_id: curioId
+        });
+      } catch (saveError) {
+        console.error('Error saving first block:', saveError);
+      }
       
-      // Calculate how long generation took
+      loadRemainingBlocksProgressively(curioId, generatedBlocks);
+      
       if (generationStartTime) {
         const generationTime = Math.round((Date.now() - generationStartTime) / 1000);
-        console.log(`Content generation completed in ${generationTime} seconds`);
+        console.log(`Initial content generation completed in ${generationTime} seconds`);
       }
       
       setIsFirstLoad(false);
+      setIsGeneratingContent(false);
     } catch (error) {
       console.error('Error generating content blocks:', error);
       toast({
@@ -247,19 +242,115 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
         description: error instanceof Error ? error.message : "Could not generate content blocks",
         variant: "destructive"
       });
-    } finally {
       setIsGeneratingContent(false);
+      
+      setBlocks([{
+        id: `error-${Date.now()}`,
+        curio_id: curioId,
+        specialist_id: 'nova',
+        type: 'fact',
+        content: { fact: "Sorry, I couldn't generate content at the moment. Please try again.", rabbitHoles: [] },
+        liked: false,
+        bookmarked: false,
+        created_at: new Date().toISOString()
+      } as ContentBlock]);
     }
+  };
+
+  const loadRemainingBlocksProgressively = (curioId: string, generatedBlocks: any[]) => {
+    if (generatedBlocks.length <= 1) return;
+    
+    let currentIndex = 1;
+    
+    const loadNextBlock = async () => {
+      if (currentIndex >= generatedBlocks.length) {
+        blockLoadingTimerRef.current = null;
+        return;
+      }
+      
+      try {
+        const nextBlock = generatedBlocks[currentIndex];
+        
+        setBlocks(prevBlocks => [...prevBlocks, {
+          ...nextBlock,
+          curio_id: curioId
+        } as ContentBlock]);
+        
+        setTotalBlocksLoaded(prev => prev + 1);
+        
+        setHasMoreBlocks(currentIndex < generatedBlocks.length - 1);
+        
+        supabase.from('content_blocks').insert({
+          ...nextBlock,
+          curio_id: curioId
+        }).then(() => {
+          console.log(`Successfully saved block ${currentIndex + 1}/${generatedBlocks.length}`);
+        }).catch(error => {
+          console.error(`Error saving block ${currentIndex + 1}:`, error);
+        });
+        
+        currentIndex++;
+        
+        const nextDelay = 1000 + (currentIndex * 500);
+        blockLoadingTimerRef.current = setTimeout(loadNextBlock, nextDelay);
+      } catch (error) {
+        console.error('Error during progressive block loading:', error);
+        blockLoadingTimerRef.current = null;
+      }
+    };
+    
+    blockLoadingTimerRef.current = setTimeout(loadNextBlock, 1000);
   };
 
   const loadMoreBlocks = useCallback(async () => {
     if (!hasMoreBlocks || loadingMoreBlocks || !curioId) return;
     
-    console.log('Loading more blocks...');
+    if (claudeResponseRef.current && Array.isArray(claudeResponseRef.current)) {
+      const remainingBlocks = claudeResponseRef.current.slice(totalBlocksLoaded);
+      if (remainingBlocks.length > 0) {
+        console.log(`Loading more blocks from Claude's response: ${totalBlocksLoaded + 1} to ${totalBlocksLoaded + Math.min(BATCH_SIZE, remainingBlocks.length)}`);
+        setLoadingMoreBlocks(true);
+        
+        try {
+          const nextBatch = remainingBlocks.slice(0, BATCH_SIZE);
+          
+          const blocksWithCurioId = nextBatch.map((block: any) => ({
+            ...block,
+            curio_id: curioId
+          }));
+          
+          setBlocks(prev => [...prev, ...convertToContentBlocks(blocksWithCurioId)]);
+          setTotalBlocksLoaded(prev => prev + nextBatch.length);
+          
+          setHasMoreBlocks(totalBlocksLoaded + nextBatch.length < claudeResponseRef.current.length);
+          
+          for (const block of nextBatch) {
+            supabase.from('content_blocks').insert({
+              ...block,
+              curio_id: curioId
+            }).catch(error => {
+              console.error('Error saving block to database:', error);
+            });
+          }
+        } catch (error) {
+          console.error('Error loading more blocks from Claude response:', error);
+          toast({
+            title: "Error",
+            description: "Could not load more content",
+            variant: "destructive"
+          });
+        } finally {
+          setLoadingMoreBlocks(false);
+        }
+        
+        return;
+      }
+    }
+    
+    console.log('Loading more blocks from database...');
     setLoadingMoreBlocks(true);
     
     try {
-      // First try to fetch more existing blocks
       const { data: nextBlocks, error } = await supabase
         .from('content_blocks')
         .select('*')
@@ -270,15 +361,13 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
       if (error) throw error;
       
       if (nextBlocks && nextBlocks.length > 0) {
-        // We got more existing blocks
-        console.log(`Loaded ${nextBlocks.length} more blocks`);
+        console.log(`Loaded ${nextBlocks.length} more blocks from database`);
         
         const mappedBlocks = convertToContentBlocks(nextBlocks);
         
         setBlocks(prev => [...prev, ...mappedBlocks]);
         setTotalBlocksLoaded(prev => prev + mappedBlocks.length);
         
-        // Check if there are more blocks to load
         const { count, error: countError } = await supabase
           .from('content_blocks')
           .select('*', { count: 'exact', head: true })
@@ -288,8 +377,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
           setHasMoreBlocks(count > totalBlocksLoaded + mappedBlocks.length);
         }
       } else {
-        // No more blocks in the database
-        console.log('No more blocks available');
+        console.log('No more blocks available in database');
         setHasMoreBlocks(false);
       }
     } catch (error) {
@@ -305,6 +393,8 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
   }, [hasMoreBlocks, loadingMoreBlocks, totalBlocksLoaded, curioId]);
 
   const handleToggleLike = useCallback(async (blockId: string) => {
+    if (blockId.startsWith('generating-') || blockId.startsWith('error-')) return;
+    
     setBlocks(prev => 
       prev.map(block => 
         block.id === blockId 
@@ -314,9 +404,12 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
     );
 
     try {
+      const currentBlock = blocks.find(b => b.id === blockId);
+      const newLikedStatus = currentBlock ? !currentBlock.liked : true;
+      
       const { error } = await supabase
         .from('content_blocks')
-        .update({ liked: blocks.find(b => b.id === blockId)?.liked ? false : true })
+        .update({ liked: newLikedStatus })
         .eq('id', blockId);
         
       if (error) throw error;
@@ -331,6 +424,8 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
   }, [blocks]);
 
   const handleToggleBookmark = useCallback(async (blockId: string) => {
+    if (blockId.startsWith('generating-') || blockId.startsWith('error-')) return;
+    
     setBlocks(prev => 
       prev.map(block => 
         block.id === blockId 
@@ -340,9 +435,12 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
     );
 
     try {
+      const currentBlock = blocks.find(b => b.id === blockId);
+      const newBookmarkedStatus = currentBlock ? !currentBlock.bookmarked : true;
+      
       const { error } = await supabase
         .from('content_blocks')
-        .update({ bookmarked: blocks.find(b => b.id === blockId)?.bookmarked ? false : true })
+        .update({ bookmarked: newBookmarkedStatus })
         .eq('id', blockId);
         
       if (error) throw error;
@@ -357,6 +455,8 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
   }, [blocks]);
 
   const handleSearch = debounce(async (value: string) => {
+    claudeResponseRef.current = null;
+    
     if (!curioId || value.trim() === '') return;
     
     console.log('Searching for:', value);
@@ -380,7 +480,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
         
         setBlocks(mappedBlocks);
         setTotalBlocksLoaded(mappedBlocks.length);
-        setHasMoreBlocks(false); // Disable infinite scroll in search mode
+        setHasMoreBlocks(false);
       } else {
         setBlocks([]);
         toast({
@@ -402,6 +502,8 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
   }, 300);
 
   const clearSearch = () => {
+    claudeResponseRef.current = null;
+    
     setSearchQuery('');
     fetchInitialBlocks(curioId || '');
   };
