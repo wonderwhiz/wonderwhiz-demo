@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ContentBlock from '@/components/ContentBlock';
@@ -21,6 +22,7 @@ interface CurioBlockListProps {
   handleActivityComplete?: () => void;
   handleMindfulnessComplete?: () => void;
   profileId?: string;
+  isFirstLoad?: boolean;
 }
 
 const CurioBlockList: React.FC<CurioBlockListProps> = ({
@@ -40,6 +42,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
   handleActivityComplete,
   handleMindfulnessComplete,
   profileId,
+  isFirstLoad = false,
 }) => {
   const containerVariants = {
     hidden: {},

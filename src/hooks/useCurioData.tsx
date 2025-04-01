@@ -20,6 +20,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
   const [totalBlocksLoaded, setTotalBlocksLoaded] = useState(0);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
 
   // Helper function to convert database blocks to ContentBlock type
   const convertToContentBlocks = (dbBlocks: any[]): ContentBlock[] => {
@@ -81,6 +82,9 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
           console.log(`Total blocks available: ${count}`);
           setHasMoreBlocks(count > INITIAL_BLOCKS_TO_LOAD);
         }
+        
+        // Since we're loading existing blocks, we're not in the first load anymore
+        setIsFirstLoad(false);
       } else {
         // No existing blocks, generate new ones
         console.log('No existing blocks found, generating new ones');
@@ -97,6 +101,11 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
             created_at: new Date().toISOString()
           } as ContentBlock
         ]);
+        
+        // Set initial load as complete so UI can show the placeholder
+        setInitialLoadComplete(true);
+        
+        // Start generating new blocks in background
         await generateNewBlocks(curioId, query);
       }
     } catch (error) {
@@ -196,7 +205,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
         throw new Error('No content blocks were generated');
       }
       
-      // Take only the first batch
+      // Take only the first batch for immediate display
       const initialBlocks = generatedBlocks.slice(0, INITIAL_BLOCKS_TO_LOAD);
       
       // Add curio_id to each block
@@ -217,6 +226,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
       setBlocks(convertToContentBlocks(blocksWithCurioId));
       setTotalBlocksLoaded(INITIAL_BLOCKS_TO_LOAD);
       setHasMoreBlocks(generatedBlocks.length > INITIAL_BLOCKS_TO_LOAD);
+      setIsFirstLoad(false);
     } catch (error) {
       console.error('Error generating content blocks:', error);
       toast({
@@ -400,6 +410,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
     handleToggleLike,
     handleToggleBookmark,
     handleSearch,
-    clearSearch
+    clearSearch,
+    isFirstLoad
   };
 };

@@ -34,7 +34,8 @@ const CurioPage: React.FC = () => {
     handleToggleLike,
     handleToggleBookmark,
     handleSearch,
-    clearSearch
+    clearSearch,
+    isFirstLoad
   } = useCurioData(curioId, profileId);
 
   const {
@@ -133,11 +134,7 @@ const CurioPage: React.FC = () => {
     }
   }, [isLoadTriggerVisible, hasMoreBlocks, loadingMoreBlocks, isLoading, initialLoadComplete, loadMoreBlocks]);
 
-  useEffect(() => {
-    return () => {
-    };
-  }, []);
-
+  // Show loading immediately if this is the first load
   if (isLoading && blocks.length === 0) {
     return <CurioLoading />;
   }
@@ -220,6 +217,7 @@ const CurioPage: React.FC = () => {
               handleActivityComplete={handleActivityComplete}
               handleMindfulnessComplete={handleMindfulnessComplete}
               profileId={profileId}
+              isFirstLoad={isFirstLoad}
             />
           </ScrollArea>
         </Card>
