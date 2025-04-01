@@ -21,6 +21,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isFirstLoad, setIsFirstLoad] = useState(true);
+  const [generationStartTime, setGenerationStartTime] = useState<number | null>(null);
 
   // Helper function to convert database blocks to ContentBlock type
   const convertToContentBlocks = (dbBlocks: any[]): ContentBlock[] => {
@@ -89,6 +90,9 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
         // No existing blocks, generate new ones
         console.log('No existing blocks found, generating new ones');
         setIsGeneratingContent(true);
+        setGenerationStartTime(Date.now());
+        
+        // Create placeholder blocks for better UX
         setBlocks([
           {
             id: 'generating-1',
@@ -106,7 +110,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
         setInitialLoadComplete(true);
         
         // Start generating new blocks in background
-        await generateNewBlocks(curioId, query);
+        generateNewBlocks(curioId, query);
       }
     } catch (error) {
       console.error('Error fetching initial blocks:', error);
@@ -214,18 +218,27 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
         curio_id: curioId
       }));
       
-      // Save all generated blocks to the database
-      for (const block of generatedBlocks) {
-        await supabase.from('content_blocks').insert({
-          ...block,
-          curio_id: curioId
-        });
-      }
+      // Save all generated blocks to the database in the background
+      setTimeout(async () => {
+        for (const block of generatedBlocks) {
+          await supabase.from('content_blocks').insert({
+            ...block,
+            curio_id: curioId
+          });
+        }
+      }, 100);
       
       // Set the blocks in state
       setBlocks(convertToContentBlocks(blocksWithCurioId));
       setTotalBlocksLoaded(INITIAL_BLOCKS_TO_LOAD);
       setHasMoreBlocks(generatedBlocks.length > INITIAL_BLOCKS_TO_LOAD);
+      
+      // Calculate how long generation took
+      if (generationStartTime) {
+        const generationTime = Math.round((Date.now() - generationStartTime) / 1000);
+        console.log(`Content generation completed in ${generationTime} seconds`);
+      }
+      
       setIsFirstLoad(false);
     } catch (error) {
       console.error('Error generating content blocks:', error);

@@ -11,8 +11,9 @@ import { useCurioData } from '@/hooks/useCurioData';
 import { useBlockInteractions } from '@/hooks/useBlockInteractions';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const CurioPage: React.FC = () => {
   const { profileId, curioId } = useParams<{ profileId: string; curioId: string }>();
@@ -109,6 +110,7 @@ const CurioPage: React.FC = () => {
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   
+  // Effect for initial blocks loading and scrolling
   useEffect(() => {
     if (blocks.length > 0 && !isLoading && !initialLoadComplete) {
       console.log('Initial blocks loaded, preparing to auto-scroll');
@@ -127,6 +129,7 @@ const CurioPage: React.FC = () => {
     }
   }, [blocks.length, isLoading, initialLoadComplete, setInitialLoadComplete]);
 
+  // Effect for infinite scroll
   useEffect(() => {
     if (isLoadTriggerVisible && hasMoreBlocks && !loadingMoreBlocks && !isLoading && initialLoadComplete) {
       console.log('Load trigger visible, loading more blocks');
@@ -134,8 +137,8 @@ const CurioPage: React.FC = () => {
     }
   }, [isLoadTriggerVisible, hasMoreBlocks, loadingMoreBlocks, isLoading, initialLoadComplete, loadMoreBlocks]);
 
-  // Show loading immediately if this is the first load
-  if (isLoading && blocks.length === 0) {
+  // Show loading indicator immediately on first page load
+  if (isLoading && blocks.length === 0 && !isGeneratingContent) {
     return <CurioLoading />;
   }
 
@@ -146,16 +149,21 @@ const CurioPage: React.FC = () => {
       </Helmet>
       
       <div className="container px-4 py-3 sm:py-5">
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2 sm:mb-3 text-center">
-          {title || (
-            <motion.div
-              className="h-8 w-3/5 mx-auto bg-white/10 rounded animate-pulse"
-              initial={{ opacity: 0.6 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 1, repeat: Infinity, repeatType: "reverse" }}
-            ></motion.div>
-          )}
-        </h1>
+        <AnimatePresence mode="wait">
+          <motion.h1 
+            key={title || 'loading'}
+            className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2 sm:mb-3 text-center"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            {title || (
+              <div className="flex justify-center items-center">
+                <Skeleton className="h-8 w-3/5 bg-white/10 rounded" />
+              </div>
+            )}
+          </motion.h1>
+        </AnimatePresence>
         
         <CurioSearch
           searchQuery={searchQuery}

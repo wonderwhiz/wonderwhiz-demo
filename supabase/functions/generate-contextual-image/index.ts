@@ -15,11 +15,26 @@ serve(async (req) => {
   }
 
   try {
-    console.log("Received image generation request");
+    console.log("Received image generation request", new Date().toISOString());
     
-    const { blockContent, blockType } = await req.json();
-    console.log("Request data received:", { blockType });
-    console.log("Content preview:", JSON.stringify(blockContent).substring(0, 100) + "...");
+    // Parse request body
+    let blockContent, blockType;
+    try {
+      const requestData = await req.json();
+      blockContent = requestData.blockContent;
+      blockType = requestData.blockType;
+      
+      console.log("Request data received:", { blockType });
+      console.log("Content sample:", JSON.stringify(blockContent).substring(0, 100) + "...");
+    } catch (parseError) {
+      console.error("Error parsing request body:", parseError);
+      throw new Error(`Invalid request format: ${parseError.message}`);
+    }
+    
+    if (!blockContent || !blockType) {
+      console.error("Missing required parameters");
+      throw new Error('Missing required parameters: blockContent and blockType');
+    }
     
     // Get the HF token from environment variables
     const HUGGING_FACE_ACCESS_TOKEN = Deno.env.get('HUGGING_FACE_ACCESS_TOKEN');
@@ -28,7 +43,7 @@ serve(async (req) => {
       throw new Error('HUGGING_FACE_ACCESS_TOKEN is not set');
     }
     
-    console.log("HF token found, initializing client");
+    console.log("Initializing Hugging Face client");
     const hf = new HfInference(HUGGING_FACE_ACCESS_TOKEN);
 
     // Generate an appropriate prompt based on block type and content
@@ -71,22 +86,31 @@ serve(async (req) => {
     // Make sure the prompt is safe for kids and has appropriate style
     prompt += ", digital art style, bright colors, educational, safe for kids, no text, no words";
 
-    console.log("Generated prompt:", prompt);
+    console.log("Generated prompt for image:", prompt);
     
     // Generate the image using the Hugging Face API
     console.log("Calling Hugging Face API...");
     try {
+      const startTime = new Date();
+      console.log(`HF API call started at: ${startTime.toISOString()}`);
+      
       const image = await hf.textToImage({
         inputs: prompt,
         model: "black-forest-labs/FLUX.1-schnell", // Fast and high quality model
+        parameters: {
+          guidance_scale: 7.5,
+          num_inference_steps: 30,
+        }
       });
 
-      console.log("Image generated successfully");
+      const endTime = new Date();
+      const duration = (endTime.getTime() - startTime.getTime()) / 1000;
+      console.log(`HF API call finished at: ${endTime.toISOString()}, took ${duration} seconds`);
 
       // Convert the blob to a base64 string
       const arrayBuffer = await image.arrayBuffer();
       const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-      console.log("Image converted to base64");
+      console.log("Image converted to base64, size:", base64.length);
 
       return new Response(
         JSON.stringify({ image: `data:image/png;base64,${base64}` }),
@@ -94,15 +118,19 @@ serve(async (req) => {
       );
     } catch (hfError) {
       console.error('Error from Hugging Face API:', hfError);
-      throw new Error(`Hugging Face API error: ${hfError.message}`);
+      console.error('Error details:', JSON.stringify(hfError));
+      throw new Error(`Hugging Face API error: ${hfError.message || 'Unknown error'}`);
     }
   } catch (error) {
     console.error('Error generating image:', error);
     console.error('Error stack:', error.stack);
+    
+    // Return a structured error response
     return new Response(
       JSON.stringify({ 
         error: error.message, 
         stack: error.stack,
+        timestamp: new Date().toISOString(),
         message: "Failed to generate image"
       }),
       { 
