@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -218,10 +219,15 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
       setHasMoreBlocks(generatedBlocks.length > 1);
       
       try {
-        await supabase.from('content_blocks').insert({
+        // Fix #1: Add proper error handling for the Supabase insert operation
+        const { error } = await supabase.from('content_blocks').insert({
           ...initialBlock,
           curio_id: curioId
         });
+        
+        if (error) {
+          console.error('Error saving first block:', error);
+        }
       } catch (saveError) {
         console.error('Error saving first block:', saveError);
       }
@@ -280,14 +286,17 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
         
         setHasMoreBlocks(currentIndex < generatedBlocks.length - 1);
         
-        supabase.from('content_blocks').insert({
+        // Fix #2: Use proper Promise handling for the Supabase insert operation
+        const { error } = await supabase.from('content_blocks').insert({
           ...nextBlock,
           curio_id: curioId
-        }).then(() => {
-          console.log(`Successfully saved block ${currentIndex + 1}/${generatedBlocks.length}`);
-        }).catch(error => {
-          console.error(`Error saving block ${currentIndex + 1}:`, error);
         });
+        
+        if (error) {
+          console.error(`Error saving block ${currentIndex + 1}:`, error);
+        } else {
+          console.log(`Successfully saved block ${currentIndex + 1}/${generatedBlocks.length}`);
+        }
         
         currentIndex++;
         
@@ -325,12 +334,15 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
           setHasMoreBlocks(totalBlocksLoaded + nextBatch.length < claudeResponseRef.current.length);
           
           for (const block of nextBatch) {
-            supabase.from('content_blocks').insert({
+            // Fix #3: Use proper Promise handling for the Supabase insert operations
+            const { error } = await supabase.from('content_blocks').insert({
               ...block,
               curio_id: curioId
-            }).catch(error => {
-              console.error('Error saving block to database:', error);
             });
+            
+            if (error) {
+              console.error('Error saving block to database:', error);
+            }
           }
         } catch (error) {
           console.error('Error loading more blocks from Claude response:', error);
@@ -470,8 +482,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
         .textSearch('content', value, {
           type: 'websearch',
           config: 'english'
-        })
-        .limit(INITIAL_BLOCKS_TO_LOAD);
+        });
         
       if (error) throw error;
       
