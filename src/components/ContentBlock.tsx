@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { BookmarkIcon, ThumbsUpIcon, MessageCircleIcon, ImageIcon, Loader, AlertCircle, Image, ImageOff, RefreshCw } from 'lucide-react';
@@ -239,7 +238,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     }
   }, [isFirstBlock, block, contextualImage, imageLoading, imageRetryCount, imageRequestId]);
   
-  // Initial image generation - load immediately for first block
   useEffect(() => {
     if (isFirstBlock && !initialImageLoadAttempted && !contextualImage && !imageLoading) {
       console.log(`[${block.id}] Initial image generation triggering immediately`);
@@ -253,7 +251,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     };
   }, [isFirstBlock, contextualImage, imageLoading, generateImage, block.id, imageTimeout, initialImageLoadAttempted]);
   
-  // Set up retry logic with shorter timeout (1.5s) for better UX
   useEffect(() => {
     if (imageError && imageRetryCount < 3 && !contextualImage && !imageLoading) {
       const retryDelay = 1500; // Shorter retry delay: 1.5 seconds
@@ -263,7 +260,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         console.log(`[${block.id}] Retrying image generation (attempt ${imageRetryCount + 1})`);
         setImageRetryCount(prev => prev + 1);
         setImageError(null);
-        // Generate a new request ID for this retry
         setImageRequestId(`img-retry-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`);
         generateImage();
       }, retryDelay);
@@ -272,7 +268,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     }
   }, [imageError, imageRetryCount, contextualImage, imageLoading, block.id, generateImage]);
   
-  // Fetch replies
   useEffect(() => {
     const fetchReplies = async () => {
       try {
@@ -311,8 +306,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   const handleSubmitReply = async (replyText: string) => {
     if (!replyText.trim() || !userId || !childProfileId) {
       if (!userId || !childProfileId) {
-        toast({
-          description: "You need to be logged in to send messages.",
+        toast("You need to be logged in to send messages.", {
           variant: "destructive"
         });
       }
@@ -383,8 +377,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
 
       setReplies(prev => prev.filter(r => r.id !== tempId));
       
-      toast({
-        description: "There was an error sending your message. Please try again.",
+      toast("There was an error sending your message. Please try again.", {
         variant: "destructive"
       });
     } finally {
@@ -455,9 +448,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       }
     } catch (error) {
       console.error('Error getting specialist reply:', error);
-      toast({
-        description: "There was an error getting a response. Please try again."
-      });
+      toast("There was an error getting a response. Please try again.");
     }
   };
   
@@ -508,7 +499,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     }, 100);
   };
   
-  // Skip rendering temporarily generated blocks
   if (block.id.startsWith('generating-') && !isFirstBlock) {
     return null;
   }
