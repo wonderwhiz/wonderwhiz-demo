@@ -183,8 +183,8 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       // Set timeout for image generation (12 seconds)
       const timeoutId = setTimeout(() => {
         console.log(`[${reqId}][${block.id}] Image generation timed out after 12 seconds`);
-        setImageError("Generation timed out. Please try again.");
         setImageLoading(false);
+        setImageError("Generation timed out. Please try again.");
       }, 12000);
       
       setImageTimeout(timeoutId);
@@ -372,9 +372,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       onReply(block.id, replyText);
     } catch (error) {
       console.error('Error handling reply:', error);
-
       setReplies(prev => prev.filter(r => r.id !== tempId));
-      
       toast.error("There was an error sending your message. Please try again.");
     } finally {
       setIsLoading(false);

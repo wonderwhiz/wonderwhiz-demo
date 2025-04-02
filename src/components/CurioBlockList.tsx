@@ -68,7 +68,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
       // Update all blocks when array length changes
       setRenderedBlocks(blocks);
     }
-  }, [blocks]);
+  }, [blocks, renderedBlocks.length]);
   
   const containerVariants = {
     hidden: {},
