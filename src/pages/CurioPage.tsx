@@ -20,15 +20,15 @@ const CurioPage = () => {
   
   // Block interactions hook
   const { 
+    handleToggleLike,
+    handleToggleBookmark,
+    handleReply,
     handleQuizCorrect, 
     handleNewsRead, 
     handleCreativeUpload,
     handleTaskComplete,
     handleActivityComplete,
-    handleMindfulnessComplete,
-    handleToggleLike,
-    handleToggleBookmark,
-    handleReply
+    handleMindfulnessComplete
   } = useBlockInteractions(profileId);
   
   // Get Sparks System hooks

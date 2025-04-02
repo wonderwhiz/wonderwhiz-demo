@@ -9,10 +9,10 @@ interface FactBlockProps {
     fact: string;
     rabbitHoles?: string[];
   };
-  onRabbitHoleClick: (question: string) => void;  // Updated to match what CurioPage provides
+  onRabbitHoleClick: (question: string) => void;
   expanded?: boolean;
   setExpanded?: (expanded: boolean) => void;
-  textSize?: string;  // New prop
+  textSize?: string;
 }
 
 const FactBlock: React.FC<FactBlockProps> = ({ 
@@ -20,7 +20,7 @@ const FactBlock: React.FC<FactBlockProps> = ({
   onRabbitHoleClick, 
   expanded = false,
   setExpanded = () => {},
-  textSize = 'text-sm sm:text-base'  // Default if not provided
+  textSize = 'text-sm sm:text-base'
 }) => {
   const factIsTooLong = content.fact.length > 120;
 

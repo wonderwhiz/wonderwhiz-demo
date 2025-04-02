@@ -956,7 +956,23 @@ const Dashboard = () => {
                       delay: index * 0.1,
                       duration: 0.3
                     }}>
-                            <ContentBlock block={block} onToggleLike={handleToggleLike} onToggleBookmark={handleToggleBookmark} onReply={handleBlockReply} onSetQuery={setQuery} onRabbitHoleFollow={handleFollowRabbitHole} onQuizCorrect={() => handleQuizCorrect(block.id)} onNewsRead={() => handleNewsRead(block.id)} onCreativeUpload={() => handleCreativeUpload(block.id)} colorVariant={index % 3} userId={profileId} childProfileId={profileId} />
+                            <ContentBlock
+                              block={block}
+                              onToggleLike={handleToggleLike}
+                              onToggleBookmark={handleToggleBookmark}
+                              onReply={handleBlockReply}
+                              onRabbitHoleClick={handleFollowRabbitHole}
+                              colorVariant={index % 3}
+                              userId={profileId}
+                              childProfileId={profileId}
+                              onQuizCorrect={() => handleQuizCorrect(block.id)}
+                              onNewsRead={() => handleNewsRead(block.id)}
+                              onCreativeUpload={() => handleCreativeUpload(block.id)}
+                              onTaskComplete={handleTaskComplete}
+                              onActivityComplete={handleActivityComplete}
+                              onMindfulnessComplete={handleMindfulnessComplete}
+                              isFirstBlock={index === 0}
+                            />
                             
                             {blockReplies[block.id] && blockReplies[block.id].length > 0 && <div className="pl-3 sm:pl-4 border-l-2 border-white/20 ml-3 sm:ml-4">
                                 {blockReplies[block.id].map(reply => <BlockReply key={reply.id} content={reply.content} fromUser={reply.from_user} specialistId={block.specialist_id} timestamp={reply.created_at} />)}
