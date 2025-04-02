@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ContentBlock from '@/components/ContentBlock';
@@ -14,13 +15,12 @@ interface CurioBlockListProps {
   handleToggleLike: (blockId: string) => void;
   handleToggleBookmark: (blockId: string) => void;
   handleReply: (blockId: string, message: string) => void;
-  onRabbitHoleClick: (question: string) => void;
-  onQuizCorrect?: () => void;
-  onNewsRead?: () => void;
-  onCreativeUpload?: () => void;
-  onTaskComplete?: () => void;
-  onActivityComplete?: () => void;
-  onMindfulnessComplete?: () => void;
+  handleQuizCorrect: () => void;
+  handleNewsRead: () => void;
+  handleCreativeUpload: () => void;
+  handleTaskComplete?: () => void;
+  handleActivityComplete?: () => void;
+  handleMindfulnessComplete?: () => void;
   profileId?: string;
   isFirstLoad?: boolean;
 }
@@ -35,27 +35,29 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
   handleToggleLike,
   handleToggleBookmark,
   handleReply,
-  onRabbitHoleClick,
-  onQuizCorrect,
-  onNewsRead,
-  onCreativeUpload,
-  onTaskComplete,
-  onActivityComplete,
-  onMindfulnessComplete,
+  handleQuizCorrect,
+  handleNewsRead,
+  handleCreativeUpload,
+  handleTaskComplete,
+  handleActivityComplete,
+  handleMindfulnessComplete,
   profileId,
   isFirstLoad = false,
 }) => {
   const [renderedBlocks, setRenderedBlocks] = useState<ContentBlockType[]>([]);
   
+  // Progressive rendering of blocks for better UX
   useEffect(() => {
     if (blocks.length === 0) {
       setRenderedBlocks([]);
       return;
     }
     
+    // Always show at least the first block immediately
     if (blocks.length > 0 && renderedBlocks.length === 0) {
       setRenderedBlocks([blocks[0]]);
       
+      // Then add remaining blocks progressively
       if (blocks.length > 1) {
         const timer = setTimeout(() => {
           setRenderedBlocks(blocks);
@@ -63,9 +65,10 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
         return () => clearTimeout(timer);
       }
     } else if (blocks.length !== renderedBlocks.length) {
+      // Update all blocks when array length changes
       setRenderedBlocks(blocks);
     }
-  }, [blocks, renderedBlocks.length]);
+  }, [blocks]);
   
   const containerVariants = {
     hidden: {},
@@ -200,6 +203,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
     }
   };
 
+  // Empty state variants
   const emptyStateVariants = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { duration: 0.5 } }
@@ -272,14 +276,13 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
                 colorVariant={parseInt(block.id.charAt(0), 16) % 3}
                 userId={profileId}
                 childProfileId={profileId}
-                onQuizCorrect={onQuizCorrect}
-                onNewsRead={onNewsRead}
-                onCreativeUpload={onCreativeUpload}
-                onTaskComplete={onTaskComplete}
-                onActivityComplete={onActivityComplete}
-                onMindfulnessComplete={onMindfulnessComplete}
+                onQuizCorrect={handleQuizCorrect}
+                onNewsRead={handleNewsRead}
+                onCreativeUpload={handleCreativeUpload}
+                onTaskComplete={handleTaskComplete}
+                onActivityComplete={handleActivityComplete}
+                onMindfulnessComplete={handleMindfulnessComplete}
                 isFirstBlock={index === 0}
-                onRabbitHoleClick={onRabbitHoleClick}
               />
             </motion.div>
           ))

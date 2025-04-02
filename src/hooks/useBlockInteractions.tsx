@@ -38,52 +38,6 @@ export const useBlockInteractions = (childProfileId?: string) => {
     }
   };
 
-  // Handle toggle like function
-  const handleToggleLike = async (blockId: string) => {
-    if (!childProfileId) return;
-    
-    try {
-      const { data: block } = await supabase
-        .from('content_blocks')
-        .select('liked')
-        .eq('id', blockId)
-        .single();
-      
-      if (block) {
-        await supabase
-          .from('content_blocks')
-          .update({ liked: !block.liked })
-          .eq('id', blockId);
-      }
-    } catch (error) {
-      console.error('Error toggling like:', error);
-      toast.error('Could not update like status. Please try again.');
-    }
-  };
-
-  // Handle toggle bookmark function
-  const handleToggleBookmark = async (blockId: string) => {
-    if (!childProfileId) return;
-    
-    try {
-      const { data: block } = await supabase
-        .from('content_blocks')
-        .select('bookmarked')
-        .eq('id', blockId)
-        .single();
-      
-      if (block) {
-        await supabase
-          .from('content_blocks')
-          .update({ bookmarked: !block.bookmarked })
-          .eq('id', blockId);
-      }
-    } catch (error) {
-      console.error('Error toggling bookmark:', error);
-      toast.error('Could not update bookmark status. Please try again.');
-    }
-  };
-
   // Handle correct quiz answers
   const handleQuizCorrect = async () => {
     if (!childProfileId) return;
@@ -246,8 +200,6 @@ export const useBlockInteractions = (childProfileId?: string) => {
 
   return {
     handleReply,
-    handleToggleLike,
-    handleToggleBookmark,
     handleQuizCorrect,
     handleNewsRead,
     handleCreativeUpload,

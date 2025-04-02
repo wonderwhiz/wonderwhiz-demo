@@ -1,238 +1,241 @@
 
-import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useCurioData } from '@/hooks/useCurioData';
-import { motion } from 'framer-motion';
-import { ChevronLeft, Search, X, AlertCircle, Loader2, RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import CurioBlockList from '@/components/CurioBlockList';
-import { useBlockInteractions } from '@/hooks/useBlockInteractions';
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams } from 'react-router-dom';
+import { Card } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
-import { useToast } from '@/hooks/use-toast';
-import { useSparksSystem } from '@/hooks/useSparksSystem';
+import CurioSearch from '@/components/CurioSearch';
+import CurioLoading from '@/components/CurioLoading';
+import CurioBlockList from '@/components/CurioBlockList';
+import { useCurioData } from '@/hooks/useCurioData';
+import { useBlockInteractions } from '@/hooks/useBlockInteractions';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Helmet } from 'react-helmet-async';
+import { Skeleton } from '@/components/ui/skeleton';
 
-const CurioPage = () => {
-  const { curioId } = useParams<{ curioId: string }>();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const { profileId } = JSON.parse(localStorage.getItem('wonderwhiz_user') || '{"profileId":""}');
+const CurioPage: React.FC = () => {
+  const { profileId, curioId } = useParams<{ profileId: string; curioId: string }>();
+  const [animateBlocks, setAnimateBlocks] = useState(false);
   
-  // Block interactions hook
-  const { 
-    handleToggleLike,
-    handleToggleBookmark,
-    handleReply,
-    handleQuizCorrect, 
-    handleNewsRead, 
-    handleCreativeUpload,
-    handleTaskComplete,
-    handleActivityComplete,
-    handleMindfulnessComplete
-  } = useBlockInteractions(profileId);
-  
-  // Get Sparks System hooks
-  const { 
-    streakDays
-  } = useSparksSystem(profileId);
-  
-  // State for search
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchFocused, setSearchFocused] = useState(false);
-  
-  // Refs
-  const loadMoreRef = useRef<HTMLDivElement>(null);
-  
-  // Get curio data
   const {
     blocks,
     title,
     isLoading,
+    isGeneratingContent,
     hasMoreBlocks,
-    loadMoreBlocks,
     loadingMoreBlocks,
-    handleSearch: setNewQuery,
-    clearSearch: refreshCurio,
+    totalBlocksLoaded,
+    initialLoadComplete,
+    setInitialLoadComplete,
+    searchQuery,
+    setSearchQuery,
+    loadMoreBlocks,
+    handleToggleLike,
+    handleToggleBookmark,
+    handleSearch,
+    clearSearch,
     isFirstLoad
   } = useCurioData(curioId, profileId);
+
+  const {
+    handleReply,
+    handleQuizCorrect,
+    handleNewsRead,
+    handleCreativeUpload
+  } = useBlockInteractions(profileId);
+
+  const handleTaskComplete = async () => {
+    if (!profileId) return;
+    
+    try {
+      await supabase.functions.invoke('increment-sparks-balance', {
+        body: { childId: profileId, amount: 8 }
+      });
+      
+      toast.success("Task completed! +8 sparks", {
+        position: 'top-center',
+        classNames: {
+          toast: 'bg-wonderwhiz-purple text-white'
+        }
+      });
+    } catch (error) {
+      console.error('Error handling task completion:', error);
+    }
+  };
+
+  const handleActivityComplete = async () => {
+    if (!profileId) return;
+    
+    try {
+      await supabase.functions.invoke('increment-sparks-balance', {
+        body: { childId: profileId, amount: 3 }
+      });
+      
+      toast.success("Activity completed! +3 sparks", {
+        position: 'top-center',
+        classNames: {
+          toast: 'bg-wonderwhiz-purple text-white'
+        }
+      });
+    } catch (error) {
+      console.error('Error handling activity completion:', error);
+    }
+  };
+
+  const handleMindfulnessComplete = async () => {
+    if (!profileId) return;
+    
+    try {
+      await supabase.functions.invoke('increment-sparks-balance', {
+        body: { childId: profileId, amount: 5 }
+      });
+      
+      toast.success("Mindfulness exercise completed! +5 sparks", {
+        position: 'top-center',
+        classNames: {
+          toast: 'bg-wonderwhiz-purple text-white'
+        }
+      });
+    } catch (error) {
+      console.error('Error handling mindfulness completion:', error);
+    }
+  };
+
+  const [loadTriggerRef, isLoadTriggerVisible] = useIntersectionObserver(
+    { rootMargin: '200px' },
+    false
+  );
+
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   
-  // Intersection observer for infinite loading
-  const [loadRef, isVisible] = useIntersectionObserver({});
-  
-  // Load more blocks when scrolled to bottom
-  const loadMoreHandler = useCallback(() => {
-    if (isVisible && hasMoreBlocks && !loadingMoreBlocks && !isLoading) {
+  // Effect for initial blocks loading and scrolling
+  useEffect(() => {
+    if (blocks.length > 0 && !isLoading && !initialLoadComplete) {
+      console.log('Initial blocks loaded, preparing to auto-scroll');
+      setInitialLoadComplete(true);
+      
+      setAnimateBlocks(true);
+      
+      if (scrollAreaRef.current) {
+        console.log('Auto-scrolling to top');
+        setTimeout(() => {
+          if (scrollAreaRef.current) {
+            scrollAreaRef.current.scrollTop = 0;
+          }
+        }, 100);
+      }
+    }
+  }, [blocks.length, isLoading, initialLoadComplete, setInitialLoadComplete]);
+
+  // Effect for infinite scroll
+  useEffect(() => {
+    if (isLoadTriggerVisible && hasMoreBlocks && !loadingMoreBlocks && !isLoading && initialLoadComplete) {
+      console.log('Load trigger visible, loading more blocks');
       loadMoreBlocks();
     }
-  }, [isVisible, hasMoreBlocks, loadingMoreBlocks, loadMoreBlocks, isLoading]);
-  
-  useEffect(() => {
-    loadMoreHandler();
-  }, [loadMoreHandler]);
-  
-  // Handle search
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      setNewQuery(searchQuery);
-    }
-  };
-  
-  const clearSearch = () => {
-    setSearchQuery('');
-    refreshCurio();
-  };
-  
-  // Handle rabbit hole follow
-  const handleRabbitHoleFollow = (question: string) => {
-    setNewQuery(question);
-    toast({
-      title: "New question explored",
-      description: `Now exploring: "${question}"`,
-      duration: 3000
-    });
-  };
-  
-  // If loading, show skeleton
-  if (isLoading) {
-    return (
-      <div className="container max-w-4xl mx-auto px-4 py-6">
-        <div className="flex items-center mb-6">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate('/dashboard')}
-            className="mr-2"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </Button>
-          <div className="h-8 bg-gray-700/30 rounded w-1/2 animate-pulse" />
-        </div>
-        
-        <div className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="border border-gray-800 rounded-lg p-4">
-              <div className="flex items-center mb-3">
-                <div className="h-10 w-10 bg-gray-700/30 rounded-full animate-pulse" />
-                <div className="ml-2">
-                  <div className="h-4 bg-gray-700/30 rounded w-24 animate-pulse" />
-                  <div className="h-3 bg-gray-700/30 rounded w-32 mt-1 animate-pulse" />
-                </div>
-              </div>
-              <div className="h-32 bg-gray-700/30 rounded animate-pulse" />
-            </div>
-          ))}
-        </div>
-      </div>
-    );
+  }, [isLoadTriggerVisible, hasMoreBlocks, loadingMoreBlocks, isLoading, initialLoadComplete, loadMoreBlocks]);
+
+  // Show loading indicator immediately on first page load
+  if (isLoading && blocks.length === 0 && !isGeneratingContent) {
+    return <CurioLoading />;
   }
-  
-  // Error state
-  const error = null; // We'll handle error state separately in the useCurioData hook
-  
-  // If error, show error message
-  if (error) {
-    return (
-      <div className="container max-w-4xl mx-auto px-4 py-8 text-center">
-        <div className="mb-6">
-          <Button
-            variant="outline"
-            onClick={() => navigate('/dashboard')}
-            className="mb-6"
-          >
-            <ChevronLeft className="mr-2 h-4 w-4" /> Back to Dashboard
-          </Button>
-        </div>
-        
-        <div className="p-6 rounded-lg bg-red-950/30 border border-red-800/50">
-          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-white mb-2">Error Loading Curio</h3>
-          <p className="text-white/70">{error}</p>
-          
-          <Button className="mt-6" onClick={refreshCurio}>
-            <RefreshCw className="mr-2 h-4 w-4" /> Try Again
-          </Button>
-        </div>
-      </div>
-    );
-  }
-  
+
   return (
-    <div className="container max-w-4xl mx-auto px-4 py-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate('/dashboard')}
-            className="mr-2"
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black pb-20">
+      <Helmet>
+        <script src="https://elevenlabs.io/convai-widget/index.js" async type="text/javascript"></script>
+      </Helmet>
+      
+      <div className="container px-4 py-3 sm:py-5">
+        <AnimatePresence mode="wait">
+          <motion.h1 
+            key={title || 'loading'}
+            className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2 sm:mb-3 text-center"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
           >
-            <ChevronLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-xl font-bold text-white">{title || 'Exploring Curio'}</h1>
-        </div>
-      </div>
-      
-      {/* Search bar */}
-      <div className="mb-6">
-        <form onSubmit={handleSearch} className="relative">
-          <div className="relative group">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              type="text"
-              placeholder="Search within this curio..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
-              className="pl-10 pr-10 bg-gray-900/50 border-gray-700 focus:border-wonderwhiz-purple/50 focus:ring-wonderwhiz-purple/20"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={clearSearch}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2"
-              >
-                <X className="h-4 w-4 text-gray-400 hover:text-white" />
-              </button>
+            {title || (
+              <div className="flex justify-center items-center">
+                <Skeleton className="h-8 w-3/5 bg-white/10 rounded" />
+              </div>
             )}
-          </div>
-        </form>
+          </motion.h1>
+        </AnimatePresence>
+        
+        <CurioSearch
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          handleSearch={handleSearch}
+          clearSearch={clearSearch}
+          isSearching={isLoading}
+          totalBlocksLoaded={totalBlocksLoaded}
+        />
+        
+        <Card className="bg-black/40 border-white/10 p-2 sm:p-4 md:p-6">
+          <ScrollArea ref={scrollAreaRef} className="h-[calc(100vh-230px)]">
+            {isGeneratingContent && (
+              <motion.div 
+                className="flex items-center justify-center py-4 mb-4 bg-purple-900/20 rounded-lg border border-purple-500/30"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                <div className="flex flex-col items-center">
+                  <div className="flex space-x-2 mb-2">
+                    {[0, 1, 2].map((i) => (
+                      <motion.div
+                        key={i}
+                        className="w-3 h-3 rounded-full bg-wonderwhiz-purple"
+                        animate={{
+                          y: [0, -10, 0],
+                        }}
+                        transition={{
+                          duration: 0.6,
+                          repeat: Infinity,
+                          repeatType: "loop",
+                          delay: i * 0.2,
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-sm text-white/80">
+                    Generating amazing content for you...
+                  </p>
+                </div>
+              </motion.div>
+            )}
+            
+            <CurioBlockList
+              blocks={blocks}
+              animateBlocks={animateBlocks}
+              hasMoreBlocks={hasMoreBlocks}
+              loadingMoreBlocks={loadingMoreBlocks}
+              loadTriggerRef={loadTriggerRef}
+              searchQuery={searchQuery}
+              handleToggleLike={handleToggleLike}
+              handleToggleBookmark={handleToggleBookmark}
+              handleReply={handleReply}
+              handleQuizCorrect={handleQuizCorrect}
+              handleNewsRead={handleNewsRead}
+              handleCreativeUpload={handleCreativeUpload}
+              handleTaskComplete={handleTaskComplete}
+              handleActivityComplete={handleActivityComplete}
+              handleMindfulnessComplete={handleMindfulnessComplete}
+              profileId={profileId}
+              isFirstLoad={isFirstLoad}
+            />
+          </ScrollArea>
+        </Card>
       </div>
-      
-      {/* Content blocks */}
-      <CurioBlockList
-        blocks={blocks}
-        animateBlocks={!isLoading}
-        hasMoreBlocks={hasMoreBlocks}
-        loadingMoreBlocks={loadingMoreBlocks}
-        loadTriggerRef={loadRef}
-        searchQuery={searchQuery}
-        handleToggleLike={handleToggleLike}
-        handleToggleBookmark={handleToggleBookmark}
-        handleReply={handleReply}
-        onRabbitHoleClick={handleRabbitHoleFollow}
-        onQuizCorrect={handleQuizCorrect}
-        onNewsRead={handleNewsRead}
-        onCreativeUpload={handleCreativeUpload}
-        onTaskComplete={handleTaskComplete}
-        onActivityComplete={handleActivityComplete}
-        onMindfulnessComplete={handleMindfulnessComplete}
-        profileId={profileId}
-        isFirstLoad={isFirstLoad}
-      />
-      
-      {/* Loading more indicator */}
-      {loadingMoreBlocks && (
-        <div className="text-center py-6">
-          <Loader2 className="h-6 w-6 animate-spin mx-auto text-wonderwhiz-purple/60" />
-          <p className="text-sm text-gray-400 mt-2">Loading more content...</p>
-        </div>
-      )}
-      
-      {/* Invisible load more trigger */}
-      <div ref={loadMoreRef} className="h-1" />
+
+      <div className="fixed bottom-4 right-4 z-50">
+        <div dangerouslySetInnerHTML={{ 
+          __html: '<elevenlabs-convai agent-id="zmQ4IMOTcaVnB64g8OYl"></elevenlabs-convai>'
+        }} />
+      </div>
     </div>
   );
 };

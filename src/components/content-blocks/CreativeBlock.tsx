@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -62,38 +63,45 @@ const CreativeBlock: React.FC<CreativeBlockProps> = ({ content, onCreativeUpload
           throw new Error('Failed to encode image');
         }
         
-        try {
-          // Send to Claude for analysis through our Edge Function
-          const response = await supabase.functions.invoke('analyze-creative-work', {
+        // Send to Claude for analysis through our Edge Function
+        toast.promise(
+          supabase.functions.invoke('analyze-creative-work', {
             body: { 
               imageUrl: base64Image,
               prompt: content.prompt,
               type: content.type || 'creation'
             }
-          });
-          
-          // Clear the progress simulation
-          if (progressIntervalRef.current) {
-            clearInterval(progressIntervalRef.current);
-            setUploadProgress(100);
+          }),
+          {
+            loading: 'Analyzing your creation...',
+            success: (response) => {
+              // Clear the progress simulation
+              if (progressIntervalRef.current) {
+                clearInterval(progressIntervalRef.current);
+                setUploadProgress(100);
+              }
+              
+              if (response.error) {
+                throw new Error(response.error.message);
+              }
+              
+              setAnalysis(response.data.analysis);
+              setCreativeUploaded(true);
+              onCreativeUpload();
+              return 'Analysis complete!';
+            },
+            error: (err) => {
+              console.error('Error analyzing creative work:', err);
+              // Provide a fallback analysis if Claude fails
+              setTimeout(() => {
+                setAnalysis("Amazing work! You've put a lot of creativity into this. Keep exploring and creating!");
+                setCreativeUploaded(true);
+                onCreativeUpload();
+              }, 500);
+              return 'Could not analyze your creation, but we still love it!';
+            }
           }
-          
-          if (response.error) {
-            throw new Error(response.error.message);
-          }
-          
-          setAnalysis(response.data.analysis);
-          setCreativeUploaded(true);
-          onCreativeUpload();
-          toast.success('Analysis complete!');
-        } catch (error) {
-          console.error('Error analyzing creative work:', error);
-          // Provide a fallback analysis if Claude fails
-          setAnalysis("Amazing work! You've put a lot of creativity into this. Keep exploring and creating!");
-          setCreativeUploaded(true);
-          onCreativeUpload();
-          toast.error('Could not analyze your creation, but we still love it!');
-        }
+        );
       };
       
       reader.onerror = () => {
@@ -134,27 +142,33 @@ const CreativeBlock: React.FC<CreativeBlockProps> = ({ content, onCreativeUpload
       const videoElement = document.createElement('video');
       const canvasElement = document.createElement('canvas');
       
+      // Show the user feedback that camera is initializing
       toast.loading('Preparing camera...', { id: 'camera-init' });
       
       videoElement.srcObject = stream;
       videoElement.play();
       
+      // Take the picture after a short delay to allow camera to initialize
       setTimeout(() => {
         toast.dismiss('camera-init');
+        // Set canvas dimensions to match video
         canvasElement.width = videoElement.videoWidth;
         canvasElement.height = videoElement.videoHeight;
         
+        // Draw the video frame to the canvas
         const context = canvasElement.getContext('2d');
         if (context) {
           context.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
         }
         
+        // Convert canvas to file
         canvasElement.toBlob((blob) => {
           if (blob) {
             const file = new File([blob], "camera-capture.jpg", { type: "image/jpeg" });
             handleCreativeUpload(file);
           }
           
+          // Stop all video tracks to turn off the camera
           const tracks = stream.getTracks();
           tracks.forEach(track => track.stop());
         }, 'image/jpeg');
@@ -174,12 +188,13 @@ const CreativeBlock: React.FC<CreativeBlockProps> = ({ content, onCreativeUpload
     setPreviewImage(null);
     setShowUploadOptions(false);
     setUploadProgress(0);
+    // Clear interval if it exists
     if (progressIntervalRef.current) {
       clearInterval(progressIntervalRef.current);
       progressIntervalRef.current = null;
     }
   };
-
+  
   return (
     <div>
       <motion.p 

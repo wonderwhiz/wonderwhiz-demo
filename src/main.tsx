@@ -1,14 +1,12 @@
 
 import { createRoot } from 'react-dom/client'
 import './index.css'
-import { BrowserRouter } from 'react-router-dom'
+
+// Remove lazy loading and Suspense
 import App from './App.tsx'
 
+// Remove the LoadingFallback component
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("Root element not found");
 
-createRoot(rootElement).render(
-  <BrowserRouter>
-    <App />
-  </BrowserRouter>
-);
+createRoot(rootElement).render(<App />);

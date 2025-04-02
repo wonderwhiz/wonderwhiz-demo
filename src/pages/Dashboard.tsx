@@ -1,57 +1,29 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent, CurioCard } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  Send, 
-  MessageSquare, 
-  Sparkles, 
-  Search, 
-  Lightbulb, 
-  RefreshCw, 
-  ChevronDown, 
-  User, 
-  LogOut, 
-  UserCircle,
-  Star,
-  ArrowLeftRight
-} from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { useSparksSystem } from '@/hooks/useSparksSystem';
+import { Send, Menu, ArrowLeftRight, MessageSquare, Sparkles, Search, Star, Lightbulb, RefreshCw, ChevronDown, User, LogOut, UserCircle, PanelLeftClose, PanelLeft } from 'lucide-react';
 import WonderWhizLogo from '@/components/WonderWhizLogo';
 import ContentBlock from '@/components/ContentBlock';
-import { useBlockInteractions } from '@/hooks/useBlockInteractions';
-import SparksBalance from '@/components/SparksBalance';
-import SparksOverview from '@/components/SparksOverview';
-import SparksHistory from '@/components/SparksHistory';
-import SparksMilestones from '@/components/SparksMilestones';
-import StreakDisplay from '@/components/StreakDisplay';
+import BlockReply from '@/components/BlockReply';
+import { SPECIALISTS } from '@/components/SpecialistAvatar';
 import ChildDashboardTasks from '@/components/ChildDashboardTasks';
+import SparksBalance from '@/components/SparksBalance';
+import SparksHistory from '@/components/SparksHistory';
+import SparksOverview from '@/components/SparksOverview';
+import { useSparksSystem } from '@/hooks/useSparksSystem';
 import MagicalBorder from '@/components/MagicalBorder';
 import FloatingElements from '@/components/FloatingElements';
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarHeader,
-  SidebarProvider,
-  SidebarTrigger
-} from '@/components/ui/sidebar';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
+import CurioSuggestion from '@/components/CurioSuggestion';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import SparksBadge from '@/components/SparksBadge';
+import { Sidebar, SidebarProvider, SidebarContent, SidebarHeader, SidebarFooter, SidebarSeparator, SidebarTrigger } from '@/components/ui/sidebar';
 
 interface ChildProfile {
   id: string;
@@ -86,81 +58,12 @@ interface BlockReply {
   created_at: string;
 }
 
-// Component for CurioCard
-const CurioCard: React.FC<{
-  children: React.ReactNode;
-  colorVariant: number;
-  className?: string;
-  onClick: () => void;
-}> = ({ children, colorVariant, className, onClick }) => {
-  return (
-    <div className={className} onClick={onClick}>
-      {children}
-    </div>
-  );
-};
-
-// Component for CurioSuggestion
-const CurioSuggestion: React.FC<{
-  suggestion: string;
-  onClick: (suggestion: string) => void;
-  index: number;
-  directGenerate?: boolean;
-}> = ({ suggestion, onClick, index, directGenerate = false }) => {
-  return (
-    <motion.div
-      whileHover={{ scale: 1.03 }}
-      whileTap={{ scale: 0.97 }}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1, duration: 0.3 }}
-      className="flip-card"
-    >
-      <div 
-        className="flip-card-inner bg-white/10 border border-white/20 rounded-lg p-3 text-center"
-        onClick={() => onClick(suggestion)}
-      >
-        <div className="flip-card-front flex items-center justify-center h-full">
-          <p className="text-sm md:text-base text-white font-medium">{suggestion}</p>
-        </div>
-        <div className="flip-card-back flex items-center justify-center h-full">
-          <button className="text-wonderwhiz-gold flex items-center text-sm">
-            {directGenerate ? 'Generate' : 'Ask'} <ChevronDown className="ml-1 h-4 w-4" />
-          </button>
-        </div>
-      </div>
-    </motion.div>
-  );
-};
-
-// Component for BlockReply
-const BlockReply: React.FC<{
-  content: string;
-  fromUser: boolean;
-  specialistId?: string;
-  timestamp: string;
-}> = ({ content, fromUser, specialistId, timestamp }) => {
-  return (
-    <div className={`mt-2 ${fromUser ? 'text-right' : 'text-left'}`}>
-      <div className={`inline-block rounded-lg p-2 max-w-[85%] ${fromUser ? 'bg-wonderwhiz-purple/30 text-white' : 'bg-white/10 text-white/90'}`}>
-        <div className="text-xs font-medium mb-1">
-          {fromUser ? 'You' : specialistId || 'AI Assistant'}
-        </div>
-        <div className="text-sm whitespace-pre-wrap">{content}</div>
-        <div className="text-xs text-white/60 mt-1">
-          {new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </div>
-      </div>
-    </div>
-  );
-};
-
 const Dashboard = () => {
   const navigate = useNavigate();
   const {
     profileId
   } = useParams<{
-    profileId?: string;
+    profileId: string;
   }>();
   const [childProfile, setChildProfile] = useState<ChildProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -184,19 +87,7 @@ const Dashboard = () => {
     streakDays,
     streakBonusReceived,
     streakBonusAmount
-  } = useSparksSystem(profileId || '');
-
-  const { 
-    handleToggleLike,
-    handleToggleBookmark,
-    handleReply,
-    handleQuizCorrect: quizCorrectHandler,
-    handleNewsRead: newsReadHandler,
-    handleCreativeUpload: creativeUploadHandler,
-    handleTaskComplete,
-    handleActivityComplete,
-    handleMindfulnessComplete
-  } = useBlockInteractions(profileId);
+  } = useSparksSystem(profileId);
 
   useEffect(() => {
     const loadProfileAndCurios = async () => {
@@ -477,9 +368,6 @@ const Dashboard = () => {
         duration: 2000,
         position: 'bottom-right'
       });
-      
-      // Call the handler from useBlockInteractions
-      quizCorrectHandler();
     } catch (error) {
       console.error('Error awarding sparks for correct quiz answer:', error);
     }
@@ -511,9 +399,6 @@ const Dashboard = () => {
         duration: 2000,
         position: 'bottom-right'
       });
-      
-      // Call the handler from useBlockInteractions
-      newsReadHandler();
     } catch (error) {
       console.error('Error awarding sparks for news read:', error);
     }
@@ -545,11 +430,42 @@ const Dashboard = () => {
         duration: 2000,
         position: 'bottom-right'
       });
-      
-      // Call the handler from useBlockInteractions
-      creativeUploadHandler();
     } catch (error) {
       console.error('Error awarding sparks for creative upload:', error);
+    }
+  };
+
+  const handleToggleLike = async (blockId: string) => {
+    setContentBlocks(prev => prev.map(block => block.id === blockId ? {
+      ...block,
+      liked: !block.liked
+    } : block));
+    try {
+      const blockToUpdate = contentBlocks.find(b => b.id === blockId);
+      if (blockToUpdate) {
+        await supabase.from('content_blocks').update({
+          liked: !blockToUpdate.liked
+        }).eq('id', blockId);
+      }
+    } catch (error) {
+      console.error('Error updating like status:', error);
+    }
+  };
+
+  const handleToggleBookmark = async (blockId: string) => {
+    setContentBlocks(prev => prev.map(block => block.id === blockId ? {
+      ...block,
+      bookmarked: !block.bookmarked
+    } : block));
+    try {
+      const blockToUpdate = contentBlocks.find(b => b.id === blockId);
+      if (blockToUpdate) {
+        await supabase.from('content_blocks').update({
+          bookmarked: !blockToUpdate.bookmarked
+        }).eq('id', blockId);
+      }
+    } catch (error) {
+      console.error('Error updating bookmark status:', error);
     }
   };
 
@@ -730,8 +646,7 @@ const Dashboard = () => {
       </div>;
   }
 
-  return (
-    <SidebarProvider>
+  return <SidebarProvider>
       <div className="min-h-screen bg-wonderwhiz-gradient flex w-full">
         <Helmet>
           <title>WonderWhiz - Explore & Learn</title>
@@ -779,8 +694,7 @@ const Dashboard = () => {
               </h3>
               
               {pastCurios.length === 0 ? <p className="text-white/60 text-sm">Ask a question to start exploring!</p> : <div className="space-y-3">
-                  {pastCurios.slice(0, displayedCuriosCount).map((curio, index) => (
-                    <CurioCard key={curio.id} colorVariant={index} className={`
+                  {pastCurios.slice(0, displayedCuriosCount).map((curio, index) => <CurioCard key={curio.id} colorVariant={index} className={`
                         cursor-pointer 
                         transition-all 
                         hover:bg-white/10 
@@ -814,8 +728,7 @@ const Dashboard = () => {
                           {curio.title}
                         </span>
                       </div>
-                    </CurioCard>
-                  ))}
+                    </CurioCard>)}
                   
                   {displayedCuriosCount < pastCurios.length && <motion.div initial={{
                 opacity: 0
@@ -1009,15 +922,7 @@ const Dashboard = () => {
                       </div>
                       
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 max-w-3xl mx-auto px-3 sm:px-4">
-                        {curioSuggestions.map((suggestion, index) => (
-                          <CurioSuggestion 
-                            key={`${suggestion}-${index}`} 
-                            suggestion={suggestion} 
-                            onClick={handleCurioSuggestionClick} 
-                            index={index} 
-                            directGenerate={true} 
-                          />
-                        ))}
+                        {curioSuggestions.map((suggestion, index) => <CurioSuggestion key={`${suggestion}-${index}`} suggestion={suggestion} onClick={handleCurioSuggestionClick} index={index} directGenerate={true} />)}
                       </div>
                     </div>}
                   
@@ -1051,40 +956,14 @@ const Dashboard = () => {
                       delay: index * 0.1,
                       duration: 0.3
                     }}>
-                            <ContentBlock
-                              block={{
-                                ...block,
-                                curio_id: currentCurio?.id || '',
-                              }}
-                              onToggleLike={handleToggleLike}
-                              onToggleBookmark={handleToggleBookmark}
-                              onReply={handleBlockReply}
-                              onRabbitHoleClick={handleFollowRabbitHole}
-                              colorVariant={index % 3}
-                              userId={profileId}
-                              childProfileId={profileId}
-                              onQuizCorrect={() => handleQuizCorrect(block.id)}
-                              onNewsRead={() => handleNewsRead(block.id)}
-                              onCreativeUpload={() => handleCreativeUpload(block.id)}
-                              onTaskComplete={handleTaskComplete}
-                              onActivityComplete={handleActivityComplete}
-                              onMindfulnessComplete={handleMindfulnessComplete}
-                              isFirstBlock={index === 0}
-                            />
+                            <ContentBlock block={block} onToggleLike={handleToggleLike} onToggleBookmark={handleToggleBookmark} onReply={handleBlockReply} onSetQuery={setQuery} onRabbitHoleFollow={handleFollowRabbitHole} onQuizCorrect={() => handleQuizCorrect(block.id)} onNewsRead={() => handleNewsRead(block.id)} onCreativeUpload={() => handleCreativeUpload(block.id)} colorVariant={index % 3} userId={profileId} childProfileId={profileId} />
                             
                             {blockReplies[block.id] && blockReplies[block.id].length > 0 && <div className="pl-3 sm:pl-4 border-l-2 border-white/20 ml-3 sm:ml-4">
-                                {blockReplies[block.id].map(reply => (
-                                  <BlockReply 
-                                    key={reply.id} 
-                                    content={reply.content} 
-                                    fromUser={reply.from_user} 
-                                    specialistId={block.specialist_id} 
-                                    timestamp={reply.created_at} 
-                                  />
-                                ))}
+                                {blockReplies[block.id].map(reply => <BlockReply key={reply.id} content={reply.content} fromUser={reply.from_user} specialistId={block.specialist_id} timestamp={reply.created_at} />)}
                               </div>}
                           </motion.div>)}
                         
+                        {/* Load more target for intersection observer */}
                         {visibleBlocksCount < contentBlocks.length && <div ref={observerTarget} className="h-10 flex items-center justify-center text-white/50 text-sm">
                             <div className="animate-pulse">Loading more content...</div>
                           </div>}
@@ -1178,8 +1057,7 @@ const Dashboard = () => {
         }
         `}
       </style>
-    </SidebarProvider>
-  );
+    </SidebarProvider>;
 };
 
 export default Dashboard;
