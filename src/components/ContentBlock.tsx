@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { BookmarkIcon, ThumbsUpIcon, MessageCircleIcon, ImageIcon, Loader, AlertCircle, Image, ImageOff, RefreshCw } from 'lucide-react';
@@ -7,7 +6,7 @@ import BlockReply from './BlockReply';
 import BlockReplyForm from './BlockReplyForm';
 import { getBackgroundColor, getBorderColor, getTextColor, getTextSize, getContextualImageStyle } from './BlockStyleUtils';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -276,12 +275,11 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   useEffect(() => {
     const fetchReplies = async () => {
       try {
-        const {
-          data,
-          error
-        } = await supabase.from('block_replies').select('*').eq('block_id', block.id).order('created_at', {
-          ascending: true
-        });
+        const { data, error } = await supabase
+          .from('block_replies')
+          .select('*')
+          .eq('block_id', block.id)
+          .order('created_at', { ascending: true });
         
         if (error) {
           console.error('Error fetching replies:', error);

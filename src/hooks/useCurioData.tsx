@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { ContentBlock, isValidContentBlockType } from '@/types/curio';
 import { debounce } from 'lodash';
 
@@ -115,8 +115,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
             setIsGeneratingContent(false);
             toast({
               title: "Content generation taking longer than expected",
-              description: "Please try refreshing the page if content doesn't appear soon.",
-              variant: "default"
+              description: "Please try refreshing the page if content doesn't appear soon."
             });
           }
         }, 30000); // 30 seconds timeout
@@ -127,8 +126,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
       console.error('Error fetching initial blocks:', error);
       toast({
         title: "Error",
-        description: "Could not load content blocks",
-        variant: "destructive"
+        description: "Could not load content blocks"
       });
     } finally {
       setIsLoading(false);
@@ -162,8 +160,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
         console.error('Error fetching curio:', error);
         toast({
           title: "Error",
-          description: "Could not load curio data",
-          variant: "destructive"
+          description: "Could not load curio data"
         });
       } finally {
         setIsLoadingBasicInfo(false);
@@ -207,7 +204,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
       const apiStartTime = Date.now();
       console.log(`API call started at ${new Date().toISOString()}`);
       
-      const response = await supabase.functions.invoke('generate-curiosity-blocks', {
+      const { data, error } = await supabase.functions.invoke('generate-curiosity-blocks', {
         body: {
           query,
           childProfile: {
@@ -221,11 +218,11 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
       const apiEndTime = Date.now();
       console.log(`API call finished after ${(apiEndTime - apiStartTime) / 1000} seconds`);
       
-      if (response.error) {
-        throw new Error(response.error.message || 'Error generating content blocks');
+      if (error) {
+        throw new Error(error.message || 'Error generating content blocks');
       }
       
-      const generatedBlocks = response.data || [];
+      const generatedBlocks = data || [];
       console.log('Generated blocks from Claude:', generatedBlocks.length);
       
       if (!generatedBlocks.length) {
@@ -282,8 +279,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
       console.error('Error generating content blocks:', error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Could not generate content blocks",
-        variant: "destructive"
+        description: error instanceof Error ? error.message : "Could not generate content blocks"
       });
       setIsGeneratingContent(false);
       
@@ -323,15 +319,19 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
         
         setHasMoreBlocks(currentIndex < generatedBlocks.length - 1);
         
-        const { error } = await supabase.from('content_blocks').insert({
-          ...nextBlock,
-          curio_id: curioId
-        });
-        
-        if (error) {
-          console.error(`Error saving block ${currentIndex + 1}:`, error);
-        } else {
-          console.log(`Successfully saved block ${currentIndex + 1}/${generatedBlocks.length}`);
+        try {
+          const { error } = await supabase.from('content_blocks').insert({
+            ...nextBlock,
+            curio_id: curioId
+          });
+          
+          if (error) {
+            console.error(`Error saving block ${currentIndex + 1}:`, error);
+          } else {
+            console.log(`Successfully saved block ${currentIndex + 1}/${generatedBlocks.length}`);
+          }
+        } catch (insertError) {
+          console.error(`Error saving block ${currentIndex + 1}:`, insertError);
         }
         
         currentIndex++;
@@ -373,21 +373,24 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
           setHasMoreBlocks(totalBlocksLoaded + nextBatch.length < claudeResponseRef.current.length);
           
           for (const block of nextBatch) {
-            const { error } = await supabase.from('content_blocks').insert({
-              ...block,
-              curio_id: curioId
-            });
-            
-            if (error) {
-              console.error('Error saving block to database:', error);
+            try {
+              const { error } = await supabase.from('content_blocks').insert({
+                ...block,
+                curio_id: curioId
+              });
+              
+              if (error) {
+                console.error('Error saving block to database:', error);
+              }
+            } catch (insertError) {
+              console.error('Error saving block to database:', insertError);
             }
           }
         } catch (error) {
           console.error('Error loading more blocks from Claude response:', error);
           toast({
             title: "Error",
-            description: "Could not load more content",
-            variant: "destructive"
+            description: "Could not load more content"
           });
         } finally {
           setLoadingMoreBlocks(false);
@@ -434,8 +437,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
       console.error('Error loading more blocks:', error);
       toast({
         title: "Error",
-        description: "Could not load more content",
-        variant: "destructive"
+        description: "Could not load more content"
       });
     } finally {
       setLoadingMoreBlocks(false);
@@ -467,8 +469,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
       console.error('Error updating like status:', error);
       toast({
         title: "Error",
-        description: "Could not update like status",
-        variant: "destructive"
+        description: "Could not update like status"
       });
     }
   }, [blocks]);
@@ -498,8 +499,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
       console.error('Error updating bookmark status:', error);
       toast({
         title: "Error",
-        description: "Could not update bookmark status",
-        variant: "destructive"
+        description: "Could not update bookmark status"
       });
     }
   }, [blocks]);
@@ -534,16 +534,14 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
         setBlocks([]);
         toast({
           title: "No results",
-          description: `No content found for "${value}"`,
-          variant: "default"
+          description: `No content found for "${value}"`
         });
       }
     } catch (error) {
       console.error('Error searching blocks:', error);
       toast({
         title: "Search error",
-        description: "Could not search content blocks",
-        variant: "destructive"
+        description: "Could not search content blocks"
       });
     } finally {
       setIsLoading(false);

@@ -25,7 +25,8 @@ serve(async (req) => {
       blockContent = requestData.blockContent;
       blockType = requestData.blockType;
       
-      console.log(`[${requestId}] Received request for ${blockType} content`);
+      console.log(`[${requestId}] Received request for ${blockType} content with data:`, 
+                 JSON.stringify(blockContent).substring(0, 100) + '...');
     } catch (parseError) {
       console.error(`[${requestId}] Error parsing request body:`, parseError);
       throw new Error(`Invalid request format: ${parseError.message}`);
@@ -77,6 +78,7 @@ serve(async (req) => {
     };
     
     const contentText = getContentString(blockContent);
+    console.log(`[${requestId}] Extracted content text: ${contentText}`);
     
     // Default prompt if we can't extract better content
     prompt = `A child-friendly, educational illustration about: ${contentText || blockType}`;
@@ -118,7 +120,7 @@ serve(async (req) => {
     // Make sure the prompt is safe for kids and has appropriate style
     prompt += ", digital art style, bright colors, educational, safe for kids, no text, no words";
     
-    console.log(`[${requestId}] Generated prompt: ${prompt.substring(0, 100)}...`);
+    console.log(`[${requestId}] Final prompt: ${prompt}`);
     
     // Improved error handling for the Hugging Face API call
     console.log(`[${requestId}] Calling Hugging Face API...`);
@@ -131,7 +133,7 @@ serve(async (req) => {
         model: "black-forest-labs/FLUX.1-schnell", // Fast and high quality model
         parameters: {
           guidance_scale: 7.5,
-          num_inference_steps: 20, // Reduced for faster generation while maintaining quality
+          num_inference_steps: 15, // Reduced for faster generation while maintaining quality
         }
       });
 
