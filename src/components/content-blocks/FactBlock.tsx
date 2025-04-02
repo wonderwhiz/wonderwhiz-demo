@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
@@ -8,10 +9,10 @@ interface FactBlockProps {
     fact: string;
     rabbitHoles?: string[];
   };
-  onRabbitHoleClick: (question: string) => void;
+  onRabbitHoleClick: (question: string) => void;  // This accepts a string parameter
   expanded?: boolean;
   setExpanded?: (expanded: boolean) => void;
-  textSize?: string;  // New prop
+  textSize?: string;
 }
 
 const FactBlock: React.FC<FactBlockProps> = ({ 
@@ -19,7 +20,7 @@ const FactBlock: React.FC<FactBlockProps> = ({
   onRabbitHoleClick, 
   expanded = false,
   setExpanded = () => {},
-  textSize = 'text-sm sm:text-base'  // Default if not provided
+  textSize = 'text-sm sm:text-base'
 }) => {
   const factIsTooLong = content.fact.length > 120;
 
