@@ -306,9 +306,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   const handleSubmitReply = async (replyText: string) => {
     if (!replyText.trim() || !userId || !childProfileId) {
       if (!userId || !childProfileId) {
-        toast("You need to be logged in to send messages.", {
-          variant: "destructive"
-        });
+        toast.error("You need to be logged in to send messages.");
       }
       return;
     }
@@ -377,9 +375,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
 
       setReplies(prev => prev.filter(r => r.id !== tempId));
       
-      toast("There was an error sending your message. Please try again.", {
-        variant: "destructive"
-      });
+      toast.error("There was an error sending your message. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -448,7 +444,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       }
     } catch (error) {
       console.error('Error getting specialist reply:', error);
-      toast("There was an error getting a response. Please try again.");
+      toast.error("There was an error getting a response. Please try again.");
     }
   };
   
