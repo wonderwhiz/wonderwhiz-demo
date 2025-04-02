@@ -1,7 +1,6 @@
 import React from 'react';
-
-// Import the proper type for ContentBlock props
 import { ContentBlock as ContentBlockType } from '@/types/curio';
+import FactBlock from '@/components/content-blocks/FactBlock';
 
 interface ContentBlockProps {
   block: ContentBlockType;
@@ -22,23 +21,21 @@ interface ContentBlockProps {
   onSetQuery?: (query: string) => void;
 }
 
-// Define the component as default export
-const ContentBlock: React.FC<ContentBlockProps> = (props) => {
+const ContentBlock = (props: ContentBlockProps) => {
   // The implementation here would handle routing the props to the appropriate block type
   // For now, we'll use props directly with the original content block implementation
   return (
     <div className="content-block">
       {/* This would render the actual content based on block type */}
       {props.block.type === 'fact' && (
-        <div>
-          {/* Fact block content with rabbit hole click handler properly passed */}
-          Fact content would be rendered here
-        </div>
+        <FactBlock 
+          content={props.block.content} 
+          onRabbitHoleClick={props.onRabbitHoleClick}
+        />
       )}
       {/* Other block types would be rendered here */}
     </div>
   );
 };
 
-// Export the component as default
 export default ContentBlock;

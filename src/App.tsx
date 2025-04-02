@@ -1,14 +1,17 @@
+
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import CurioPage from '@/pages/CurioPage';
+import Dashboard from '@/pages/Dashboard';
 
-const AppRoutes = () => {
+const App = () => {
   return (
     <Routes>
-      {/* This additional route file will be imported into the main App.tsx */}
       <Route path="/curio/:curioId" element={<CurioPage />} />
+      <Route path="/dashboard/:profileId" element={<Dashboard />} />
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
 };
 
-export default AppRoutes;
+export default App;

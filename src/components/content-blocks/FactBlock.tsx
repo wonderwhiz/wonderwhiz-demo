@@ -23,6 +23,12 @@ const FactBlock: React.FC<FactBlockProps> = ({
   textSize = 'text-sm sm:text-base'
 }) => {
   const factIsTooLong = content.fact.length > 120;
+  const [isExpanded, setIsExpanded] = useState(expanded);
+  
+  const toggleExpanded = () => {
+    setIsExpanded(!isExpanded);
+    setExpanded(!isExpanded);
+  };
 
   return (
     <div>
@@ -36,7 +42,7 @@ const FactBlock: React.FC<FactBlockProps> = ({
             <Lightbulb className="h-5 w-5 text-wonderwhiz-gold" />
           </div>
           <div className="flex-1">
-            {factIsTooLong && !expanded ? (
+            {factIsTooLong && !isExpanded ? (
               <>
                 <p className={`text-white/90 ${textSize}`}>
                   {content.fact.substring(0, 120)}...
@@ -44,7 +50,7 @@ const FactBlock: React.FC<FactBlockProps> = ({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setExpanded(true)}
+                  onClick={toggleExpanded}
                   className="mt-1 text-wonderwhiz-purple hover:text-wonderwhiz-purple/80 px-2 py-0.5 h-auto text-xs flex items-center"
                 >
                   Read more <ChevronDown className="ml-1 h-3 w-3" />
@@ -53,11 +59,11 @@ const FactBlock: React.FC<FactBlockProps> = ({
             ) : (
               <>
                 <p className={`text-white/90 ${textSize}`}>{content.fact}</p>
-                {factIsTooLong && expanded && (
+                {factIsTooLong && isExpanded && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setExpanded(false)}
+                    onClick={toggleExpanded}
                     className="mt-1 text-wonderwhiz-purple hover:text-wonderwhiz-purple/80 px-2 py-0.5 h-auto text-xs flex items-center"
                   >
                     Show less <ChevronUp className="ml-1 h-3 w-3" />

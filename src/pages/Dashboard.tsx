@@ -3,27 +3,14 @@ import { Helmet } from 'react-helmet-async';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardHeader, CardTitle, CardContent, CurioCard } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
-import { Send, Menu, ArrowLeftRight, MessageSquare, Sparkles, Search, Star, Lightbulb, RefreshCw, ChevronDown, User, LogOut, UserCircle, PanelLeftClose, PanelLeft } from 'lucide-react';
+import { Send, MessageSquare, Sparkles, Search, Lightbulb, RefreshCw, ChevronDown, User, LogOut, UserCircle } from 'lucide-react';
 import WonderWhizLogo from '@/components/WonderWhizLogo';
 import ContentBlock from '@/components/ContentBlock';
-import BlockReply from '@/components/BlockReply';
-import { SPECIALISTS } from '@/components/SpecialistAvatar';
-import ChildDashboardTasks from '@/components/ChildDashboardTasks';
-import SparksBalance from '@/components/SparksBalance';
-import SparksHistory from '@/components/SparksHistory';
-import SparksOverview from '@/components/SparksOverview';
-import { useSparksSystem } from '@/hooks/useSparksSystem';
-import MagicalBorder from '@/components/MagicalBorder';
-import FloatingElements from '@/components/FloatingElements';
-import CurioSuggestion from '@/components/CurioSuggestion';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import SparksBadge from '@/components/SparksBadge';
-import { Sidebar, SidebarProvider, SidebarContent, SidebarHeader, SidebarFooter, SidebarSeparator, SidebarTrigger } from '@/components/ui/sidebar';
+import { useBlockInteractions } from '@/hooks/useBlockInteractions';
 
 interface ChildProfile {
   id: string;
@@ -88,6 +75,18 @@ const Dashboard = () => {
     streakBonusReceived,
     streakBonusAmount
   } = useSparksSystem(profileId);
+
+  const { 
+    handleToggleLike,
+    handleToggleBookmark,
+    handleReply,
+    handleQuizCorrect,
+    handleNewsRead,
+    handleCreativeUpload,
+    handleTaskComplete,
+    handleActivityComplete,
+    handleMindfulnessComplete
+  } = useBlockInteractions(profileId);
 
   useEffect(() => {
     const loadProfileAndCurios = async () => {
@@ -432,40 +431,6 @@ const Dashboard = () => {
       });
     } catch (error) {
       console.error('Error awarding sparks for creative upload:', error);
-    }
-  };
-
-  const handleToggleLike = async (blockId: string) => {
-    setContentBlocks(prev => prev.map(block => block.id === blockId ? {
-      ...block,
-      liked: !block.liked
-    } : block));
-    try {
-      const blockToUpdate = contentBlocks.find(b => b.id === blockId);
-      if (blockToUpdate) {
-        await supabase.from('content_blocks').update({
-          liked: !blockToUpdate.liked
-        }).eq('id', blockId);
-      }
-    } catch (error) {
-      console.error('Error updating like status:', error);
-    }
-  };
-
-  const handleToggleBookmark = async (blockId: string) => {
-    setContentBlocks(prev => prev.map(block => block.id === blockId ? {
-      ...block,
-      bookmarked: !block.bookmarked
-    } : block));
-    try {
-      const blockToUpdate = contentBlocks.find(b => b.id === blockId);
-      if (blockToUpdate) {
-        await supabase.from('content_blocks').update({
-          bookmarked: !blockToUpdate.bookmarked
-        }).eq('id', blockId);
-      }
-    } catch (error) {
-      console.error('Error updating bookmark status:', error);
     }
   };
 
@@ -957,10 +922,13 @@ const Dashboard = () => {
                       duration: 0.3
                     }}>
                             <ContentBlock
-                              block={block}
+                              block={{
+                                ...block,
+                                curio_id: currentCurio?.id || '',
+                              }}
                               onToggleLike={handleToggleLike}
                               onToggleBookmark={handleToggleBookmark}
-                              onReply={handleBlockReply}
+                              onReply={handleReply}
                               onRabbitHoleClick={handleFollowRabbitHole}
                               colorVariant={index % 3}
                               userId={profileId}
@@ -979,7 +947,6 @@ const Dashboard = () => {
                               </div>}
                           </motion.div>)}
                         
-                        {/* Load more target for intersection observer */}
                         {visibleBlocksCount < contentBlocks.length && <div ref={observerTarget} className="h-10 flex items-center justify-center text-white/50 text-sm">
                             <div className="animate-pulse">Loading more content...</div>
                           </div>}

@@ -33,8 +33,7 @@ const CurioPage = () => {
   
   // Get Sparks System hooks
   const { 
-    streakDays,
-    sparkAnimation
+    streakDays
   } = useSparksSystem(profileId);
   
   // State for search
