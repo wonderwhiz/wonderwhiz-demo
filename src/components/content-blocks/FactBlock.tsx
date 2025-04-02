@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
@@ -8,7 +9,7 @@ interface FactBlockProps {
     fact: string;
     rabbitHoles?: string[];
   };
-  onRabbitHoleClick: (question: string) => void;
+  onRabbitHoleClick: (question: string) => void;  // Updated to match what CurioPage provides
   expanded?: boolean;
   setExpanded?: (expanded: boolean) => void;
   textSize?: string;  // New prop

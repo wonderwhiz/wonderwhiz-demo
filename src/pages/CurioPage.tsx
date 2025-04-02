@@ -3,12 +3,12 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useCurioData } from '@/hooks/useCurioData';
 import { motion } from 'framer-motion';
-import { ChevronLeft, Search, X, AlertCircle, Loader2 } from 'lucide-react';
+import { ChevronLeft, Search, X, AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import CurioBlockList from '@/components/CurioBlockList';
-import useBlockInteractions from '@/hooks/useBlockInteractions';
-import useIntersectionObserver from '@/hooks/useIntersectionObserver';
+import { useBlockInteractions } from '@/hooks/useBlockInteractions';
+import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import { useToast } from '@/hooks/use-toast';
 import { useSparksSystem } from '@/hooks/useSparksSystem';
 
@@ -16,16 +16,26 @@ const CurioPage = () => {
   const { curioId } = useParams<{ curioId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { profileId } = JSON.parse(localStorage.getItem('wonderwhiz_user') || '{"profileId":""}');
   
-  // Get Sparks System hooks
+  // Block interactions hook
   const { 
     handleQuizCorrect, 
     handleNewsRead, 
     handleCreativeUpload,
     handleTaskComplete,
     handleActivityComplete,
-    handleMindfulnessComplete
-  } = useSparksSystem();
+    handleMindfulnessComplete,
+    handleToggleLike,
+    handleToggleBookmark,
+    handleReply
+  } = useBlockInteractions(profileId);
+  
+  // Get Sparks System hooks
+  const { 
+    streakDays,
+    sparkAnimation
+  } = useSparksSystem(profileId);
   
   // State for search
   const [searchQuery, setSearchQuery] = useState('');
@@ -36,24 +46,19 @@ const CurioPage = () => {
   
   // Get curio data
   const {
-    curioData,
-    contentBlocks,
+    blocks,
+    title,
     isLoading,
-    error,
     hasMoreBlocks,
     loadMoreBlocks,
     loadingMoreBlocks,
-    setNewQuery,
-    refreshCurio,
-    profileId
-  } = useCurioData(curioId);
-  
-  // Block interactions hook
-  const { handleToggleLike, handleToggleBookmark, handleReply } = useBlockInteractions();
+    handleSearch: setNewQuery,
+    clearSearch: refreshCurio,
+    isFirstLoad
+  } = useCurioData(curioId, profileId);
   
   // Intersection observer for infinite loading
-  const entry = useIntersectionObserver(loadMoreRef, {});
-  const isVisible = !!entry?.isIntersecting;
+  const [loadRef, isVisible] = useIntersectionObserver({});
   
   // Load more blocks when scrolled to bottom
   const loadMoreHandler = useCallback(() => {
@@ -69,11 +74,14 @@ const CurioPage = () => {
   // Handle search
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // Implement search functionality here
+    if (searchQuery.trim()) {
+      setNewQuery(searchQuery);
+    }
   };
   
   const clearSearch = () => {
     setSearchQuery('');
+    refreshCurio();
   };
   
   // Handle rabbit hole follow
@@ -120,6 +128,9 @@ const CurioPage = () => {
     );
   }
   
+  // Error state
+  const error = null; // We'll handle error state separately in the useCurioData hook
+  
   // If error, show error message
   if (error) {
     return (
@@ -160,7 +171,7 @@ const CurioPage = () => {
           >
             <ChevronLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-xl font-bold text-white">{curioData?.title || 'Exploring Curio'}</h1>
+          <h1 className="text-xl font-bold text-white">{title || 'Exploring Curio'}</h1>
         </div>
       </div>
       
@@ -193,16 +204,16 @@ const CurioPage = () => {
       
       {/* Content blocks */}
       <CurioBlockList
-        blocks={contentBlocks}
+        blocks={blocks}
         animateBlocks={!isLoading}
         hasMoreBlocks={hasMoreBlocks}
         loadingMoreBlocks={loadingMoreBlocks}
-        loadTriggerRef={loadMoreRef}
+        loadTriggerRef={loadRef}
         searchQuery={searchQuery}
         handleToggleLike={handleToggleLike}
         handleToggleBookmark={handleToggleBookmark}
         handleReply={handleReply}
-        onRabbitHoleFollow={handleRabbitHoleFollow}
+        onRabbitHoleClick={handleRabbitHoleFollow}
         onQuizCorrect={handleQuizCorrect}
         onNewsRead={handleNewsRead}
         onCreativeUpload={handleCreativeUpload}
@@ -210,7 +221,7 @@ const CurioPage = () => {
         onActivityComplete={handleActivityComplete}
         onMindfulnessComplete={handleMindfulnessComplete}
         profileId={profileId}
-        isFirstLoad={!isLoading && contentBlocks.length > 0}
+        isFirstLoad={isFirstLoad}
       />
       
       {/* Loading more indicator */}
