@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { BookmarkIcon, ThumbsUpIcon, MessageCircleIcon, ImageIcon, Loader, AlertCircle, Image, ImageOff, RefreshCw } from 'lucide-react';
@@ -311,7 +312,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     if (!replyText.trim() || !userId || !childProfileId) {
       if (!userId || !childProfileId) {
         toast({
-          title: "Authentication Error",
           description: "You need to be logged in to send messages.",
           variant: "destructive"
         });
@@ -384,7 +384,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       setReplies(prev => prev.filter(r => r.id !== tempId));
       
       toast({
-        title: "Couldn't send message",
         description: "There was an error sending your message. Please try again.",
         variant: "destructive"
       });
@@ -457,9 +456,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     } catch (error) {
       console.error('Error getting specialist reply:', error);
       toast({
-        title: "Couldn't get specialist response",
-        description: "There was an error getting a response. Please try again.",
-        variant: "destructive"
+        description: "There was an error getting a response. Please try again."
       });
     }
   };

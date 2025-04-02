@@ -114,8 +114,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
           if (isGeneratingContent) {
             setIsGeneratingContent(false);
             toast({
-              title: "Content generation taking longer than expected",
-              description: "Please try refreshing the page if content doesn't appear soon."
+              description: "Content generation taking longer than expected. Please try refreshing the page if content doesn't appear soon."
             });
           }
         }, 30000); // 30 seconds timeout
@@ -125,7 +124,6 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
     } catch (error) {
       console.error('Error fetching initial blocks:', error);
       toast({
-        title: "Error",
         description: "Could not load content blocks"
       });
     } finally {
@@ -159,7 +157,6 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
       } catch (error) {
         console.error('Error fetching curio:', error);
         toast({
-          title: "Error",
           description: "Could not load curio data"
         });
       } finally {
@@ -278,7 +275,6 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
     } catch (error) {
       console.error('Error generating content blocks:', error);
       toast({
-        title: "Error",
         description: error instanceof Error ? error.message : "Could not generate content blocks"
       });
       setIsGeneratingContent(false);
@@ -389,7 +385,6 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
         } catch (error) {
           console.error('Error loading more blocks from Claude response:', error);
           toast({
-            title: "Error",
             description: "Could not load more content"
           });
         } finally {
@@ -436,7 +431,6 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
     } catch (error) {
       console.error('Error loading more blocks:', error);
       toast({
-        title: "Error",
         description: "Could not load more content"
       });
     } finally {
@@ -468,7 +462,6 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
     } catch (error) {
       console.error('Error updating like status:', error);
       toast({
-        title: "Error",
         description: "Could not update like status"
       });
     }
@@ -498,7 +491,6 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
     } catch (error) {
       console.error('Error updating bookmark status:', error);
       toast({
-        title: "Error",
         description: "Could not update bookmark status"
       });
     }
@@ -533,14 +525,12 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
       } else {
         setBlocks([]);
         toast({
-          title: "No results",
           description: `No content found for "${value}"`
         });
       }
     } catch (error) {
       console.error('Error searching blocks:', error);
       toast({
-        title: "Search error",
         description: "Could not search content blocks"
       });
     } finally {
