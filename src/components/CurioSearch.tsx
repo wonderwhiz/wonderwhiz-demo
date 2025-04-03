@@ -1,6 +1,6 @@
 
 import React, { useRef, useEffect } from 'react';
-import { Search } from 'lucide-react';
+import { Search, UploadCloud } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
@@ -11,6 +11,7 @@ interface CurioSearchProps {
   clearSearch: () => void;
   isSearching: boolean;
   totalBlocksLoaded: number;
+  onImageUpload?: (file: File) => void;
 }
 
 const CurioSearch: React.FC<CurioSearchProps> = ({
@@ -20,8 +21,10 @@ const CurioSearch: React.FC<CurioSearchProps> = ({
   clearSearch,
   isSearching,
   totalBlocksLoaded,
+  onImageUpload,
 }) => {
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Focus search input with keyboard shortcut
   useEffect(() => {
@@ -40,6 +43,16 @@ const CurioSearch: React.FC<CurioSearchProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     handleSearch(searchQuery);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0] && onImageUpload) {
+      onImageUpload(e.target.files[0]);
+    }
+  };
+
+  const triggerFileUpload = () => {
+    fileInputRef.current?.click();
   };
 
   return (
@@ -76,8 +89,33 @@ const CurioSearch: React.FC<CurioSearchProps> = ({
           </Button>
         </div>
       </form>
-      <div className="text-xs text-white/50 mt-1 text-right">
-        {searchQuery ? 'Searching for results...' : `${totalBlocksLoaded} blocks loaded`}
+      
+      <div className="flex justify-between items-center mt-2">
+        <div className="text-xs text-white/50">
+          {searchQuery ? 'Searching for results...' : `${totalBlocksLoaded} blocks loaded`}
+        </div>
+        
+        {onImageUpload && (
+          <div>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handleFileChange} 
+              accept="image/*"
+              className="hidden" 
+            />
+            <Button 
+              type="button" 
+              size="sm" 
+              variant="outline" 
+              onClick={triggerFileUpload}
+              className="h-8 bg-wonderwhiz-purple/20 border-wonderwhiz-purple/40 text-white hover:bg-wonderwhiz-purple/30"
+            >
+              <UploadCloud className="h-4 w-4 mr-2" />
+              Upload Image
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

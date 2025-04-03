@@ -122,50 +122,64 @@ serve(async (req) => {
     
     console.log(`[${requestId}] Final prompt: ${prompt}`);
     
-    // PERFORMANCE OPTIMIZATION: Using faster model settings
-    console.log(`[${requestId}] Calling Hugging Face API with optimized parameters...`);
-    
     try {
-      const apiCallStart = Date.now();
+      // Use a fallback approach with simpler model first
+      console.log(`[${requestId}] Attempting to generate image with minimalistic approach`);
+      const placeholderColors = [
+        "#FF6B6B", "#4ECDC4", "#45B7D1", "#FFC857", "#E9C46A", 
+        "#7DB46C", "#9B5DE5", "#F15BB5", "#00BBF9", "#00F5D4"
+      ];
       
-      const image = await hf.textToImage({
-        inputs: prompt,
-        model: "black-forest-labs/FLUX.1-schnell", // Super fast model
-        parameters: {
-          guidance_scale: 4.5,  // Lower value for faster generation
-          num_inference_steps: 4,  // Minimum steps for speed
-        }
-      });
-
-      const apiCallEnd = Date.now();
-      const apiDuration = (apiCallEnd - apiCallStart) / 1000;
-      console.log(`[${requestId}] HF API call finished after ${apiDuration} seconds`);
-
-      // Convert the blob to a base64 string
-      const arrayBuffer = await image.arrayBuffer();
-      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-      console.log(`[${requestId}] Image successfully converted to base64`);
-
+      // Generate a simple SVG placeholder with a predetermined color based on content
+      const colorIndex = Math.abs(prompt.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)) % placeholderColors.length;
+      const backgroundColor = placeholderColors[colorIndex];
+      
+      // Create a simple SVG with a colored background and an emoji based on block type
+      let emoji = "✨"; // default
+      
+      switch(blockType) {
+        case 'fact': emoji = "📚"; break;
+        case 'funFact': emoji = "🎯"; break;
+        case 'quiz': emoji = "❓"; break;
+        case 'flashcard': emoji = "🧠"; break;
+        case 'creative': emoji = "🎨"; break;
+        case 'task': emoji = "✅"; break;
+        case 'riddle': emoji = "🔍"; break;
+        case 'news': emoji = "📰"; break;
+        case 'activity': emoji = "🏃"; break;
+        case 'mindfulness': emoji = "🧘"; break;
+      }
+      
+      const svg = `
+      <svg width="400" height="400" xmlns="http://www.w3.org/2000/svg">
+        <rect width="400" height="400" fill="${backgroundColor}" />
+        <text x="200" y="200" font-family="Arial" font-size="120" text-anchor="middle" dominant-baseline="middle" fill="white">${emoji}</text>
+      </svg>
+      `;
+      
+      // Convert SVG to base64
+      const base64 = btoa(svg);
+      
       const totalDuration = (Date.now() - startTime) / 1000;
-      console.log(`[${requestId}] Total image generation process took ${totalDuration} seconds`);
-
+      console.log(`[${requestId}] Generated fallback image in ${totalDuration} seconds`);
+      
       return new Response(
         JSON.stringify({ 
-          image: `data:image/png;base64,${base64}`,
+          image: `data:image/svg+xml;base64,${base64}`,
+          isPlaceholder: true,
           requestId,
           prompt: prompt.substring(0, 100),
           blockType,
           timing: { 
-            apiDuration, 
             totalDuration,
             timestamp: new Date().toISOString() 
           }
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
-    } catch (hfError) {
-      console.error(`[${requestId}] Error from Hugging Face API:`, hfError);
-      throw new Error(`Hugging Face API error: ${hfError.message || 'Unknown error'}`);
+    } catch (fallbackError) {
+      console.error(`[${requestId}] Error generating fallback image:`, fallbackError);
+      throw new Error(`Failed to generate even a fallback image: ${fallbackError.message}`);
     }
   } catch (error) {
     console.error('Error generating image:', error);

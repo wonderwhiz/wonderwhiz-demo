@@ -9,6 +9,7 @@ interface UseInfiniteScrollOptions {
   rootMargin?: string;
   delayMs?: number;
   immediate?: boolean;
+  disabled?: boolean;
 }
 
 /**
@@ -19,9 +20,10 @@ const useInfiniteScroll = ({
   isLoading, 
   hasMore,
   threshold = 0.1,
-  rootMargin = '200px', // Increased for earlier loading
-  delayMs = 100,
-  immediate = false
+  rootMargin = '300px', // Increased for earlier loading
+  delayMs = 50,
+  immediate = false,
+  disabled = false
 }: UseInfiniteScrollOptions) => {
   const observerTarget = useRef<HTMLDivElement | null>(null);
   const [intersecting, setIntersecting] = useState(false);
@@ -45,27 +47,27 @@ const useInfiniteScroll = ({
       clearTimeout(timeoutRef.current);
     }
     
-    if (!isLoading && hasMore) {
+    if (!isLoading && hasMore && !disabled) {
       timeoutRef.current = setTimeout(() => {
         console.log('Infinite scroll triggered loadMore');
         loadMore();
         timeoutRef.current = null;
       }, delayMs);
     }
-  }, [loadMore, isLoading, hasMore, delayMs]);
+  }, [loadMore, isLoading, hasMore, delayMs, disabled]);
   
   // Immediate loading on first render if specified
   useEffect(() => {
-    if (immediate && !hasTriggeredInitial.current && hasMore && !isLoading) {
+    if (immediate && !hasTriggeredInitial.current && hasMore && !isLoading && !disabled) {
       console.log('Initial load triggered immediately via immediate flag');
       loadMore();
       hasTriggeredInitial.current = true;
     }
-  }, [immediate, hasMore, isLoading, loadMore]);
+  }, [immediate, hasMore, isLoading, loadMore, disabled]);
   
   // Effect for intersection detection
   useEffect(() => {
-    if (intersecting && !isLoading && hasMore) {
+    if (intersecting && !isLoading && hasMore && !disabled) {
       // For the first visible intersection, trigger immediately
       if (!hasTriggeredInitial.current) {
         console.log('First intersection detected - loading content immediately');
@@ -75,10 +77,17 @@ const useInfiniteScroll = ({
         debouncedLoadMore();
       }
     }
-  }, [intersecting, isLoading, hasMore, debouncedLoadMore, loadMore]);
+  }, [intersecting, isLoading, hasMore, debouncedLoadMore, loadMore, disabled]);
 
-  // Setup IntersectionObserver
+  // Setup IntersectionObserver with performance optimizations
   useEffect(() => {
+    if (disabled) {
+      if (observer.current && observerTarget.current) {
+        observer.current.unobserve(observerTarget.current);
+      }
+      return;
+    }
+
     // Create new observer with better performance options
     observer.current = new IntersectionObserver(
       entries => {
@@ -111,7 +120,7 @@ const useInfiniteScroll = ({
         timeoutRef.current = null;
       }
     };
-  }, [threshold, rootMargin, intersecting]);
+  }, [threshold, rootMargin, intersecting, disabled]);
 
   return observerTarget;
 };

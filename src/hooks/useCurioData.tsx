@@ -48,6 +48,36 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
     });
   };
 
+  const addBlock = useCallback(async (newBlock: any) => {
+    if (!curioId) return null;
+    
+    try {
+      const { data, error } = await supabase
+        .from('content_blocks')
+        .insert({
+          ...newBlock,
+          curio_id: curioId,
+        })
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      if (data) {
+        const mappedBlock = convertToContentBlocks([data])[0];
+        setBlocks(prevBlocks => [mappedBlock, ...prevBlocks]);
+        setTotalBlocksLoaded(prev => prev + 1);
+        return mappedBlock;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error adding new block:', error);
+      toast.error('Failed to add content block');
+      return null;
+    }
+  }, [curioId]);
+
   const fetchInitialBlocks = useCallback(async (curioId: string) => {
     if (!curioId) return;
     
@@ -558,6 +588,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
     handleToggleBookmark,
     handleSearch,
     clearSearch,
-    isFirstLoad
+    isFirstLoad,
+    addBlock
   };
 };

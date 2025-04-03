@@ -18,6 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 const CurioPage: React.FC = () => {
   const { profileId, curioId } = useParams<{ profileId: string; curioId: string }>();
   const [animateBlocks, setAnimateBlocks] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   
   const {
     blocks,
@@ -36,7 +37,8 @@ const CurioPage: React.FC = () => {
     handleToggleBookmark,
     handleSearch,
     clearSearch,
-    isFirstLoad
+    isFirstLoad,
+    addBlock
   } = useCurioData(curioId, profileId);
 
   const {
@@ -100,6 +102,68 @@ const CurioPage: React.FC = () => {
       });
     } catch (error) {
       console.error('Error handling mindfulness completion:', error);
+    }
+  };
+
+  const handleImageUpload = async (file: File) => {
+    if (!curioId || !profileId) {
+      toast.error("Unable to process image without proper context");
+      return;
+    }
+    
+    setIsUploadingImage(true);
+    
+    try {
+      toast.info("Analyzing your image...", {
+        duration: 5000,
+      });
+      
+      // Create FormData to send the image
+      const formData = new FormData();
+      formData.append("image", file);
+      formData.append("query", "What's in this image? Generate interesting facts for a child.");
+      
+      // Call the analyze-image function
+      const response = await fetch(
+        `${supabase.functions.url}/analyze-image`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to analyze image: ${errorText}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      
+      if (data.block) {
+        // Add the block to the current curio
+        await addBlock({
+          ...data.block,
+          curio_id: curioId
+        });
+        
+        toast.success("Image analyzed successfully!", {
+          duration: 3000,
+        });
+        
+        // Scroll to the top to see the new content
+        if (scrollAreaRef.current) {
+          scrollAreaRef.current.scrollTop = 0;
+        }
+      }
+    } catch (error) {
+      console.error("Error analyzing image:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to analyze image");
+    } finally {
+      setIsUploadingImage(false);
     }
   };
 
@@ -172,7 +236,40 @@ const CurioPage: React.FC = () => {
           clearSearch={clearSearch}
           isSearching={isLoading}
           totalBlocksLoaded={totalBlocksLoaded}
+          onImageUpload={handleImageUpload}
         />
+        
+        {isUploadingImage && (
+          <motion.div 
+            className="flex items-center justify-center py-4 mb-4 bg-purple-900/20 rounded-lg border border-purple-500/30"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="flex flex-col items-center">
+              <div className="flex space-x-2 mb-2">
+                {[0, 1, 2].map((i) => (
+                  <motion.div
+                    key={i}
+                    className="w-3 h-3 rounded-full bg-wonderwhiz-purple"
+                    animate={{
+                      y: [0, -10, 0],
+                    }}
+                    transition={{
+                      duration: 0.6,
+                      repeat: Infinity,
+                      repeatType: "loop",
+                      delay: i * 0.2,
+                    }}
+                  />
+                ))}
+              </div>
+              <p className="text-sm text-white/80">
+                Analyzing your image with AI...
+              </p>
+            </div>
+          </motion.div>
+        )}
         
         <Card className="bg-black/40 border-white/10 p-2 sm:p-4 md:p-6">
           <ScrollArea ref={scrollAreaRef} className="h-[calc(100vh-230px)]">
