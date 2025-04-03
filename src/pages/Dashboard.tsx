@@ -732,7 +732,8 @@ const Dashboard = () => {
         </main>
       </div>
       
-      <style jsx>{`
+      <style>
+        {`
         .flip-card {
           background-color: transparent;
           perspective: 1000px;
@@ -779,7 +780,8 @@ const Dashboard = () => {
             height: 100px;
           }
         }
-      `}</style>
+        `}
+      </style>
     </SidebarProvider>
   );
 };
