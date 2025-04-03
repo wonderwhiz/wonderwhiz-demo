@@ -25,6 +25,7 @@ const useInfiniteScroll = ({
   const [intersecting, setIntersecting] = useState(false);
   const observer = useRef<IntersectionObserver | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hasTriggeredInitial = useRef<boolean>(false);
   
   // Debounced load function to prevent multiple rapid calls
   const debouncedLoadMore = useCallback(() => {
@@ -44,9 +45,16 @@ const useInfiniteScroll = ({
   useEffect(() => {
     // If we're intersecting and not loading and have more content, trigger load
     if (intersecting && !isLoading && hasMore) {
-      debouncedLoadMore();
+      // For the first visible intersection, trigger immediately
+      if (!hasTriggeredInitial.current) {
+        console.log('First intersection detected - loading content immediately');
+        loadMore();
+        hasTriggeredInitial.current = true;
+      } else {
+        debouncedLoadMore();
+      }
     }
-  }, [intersecting, isLoading, hasMore, debouncedLoadMore]);
+  }, [intersecting, isLoading, hasMore, debouncedLoadMore, loadMore]);
 
   useEffect(() => {
     // Create new observer

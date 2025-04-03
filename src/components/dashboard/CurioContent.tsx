@@ -68,6 +68,33 @@ const CurioContent: React.FC<CurioContentProps> = ({
   onCreativeUpload
 }) => {
   const feedEndRef = useRef<HTMLDivElement>(null);
+  const [renderedBlocks, setRenderedBlocks] = useState<ContentBlock[]>([]);
+  
+  // Progressive rendering - immediately show first blocks for better UX
+  useEffect(() => {
+    if (!contentBlocks.length) {
+      setRenderedBlocks([]);
+      return;
+    }
+    
+    // Always show at least the first block immediately
+    if (contentBlocks.length > 0 && renderedBlocks.length === 0) {
+      console.log("Immediately rendering first block for fast initial display");
+      setRenderedBlocks([contentBlocks[0]]);
+      
+      // Then add all blocks with a short delay
+      if (contentBlocks.length > 1) {
+        const timer = setTimeout(() => {
+          console.log(`Rendering all ${contentBlocks.length} blocks after initial display`);
+          setRenderedBlocks(contentBlocks);
+        }, 150); // Short delay for the rest
+        return () => clearTimeout(timer);
+      }
+    } else if (contentBlocks.length !== renderedBlocks.length) {
+      // Fast update when blocks change but not on initial render
+      setRenderedBlocks(contentBlocks);
+    }
+  }, [contentBlocks, renderedBlocks.length]);
   
   // Set up infinite scroll for loading more blocks
   const observerTarget = useInfiniteScroll({
@@ -102,7 +129,7 @@ const CurioContent: React.FC<CurioContentProps> = ({
       
       <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 px-3 sm:px-4 pt-4">{currentCurio.title}</h2>
       <div className="space-y-4 px-3 sm:px-4 pb-4">
-        {contentBlocks.map((block, index) => (
+        {renderedBlocks.map((block, index) => (
           <motion.div 
             key={block.id} 
             className="space-y-2" 

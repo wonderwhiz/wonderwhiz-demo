@@ -173,23 +173,27 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   const blockTitle = getBlockTitle(block);
   
   useEffect(() => {
-    if (isFirstBlock && !contextualImage && !imageLoading) {
+    if (isFirstBlock && !contextualImage && !imageLoading && !initialImageLoadAttempted) {
       try {
         const cacheKey = `image-cache-${block.id}`;
         const cachedImageData = localStorage.getItem(cacheKey);
         if (cachedImageData) {
-          console.log(`[${block.id}] Found cached image, using it.`);
+          console.log(`[${block.id}] Found cached image, using it immediately`);
           setContextualImage(cachedImageData);
           return;
+        } else {
+          console.log(`[${block.id}] No cached image found, will generate`);
         }
       } catch (e) {
         console.error('Error accessing localStorage:', e);
       }
     }
-  }, [isFirstBlock, block.id, contextualImage, imageLoading]);
+  }, [isFirstBlock, block.id, contextualImage, imageLoading, initialImageLoadAttempted]);
   
   const generateImage = useCallback(async () => {
-    if (!isFirstBlock || contextualImage || imageLoading || imageRetryCount > 2) return;
+    if (!isFirstBlock || contextualImage || imageLoading || imageRetryCount > 2) {
+      return;
+    }
     
     try {
       const reqId = imageRequestId;
@@ -206,6 +210,10 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       setImageTimeout(timeoutId);
       
       const startTime = Date.now();
+      
+      console.log(`[${reqId}][${block.id}] Calling generate-contextual-image with content:`, 
+                 JSON.stringify(block.content).substring(0, 100) + '...');
+                 
       const { data, error } = await supabase.functions.invoke('generate-contextual-image', {
         body: {
           blockContent: block.content,
@@ -221,7 +229,8 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       }
       
       const duration = (Date.now() - startTime) / 1000;
-      console.log(`[${reqId}][${block.id}] Image generation response received after ${duration}s:`, { success: !!data, hasError: !!error });
+      console.log(`[${reqId}][${block.id}] Image generation response received after ${duration}s:`, 
+                 { success: !!data, hasError: !!error, dataKeys: data ? Object.keys(data) : 'none' });
       
       if (error) {
         console.error(`[${reqId}][${block.id}] Supabase function error:`, error);
@@ -244,6 +253,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         try {
           const cacheKey = `image-cache-${block.id}`;
           localStorage.setItem(cacheKey, data.image);
+          console.log(`[${reqId}][${block.id}] Image cached successfully with key:`, cacheKey);
         } catch (e) {
           console.error('Error caching image in localStorage:', e);
         }
@@ -260,17 +270,21 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   }, [isFirstBlock, block, contextualImage, imageLoading, imageRetryCount, imageRequestId]);
   
   useEffect(() => {
-    if (isFirstBlock && !initialImageLoadAttempted && !contextualImage && !imageLoading) {
-      console.log(`[${block.id}] Initial image generation triggering immediately`);
-      generateImage();
-    }
+    const initImage = async () => {
+      if (isFirstBlock && !initialImageLoadAttempted && !contextualImage && !imageLoading) {
+        console.log(`[${block.id}] Initial image generation triggering immediately`);
+        await generateImage();
+      }
+    };
+    
+    initImage();
     
     return () => {
       if (imageTimeout) {
         clearTimeout(imageTimeout);
       }
     };
-  }, [isFirstBlock, contextualImage, imageLoading, generateImage, block.id, imageTimeout, initialImageLoadAttempted]);
+  }, [isFirstBlock, block.id, contextualImage, generateImage, imageLoading, imageTimeout, initialImageLoadAttempted]);
   
   useEffect(() => {
     if (imageError && imageRetryCount < 3 && !contextualImage && !imageLoading) {
