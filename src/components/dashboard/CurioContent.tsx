@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ContentBlock from '@/components/ContentBlock';
 import useInfiniteScroll from '@/hooks/useInfiniteScroll';
@@ -36,8 +36,8 @@ interface CurioContentProps {
   loadingBlocks: boolean;
   visibleBlocksCount: number;
   profileId?: string;
-  onLoadMore: () => void;  // New prop for loading more blocks
-  hasMoreBlocks: boolean;  // New prop to indicate if there are more blocks
+  onLoadMore: () => void;
+  hasMoreBlocks: boolean;
   onToggleLike: (blockId: string) => void;
   onToggleBookmark: (blockId: string) => void;
   onReply: (blockId: string, message: string) => void;
@@ -69,58 +69,77 @@ const CurioContent: React.FC<CurioContentProps> = ({
 }) => {
   const feedEndRef = useRef<HTMLDivElement>(null);
   const [renderedBlocks, setRenderedBlocks] = useState<ContentBlock[]>([]);
+  const [imageGenerationRequested, setImageGenerationRequested] = useState<boolean>(false);
   
-  // Progressive rendering - immediately show first blocks for better UX
+  // Performance optimization: Only render a max number of blocks at once
+  const MAX_VISIBLE_BLOCKS = 10;
+  
+  // Progressive rendering with immediate first block for better UX
   useEffect(() => {
-    if (!contentBlocks.length) {
+    if (contentBlocks.length === 0) {
       setRenderedBlocks([]);
       return;
     }
     
-    // Always show at least the first block immediately
+    // Always render the first block immediately for instant feedback
     if (contentBlocks.length > 0 && renderedBlocks.length === 0) {
       console.log("Immediately rendering first block for fast initial display");
       setRenderedBlocks([contentBlocks[0]]);
       
-      // Then add all blocks with a short delay
+      // Then add the rest of the initial blocks quickly
       if (contentBlocks.length > 1) {
         const timer = setTimeout(() => {
-          console.log(`Rendering all ${contentBlocks.length} blocks after initial display`);
-          setRenderedBlocks(contentBlocks);
-        }, 150); // Short delay for the rest
+          console.log(`Rendering all visible blocks after initial display`);
+          // Limit number of rendered blocks for performance
+          setRenderedBlocks(contentBlocks.slice(0, MAX_VISIBLE_BLOCKS));
+        }, 50); // Very short delay for the rest
         return () => clearTimeout(timer);
       }
-    } else if (contentBlocks.length !== renderedBlocks.length) {
+    } else {
       // Fast update when blocks change but not on initial render
-      setRenderedBlocks(contentBlocks);
+      // Only render the visible blocks for performance
+      setRenderedBlocks(contentBlocks.slice(0, Math.min(contentBlocks.length, MAX_VISIBLE_BLOCKS)));
     }
   }, [contentBlocks, renderedBlocks.length]);
+
+  // Request image generation for first block only once
+  useEffect(() => {
+    if (contentBlocks.length > 0 && !imageGenerationRequested) {
+      console.log("Setting image generation flag for first block");
+      setImageGenerationRequested(true);
+    }
+  }, [contentBlocks, imageGenerationRequested]);
   
-  // Set up infinite scroll for loading more blocks
+  // Set up infinite scroll with improved configuration
   const observerTarget = useInfiniteScroll({
     loadMore: onLoadMore,
     isLoading: loadingBlocks,
     hasMore: hasMoreBlocks,
-    threshold: 0.1,
-    rootMargin: '200px', // Load earlier for smoother experience
+    threshold: 0.2, // Start loading earlier
+    rootMargin: '400px', // Load much earlier for smoother experience
+    delayMs: 50, // Faster response time
   });
+
+  // Memoize block replies to prevent unnecessary re-renders
+  const memoizedReplies = useMemo(() => blockReplies, [blockReplies]);
 
   if (!currentCurio) return null;
 
   return (
-    <div>
+    <div className="relative">
       <AnimatePresence>
         {(isGenerating || loadingBlocks) && (
           <motion.div 
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
             exit={{ opacity: 0 }} 
-            className="p-4 mb-6 bg-wonderwhiz-purple/20 backdrop-blur-sm rounded-lg border border-wonderwhiz-purple/30 flex items-center"
+            transition={{ duration: 0.2 }}
+            className="p-3 mb-4 bg-wonderwhiz-purple/20 backdrop-blur-sm rounded-lg border border-wonderwhiz-purple/30 flex items-center"
           >
-            <div className="mr-3">
-              <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+            <div className="mr-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
             </div>
-            <p className="text-white">
+            <p className="text-white text-sm">
               {isGenerating ? "Generating your personalized content..." : "Loading more content..."}
             </p>
           </motion.div>
@@ -136,8 +155,8 @@ const CurioContent: React.FC<CurioContentProps> = ({
             initial={{ opacity: 0, y: 20 }} 
             animate={{ opacity: 1, y: 0 }} 
             transition={{ 
-              delay: Math.min(index * 0.05, 0.3), // Cap the delay for smoother loading
-              duration: 0.3 
+              delay: Math.min(index * 0.05, 0.2), // Cap the delay for smoother loading
+              duration: 0.2
             }}
           >
             <ContentBlock 
@@ -153,12 +172,12 @@ const CurioContent: React.FC<CurioContentProps> = ({
               colorVariant={index % 3} 
               userId={profileId} 
               childProfileId={profileId} 
-              isFirstBlock={index === 0} // Mark the first block for image generation
+              isFirstBlock={index === 0} // Always generate image for first block
             />
             
-            {blockReplies[block.id] && blockReplies[block.id].length > 0 && (
+            {memoizedReplies[block.id] && memoizedReplies[block.id].length > 0 && (
               <div className="pl-3 sm:pl-4 border-l-2 border-white/20 ml-3 sm:ml-4">
-                {blockReplies[block.id].map(reply => (
+                {memoizedReplies[block.id].map(reply => (
                   <div 
                     key={reply.id}
                     className={`mb-3 ${reply.from_user ? 'ml-auto' : ''}`}
@@ -184,13 +203,16 @@ const CurioContent: React.FC<CurioContentProps> = ({
           </motion.div>
         ))}
         
-        {/* Invisible loading sentinel for infinite scroll */}
-        {hasMoreBlocks && <div ref={observerTarget} className="h-10 w-full" />}
+        {/* Invisible loading sentinel for infinite scroll - positioned earlier for preloading */}
+        {hasMoreBlocks && <div ref={observerTarget} className="h-20 w-full" />}
         
         {/* Loading indicator shown when fetching more blocks */}
         {loadingBlocks && hasMoreBlocks && (
           <div className="h-10 flex items-center justify-center text-white/50 text-sm">
-            <div className="animate-pulse">Loading more content...</div>
+            <div className="animate-pulse flex items-center">
+              <div className="w-3 h-3 bg-wonderwhiz-purple/60 rounded-full mr-2 animate-bounce" />
+              Loading more content...
+            </div>
           </div>
         )}
       </div>

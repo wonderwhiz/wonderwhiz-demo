@@ -16,7 +16,8 @@ serve(async (req) => {
 
   try {
     const requestId = crypto.randomUUID();
-    console.log(`[${requestId}] Starting image generation request`);
+    const startTime = Date.now();
+    console.log(`[${requestId}] Starting image generation request at ${new Date().toISOString()}`);
     
     // Parse request body with better error handling
     let blockContent, blockType;
@@ -25,8 +26,7 @@ serve(async (req) => {
       blockContent = requestData.blockContent;
       blockType = requestData.blockType;
       
-      console.log(`[${requestId}] Received request for ${blockType} content with data:`, 
-                 JSON.stringify(blockContent).substring(0, 100) + '...');
+      console.log(`[${requestId}] Received request for ${blockType} content`);
     } catch (parseError) {
       console.error(`[${requestId}] Error parsing request body:`, parseError);
       throw new Error(`Invalid request format: ${parseError.message}`);
@@ -78,10 +78,10 @@ serve(async (req) => {
     };
     
     const contentText = getContentString(blockContent);
-    console.log(`[${requestId}] Extracted content text: ${contentText}`);
+    console.log(`[${requestId}] Extracted content text: ${contentText.substring(0, 50)}...`);
     
-    // Default prompt if we can't extract better content
-    prompt = `A child-friendly, educational illustration about: ${contentText || blockType}`;
+    // Default prompt
+    prompt = `A child-friendly, educational illustration related to: ${contentText || blockType}`;
     
     // Try to make a more specific prompt based on block type
     switch(blockType) {
@@ -90,10 +90,10 @@ serve(async (req) => {
         prompt = `A child-friendly, educational illustration showing: ${getContentString(blockContent.fact)}`;
         break;
       case 'quiz':
-        prompt = `A child-friendly, educational illustration related to: ${getContentString(blockContent.question)}`;
+        prompt = `A child-friendly, educational illustration related to this question: ${getContentString(blockContent.question)}`;
         break;
       case 'flashcard':
-        prompt = `A child-friendly, educational illustration showing: ${getContentString(blockContent.front)}`;
+        prompt = `A child-friendly, educational illustration about: ${getContentString(blockContent.front)}`;
         break;
       case 'creative':
         prompt = `A child-friendly, inspiring illustration about: ${getContentString(blockContent.prompt)}`;
@@ -102,7 +102,7 @@ serve(async (req) => {
         prompt = `A child-friendly illustration showing a child doing: ${getContentString(blockContent.task)}`;
         break;
       case 'riddle':
-        prompt = `A child-friendly, mysterious illustration hinting at: ${
+        prompt = `A child-friendly, mysterious illustration about: ${
           blockContent.answer ? getContentString(blockContent.answer) : getContentString(blockContent.riddle)
         }`;
         break;
@@ -118,22 +118,22 @@ serve(async (req) => {
     }
     
     // Make sure the prompt is safe for kids and has appropriate style
-    prompt += ", digital art style, bright colors, educational, safe for kids, no text, no words";
+    prompt += ", digital art style, bright colors, educational, safe for kids, no text";
     
     console.log(`[${requestId}] Final prompt: ${prompt}`);
     
-    // OPTIMIZATION: Improved error handling and faster image generation settings
-    console.log(`[${requestId}] Calling Hugging Face API...`);
+    // PERFORMANCE OPTIMIZATION: Using faster model settings
+    console.log(`[${requestId}] Calling Hugging Face API with optimized parameters...`);
     
     try {
       const apiCallStart = Date.now();
       
       const image = await hf.textToImage({
         inputs: prompt,
-        model: "black-forest-labs/FLUX.1-schnell", // Fast and high quality model
+        model: "black-forest-labs/FLUX.1-schnell", // Super fast model
         parameters: {
-          guidance_scale: 6.5, // Reduced from 7.5 for faster generation
-          num_inference_steps: 10, // Further reduced from 15 for faster generation
+          guidance_scale: 4.5,  // Lower value for faster generation
+          num_inference_steps: 4,  // Minimum steps for speed
         }
       });
 
@@ -144,7 +144,10 @@ serve(async (req) => {
       // Convert the blob to a base64 string
       const arrayBuffer = await image.arrayBuffer();
       const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-      console.log(`[${requestId}] Image successfully converted to base64, length: ${base64.length}`);
+      console.log(`[${requestId}] Image successfully converted to base64`);
+
+      const totalDuration = (Date.now() - startTime) / 1000;
+      console.log(`[${requestId}] Total image generation process took ${totalDuration} seconds`);
 
       return new Response(
         JSON.stringify({ 
@@ -154,7 +157,7 @@ serve(async (req) => {
           blockType,
           timing: { 
             apiDuration, 
-            totalDuration: (Date.now() - apiCallStart) / 1000,
+            totalDuration,
             timestamp: new Date().toISOString() 
           }
         }),

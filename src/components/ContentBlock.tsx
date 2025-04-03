@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { BookmarkIcon, ThumbsUpIcon, MessageCircleIcon, ImageIcon, Loader, AlertCircle, Image, ImageOff, RefreshCw } from 'lucide-react';
 import { SPECIALISTS } from './SpecialistAvatar';
@@ -10,7 +10,6 @@ import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';
 
-// Import Block Type Components
 import FactBlock from './content-blocks/FactBlock';
 import QuizBlock from './content-blocks/QuizBlock';
 import FlashcardBlock from './content-blocks/FlashcardBlock';
@@ -157,10 +156,10 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   const [imageLoading, setImageLoading] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
   const [imageRetryCount, setImageRetryCount] = useState(0);
-  const [imageTimeout, setImageTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [imageRequestInProgress, setImageRequestInProgress] = useState(false);
+  const [imageTimerId, setImageTimerId] = useState<number | null>(null);
   const [imageRequestId, setImageRequestId] = useState<string>(`img-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`);
-  const [initialImageLoadAttempted, setInitialImageLoadAttempted] = useState(false);
-  const [cachedImage, setCachedImage] = useState<string | null>(null);
+  const imageRetryCountRef = useRef(0);
   
   const specialist = SPECIALISTS[block.specialist_id] || {
     name: 'Wonder Wizard',
@@ -171,48 +170,62 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   
   const specialistStyle = getSpecialistStyle(block.specialist_id);
   const blockTitle = getBlockTitle(block);
-  
+
   useEffect(() => {
-    if (isFirstBlock && !contextualImage && !imageLoading && !initialImageLoadAttempted) {
+    const checkImageCache = async () => {
+      if (!isFirstBlock || contextualImage || imageRequestInProgress) {
+        return;
+      }
+      
       try {
         const cacheKey = `image-cache-${block.id}`;
         const cachedImageData = localStorage.getItem(cacheKey);
+        
         if (cachedImageData) {
           console.log(`[${block.id}] Found cached image, using it immediately`);
           setContextualImage(cachedImageData);
           return;
-        } else {
-          console.log(`[${block.id}] No cached image found, will generate`);
-        }
+        } 
+        
+        console.log(`[${block.id}] No cached image found, initiating generation`);
+        generateImage();
       } catch (e) {
-        console.error('Error accessing localStorage:', e);
+        console.error(`[${block.id}] Error checking image cache:`, e);
+        generateImage();
       }
+    };
+    
+    if (isFirstBlock) {
+      checkImageCache();
     }
-  }, [isFirstBlock, block.id, contextualImage, imageLoading, initialImageLoadAttempted]);
+  }, [isFirstBlock, block.id, contextualImage, imageRequestInProgress]);
   
   const generateImage = useCallback(async () => {
-    if (!isFirstBlock || contextualImage || imageLoading || imageRetryCount > 2) {
+    if (!isFirstBlock || contextualImage || imageLoading || imageRetryCountRef.current > 3) {
       return;
     }
     
     try {
       const reqId = imageRequestId;
-      console.log(`[${reqId}][${block.id}] Starting image generation for block type:`, block.type);
+      console.log(`[${reqId}][${block.id}] Starting image generation`);
       setImageLoading(true);
+      setImageRequestInProgress(true);
       setImageError(null);
       
-      const timeoutId = setTimeout(() => {
-        console.log(`[${reqId}][${block.id}] Image generation timed out after 12 seconds`);
-        setImageError("Generation timed out. Please try again.");
-        setImageLoading(false);
-      }, 12000);
+      const timerId = setTimeout(() => {
+        console.log(`[${reqId}][${block.id}] Image generation taking longer than expected`);
+        setImageTimerId(null);
+        
+        if (imageLoading) {
+          // We'll keep waiting, but update UI
+        }
+      }, 5000) as unknown as number;
       
-      setImageTimeout(timeoutId);
+      setImageTimerId(timerId);
       
       const startTime = Date.now();
       
-      console.log(`[${reqId}][${block.id}] Calling generate-contextual-image with content:`, 
-                 JSON.stringify(block.content).substring(0, 100) + '...');
+      console.log(`[${reqId}][${block.id}] Calling generate-contextual-image function`);
                  
       const { data, error } = await supabase.functions.invoke('generate-contextual-image', {
         body: {
@@ -223,14 +236,13 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         }
       });
       
-      if (imageTimeout) {
-        clearTimeout(imageTimeout);
-        setImageTimeout(null);
+      if (imageTimerId) {
+        clearTimeout(imageTimerId);
+        setImageTimerId(null);
       }
       
       const duration = (Date.now() - startTime) / 1000;
-      console.log(`[${reqId}][${block.id}] Image generation response received after ${duration}s:`, 
-                 { success: !!data, hasError: !!error, dataKeys: data ? Object.keys(data) : 'none' });
+      console.log(`[${reqId}][${block.id}] Image generation response received after ${duration}s`);
       
       if (error) {
         console.error(`[${reqId}][${block.id}] Supabase function error:`, error);
@@ -247,13 +259,13 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       }
       
       if (data && data.image) {
-        console.log(`[${reqId}][${block.id}] Image generated successfully, size: ${data.image.length} chars`);
+        console.log(`[${reqId}][${block.id}] Image generated successfully`);
         setContextualImage(data.image);
         
         try {
           const cacheKey = `image-cache-${block.id}`;
           localStorage.setItem(cacheKey, data.image);
-          console.log(`[${reqId}][${block.id}] Image cached successfully with key:`, cacheKey);
+          console.log(`[${reqId}][${block.id}] Image cached successfully`);
         } catch (e) {
           console.error('Error caching image in localStorage:', e);
         }
@@ -263,80 +275,57 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     } catch (err) {
       console.error(`[${block.id}] Error generating contextual image:`, err);
       setImageError(err instanceof Error ? err.message : "Unknown error occurred");
+      
+      imageRetryCountRef.current += 1;
+      
+      if (imageRetryCountRef.current <= 3) {
+        console.log(`[${block.id}] Will retry image generation (attempt ${imageRetryCountRef.current})`);
+        
+        setTimeout(() => {
+          setImageRequestId(`img-retry-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`);
+          setImageLoading(false);
+          setImageRequestInProgress(false);
+          generateImage();
+        }, 1000);
+      }
     } finally {
       setImageLoading(false);
-      setInitialImageLoadAttempted(true);
+      if (imageRetryCountRef.current > 3) {
+        setImageRequestInProgress(false);
+      }
     }
-  }, [isFirstBlock, block, contextualImage, imageLoading, imageRetryCount, imageRequestId]);
+  }, [isFirstBlock, block, contextualImage, imageLoading, imageRequestId, imageTimerId]);
   
-  useEffect(() => {
-    const initImage = async () => {
-      if (isFirstBlock && !initialImageLoadAttempted && !contextualImage && !imageLoading) {
-        console.log(`[${block.id}] Initial image generation triggering immediately`);
-        await generateImage();
-      }
-    };
+  const handleImageLoadError = () => {
+    console.error(`[${block.id}] Image failed to load from data URL`);
+    setImageError("Image failed to load");
+    setContextualImage(null);
     
-    initImage();
-    
-    return () => {
-      if (imageTimeout) {
-        clearTimeout(imageTimeout);
-      }
-    };
-  }, [isFirstBlock, block.id, contextualImage, generateImage, imageLoading, imageTimeout, initialImageLoadAttempted]);
-  
-  useEffect(() => {
-    if (imageError && imageRetryCount < 3 && !contextualImage && !imageLoading) {
-      const retryDelay = 1000;
-      console.log(`[${block.id}] Setting up retry ${imageRetryCount + 1} in ${retryDelay}ms`);
+    if (imageRetryCountRef.current < 3) {
+      console.log(`[${block.id}] Will retry after image load failure`);
+      imageRetryCountRef.current += 1;
       
-      const retryTimer = setTimeout(() => {
-        console.log(`[${block.id}] Retrying image generation (attempt ${imageRetryCount + 1})`);
-        setImageRetryCount(prev => prev + 1);
-        setImageError(null);
-        setImageRequestId(`img-retry-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`);
+      setTimeout(() => {
+        setImageRequestId(`img-error-retry-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`);
+        setImageRequestInProgress(false);
         generateImage();
-      }, retryDelay);
-      
-      return () => clearTimeout(retryTimer);
+      }, 1000);
     }
-  }, [imageError, imageRetryCount, contextualImage, imageLoading, block.id, generateImage]);
+  };
   
-  useEffect(() => {
-    const fetchReplies = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('block_replies')
-          .select('*')
-          .eq('block_id', block.id)
-          .order('created_at', { ascending: true });
-        
-        if (error) {
-          console.error('Error fetching replies:', error);
-          return;
-        }
-        
-        if (data) {
-          const mappedReplies: Reply[] = data.map((reply: DbReply) => ({
-            id: reply.id,
-            block_id: reply.block_id,
-            content: reply.content,
-            from_user: reply.from_user,
-            timestamp: reply.created_at,
-            specialist_id: reply.specialist_id
-          }));
-          setReplies(mappedReplies);
-        }
-      } catch (err) {
-        console.error('Error in fetchReplies:', err);
-      }
-    };
+  const handleRetryImage = () => {
+    console.log(`[${block.id}] Manual image retry requested`);
+    setContextualImage(null);
+    setImageError(null);
+    imageRetryCountRef.current = 0;
+    setImageLoading(false);
+    setImageRequestInProgress(false);
+    setImageRequestId(`img-manual-retry-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`);
     
-    if (block.id && !block.id.startsWith('generating-')) {
-      fetchReplies();
-    }
-  }, [block.id]);
+    setTimeout(() => {
+      generateImage();
+    }, 100);
+  };
   
   const handleSubmitReply = async (replyText: string) => {
     if (!replyText.trim() || !userId || !childProfileId) {
@@ -491,6 +480,97 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     }
   };
   
+  const renderContextualImage = () => {
+    if (!isFirstBlock) return null;
+    
+    if (imageLoading) {
+      return (
+        <motion.div 
+          key="loading"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+          className={`${getContextualImageStyle()} flex items-center justify-center bg-gradient-to-r from-purple-900/30 to-indigo-900/30`}
+        >
+          <div className="flex flex-col items-center">
+            <div className="h-8 w-8 text-white/60 mb-2 animate-spin rounded-full border-2 border-dashed border-white/60" />
+            <p className="text-white/80 text-sm">Creating illustration...</p>
+            <div className="w-48 h-1.5 bg-white/10 rounded-full mt-2 overflow-hidden">
+              <motion.div 
+                className="h-full bg-wonderwhiz-purple"
+                initial={{ width: "0%" }}
+                animate={{ width: "100%" }}
+                transition={{ duration: 5, ease: "linear" }}
+              />
+            </div>
+          </div>
+        </motion.div>
+      );
+    }
+    
+    if (contextualImage) {
+      return (
+        <motion.div
+          key="image"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.5 }}
+          className="relative group"
+        >
+          <img 
+            src={contextualImage} 
+            alt={`Illustration for ${blockTitle}`} 
+            className={`${getContextualImageStyle()} shadow-lg`}
+            loading="eager"
+            onError={handleImageLoadError}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center p-2">
+            <div className="text-xs bg-black/50 px-2 py-1 rounded-full text-white/90 backdrop-blur-sm">
+              AI-generated illustration
+            </div>
+          </div>
+        </motion.div>
+      );
+    }
+    
+    return (
+      <motion.div 
+        key="error-placeholder"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.3 }}
+        className={`${getContextualImageStyle()} flex flex-col items-center justify-center bg-gradient-to-r from-purple-900/20 to-indigo-900/20 border border-dashed border-white/20 p-4`}
+      >
+        {imageError ? (
+          <div className="flex flex-col items-center text-center">
+            <AlertCircle className="h-7 w-7 text-white/40 mb-2" />
+            <p className="text-white/70 text-sm mb-2 max-w-[220px]">
+              {imageError.includes("API") ? "Could not generate illustration" : "Failed to load illustration"}
+            </p>
+            <button 
+              onClick={handleRetryImage}
+              className="text-xs flex items-center gap-1.5 bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-full text-white transition-colors"
+            >
+              <RefreshCw className="h-3 w-3" />
+              Try Again
+            </button>
+          </div>
+        ) : (
+          <button 
+            onClick={handleRetryImage}
+            className="flex flex-col items-center"
+          >
+            <ImageIcon className="h-7 w-7 text-white/40 mb-2" />
+            <p className="text-white/70 text-sm">Generate illustration</p>
+          </button>
+        )}
+      </motion.div>
+    );
+  };
+  
   const renderBlockContent = () => {
     switch (block.type) {
       case 'fact':
@@ -515,19 +595,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       default:
         return <p className="text-white/70 text-sm">This content type is not supported yet.</p>;
     }
-  };
-  
-  const handleRetryImage = () => {
-    console.log(`[${block.id}] Manual image retry requested`);
-    setContextualImage(null);
-    setImageError(null);
-    setImageRetryCount(0);
-    setImageLoading(false);
-    setInitialImageLoadAttempted(false);
-    setImageRequestId(`img-manual-retry-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`);
-    setTimeout(() => {
-      generateImage();
-    }, 100);
   };
   
   if (block.id.startsWith('generating-') && !isFirstBlock) {
@@ -564,85 +631,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         {isFirstBlock && (
           <div className="mb-4 relative">
             <AnimatePresence mode="wait">
-              {imageLoading ? (
-                <motion.div 
-                  key="loading"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className={`${getContextualImageStyle()} flex items-center justify-center bg-gradient-to-r from-purple-900/30 to-indigo-900/30`}
-                >
-                  <div className="flex flex-col items-center">
-                    <Loader className="h-8 w-8 text-white/60 mb-2 animate-spin" />
-                    <p className="text-white/80 text-sm">Creating illustration...</p>
-                    <div className="w-48 h-1.5 bg-white/10 rounded-full mt-2 overflow-hidden">
-                      <motion.div 
-                        className="h-full bg-wonderwhiz-purple"
-                        initial={{ width: "0%" }}
-                        animate={{ width: "100%" }}
-                        transition={{ duration: 7, ease: "linear" }}
-                      />
-                    </div>
-                  </div>
-                </motion.div>
-              ) : contextualImage ? (
-                <motion.div
-                  key="image"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.5 }}
-                  className="relative group"
-                >
-                  <img 
-                    src={contextualImage} 
-                    alt={`Illustration for ${blockTitle}`} 
-                    className={`${getContextualImageStyle()} shadow-lg`}
-                    loading="eager"
-                    onError={() => {
-                      console.error(`[${block.id}] Image failed to load from data URL`);
-                      setImageError("Image failed to load");
-                      setContextualImage(null);
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center p-2">
-                    <div className="text-xs bg-black/50 px-2 py-1 rounded-full text-white/90 backdrop-blur-sm">
-                      AI-generated illustration
-                    </div>
-                  </div>
-                </motion.div>
-              ) : (
-                <motion.div 
-                  key="error-placeholder"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className={`${getContextualImageStyle()} flex flex-col items-center justify-center bg-gradient-to-r from-purple-900/20 to-indigo-900/20 border border-dashed border-white/20 p-4`}
-                >
-                  {imageError ? (
-                    <div className="flex flex-col items-center text-center">
-                      <AlertCircle className="h-7 w-7 text-white/40 mb-2" />
-                      <p className="text-white/70 text-sm mb-2 max-w-[220px]">
-                        {imageError.includes("API") ? "Could not generate illustration" : "Failed to load illustration"}
-                      </p>
-                      <button 
-                        onClick={handleRetryImage}
-                        className="text-xs flex items-center gap-1.5 bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-full text-white transition-colors"
-                      >
-                        <RefreshCw className="h-3 w-3" />
-                        Try Again
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center">
-                      <ImageIcon className="h-7 w-7 text-white/40 mb-2" />
-                      <p className="text-white/70 text-sm">Illustration coming soon...</p>
-                    </div>
-                  )}
-                </motion.div>
-              )}
+              {renderContextualImage()}
             </AnimatePresence>
           </div>
         )}
