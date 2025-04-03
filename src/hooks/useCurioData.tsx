@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -7,6 +6,7 @@ import { debounce } from 'lodash';
 
 const BATCH_SIZE = 3;
 const INITIAL_BLOCKS_TO_LOAD = 2;
+const PROGRESSIVE_LOADING_DELAY = 500; // ms between loading blocks
 
 export const useCurioData = (curioId?: string, profileId?: string) => {
   const [blocks, setBlocks] = useState<ContentBlock[]>([]);
@@ -74,7 +74,6 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
         setBlocks(mappedBlocks);
         setTotalBlocksLoaded(mappedBlocks.length);
         
-        // Check if there are more blocks to load
         const { count, error: countError } = await supabase
           .from('content_blocks')
           .select('*', { count: 'exact', head: true })
@@ -92,7 +91,6 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
         setIsGeneratingContent(true);
         setGenerationStartTime(Date.now());
         
-        // Start with a placeholder block immediately
         setBlocks([
           {
             id: `generating-${Date.now()}-1`,
@@ -108,7 +106,6 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
         
         setInitialLoadComplete(true);
         
-        // Set a maximum time for content generation
         if (generationTimeoutRef.current) {
           clearTimeout(generationTimeoutRef.current);
         }
@@ -118,7 +115,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
             setIsGeneratingContent(false);
             toast("Content generation taking longer than expected. Please try refreshing the page if content doesn't appear soon.");
           }
-        }, 30000); // 30 seconds timeout
+        }, 20000);
         
         generateNewBlocks(curioId, query);
       }
@@ -170,7 +167,6 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
     }
     
     return () => {
-      // Clean up all timers when unmounting
       if (blockLoadingTimerRef.current) {
         clearTimeout(blockLoadingTimerRef.current);
       }
@@ -197,11 +193,9 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
         
       if (profileError) throw profileError;
       
-      // Generate only 2 blocks initially for faster response
       const initialApiStartTime = Date.now();
       console.log(`Initial API call started at ${new Date().toISOString()}`);
       
-      // First quick request for just 2 blocks
       const { data: initialData, error: initialError } = await supabase.functions.invoke('generate-curiosity-blocks', {
         body: {
           query,
@@ -222,9 +216,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
       const initialBlocks = initialData || [];
       console.log(`Generated initial ${initialBlocks.length} blocks in ${(Date.now() - initialApiStartTime) / 1000} seconds`);
       
-      // Save and display initial blocks immediately
       if (initialBlocks.length > 0) {
-        // Process and save initial blocks
         const initialBlocksWithCurioId = initialBlocks.map((block: any) => ({
           ...block,
           curio_id: curioId
@@ -233,16 +225,18 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
         setBlocks(convertToContentBlocks(initialBlocksWithCurioId));
         setTotalBlocksLoaded(initialBlocksWithCurioId.length);
         
-        // Save initial blocks to database
         for (const block of initialBlocksWithCurioId) {
-          await supabase.from('content_blocks').insert({
-            ...block,
-            curio_id: curioId
-          });
+          try {
+            await supabase.from('content_blocks').insert({
+              ...block,
+              curio_id: curioId
+            });
+          } catch (insertError) {
+            console.error('Error saving block to database:', insertError);
+          }
         }
       }
       
-      // Then start generating remaining blocks in the background
       setTimeout(async () => {
         try {
           const remainingApiStartTime = Date.now();
@@ -257,7 +251,8 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
                 language: profileData?.language || 'English'
               },
               blockCount: 8,
-              skipInitial: 2
+              skipInitial: 2,
+              quickGeneration: false
             }
           });
           
@@ -274,7 +269,6 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
           if (remainingBlocks.length > 0) {
             setHasMoreBlocks(true);
             
-            // Start loading the remaining blocks progressively
             loadRemainingBlocksProgressively(curioId, remainingBlocks);
           }
         } catch (error) {
@@ -290,7 +284,6 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
       setIsFirstLoad(false);
       setIsGeneratingContent(false);
       
-      // Clear the generation timeout as we've successfully generated content
       if (generationTimeoutRef.current) {
         clearTimeout(generationTimeoutRef.current);
         generationTimeoutRef.current = null;
@@ -355,8 +348,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
         
         currentIndex++;
         
-        // Use shorter delays for a more responsive experience
-        const nextDelay = currentIndex <= 3 ? 400 : 600 + (Math.min(currentIndex, 5) * 100);
+        const nextDelay = currentIndex <= 3 ? 400 : 600;
         blockLoadingTimerRef.current = setTimeout(loadNextBlock, nextDelay);
       } catch (error) {
         console.error('Error during progressive block loading:', error);
@@ -364,7 +356,6 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
       }
     };
     
-    // Start loading immediately for better UX
     blockLoadingTimerRef.current = setTimeout(loadNextBlock, 300);
   };
 
@@ -372,7 +363,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
     if (!hasMoreBlocks || loadingMoreBlocks || !curioId) return;
     
     if (claudeResponseRef.current && Array.isArray(claudeResponseRef.current)) {
-      const remainingBlocks = claudeResponseRef.current.slice(totalBlocksLoaded);
+      const remainingBlocks = claudeResponseRef.current.slice(totalBlocksLoaded - INITIAL_BLOCKS_TO_LOAD);
       if (remainingBlocks.length > 0) {
         console.log(`Loading more blocks from Claude's response: ${totalBlocksLoaded + 1} to ${totalBlocksLoaded + Math.min(BATCH_SIZE, remainingBlocks.length)}`);
         setLoadingMoreBlocks(true);
@@ -388,22 +379,16 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
           setBlocks(prev => [...prev, ...convertToContentBlocks(blocksWithCurioId)]);
           setTotalBlocksLoaded(prev => prev + nextBatch.length);
           
-          setHasMoreBlocks(totalBlocksLoaded + nextBatch.length < claudeResponseRef.current.length);
+          setHasMoreBlocks(totalBlocksLoaded + nextBatch.length - INITIAL_BLOCKS_TO_LOAD < claudeResponseRef.current.length);
           
-          for (const block of nextBatch) {
-            try {
-              const { error } = await supabase.from('content_blocks').insert({
-                ...block,
-                curio_id: curioId
-              });
-              
-              if (error) {
-                console.error('Error saving block to database:', error);
-              }
-            } catch (insertError) {
-              console.error('Error saving block to database:', insertError);
-            }
-          }
+          const savePromises = nextBatch.map(block => 
+            supabase.from('content_blocks').insert({
+              ...block,
+              curio_id: curioId
+            })
+          );
+          
+          await Promise.all(savePromises);
         } catch (error) {
           console.error('Error loading more blocks from Claude response:', error);
           toast("Could not load more content");

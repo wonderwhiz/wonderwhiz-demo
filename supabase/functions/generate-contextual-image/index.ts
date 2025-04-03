@@ -122,7 +122,7 @@ serve(async (req) => {
     
     console.log(`[${requestId}] Final prompt: ${prompt}`);
     
-    // Improved error handling for the Hugging Face API call
+    // OPTIMIZATION: Improved error handling and faster image generation settings
     console.log(`[${requestId}] Calling Hugging Face API...`);
     
     try {
@@ -132,8 +132,8 @@ serve(async (req) => {
         inputs: prompt,
         model: "black-forest-labs/FLUX.1-schnell", // Fast and high quality model
         parameters: {
-          guidance_scale: 7.5,
-          num_inference_steps: 15, // Reduced for faster generation while maintaining quality
+          guidance_scale: 6.5, // Reduced from 7.5 for faster generation
+          num_inference_steps: 10, // Further reduced from 15 for faster generation
         }
       });
 

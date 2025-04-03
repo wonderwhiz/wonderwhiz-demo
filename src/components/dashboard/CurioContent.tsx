@@ -1,7 +1,8 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ContentBlock from '@/components/ContentBlock';
+import useInfiniteScroll from '@/hooks/useInfiniteScroll';
 
 interface Curio {
   id: string;
@@ -35,6 +36,8 @@ interface CurioContentProps {
   loadingBlocks: boolean;
   visibleBlocksCount: number;
   profileId?: string;
+  onLoadMore: () => void;  // New prop for loading more blocks
+  hasMoreBlocks: boolean;  // New prop to indicate if there are more blocks
   onToggleLike: (blockId: string) => void;
   onToggleBookmark: (blockId: string) => void;
   onReply: (blockId: string, message: string) => void;
@@ -53,6 +56,8 @@ const CurioContent: React.FC<CurioContentProps> = ({
   loadingBlocks,
   visibleBlocksCount,
   profileId,
+  onLoadMore,
+  hasMoreBlocks,
   onToggleLike,
   onToggleBookmark,
   onReply,
@@ -63,6 +68,15 @@ const CurioContent: React.FC<CurioContentProps> = ({
   onCreativeUpload
 }) => {
   const feedEndRef = useRef<HTMLDivElement>(null);
+  
+  // Set up infinite scroll for loading more blocks
+  const observerTarget = useInfiniteScroll({
+    loadMore: onLoadMore,
+    isLoading: loadingBlocks,
+    hasMore: hasMoreBlocks,
+    threshold: 0.1,
+    rootMargin: '200px', // Load earlier for smoother experience
+  });
 
   if (!currentCurio) return null;
 
@@ -80,7 +94,7 @@ const CurioContent: React.FC<CurioContentProps> = ({
               <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
             </div>
             <p className="text-white">
-              {isGenerating ? "Generating your personalized content..." : "Loading content blocks..."}
+              {isGenerating ? "Generating your personalized content..." : "Loading more content..."}
             </p>
           </motion.div>
         )}
@@ -88,13 +102,16 @@ const CurioContent: React.FC<CurioContentProps> = ({
       
       <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 px-3 sm:px-4 pt-4">{currentCurio.title}</h2>
       <div className="space-y-4 px-3 sm:px-4 pb-4">
-        {contentBlocks.slice(0, visibleBlocksCount).map((block, index) => (
+        {contentBlocks.map((block, index) => (
           <motion.div 
             key={block.id} 
             className="space-y-2" 
             initial={{ opacity: 0, y: 20 }} 
             animate={{ opacity: 1, y: 0 }} 
-            transition={{ delay: index * 0.1, duration: 0.3 }}
+            transition={{ 
+              delay: Math.min(index * 0.05, 0.3), // Cap the delay for smoother loading
+              duration: 0.3 
+            }}
           >
             <ContentBlock 
               block={block} 
@@ -109,6 +126,7 @@ const CurioContent: React.FC<CurioContentProps> = ({
               colorVariant={index % 3} 
               userId={profileId} 
               childProfileId={profileId} 
+              isFirstBlock={index === 0} // Mark the first block for image generation
             />
             
             {blockReplies[block.id] && blockReplies[block.id].length > 0 && (
@@ -139,8 +157,11 @@ const CurioContent: React.FC<CurioContentProps> = ({
           </motion.div>
         ))}
         
-        {/* Load more text shown if there are more blocks to display */}
-        {visibleBlocksCount < contentBlocks.length && (
+        {/* Invisible loading sentinel for infinite scroll */}
+        {hasMoreBlocks && <div ref={observerTarget} className="h-10 w-full" />}
+        
+        {/* Loading indicator shown when fetching more blocks */}
+        {loadingBlocks && hasMoreBlocks && (
           <div className="h-10 flex items-center justify-center text-white/50 text-sm">
             <div className="animate-pulse">Loading more content...</div>
           </div>

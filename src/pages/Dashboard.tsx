@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -16,7 +15,7 @@ import DashboardSidebar from '@/components/dashboard/DashboardSidebar';
 import WelcomeSection from '@/components/dashboard/WelcomeSection';
 import CurioContent from '@/components/dashboard/CurioContent';
 import DiscoverySection from '@/components/dashboard/DiscoverySection';
-import useInfiniteScroll from '@/hooks/useInfiniteScroll';
+import { useCurioData } from '@/hooks/useCurioData';
 
 interface ChildProfile {
   id: string;
@@ -58,53 +57,69 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [currentCurio, setCurrentCurio] = useState<Curio | null>(null);
-  const [contentBlocks, setContentBlocks] = useState<ContentBlock[]>([]);
   const [blockReplies, setBlockReplies] = useState<Record<string, BlockReply[]>>({});
   const [pastCurios, setPastCurios] = useState<Curio[]>([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const [curioSuggestions, setCurioSuggestions] = useState<string[]>(['How do volcanoes work?', 'What are black holes?', 'Tell me about penguins', 'Show me cool dinosaurs']);
-  const [loadingBlocks, setLoadingBlocks] = useState(false);
-  const [visibleBlocksCount, setVisibleBlocksCount] = useState(3);
   const [displayedCuriosCount, setDisplayedCuriosCount] = useState(5);
   const isMobile = useIsMobile();
   const [isGenerating, setIsGenerating] = useState(false);
   const { streakDays } = useSparksSystem(profileId);
 
-  // Function to load more content blocks
-  const handleLoadMoreBlocks = () => {
-    setVisibleBlocksCount(prev => Math.min(prev + 3, contentBlocks.length));
-  };
-  
-  // Set up infinite scroll for content blocks
-  const observerTarget = useInfiniteScroll({
-    loadMore: handleLoadMoreBlocks,
-    isLoading: loadingBlocks,
-    hasMore: visibleBlocksCount < contentBlocks.length
-  });
+  // OPTIMIZATION: Use the optimized useCurioData hook for faster loading
+  const {
+    blocks: contentBlocks,
+    title: curioTitle,
+    query: curioQuery,
+    isLoading: isLoadingBlocks,
+    isGeneratingContent,
+    hasMoreBlocks,
+    loadingMoreBlocks,
+    loadMoreBlocks,
+    totalBlocksLoaded,
+    initialLoadComplete,
+    searchQuery,
+    setSearchQuery,
+    handleToggleLike,
+    handleToggleBookmark,
+    handleSearch,
+    clearSearch,
+    isFirstLoad
+  } = useCurioData(currentCurio?.id, profileId);
 
+  // OPTIMIZATION: Preload child profile and curios in parallel
   useEffect(() => {
     const loadProfileAndCurios = async () => {
       if (!profileId) {
         navigate('/profiles');
         return;
       }
+      
       try {
-        const { data: profileData, error: profileError } = await supabase
-          .from('child_profiles')
-          .select('*')
-          .eq('id', profileId)
-          .single();
-          
-        if (profileError) throw profileError;
-        setChildProfile(profileData);
+        setIsLoading(true);
         
-        const { data: curiosData, error: curiosError } = await supabase
-          .from('curios')
-          .select('*')
-          .eq('child_id', profileId)
-          .order('created_at', { ascending: false });
+        // Load profile and curios in parallel
+        const [profileResponse, curiosResponse] = await Promise.all([
+          supabase
+            .from('child_profiles')
+            .select('*')
+            .eq('id', profileId)
+            .single(),
           
+          supabase
+            .from('curios')
+            .select('*')
+            .eq('child_id', profileId)
+            .order('created_at', { ascending: false })
+        ]);
+        
+        const { data: profileData, error: profileError } = profileResponse;
+        const { data: curiosData, error: curiosError } = curiosResponse;
+        
+        if (profileError) throw profileError;
         if (curiosError) throw curiosError;
+        
+        setChildProfile(profileData);
         setPastCurios(curiosData || []);
         
         if (profileData) {
@@ -157,11 +172,13 @@ const Dashboard = () => {
     }
   };
 
+  // OPTIMIZATION: Optimize submission by splitting concerns
   const handleSubmitQuery = async () => {
     if (!query.trim() || isGenerating || !childProfile) return;
     setIsGenerating(true);
     
     try {
+      // OPTIMIZATION: First, create the curio record immediately
       const { data: newCurio, error: curioError } = await supabase
         .from('curios')
         .insert({
@@ -174,223 +191,98 @@ const Dashboard = () => {
         
       if (curioError) throw curioError;
 
-      // Award sparks for starting a new curio
-      try {
-        await supabase.functions.invoke('increment-sparks-balance', {
-          body: JSON.stringify({
-            profileId: profileId,
-            amount: 1
-          })
-        });
-
-        // Update the local state with new sparks balance
-        if (childProfile) {
-          setChildProfile({
-            ...childProfile,
-            sparks_balance: (childProfile.sparks_balance || 0) + 1
-          });
-        }
-
-        // Add the transaction record
-        await supabase.from('sparks_transactions').insert({
-          child_id: profileId,
-          amount: 1,
-          reason: 'Starting new Curio'
-        });
-        
-        toast.success('You earned 1 spark for your curiosity!', {
-          duration: 2000,
-          position: 'bottom-right'
-        });
-      } catch (error) {
-        console.error('Error awarding sparks for new curio:', error);
-      }
-      
-      const claudeResponse = await supabase.functions.invoke('generate-curiosity-blocks', {
-        body: JSON.stringify({
-          query: query.trim(),
-          childProfile: childProfile
-        })
-      });
-      
-      if (claudeResponse.error) {
-        throw new Error(`Failed to generate content: ${claudeResponse.error.message}`);
-      }
-      
-      const generatedBlocks = claudeResponse.data;
-      if (!Array.isArray(generatedBlocks)) {
-        throw new Error("Invalid response format from generate-curiosity-blocks");
-      }
-      
-      for (const block of generatedBlocks) {
-        await supabase.from('content_blocks').insert({
-          curio_id: newCurio.id,
-          type: block.type,
-          specialist_id: block.specialist_id,
-          content: block.content
-        });
-      }
-      
+      // Set the current curio immediately so UI updates
       setPastCurios(prev => [newCurio, ...prev]);
-      setContentBlocks(generatedBlocks);
       setCurrentCurio(newCurio);
       setQuery('');
+      
+      // Award sparks for starting a new curio (non-blocking)
+      setTimeout(async () => {
+        try {
+          await supabase.functions.invoke('increment-sparks-balance', {
+            body: JSON.stringify({
+              profileId: profileId,
+              amount: 1
+            })
+          });
+  
+          // Update the local state with new sparks balance
+          if (childProfile) {
+            setChildProfile({
+              ...childProfile,
+              sparks_balance: (childProfile.sparks_balance || 0) + 1
+            });
+          }
+  
+          // Add the transaction record
+          await supabase.from('sparks_transactions').insert({
+            child_id: profileId,
+            amount: 1,
+            reason: 'Starting new Curio'
+          });
+          
+          toast.success('You earned 1 spark for your curiosity!', {
+            duration: 2000,
+            position: 'bottom-right'
+          });
+        } catch (error) {
+          console.error('Error awarding sparks for new curio:', error);
+        }
+      }, 100);
+      
+      // Rest of content generation is handled through useCurioData
+      
     } catch (error) {
       console.error('Error creating curio:', error);
       toast.error("Oops! Something went wrong with your question.");
-    } finally {
       setIsGenerating(false);
     }
   };
 
-  const handleLoadCurio = async (curio: Curio) => {
+  // OPTIMIZATION: Simplified curio loading that uses useCurioData
+  const handleLoadCurio = (curio: Curio) => {
     setCurrentCurio(curio);
-    setLoadingBlocks(true);
-    setContentBlocks([]);
-    setVisibleBlocksCount(3);
-    
-    try {
-      const { data: blocks, error: blocksError } = await supabase
-        .from('content_blocks')
-        .select('*')
-        .eq('curio_id', curio.id)
-        .order('created_at', { ascending: true });
-        
-      if (blocksError) throw blocksError;
-      
-      const blockIds = blocks?.map(block => block.id) || [];
-      let allReplies: Record<string, BlockReply[]> = {};
-      
-      if (blockIds.length > 0) {
-        const { data: replies, error: repliesError } = await supabase
-          .from('block_replies')
-          .select('*')
-          .in('block_id', blockIds)
-          .order('created_at', { ascending: true });
-          
-        if (repliesError) throw repliesError;
-        
-        if (replies) {
-          allReplies = replies.reduce((acc: Record<string, BlockReply[]>, reply) => {
-            if (!acc[reply.block_id]) {
-              acc[reply.block_id] = [];
-            }
-            acc[reply.block_id].push(reply);
-            return acc;
-          }, {});
-        }
-      }
-      
-      if (!blocks || blocks.length === 0) {
-        if (childProfile) {
-          setIsGenerating(true);
-          const claudeResponse = await supabase.functions.invoke('generate-curiosity-blocks', {
-            body: JSON.stringify({
-              query: curio.query,
-              childProfile: childProfile
-            })
-          });
-          
-          const generatedBlocks = claudeResponse.data;
-          for (const block of generatedBlocks) {
-            await supabase.from('content_blocks').insert({
-              curio_id: curio.id,
-              type: block.type,
-              specialist_id: block.specialist_id,
-              content: block.content
-            });
-          }
-          
-          setContentBlocks(generatedBlocks);
-          setIsGenerating(false);
-        }
-      } else {
-        setContentBlocks(blocks as ContentBlock[]);
-      }
-      
-      setBlockReplies(allReplies);
-    } catch (error) {
-      console.error('Error loading curio content:', error);
-      toast.error("Failed to load content");
-    } finally {
-      setLoadingBlocks(false);
-    }
+    // The useCurioData hook will load the blocks when the currentCurio ID changes
   };
 
   const handleFollowRabbitHole = async (question: string) => {
     setQuery(question);
-    try {
-      await supabase.functions.invoke('increment-sparks-balance', {
-        body: JSON.stringify({
-          profileId: profileId,
-          amount: 2
-        })
-      });
-      
-      if (childProfile) {
-        setChildProfile({
-          ...childProfile,
-          sparks_balance: (childProfile.sparks_balance || 0) + 2
+    
+    // OPTIMIZATION: Start spark award in parallel
+    Promise.resolve().then(async () => {
+      try {
+        await supabase.functions.invoke('increment-sparks-balance', {
+          body: JSON.stringify({
+            profileId: profileId,
+            amount: 2
+          })
         });
+        
+        if (childProfile) {
+          setChildProfile({
+            ...childProfile,
+            sparks_balance: (childProfile.sparks_balance || 0) + 2
+          });
+        }
+        
+        await supabase.from('sparks_transactions').insert({
+          child_id: profileId,
+          amount: 2,
+          reason: 'Following a rabbit hole'
+        });
+        
+        toast.success('You earned 2 sparks for exploring deeper!', {
+          duration: 2000,
+          position: 'bottom-right'
+        });
+      } catch (error) {
+        console.error('Error awarding sparks for rabbit hole:', error);
       }
-      
-      await supabase.from('sparks_transactions').insert({
-        child_id: profileId,
-        amount: 2,
-        reason: 'Following a rabbit hole'
-      });
-      
-      toast.success('You earned 2 sparks for exploring deeper!', {
-        duration: 2000,
-        position: 'bottom-right'
-      });
-    } catch (error) {
-      console.error('Error awarding sparks for rabbit hole:', error);
-    }
+    });
     
     setTimeout(() => {
       handleSubmitQuery();
     }, 100);
-  };
-
-  const handleToggleLike = async (blockId: string) => {
-    setContentBlocks(prev => 
-      prev.map(block => 
-        block.id === blockId ? { ...block, liked: !block.liked } : block
-      )
-    );
-    
-    try {
-      const blockToUpdate = contentBlocks.find(b => b.id === blockId);
-      if (blockToUpdate) {
-        await supabase
-          .from('content_blocks')
-          .update({ liked: !blockToUpdate.liked })
-          .eq('id', blockId);
-      }
-    } catch (error) {
-      console.error('Error updating like status:', error);
-    }
-  };
-
-  const handleToggleBookmark = async (blockId: string) => {
-    setContentBlocks(prev => 
-      prev.map(block => 
-        block.id === blockId ? { ...block, bookmarked: !block.bookmarked } : block
-      )
-    );
-    
-    try {
-      const blockToUpdate = contentBlocks.find(b => b.id === blockId);
-      if (blockToUpdate) {
-        await supabase
-          .from('content_blocks')
-          .update({ bookmarked: !blockToUpdate.bookmarked })
-          .eq('id', blockId);
-      }
-    } catch (error) {
-      console.error('Error updating bookmark status:', error);
-    }
   };
 
   const handleBlockReply = async (blockId: string, message: string) => {
@@ -559,90 +451,12 @@ const Dashboard = () => {
     }
   };
 
+  // OPTIMIZATION: Reuse the same handleSubmitQuery function for suggestions
   const handleCurioSuggestionClick = async (suggestion: string) => {
-    if (!childProfile || isGenerating) return;
-    setIsGenerating(true);
-    
-    try {
-      const { data: newCurio, error: curioError } = await supabase
-        .from('curios')
-        .insert({
-          child_id: profileId,
-          query: suggestion.trim(),
-          title: suggestion.trim()
-        })
-        .select()
-        .single();
-        
-      if (curioError) throw curioError;
-
-      // Award sparks for starting a new curio
-      try {
-        await supabase.functions.invoke('increment-sparks-balance', {
-          body: JSON.stringify({
-            profileId: profileId,
-            amount: 1
-          })
-        });
-
-        // Update the local state with new sparks balance
-        if (childProfile) {
-          setChildProfile({
-            ...childProfile,
-            sparks_balance: (childProfile.sparks_balance || 0) + 1
-          });
-        }
-
-        // Add the transaction record
-        await supabase.from('sparks_transactions').insert({
-          child_id: profileId,
-          amount: 1,
-          reason: 'Starting new Curio'
-        });
-        
-        toast.success('You earned 1 spark for your curiosity!', {
-          duration: 2000,
-          position: 'bottom-right'
-        });
-      } catch (error) {
-        console.error('Error awarding sparks for new curio:', error);
-      }
-      
-      const claudeResponse = await supabase.functions.invoke('generate-curiosity-blocks', {
-        body: JSON.stringify({
-          query: suggestion.trim(),
-          childProfile: childProfile
-        })
-      });
-      
-      if (claudeResponse.error) {
-        throw new Error(`Failed to generate content: ${claudeResponse.error.message}`);
-      }
-      
-      const generatedBlocks = claudeResponse.data;
-      if (!Array.isArray(generatedBlocks)) {
-        throw new Error("Invalid response format from generate-curiosity-blocks");
-      }
-      
-      for (const block of generatedBlocks) {
-        await supabase.from('content_blocks').insert({
-          curio_id: newCurio.id,
-          type: block.type,
-          specialist_id: block.specialist_id,
-          content: block.content
-        });
-      }
-      
-      setPastCurios(prev => [newCurio, ...prev]);
-      setContentBlocks(generatedBlocks);
-      setCurrentCurio(newCurio);
-      setQuery('');
-    } catch (error) {
-      console.error('Error creating curio:', error);
-      toast.error("Oops! Something went wrong with your question.");
-    } finally {
-      setIsGenerating(false);
-    }
+    setQuery(suggestion);
+    setTimeout(() => {
+      handleSubmitQuery();
+    }, 100);
   };
 
   if (isLoading) {
@@ -683,7 +497,7 @@ const Dashboard = () => {
                   query={query} 
                   setQuery={setQuery} 
                   handleSubmitQuery={handleSubmitQuery}
-                  isGenerating={isGenerating} 
+                  isGenerating={isGenerating || isGeneratingContent} 
                 />
               </div>
               
@@ -700,10 +514,12 @@ const Dashboard = () => {
                     currentCurio={currentCurio}
                     contentBlocks={contentBlocks}
                     blockReplies={blockReplies}
-                    isGenerating={isGenerating}
-                    loadingBlocks={loadingBlocks}
-                    visibleBlocksCount={visibleBlocksCount}
+                    isGenerating={isGeneratingContent}
+                    loadingBlocks={loadingMoreBlocks}
+                    visibleBlocksCount={totalBlocksLoaded}
                     profileId={profileId}
+                    onLoadMore={loadMoreBlocks} // New prop for infinite scrolling
+                    hasMoreBlocks={hasMoreBlocks} // New prop for infinite scrolling
                     onToggleLike={handleToggleLike}
                     onToggleBookmark={handleToggleBookmark}
                     onReply={handleBlockReply}
@@ -714,9 +530,6 @@ const Dashboard = () => {
                     onCreativeUpload={handleCreativeUpload}
                   />
                 )}
-                
-                {/* Invisible element for intersection observer */}
-                <div ref={observerTarget} />
               </Card>
               
               {/* Discovery section with sparks and tasks */}

@@ -160,6 +160,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   const [imageTimeout, setImageTimeout] = useState<NodeJS.Timeout | null>(null);
   const [imageRequestId, setImageRequestId] = useState<string>(`img-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`);
   const [initialImageLoadAttempted, setInitialImageLoadAttempted] = useState(false);
+  const [cachedImage, setCachedImage] = useState<string | null>(null);
   
   const specialist = SPECIALISTS[block.specialist_id] || {
     name: 'Wonder Wizard',
@@ -171,6 +172,22 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   const specialistStyle = getSpecialistStyle(block.specialist_id);
   const blockTitle = getBlockTitle(block);
   
+  useEffect(() => {
+    if (isFirstBlock && !contextualImage && !imageLoading) {
+      try {
+        const cacheKey = `image-cache-${block.id}`;
+        const cachedImageData = localStorage.getItem(cacheKey);
+        if (cachedImageData) {
+          console.log(`[${block.id}] Found cached image, using it.`);
+          setContextualImage(cachedImageData);
+          return;
+        }
+      } catch (e) {
+        console.error('Error accessing localStorage:', e);
+      }
+    }
+  }, [isFirstBlock, block.id, contextualImage, imageLoading]);
+  
   const generateImage = useCallback(async () => {
     if (!isFirstBlock || contextualImage || imageLoading || imageRetryCount > 2) return;
     
@@ -180,7 +197,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       setImageLoading(true);
       setImageError(null);
       
-      // Set timeout for image generation (12 seconds)
       const timeoutId = setTimeout(() => {
         console.log(`[${reqId}][${block.id}] Image generation timed out after 12 seconds`);
         setImageError("Generation timed out. Please try again.");
@@ -189,7 +205,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       
       setImageTimeout(timeoutId);
       
-      // Call the Supabase Edge Function to generate the image
       const startTime = Date.now();
       const { data, error } = await supabase.functions.invoke('generate-contextual-image', {
         body: {
@@ -200,7 +215,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         }
       });
       
-      // Clear timeout as we got a response (either success or error)
       if (imageTimeout) {
         clearTimeout(imageTimeout);
         setImageTimeout(null);
@@ -226,6 +240,13 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       if (data && data.image) {
         console.log(`[${reqId}][${block.id}] Image generated successfully, size: ${data.image.length} chars`);
         setContextualImage(data.image);
+        
+        try {
+          const cacheKey = `image-cache-${block.id}`;
+          localStorage.setItem(cacheKey, data.image);
+        } catch (e) {
+          console.error('Error caching image in localStorage:', e);
+        }
       } else {
         throw new Error("No image data in response");
       }
@@ -253,7 +274,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   
   useEffect(() => {
     if (imageError && imageRetryCount < 3 && !contextualImage && !imageLoading) {
-      const retryDelay = 1500; // Shorter retry delay: 1.5 seconds
+      const retryDelay = 1000;
       console.log(`[${block.id}] Setting up retry ${imageRetryCount + 1} in ${retryDelay}ms`);
       
       const retryTimer = setTimeout(() => {
@@ -546,7 +567,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
                         className="h-full bg-wonderwhiz-purple"
                         initial={{ width: "0%" }}
                         animate={{ width: "100%" }}
-                        transition={{ duration: 10, ease: "linear" }}
+                        transition={{ duration: 7, ease: "linear" }}
                       />
                     </div>
                   </div>
@@ -600,26 +621,10 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
                         Try Again
                       </button>
                     </div>
-                  ) : initialImageLoadAttempted ? (
-                    <div className="flex flex-col items-center text-center">
-                      <ImageOff className="h-7 w-7 text-white/30 mb-2" />
-                      <p className="text-white/50 text-xs mb-2">
-                        Illustration not available
-                      </p>
-                      <button 
-                        onClick={handleRetryImage}
-                        className="text-xs flex items-center gap-1.5 bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-full text-white transition-colors"
-                      >
-                        <RefreshCw className="h-3 w-3" />
-                        Generate Image
-                      </button>
-                    </div>
                   ) : (
                     <div className="flex flex-col items-center">
-                      <ImageIcon className="h-6 w-6 text-white/30 mb-1.5" />
-                      <p className="text-white/50 text-xs">
-                        Preparing illustration...
-                      </p>
+                      <ImageIcon className="h-7 w-7 text-white/40 mb-2" />
+                      <p className="text-white/70 text-sm">Illustration coming soon...</p>
                     </div>
                   )}
                 </motion.div>
