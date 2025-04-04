@@ -133,7 +133,6 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           image: imageUrl,
-          isPlaceholder: false,
           requestId,
           contentSummary,
           blockType,
@@ -146,74 +145,17 @@ serve(async (req) => {
       );
     } catch (dalleError) {
       console.error(`[${requestId}] DALL-E generation failed:`, dalleError);
-      
-      // Fall back to SVG placeholder
-      console.log(`[${requestId}] Falling back to SVG placeholder`);
-      
-      const placeholderColors = [
-        "#FF6B6B", "#4ECDC4", "#45B7D1", "#FFC857", "#E9C46A", 
-        "#7DB46C", "#9B5DE5", "#F15BB5", "#00BBF9", "#00F5D4"
-      ];
-      
-      // Generate color based on content hash
-      const contentText = JSON.stringify(blockContent).substring(0, 100);
-      const colorIndex = Math.abs(contentText.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)) % placeholderColors.length;
-      const backgroundColor = placeholderColors[colorIndex];
-      
-      // Create a simple SVG with a colored background and an emoji based on block type
-      let emoji = "✨"; // default
-      
-      switch(blockType) {
-        case 'fact': emoji = "📚"; break;
-        case 'funFact': emoji = "🎯"; break;
-        case 'quiz': emoji = "❓"; break;
-        case 'flashcard': emoji = "🧠"; break;
-        case 'creative': emoji = "🎨"; break;
-        case 'task': emoji = "✅"; break;
-        case 'riddle': emoji = "🔍"; break;
-        case 'news': emoji = "📰"; break;
-        case 'activity': emoji = "🏃"; break;
-        case 'mindfulness': emoji = "🧘"; break;
-      }
-      
-      const svg = `
-      <svg width="400" height="400" xmlns="http://www.w3.org/2000/svg">
-        <rect width="400" height="400" fill="${backgroundColor}" />
-        <text x="200" y="200" font-family="Arial" font-size="120" text-anchor="middle" dominant-baseline="middle" fill="white">${emoji}</text>
-        <text x="200" y="300" font-family="Arial" font-size="24" text-anchor="middle" dominant-baseline="middle" fill="white">WonderWhiz</text>
-      </svg>
-      `;
-      
-      // Convert SVG to base64
-      const base64 = btoa(svg);
-      
-      const totalDuration = (Date.now() - startTime) / 1000;
-      console.log(`[${requestId}] Generated fallback image in ${totalDuration} seconds`);
-      
-      return new Response(
-        JSON.stringify({ 
-          image: `data:image/svg+xml;base64,${base64}`,
-          isPlaceholder: true,
-          requestId,
-          contentSummary,
-          blockType,
-          timing: { 
-            totalDuration,
-            timestamp: new Date().toISOString() 
-          }
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      throw dalleError;
     }
   } catch (error) {
     console.error('Error generating image:', error);
     
-    // Return a structured error response
+    // Instead of generating a SVG placeholder, return a suitable error
+    // but don't make it too obvious to the user
     return new Response(
       JSON.stringify({ 
         error: error.message, 
-        timestamp: new Date().toISOString(),
-        message: "Failed to generate image"
+        timestamp: new Date().toISOString()
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
