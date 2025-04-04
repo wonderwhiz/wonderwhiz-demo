@@ -7,14 +7,8 @@ export const getContextualImage = async (
   requestId: string,
   imageRetryCountRef: React.MutableRefObject<number>
 ) => {
-  if (!isFirstBlock || imageRetryCountRef.current > 2) {
-    return { 
-      imageLoading: false, 
-      imageRequestInProgress: false, 
-      contextualImage: null, 
-      imageError: null,
-      imageDescription: "A wonderful picture about learning!"
-    };
+  if (!isFirstBlock || imageRetryCountRef.current > 3) {
+    return { imageLoading: false, imageRequestInProgress: false, contextualImage: null, imageError: null };
   }
 
   try {
@@ -31,38 +25,21 @@ export const getContextualImage = async (
       }
     });
     
-    console.log(`[${requestId}][${block.id}] Image generation response received after ${Date.now() / 1000}s`);
+    const duration = Date.now() / 1000;
+    console.log(`[${requestId}][${block.id}] Image generation response received after ${duration}s`);
     
     if (error) {
       console.error(`[${requestId}][${block.id}] Supabase function error:`, error);
-      return { 
-        imageLoading: false, 
-        imageRequestInProgress: false,
-        contextualImage: null,
-        imageError: null, // No error message to avoid displaying error placeholders
-        imageDescription: data?.imageDescription || "A wonderful picture about learning!" 
-      };
+      throw new Error(`Edge function error: ${error.message}`);
     }
     
     if (!data) {
-      return { 
-        imageLoading: false,
-        imageRequestInProgress: false,
-        contextualImage: null,
-        imageError: null, // No error message to avoid displaying error placeholders
-        imageDescription: "A wonderful picture about learning!" 
-      };
+      throw new Error("No data returned from image generation function");
     }
     
     if (data.error) {
       console.error(`[${requestId}][${block.id}] Image generation error:`, data.error);
-      return { 
-        imageLoading: false,
-        imageRequestInProgress: false,
-        contextualImage: null,
-        imageError: null, // No error message to avoid displaying error placeholders
-        imageDescription: data.imageDescription || "A wonderful picture about learning!" 
-      };
+      throw new Error(data.error);
     }
     
     if (data && data.image) {
@@ -80,17 +57,10 @@ export const getContextualImage = async (
         imageLoading: false, 
         imageRequestInProgress: false, 
         contextualImage: data.image, 
-        imageError: null,
-        imageDescription: data.imageDescription || "A wonderful picture about learning!" 
+        imageError: null 
       };
     } else {
-      return { 
-        imageLoading: false,
-        imageRequestInProgress: false,
-        contextualImage: null,
-        imageError: null, // No error message to avoid displaying error placeholders
-        imageDescription: data.imageDescription || "A wonderful picture about learning!" 
-      };
+      throw new Error("No image data in response");
     }
   } catch (err) {
     console.error(`[${block.id}] Error generating contextual image:`, err);
@@ -98,8 +68,7 @@ export const getContextualImage = async (
       imageLoading: false, 
       imageRequestInProgress: false, 
       contextualImage: null, 
-      imageError: null, // No error message to avoid displaying error placeholders
-      imageDescription: "A wonderful picture about learning!" 
+      imageError: err instanceof Error ? err.message : "Unknown error occurred" 
     };
   }
 };
