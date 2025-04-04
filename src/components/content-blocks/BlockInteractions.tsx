@@ -26,7 +26,7 @@ const BlockInteractions: React.FC<BlockInteractionsProps> = ({
   // Check if this is one of the interactive blocks where replies make sense
   const allowsReplies = !['task', 'activity', 'mindfulness'].includes(blockType || '');
   
-  // Fixed the implementation to properly toggle the reply form
+  // Properly toggle the reply form
   const handleReplyClick = () => {
     setShowReplyForm(prev => !prev);
   };

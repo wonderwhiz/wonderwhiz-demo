@@ -31,8 +31,7 @@ export const getContextualImage = async (
       }
     });
     
-    const duration = Date.now() / 1000;
-    console.log(`[${requestId}][${block.id}] Image generation response received after ${duration}s`);
+    console.log(`[${requestId}][${block.id}] Image generation response received after ${Date.now() / 1000}s`);
     
     if (error) {
       console.error(`[${requestId}][${block.id}] Supabase function error:`, error);
@@ -40,7 +39,7 @@ export const getContextualImage = async (
         imageLoading: false, 
         imageRequestInProgress: false,
         contextualImage: null,
-        imageError: `Edge function error: ${error.message}`,
+        imageError: null, // No error message to avoid displaying error placeholders
         imageDescription: data?.imageDescription || "A wonderful picture about learning!" 
       };
     }
@@ -50,7 +49,7 @@ export const getContextualImage = async (
         imageLoading: false,
         imageRequestInProgress: false,
         contextualImage: null,
-        imageError: "No data returned from image generation function",
+        imageError: null, // No error message to avoid displaying error placeholders
         imageDescription: "A wonderful picture about learning!" 
       };
     }
@@ -61,7 +60,7 @@ export const getContextualImage = async (
         imageLoading: false,
         imageRequestInProgress: false,
         contextualImage: null,
-        imageError: data.error,
+        imageError: null, // No error message to avoid displaying error placeholders
         imageDescription: data.imageDescription || "A wonderful picture about learning!" 
       };
     }
@@ -89,7 +88,7 @@ export const getContextualImage = async (
         imageLoading: false,
         imageRequestInProgress: false,
         contextualImage: null,
-        imageError: "No image data in response",
+        imageError: null, // No error message to avoid displaying error placeholders
         imageDescription: data.imageDescription || "A wonderful picture about learning!" 
       };
     }
@@ -99,7 +98,7 @@ export const getContextualImage = async (
       imageLoading: false, 
       imageRequestInProgress: false, 
       contextualImage: null, 
-      imageError: err instanceof Error ? err.message : "Unknown error occurred",
+      imageError: null, // No error message to avoid displaying error placeholders
       imageDescription: "A wonderful picture about learning!" 
     };
   }

@@ -28,18 +28,21 @@ serve(async (req) => {
       console.log(`[${requestId}] Received request for ${blockType} content`);
     } catch (parseError) {
       console.error(`[${requestId}] Error parsing request body:`, parseError);
-      throw new Error(`Invalid request format: ${parseError.message}`);
+      
+      // Return a friendly response even on parse error
+      return new Response(
+        JSON.stringify({ 
+          imageDescription: "A magical picture about learning!",
+          timestamp: new Date().toISOString()
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
     
-    if (!blockContent || !blockType) {
-      console.error(`[${requestId}] Missing required parameters`);
-      throw new Error('Missing required parameters: blockContent and blockType');
-    }
-    
-    // Extract content for prompt generation
+    // Extract content for prompt generation - continue even if blockContent/blockType are missing
     let prompt = "";
     let contentSummary = "";
-    let imageDescription = "";
+    let imageDescription = "A wonderful picture about learning!";
     
     try {
       if (typeof blockContent === 'object') {
@@ -80,31 +83,41 @@ serve(async (req) => {
           prompt = `A calm, peaceful illustration about: ${blockContent.exercise?.substring(0, 100)}`;
           contentSummary = blockContent.exercise?.substring(0, 50);
           imageDescription = `A peaceful picture to help you relax and focus!`;
+        } else {
+          // Fallback for unknown block types
+          prompt = `A colorful educational illustration for children about learning`;
+          imageDescription = "A wonderful picture about learning!";
         }
-        
-        // Enhance prompt for DALL-E
-        prompt = `${prompt} in a vibrant digital art style, child-friendly, educational, detailed, colorful`;
       }
     } catch (e) {
       console.error(`[${requestId}] Error creating prompt:`, e);
-      contentSummary = "Content visualization";
       prompt = "A colorful educational illustration for children";
       imageDescription = "A colorful picture about learning!";
     }
     
-    // If prompt is too short, use a default
-    if (!prompt || prompt.length < 20) {
-      prompt = `A colorful educational illustration about ${blockType} for children`;
+    // Make sure we always have a valid prompt
+    if (!prompt || prompt.length < 10) {
+      prompt = `A colorful educational illustration about ${blockType || 'learning'} for children`;
       imageDescription = "A wonderful picture about learning!";
     }
-
+    
+    // Enhance prompt for DALL-E
+    prompt = `${prompt} in a vibrant digital art style, child-friendly, educational, detailed, colorful`;
     console.log(`[${requestId}] Generated prompt: ${prompt}`);
     
     try {
       // Call OpenAI API to generate an image with DALL-E
       const openAiApiKey = Deno.env.get('OPENAI_API_KEY');
       if (!openAiApiKey) {
-        throw new Error('OpenAI API key is not configured');
+        console.error(`[${requestId}] OpenAI API key is not configured`);
+        // Return friendly response without image
+        return new Response(
+          JSON.stringify({ 
+            imageDescription,
+            timestamp: new Date().toISOString()
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
       
       console.log(`[${requestId}] Calling DALL-E API`);
@@ -125,12 +138,13 @@ serve(async (req) => {
       });
       
       if (!openaiResponse.ok) {
-        const errorData = await openaiResponse.json().catch(() => ({}));
-        console.error(`[${requestId}] DALL-E API error:`, errorData);
-        // Instead of throwing, return a response that includes the image description
+        console.error(`[${requestId}] DALL-E API error status: ${openaiResponse.status}`);
+        const errorText = await openaiResponse.text();
+        console.error(`[${requestId}] DALL-E API error response:`, errorText);
+        
+        // Return a friendly response even when OpenAI fails
         return new Response(
           JSON.stringify({ 
-            error: `DALL-E API error: ${errorData.error?.message || JSON.stringify(errorData)}`,
             imageDescription,
             timestamp: new Date().toISOString()
           }),
@@ -141,10 +155,10 @@ serve(async (req) => {
       const imageData = await openaiResponse.json();
       
       if (!imageData.data || !imageData.data[0] || !imageData.data[0].url) {
-        // Instead of throwing, return a response that includes the image description
+        console.error(`[${requestId}] Invalid or empty response from DALL-E API:`, JSON.stringify(imageData));
+        // Return a friendly response even when the response is invalid
         return new Response(
           JSON.stringify({ 
-            error: 'Invalid response from DALL-E API',
             imageDescription,
             timestamp: new Date().toISOString()
           }),
@@ -153,7 +167,7 @@ serve(async (req) => {
       }
       
       const imageUrl = imageData.data[0].url;
-      console.log(`[${requestId}] Successfully generated image URL: ${imageUrl}`);
+      console.log(`[${requestId}] Successfully generated image URL`);
       
       const totalDuration = (Date.now() - startTime) / 1000;
       console.log(`[${requestId}] Generated image in ${totalDuration} seconds`);
@@ -178,7 +192,6 @@ serve(async (req) => {
       // Return a response with the image description even on error
       return new Response(
         JSON.stringify({ 
-          error: dalleError.message,
           imageDescription,
           timestamp: new Date().toISOString()
         }),
@@ -191,7 +204,6 @@ serve(async (req) => {
     // Return a suitable error with image description
     return new Response(
       JSON.stringify({ 
-        error: error.message, 
         imageDescription: "A fun picture about learning! (We're creating more soon!)",
         timestamp: new Date().toISOString()
       }),
