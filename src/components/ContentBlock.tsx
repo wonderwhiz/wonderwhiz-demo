@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
@@ -91,6 +90,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   const [contextualImage, setContextualImage] = useState<string | null>(null);
   const [imageLoading, setImageLoading] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [imageDescription, setImageDescription] = useState<string>("A wonderful picture about learning!");
   const [imageRequestInProgress, setImageRequestInProgress] = useState(false);
   const [imageTimerId, setImageTimerId] = useState<number | null>(null);
   const [imageRequestId, setImageRequestId] = useState<string>(`img-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`);
@@ -124,7 +124,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   }, [isFirstBlock, block.id, contextualImage, imageRequestInProgress]);
   
   const tryGenerateImage = useCallback(async () => {
-    if (!isFirstBlock || contextualImage || imageLoading || imageRetryCountRef.current > 3) {
+    if (!isFirstBlock || contextualImage || imageLoading || imageRetryCountRef.current > 2) {
       return;
     }
 
@@ -157,12 +157,13 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     setImageError(result.imageError);
     setImageLoading(result.imageLoading);
     setImageRequestInProgress(result.imageRequestInProgress);
+    setImageDescription(result.imageDescription || "A wonderful picture about learning!");
     
-    // If there was an error, increment retry count
+    // If there was an error, increment retry count but continue silently
     if (result.imageError) {
       imageRetryCountRef.current += 1;
       
-      // Don't retry automatically - we'll silently fail
+      // Don't retry automatically - we'll silently fail with a friendly message
       setImageLoading(false);
       setImageRequestInProgress(false);
     }
@@ -173,7 +174,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     setImageError("Image failed to load");
     setContextualImage(null);
     
-    // Don't retry automatically - we'll silently fail
+    // Don't retry automatically - we'll silently fail with a friendly message
     setImageLoading(false);
     setImageRequestInProgress(false);
   };
@@ -391,6 +392,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
                 imageLoading={imageLoading}
                 contextualImage={contextualImage}
                 imageError={imageError}
+                imageDescription={imageDescription}
                 blockTitle={blockTitle}
                 handleImageLoadError={handleImageLoadError}
                 handleRetryImage={handleRetryImage}

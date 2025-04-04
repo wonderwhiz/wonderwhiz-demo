@@ -7,8 +7,14 @@ export const getContextualImage = async (
   requestId: string,
   imageRetryCountRef: React.MutableRefObject<number>
 ) => {
-  if (!isFirstBlock || imageRetryCountRef.current > 3) {
-    return { imageLoading: false, imageRequestInProgress: false, contextualImage: null, imageError: null };
+  if (!isFirstBlock || imageRetryCountRef.current > 2) {
+    return { 
+      imageLoading: false, 
+      imageRequestInProgress: false, 
+      contextualImage: null, 
+      imageError: null,
+      imageDescription: "A wonderful picture about learning!"
+    };
   }
 
   try {
@@ -30,16 +36,34 @@ export const getContextualImage = async (
     
     if (error) {
       console.error(`[${requestId}][${block.id}] Supabase function error:`, error);
-      throw new Error(`Edge function error: ${error.message}`);
+      return { 
+        imageLoading: false, 
+        imageRequestInProgress: false,
+        contextualImage: null,
+        imageError: `Edge function error: ${error.message}`,
+        imageDescription: data?.imageDescription || "A wonderful picture about learning!" 
+      };
     }
     
     if (!data) {
-      throw new Error("No data returned from image generation function");
+      return { 
+        imageLoading: false,
+        imageRequestInProgress: false,
+        contextualImage: null,
+        imageError: "No data returned from image generation function",
+        imageDescription: "A wonderful picture about learning!" 
+      };
     }
     
     if (data.error) {
       console.error(`[${requestId}][${block.id}] Image generation error:`, data.error);
-      throw new Error(data.error);
+      return { 
+        imageLoading: false,
+        imageRequestInProgress: false,
+        contextualImage: null,
+        imageError: data.error,
+        imageDescription: data.imageDescription || "A wonderful picture about learning!" 
+      };
     }
     
     if (data && data.image) {
@@ -57,10 +81,17 @@ export const getContextualImage = async (
         imageLoading: false, 
         imageRequestInProgress: false, 
         contextualImage: data.image, 
-        imageError: null 
+        imageError: null,
+        imageDescription: data.imageDescription || "A wonderful picture about learning!" 
       };
     } else {
-      throw new Error("No image data in response");
+      return { 
+        imageLoading: false,
+        imageRequestInProgress: false,
+        contextualImage: null,
+        imageError: "No image data in response",
+        imageDescription: data.imageDescription || "A wonderful picture about learning!" 
+      };
     }
   } catch (err) {
     console.error(`[${block.id}] Error generating contextual image:`, err);
@@ -68,7 +99,8 @@ export const getContextualImage = async (
       imageLoading: false, 
       imageRequestInProgress: false, 
       contextualImage: null, 
-      imageError: err instanceof Error ? err.message : "Unknown error occurred" 
+      imageError: err instanceof Error ? err.message : "Unknown error occurred",
+      imageDescription: "A wonderful picture about learning!" 
     };
   }
 };

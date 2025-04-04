@@ -1,13 +1,14 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertCircle, RefreshCw, ImageIcon } from 'lucide-react';
+import { ImageIcon, Sparkles } from 'lucide-react';
 
 interface ContextualImageProps {
   isFirstBlock: boolean;
   imageLoading: boolean;
   contextualImage: string | null;
   imageError: string | null;
+  imageDescription: string;
   blockTitle: string;
   handleImageLoadError: () => void;
   handleRetryImage: () => void;
@@ -19,6 +20,7 @@ const ContextualImage: React.FC<ContextualImageProps> = ({
   imageLoading,
   contextualImage,
   imageError,
+  imageDescription,
   blockTitle,
   handleImageLoadError,
   handleRetryImage,
@@ -78,20 +80,29 @@ const ContextualImage: React.FC<ContextualImageProps> = ({
     );
   }
   
-  // Only return a retry button if there was an error
+  // When we have imageError but don't want to show errors to kids, show a child-friendly message
   if (imageError) {
     return (
       <motion.div 
-        key="error"
+        key="friendly-description"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.3 }}
-        className="hidden"
-      />
+        className={`${getContextualImageStyle()} p-3 flex items-center justify-center bg-gradient-to-r from-purple-700/20 to-indigo-700/20 rounded-lg border border-purple-500/20`}
+      >
+        <div className="flex flex-col items-center text-center">
+          <div className="bg-white/10 p-2 rounded-full mb-2">
+            <Sparkles className="h-6 w-6 text-wonderwhiz-gold" />
+          </div>
+          <p className="text-white/90 text-sm font-medium">{imageDescription}</p>
+          <p className="text-white/60 text-xs mt-1">Use your imagination to bring this to life!</p>
+        </div>
+      </motion.div>
     );
   }
   
+  // No error or image - don't show anything
   return null;
 };
 
