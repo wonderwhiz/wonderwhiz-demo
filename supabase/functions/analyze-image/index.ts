@@ -40,48 +40,83 @@ serve(async (req) => {
     const mimeType = imageFile.type;
     const base64String = `data:${mimeType};base64,${base64Image}`;
     
-    console.log(`[${requestId}] Image converted to base64, size: ${base64String.length} chars`);
+    console.log(`[${requestId}] Image converted to base64, size: ${base64String.length} chars, type: ${mimeType}`);
     
-    // Prepare Claude API request
-    const claudeResponse = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": claudeApiKey,
-        "anthropic-version": "2023-06-01"
-      },
-      body: JSON.stringify({
-        model: "claude-3-opus-20240229",
-        max_tokens: 1000,
-        messages: [
-          {
-            role: "user",
-            content: [
+    // Prepare Claude API request with better error handling and retries
+    let attempts = 0;
+    const maxAttempts = 3;
+    let claudeResponse = null;
+    let data = null;
+    
+    while (attempts < maxAttempts) {
+      attempts++;
+      try {
+        console.log(`[${requestId}] Attempting Claude API request (attempt ${attempts}/${maxAttempts})`);
+        
+        claudeResponse = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": claudeApiKey,
+            "anthropic-version": "2023-06-01"
+          },
+          body: JSON.stringify({
+            model: "claude-3-opus-20240229",
+            max_tokens: 1000,
+            messages: [
               {
-                type: "image",
-                source: {
-                  type: "base64",
-                  media_type: mimeType,
-                  data: base64Image
-                }
-              },
-              {
-                type: "text",
-                text: `${query}\n\nPlease generate a fun, educational response about the image that would be engaging for children. Include 3-5 interesting facts or observations about what you see.`
+                role: "user",
+                content: [
+                  {
+                    type: "image",
+                    source: {
+                      type: "base64",
+                      media_type: mimeType,
+                      data: base64Image
+                    }
+                  },
+                  {
+                    type: "text",
+                    text: `${query}\n\nPlease generate a fun, educational response about the image that would be engaging for children. Include 3-5 interesting facts or observations about what you see.`
+                  }
+                ]
               }
             ]
+          })
+        });
+        
+        if (!claudeResponse.ok) {
+          const errorData = await claudeResponse.json().catch(() => ({}));
+          console.error(`[${requestId}] Claude API error (attempt ${attempts}):`, errorData);
+          
+          if (attempts >= maxAttempts) {
+            throw new Error(`Claude API error (status ${claudeResponse.status}): ${errorData.error?.message || JSON.stringify(errorData)}`);
           }
-        ]
-      })
-    });
-
-    const data = await claudeResponse.json();
-    const apiDuration = (Date.now() - startTime) / 1000;
-    console.log(`[${requestId}] Claude API response received in ${apiDuration}s`);
+          
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, 1000)); 
+          continue;
+        }
+        
+        data = await claudeResponse.json();
+        break; // Success, exit loop
+      } catch (apiError) {
+        console.error(`[${requestId}] Claude API call failed (attempt ${attempts}):`, apiError);
+        
+        if (attempts >= maxAttempts) {
+          throw new Error(`Failed to analyze image after ${maxAttempts} attempts: ${apiError.message}`);
+        }
+        
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
     
-    if (!claudeResponse.ok) {
-      console.error(`[${requestId}] Claude API error:`, data);
-      throw new Error(`Claude API error: ${data.error?.message || JSON.stringify(data)}`);
+    const apiDuration = (Date.now() - startTime) / 1000;
+    console.log(`[${requestId}] Claude API response received in ${apiDuration}s after ${attempts} attempt(s)`);
+    
+    if (!data || !data.content || !data.content[0] || !data.content[0].text) {
+      throw new Error('Invalid or empty response from Claude API');
     }
 
     // Structure the response data to match content blocks format
@@ -100,7 +135,7 @@ serve(async (req) => {
       created_at: new Date().toISOString()
     };
     
-    console.log(`[${requestId}] Generated response from Claude`);
+    console.log(`[${requestId}] Successfully generated response from Claude`);
 
     return new Response(
       JSON.stringify({
@@ -108,6 +143,7 @@ serve(async (req) => {
         block: newBlock,
         timing: {
           apiDuration,
+          attempts,
           timestamp: new Date().toISOString()
         }
       }),

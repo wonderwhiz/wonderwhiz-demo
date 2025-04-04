@@ -84,6 +84,7 @@ const CurioSearch: React.FC<CurioSearchProps> = ({
             type="submit" 
             size="sm" 
             className="h-7 px-3 bg-wonderwhiz-purple hover:bg-wonderwhiz-purple/80"
+            disabled={isSearching}
           >
             Search
           </Button>
@@ -92,7 +93,11 @@ const CurioSearch: React.FC<CurioSearchProps> = ({
       
       <div className="flex justify-between items-center mt-2">
         <div className="text-xs text-white/50">
-          {searchQuery ? 'Searching for results...' : `${totalBlocksLoaded} blocks loaded`}
+          {searchQuery ? (
+            isSearching ? 'Searching...' : 'Search results'
+          ) : (
+            `${totalBlocksLoaded} blocks loaded`
+          )}
         </div>
         
         {onImageUpload && (

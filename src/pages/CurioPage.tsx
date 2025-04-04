@@ -125,7 +125,7 @@ const CurioPage: React.FC = () => {
       
       // Call the analyze-image function
       const response = await fetch(
-        `${supabase.functions.url}/analyze-image`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-image`,
         {
           method: "POST",
           body: formData,
