@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
@@ -90,10 +91,11 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   const [contextualImage, setContextualImage] = useState<string | null>(null);
   const [imageLoading, setImageLoading] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
-  const [imageDescription, setImageDescription] = useState<string>("A wonderful picture about learning!");
+  const [imageDescription, setImageDescription] = useState<string>("A magical adventure awaits!");
   const [imageRequestInProgress, setImageRequestInProgress] = useState(false);
   const [imageTimerId, setImageTimerId] = useState<number | null>(null);
   const [imageRequestId, setImageRequestId] = useState<string>(`img-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`);
+  const [uploadFeedback, setUploadFeedback] = useState<string | null>(null);
   const imageRetryCountRef = useRef(0);
   
   const specialistStyle = getSpecialistStyle(block.specialist_id);
@@ -121,6 +123,37 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     if (isFirstBlock) {
       loadCachedImage();
     }
+
+    // Fetch existing replies when the block loads
+    const fetchReplies = async () => {
+      if (block.id && !block.id.startsWith('generating-') && !block.id.startsWith('error-')) {
+        try {
+          const { data, error } = await supabase
+            .from('block_replies')
+            .select('*')
+            .eq('block_id', block.id)
+            .order('created_at', { ascending: true });
+            
+          if (error) throw error;
+          
+          if (data && data.length > 0) {
+            const mappedReplies: Reply[] = data.map((reply: DbReply) => ({
+              id: reply.id,
+              block_id: reply.block_id,
+              content: reply.content,
+              from_user: reply.from_user,
+              timestamp: reply.created_at,
+              specialist_id: reply.specialist_id
+            }));
+            setReplies(mappedReplies);
+          }
+        } catch (error) {
+          console.error('Error fetching replies:', error);
+        }
+      }
+    };
+    
+    fetchReplies();
   }, [isFirstBlock, block.id, contextualImage, imageRequestInProgress]);
   
   const tryGenerateImage = useCallback(async () => {
@@ -157,7 +190,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     setImageError(result.imageError);
     setImageLoading(result.imageLoading);
     setImageRequestInProgress(result.imageRequestInProgress);
-    setImageDescription(result.imageDescription || "A wonderful picture about learning!");
+    setImageDescription(result.imageDescription || "A magical adventure awaits!");
     
     // If there was an error, increment retry count but continue silently
     if (result.imageError) {
@@ -345,6 +378,29 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       onSetQuery(question);
     }
   };
+
+  const handleCreativeUploadSuccess = (feedback: string) => {
+    setUploadFeedback(feedback);
+    
+    // Display toast with sparks earned
+    toast.success(
+      <div className="flex flex-col">
+        <span className="font-medium">Uploaded successfully!</span> 
+        <span className="text-sm opacity-90">You earned 10 sparks for your creativity!</span>
+      </div>,
+      {
+        position: "top-center",
+        duration: 5000,
+        className: "bg-wonderwhiz-purple text-white",
+        icon: "✨"
+      }
+    );
+    
+    // Call the parent handler
+    if (onCreativeUpload) {
+      onCreativeUpload();
+    }
+  };
   
   const renderBlockContent = () => {
     switch (block.type) {
@@ -356,7 +412,11 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       case 'flashcard':
         return <FlashcardBlock content={block.content} />;
       case 'creative':
-        return <CreativeBlock content={block.content} onCreativeUpload={onCreativeUpload || (() => {})} />;
+        return <CreativeBlock 
+          content={block.content} 
+          onCreativeUpload={() => handleCreativeUploadSuccess(uploadFeedback || "Your artwork is amazing! I love the colors and creativity you've shown. You're a wonderful artist!")} 
+          uploadFeedback={uploadFeedback}
+        />;
       case 'task':
         return <TaskBlock content={block.content} onTaskComplete={onTaskComplete || (() => {})} />;
       case 'riddle':

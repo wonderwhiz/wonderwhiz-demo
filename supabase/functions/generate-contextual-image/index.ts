@@ -31,7 +31,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           error: `Invalid request format: ${parseError.message}`,
-          imageDescription: "A magical picture about learning!",
+          imageDescription: "A magical adventure awaits!",
           timestamp: new Date().toISOString()
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
@@ -43,7 +43,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           error: 'Missing required parameters: blockContent and blockType',
-          imageDescription: "A wonderful picture about learning!",
+          imageDescription: "Imagine a world of wonders!",
           timestamp: new Date().toISOString()
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
@@ -60,65 +60,65 @@ serve(async (req) => {
         // Generate more detailed and specific prompts based on block type
         if (blockType === 'fact' || blockType === 'funFact') {
           const factText = blockContent.fact?.substring(0, 200) || "";
-          prompt = `Create a vibrant, educational illustration for children showing: ${factText}`;
+          prompt = `Create a whimsical Pixar/Disney-style illustration for children showing: ${factText}`;
           contentSummary = factText.substring(0, 50);
-          imageDescription = `A magical picture showing ${contentSummary.toLowerCase() || "amazing facts"}!`;
+          imageDescription = `A magical Pixar-style picture about ${contentSummary.toLowerCase() || "amazing facts"}!`;
         } else if (blockType === 'quiz') {
           const questionText = blockContent.question?.substring(0, 200) || "";
-          prompt = `Create a colorful, educational illustration for children about: ${questionText}`;
+          prompt = `Create a Disney-inspired, colorful educational illustration for children about: ${questionText}`;
           contentSummary = questionText.substring(0, 50);
-          imageDescription = `A fun picture about ${contentSummary.toLowerCase() || "this quiz question"}!`;
+          imageDescription = `A fun Disney-style picture about ${contentSummary.toLowerCase() || "this quiz question"}!`;
         } else if (blockType === 'flashcard') {
           const frontText = blockContent.front?.substring(0, 200) || "";
-          prompt = `Create a colorful, educational illustration for children that explains: ${frontText}`;
+          prompt = `Create a cute Pixar-style educational illustration for children that explains: ${frontText}`;
           contentSummary = frontText.substring(0, 50);
-          imageDescription = `A colorful picture showing ${contentSummary.toLowerCase() || "this fact"}!`;
+          imageDescription = `A charming Pixar-inspired picture showing ${contentSummary.toLowerCase() || "this fact"}!`;
         } else if (blockType === 'creative') {
           const promptText = blockContent.prompt?.substring(0, 200) || "";
-          prompt = `Create a creative, inspiring illustration for children about: ${promptText}`;
+          prompt = `Create a Disney-inspired, magical illustration for children about: ${promptText}`;
           contentSummary = promptText.substring(0, 50);
-          imageDescription = `A magical picture for your creative adventure about ${contentSummary.toLowerCase()}!`;
+          imageDescription = `A magical Disney-style picture for your creative adventure about ${contentSummary.toLowerCase()}!`;
         } else if (blockType === 'task') {
           const taskText = blockContent.task?.substring(0, 200) || "";
-          prompt = `Create a motivational illustration for children showing: ${taskText}`;
+          prompt = `Create a motivational Pixar-style illustration for children showing: ${taskText}`;
           contentSummary = taskText.substring(0, 50);
-          imageDescription = `A picture to inspire you on your mission to ${contentSummary.toLowerCase()}!`;
+          imageDescription = `A Pixar-inspired picture to inspire you on your mission to ${contentSummary.toLowerCase()}!`;
         } else if (blockType === 'riddle') {
           const riddleText = blockContent.riddle?.substring(0, 200) || "";
-          prompt = `Create a mysterious, magical illustration for children about: ${riddleText}`;
+          prompt = `Create a mysterious, magical Disney-style illustration for children about: ${riddleText}`;
           contentSummary = riddleText.substring(0, 50);
-          imageDescription = `A mysterious picture with clues to the riddle about ${contentSummary.toLowerCase()}!`;
+          imageDescription = `A mysterious Disney-inspired picture with clues to the riddle about ${contentSummary.toLowerCase()}!`;
         } else if (blockType === 'news') {
           const headlineText = blockContent.headline?.substring(0, 200) || "";
-          prompt = `Create a journalistic illustration for children about: ${headlineText}`;
+          prompt = `Create a journalistic Pixar-style illustration for children about: ${headlineText}`;
           contentSummary = headlineText.substring(0, 50);
-          imageDescription = `A picture showing the latest news about ${contentSummary.toLowerCase() || "this topic"}!`;
+          imageDescription = `A Pixar-inspired picture showing the latest news about ${contentSummary.toLowerCase() || "this topic"}!`;
         } else if (blockType === 'activity') {
           const activityText = blockContent.activity?.substring(0, 200) || "";
-          prompt = `Create a fun, active illustration for children showing: ${activityText}`;
+          prompt = `Create a fun, Disney-style illustration for children showing: ${activityText}`;
           contentSummary = activityText.substring(0, 50);
-          imageDescription = `A fun picture showing you how to ${contentSummary.toLowerCase() || "do this activity"}!`;
+          imageDescription = `A fun Disney-inspired picture showing you how to ${contentSummary.toLowerCase() || "do this activity"}!`;
         } else if (blockType === 'mindfulness') {
           const exerciseText = blockContent.exercise?.substring(0, 200) || "";
-          prompt = `Create a calm, peaceful illustration for children about: ${exerciseText}`;
+          prompt = `Create a calm, peaceful Pixar-style illustration for children about: ${exerciseText}`;
           contentSummary = exerciseText.substring(0, 50);
-          imageDescription = `A peaceful picture to help you ${contentSummary.toLowerCase() || "relax and focus"}!`;
+          imageDescription = `A soothing Pixar-inspired picture to help you ${contentSummary.toLowerCase() || "relax and focus"}!`;
         }
         
-        // Enhanced prompts specific to DALL-E
-        prompt = `${prompt} in a bright, colorful, child-friendly style with simple shapes and vibrant colors. Make it educational, magical, and engaging for children. Digital art style.`;
+        // Enhanced prompts specific to DALL-E for Disney/Pixar style
+        prompt = `${prompt} in the style of modern Pixar or Disney animation. Use bright, vibrant colors, expressive characters with big eyes, and a magical, whimsical atmosphere. Make it cute, educational, and engaging for children with simple shapes and clear details. Digital art style with clean edges and slight texture.`;
       }
     } catch (e) {
       console.error(`[${requestId}] Error creating prompt:`, e);
       contentSummary = "Content visualization";
-      prompt = "A colorful educational illustration for children";
-      imageDescription = "A magical picture about learning!";
+      prompt = "A colorful Pixar-style educational illustration for children";
+      imageDescription = "A magical Disney-inspired picture about learning!";
     }
     
     // If prompt is too short, use a default
     if (!prompt || prompt.length < 20) {
-      prompt = `A colorful educational illustration about ${blockType} for children. Bright, engaging, and child-friendly style.`;
-      imageDescription = "A wonderful picture about learning!";
+      prompt = `A colorful educational illustration in the style of Pixar/Disney animation about ${blockType} for children. Bright, engaging, cute characters with big eyes, and a magical atmosphere.`;
+      imageDescription = "A wonderful Disney-inspired picture about learning!";
     }
 
     console.log(`[${requestId}] Generated DALL-E prompt: ${prompt}`);
@@ -168,7 +168,7 @@ serve(async (req) => {
             || errorData.error?.type === 'insufficient_quota';
           
           const friendlyError = billingError 
-            ? "Our magical picture painter is taking a break! You'll still learn lots without the pictures."
+            ? "Our magical Disney artists are taking a break! You'll still have a wonderful time learning without the pictures."
             : `DALL-E API error: ${errorData.error?.message || JSON.stringify(errorData)}`;
           
           return new Response(
@@ -235,7 +235,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           error: error.message, 
-          imageDescription: "A fun picture about learning! (We're creating more soon!)",
+          imageDescription: "A fun Disney-style picture about learning! (We're creating more soon!)",
           timestamp: new Date().toISOString()
         }),
         { 
@@ -251,7 +251,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: error.message, 
-        imageDescription: "A fun picture about learning! (We're creating more soon!)",
+        imageDescription: "A fun Disney-inspired picture about learning! (We're creating more soon!)",
         timestamp: new Date().toISOString()
       }),
       { 

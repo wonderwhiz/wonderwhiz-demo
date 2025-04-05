@@ -34,9 +34,9 @@ const BlockReplies: React.FC<BlockRepliesProps> = ({ replies, specialistId }) =>
           <span className="w-2 h-2 rounded-full bg-green-400"></span>
           <span className="w-2 h-2 rounded-full bg-green-400 absolute inset-0 animate-ping opacity-75"></span>
         </span>
-        Conversation
+        <span className="font-medium">Your Magical Conversation</span>
       </h4>
-      <div className="space-y-2 sm:space-y-3 max-h-60 overflow-y-auto px-1 pr-2">
+      <div className="space-y-2 sm:space-y-3 max-h-64 overflow-y-auto px-1 pr-2 scrollbar-thin scrollbar-thumb-wonderwhiz-purple/50 scrollbar-track-transparent">
         <AnimatePresence initial={false}>
           {replies.map((reply, index) => (
             <motion.div

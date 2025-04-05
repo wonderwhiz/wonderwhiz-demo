@@ -14,7 +14,7 @@ export const getContextualImage = async (
       imageRequestInProgress: false, 
       contextualImage: null, 
       imageError: null,
-      imageDescription: "A wonderful picture about learning!"
+      imageDescription: "A magical adventure awaits!"
     };
   }
 
@@ -27,7 +27,7 @@ export const getContextualImage = async (
       imageRequestInProgress: true,
       contextualImage: null,
       imageError: null,
-      imageDescription: "A magical picture is being created just for you!"
+      imageDescription: "Creating a magical picture just for you!"
     };
     
     console.log(`[${requestId}][${block.id}] Calling generate-contextual-image function`);
@@ -58,8 +58,8 @@ export const getContextualImage = async (
         imageLoading: false, 
         imageRequestInProgress: false,
         contextualImage: null,
-        imageError: isBillingError ? "Images are taking a break right now!" : `Error: ${errorMessage}`,
-        imageDescription: data?.imageDescription || "A wonderful picture about learning!" 
+        imageError: isBillingError ? "Our magical artists are taking a break right now!" : `Error: ${errorMessage}`,
+        imageDescription: data?.imageDescription || "Imagine a colorful world of discovery!" 
       };
     }
     
@@ -70,7 +70,7 @@ export const getContextualImage = async (
         imageRequestInProgress: false,
         contextualImage: null,
         imageError: "No data returned from image generation function",
-        imageDescription: "A magical picture about this exciting topic!" 
+        imageDescription: "A magical journey awaits you!" 
       };
     }
     
@@ -85,8 +85,8 @@ export const getContextualImage = async (
         imageLoading: false,
         imageRequestInProgress: false,
         contextualImage: null,
-        imageError: isBillingError ? "Our artists are taking a little break!" : data.error,
-        imageDescription: data.imageDescription || "A wonderful picture about learning!" 
+        imageError: isBillingError ? "Our magical artists are taking a little break!" : data.error,
+        imageDescription: data.imageDescription || "Picture a world full of wonders!" 
       };
     }
     
@@ -109,7 +109,7 @@ export const getContextualImage = async (
         imageRequestInProgress: false, 
         contextualImage: data.image, 
         imageError: null,
-        imageDescription: data.imageDescription || "A wonderful picture about learning!" 
+        imageDescription: data.imageDescription || "A magical adventure in learning!" 
       };
     } else {
       // Handle missing image in response but with a nice description
@@ -117,8 +117,8 @@ export const getContextualImage = async (
         imageLoading: false,
         imageRequestInProgress: false,
         contextualImage: null,
-        imageError: "Our artist is still working on your picture!",
-        imageDescription: data.imageDescription || "A wonderful picture about learning!" 
+        imageError: "Our magical artists are still working on your picture!",
+        imageDescription: data.imageDescription || "A wonderful adventure through knowledge!" 
       };
     }
   } catch (err) {
@@ -129,7 +129,7 @@ export const getContextualImage = async (
       imageRequestInProgress: false, 
       contextualImage: null, 
       imageError: "Our magical picture machine needs a rest!",
-      imageDescription: "A wonderful picture about learning!" 
+      imageDescription: "Imagine a colorful world of discovery!" 
     };
   }
 };

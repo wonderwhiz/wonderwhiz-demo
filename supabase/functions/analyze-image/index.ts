@@ -63,14 +63,14 @@ serve(async (req) => {
             messages: [
               {
                 role: "system",
-                content: "You are an AI assistant specialized in analyzing images and explaining them to children in a fun, educational way. Your analysis should be accurate, engaging, and provide educational content suitable for children."
+                content: "You are an AI assistant specialized in analyzing images and explaining them to children in a fun, educational way. Your analysis should be accurate, engaging, and provide educational content suitable for children. Be enthusiastic, use simple language, and include interesting facts. Be supportive and encouraging of their creativity and exploration."
               },
               {
                 role: "user",
                 content: [
                   {
                     type: "text", 
-                    text: `${query}\n\nPlease generate a fun, educational response about the image that would be engaging for children. Include 3-5 interesting facts or observations about what you see.`
+                    text: `${query}\n\nPlease generate a fun, highly engaging, educational response about the image that would be exciting for children. Include 3-5 interesting facts or observations about what you see. Be enthusiastic and encouraging!`
                   },
                   {
                     type: "image_url",
@@ -119,6 +119,22 @@ serve(async (req) => {
       throw new Error('Invalid or empty response from OpenAI API');
     }
 
+    // Generate a personalized feedback message
+    const feedbackMessages = [
+      "Wow! Your creativity is absolutely amazing! I love what you've created!",
+      "You're a brilliant artist! Your imagination is truly wonderful!",
+      "This is fantastic work! You have such incredible talent!",
+      "I'm so impressed by your creativity! This is outstanding work!",
+      "You're a natural artist! This creation shows your amazing imagination!",
+      "This is spectacular! Your artistic skills are truly impressive!",
+      "Your creativity shines so brightly! This is wonderful work!",
+      "Amazing job! Your artistic talents are truly magnificent!",
+      "What an incredible creation! Your imagination knows no bounds!",
+      "This is absolutely delightful! You have such remarkable talent!"
+    ];
+    
+    const randomFeedback = feedbackMessages[Math.floor(Math.random() * feedbackMessages.length)];
+    
     // Structure the response data to match content blocks format
     const responseContent = data.choices[0].message.content;
     
@@ -128,7 +144,11 @@ serve(async (req) => {
       specialist_id: "nova",
       content: {
         fact: responseContent,
-        rabbitHoles: []
+        rabbitHoles: [
+          "What else can you tell about this image?",
+          "Can you explain more about what I created?",
+          "What other interesting facts relate to my creation?"
+        ]
       },
       liked: false,
       bookmarked: false,
@@ -141,6 +161,7 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         block: newBlock,
+        feedback: randomFeedback,
         timing: {
           apiDuration,
           attempts,
@@ -161,7 +182,7 @@ serve(async (req) => {
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
-        status: 500 
+        status: 200 
       }
     );
   }

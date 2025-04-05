@@ -42,7 +42,14 @@ const ContextualImage: React.FC<ContextualImageProps> = ({
               <div className="w-8 h-8 rounded-full border-4 border-t-wonderwhiz-pink border-r-wonderwhiz-pink border-b-transparent border-l-transparent animate-spin"></div>
               <div className="absolute inset-0 w-8 h-8 rounded-full border-4 border-t-transparent border-r-transparent border-b-wonderwhiz-purple border-l-wonderwhiz-purple animate-spin"></div>
             </div>
-            <p className="text-white text-sm animate-pulse">Creating a magical picture just for you...</p>
+            <motion.p 
+              className="text-white text-sm"
+              initial={{ opacity: 0.7 }}
+              animate={{ opacity: 1 }}
+              transition={{ repeat: Infinity, repeatType: "reverse", duration: 1.5 }}
+            >
+              Creating a magical Disney-style picture just for you...
+            </motion.p>
           </div>
         </motion.div>
       ) : imageError ? (
@@ -89,7 +96,7 @@ const ContextualImage: React.FC<ContextualImageProps> = ({
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0 }}
-          className="w-full h-48 sm:h-56 md:h-64 rounded-lg overflow-hidden"
+          className="w-full h-48 sm:h-56 md:h-64 rounded-lg overflow-hidden relative"
         >
           <img
             src={contextualImage}
@@ -97,9 +104,14 @@ const ContextualImage: React.FC<ContextualImageProps> = ({
             className="w-full h-full object-cover"
             onError={handleImageLoadError}
           />
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
-            <p className="text-white text-xs text-center">{imageDescription}</p>
-          </div>
+          <motion.div 
+            className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+          >
+            <p className="text-white text-xs md:text-sm text-center font-medium drop-shadow-lg">{imageDescription}</p>
+          </motion.div>
         </motion.div>
       ) : (
         <motion.div
