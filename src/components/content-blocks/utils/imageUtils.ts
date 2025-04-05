@@ -49,11 +49,16 @@ export const getContextualImage = async (
     // Handle Supabase function error
     if (error) {
       console.error(`[${requestId}][${block.id}] Supabase function error:`, error);
+      
+      // Special handling for billing limit error to make it less alarming
+      const errorMessage = error.message || "Error generating image";
+      const isBillingError = errorMessage.includes("Billing") || errorMessage.includes("quota");
+      
       return { 
         imageLoading: false, 
         imageRequestInProgress: false,
         contextualImage: null,
-        imageError: `Edge function error: ${error.message}`,
+        imageError: isBillingError ? "Images are taking a break right now!" : `Error: ${errorMessage}`,
         imageDescription: data?.imageDescription || "A wonderful picture about learning!" 
       };
     }
@@ -72,11 +77,15 @@ export const getContextualImage = async (
     // Handle error from the data
     if (data.error) {
       console.error(`[${requestId}][${block.id}] Image generation error:`, data.error);
+      
+      // Friendly error message for billing issues
+      const isBillingError = data.error.includes("Billing") || data.error.includes("quota");
+      
       return { 
         imageLoading: false,
         imageRequestInProgress: false,
         contextualImage: null,
-        imageError: data.error,
+        imageError: isBillingError ? "Our artists are taking a little break!" : data.error,
         imageDescription: data.imageDescription || "A wonderful picture about learning!" 
       };
     }
@@ -103,23 +112,23 @@ export const getContextualImage = async (
         imageDescription: data.imageDescription || "A wonderful picture about learning!" 
       };
     } else {
-      // Handle missing image in response
+      // Handle missing image in response but with a nice description
       return { 
         imageLoading: false,
         imageRequestInProgress: false,
         contextualImage: null,
-        imageError: "No image data in response",
+        imageError: "Our artist is still working on your picture!",
         imageDescription: data.imageDescription || "A wonderful picture about learning!" 
       };
     }
   } catch (err) {
-    // Handle any other errors
+    // Handle any other errors with a child-friendly message
     console.error(`[${block.id}] Error generating contextual image:`, err);
     return { 
       imageLoading: false, 
       imageRequestInProgress: false, 
       contextualImage: null, 
-      imageError: err instanceof Error ? err.message : "Unknown error occurred",
+      imageError: "Our magical picture machine needs a rest!",
       imageDescription: "A wonderful picture about learning!" 
     };
   }

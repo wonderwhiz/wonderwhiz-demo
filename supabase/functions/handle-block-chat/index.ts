@@ -39,7 +39,7 @@ serve(async (req) => {
     } else if (blockType === 'flashcard') {
       contextInfo = `The child was studying a flashcard with question: "${blockContent.front}" and answer: "${blockContent.back}"`;
     } else if (blockType === 'creative') {
-      contextInfo = `The child received this creative prompt: "${blockContent.prompt}"`;
+      contextInfo = `The child was given this creative prompt: "${blockContent.prompt}"`;
     } else if (blockType === 'task') {
       contextInfo = `The child was assigned this task: "${blockContent.task}"`;
     } else if (blockType === 'riddle') {

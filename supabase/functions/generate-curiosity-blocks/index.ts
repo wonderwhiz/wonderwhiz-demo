@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -206,7 +207,7 @@ serve(async (req) => {
           console.error(`OpenAI API error (attempt ${attempt}):`, errorText);
           
           // If this is our last retry or there's an overloaded error, use fallback content
-          if (attempt > MAX_RETRIES || errorText.includes("overloaded")) {
+          if (attempt > MAX_RETRIES || errorText.includes("overloaded") || errorText.includes("limit")) {
             console.log("OpenAI API overloaded or max retries reached, using fallback content");
             contentBlocksJSON = generateFallbackContent(query, blockCount);
             break;

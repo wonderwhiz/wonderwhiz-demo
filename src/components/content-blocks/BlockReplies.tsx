@@ -36,7 +36,7 @@ const BlockReplies: React.FC<BlockRepliesProps> = ({ replies, specialistId }) =>
         </span>
         Conversation
       </h4>
-      <div className="space-y-2 sm:space-y-3 max-h-60 overflow-y-auto px-1">
+      <div className="space-y-2 sm:space-y-3 max-h-60 overflow-y-auto px-1 pr-2">
         <AnimatePresence initial={false}>
           {replies.map((reply, index) => (
             <motion.div

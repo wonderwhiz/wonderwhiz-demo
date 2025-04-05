@@ -140,82 +140,108 @@ serve(async (req) => {
       
       console.log(`[${requestId}] Calling DALL-E API`);
       
-      const openaiResponse = await fetch('https://api.openai.com/v1/images/generations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${openAiApiKey}`
-        },
-        body: JSON.stringify({
-          model: "dall-e-3",  // Using DALL-E 3 for better quality
-          prompt: prompt,
-          n: 1,
-          size: "1024x1024",  // Using high quality for better images
-          quality: "standard",
-          style: "vivid",     // Vivid style for more colorful, engaging images
-          response_format: "url"
-        })
-      });
-      
-      if (!openaiResponse.ok) {
-        const errorData = await openaiResponse.json().catch(() => ({}));
-        console.error(`[${requestId}] DALL-E API error:`, errorData);
+      try {
+        const openaiResponse = await fetch('https://api.openai.com/v1/images/generations', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${openAiApiKey}`
+          },
+          body: JSON.stringify({
+            model: "dall-e-3",  // Using DALL-E 3 for better quality
+            prompt: prompt,
+            n: 1,
+            size: "1024x1024",  // Using high quality for better images
+            quality: "standard",
+            style: "vivid",     // Vivid style for more colorful, engaging images
+            response_format: "url"
+          })
+        });
+        
+        if (!openaiResponse.ok) {
+          const errorData = await openaiResponse.json().catch(() => ({}));
+          console.error(`[${requestId}] DALL-E API error:`, errorData);
+          
+          // Check for billing-related errors
+          const billingError = errorData.error?.message?.includes('billing') 
+            || errorData.error?.message?.includes('quota')
+            || errorData.error?.type === 'insufficient_quota';
+          
+          const friendlyError = billingError 
+            ? "Our magical picture painter is taking a break! You'll still learn lots without the pictures."
+            : `DALL-E API error: ${errorData.error?.message || JSON.stringify(errorData)}`;
+          
+          return new Response(
+            JSON.stringify({ 
+              error: friendlyError,
+              imageDescription,
+              timestamp: new Date().toISOString()
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+          );
+        }
+        
+        const imageData = await openaiResponse.json();
+        
+        if (!imageData.data || !imageData.data[0] || !imageData.data[0].url) {
+          console.error(`[${requestId}] Invalid response from DALL-E API:`, imageData);
+          return new Response(
+            JSON.stringify({ 
+              error: 'Invalid response from DALL-E API',
+              imageDescription,
+              timestamp: new Date().toISOString()
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+          );
+        }
+        
+        const imageUrl = imageData.data[0].url;
+        console.log(`[${requestId}] Successfully generated image URL`);
+        
+        const totalDuration = (Date.now() - startTime) / 1000;
+        console.log(`[${requestId}] Generated image in ${totalDuration} seconds`);
         
         return new Response(
           JSON.stringify({ 
-            error: `DALL-E API error: ${errorData.error?.message || JSON.stringify(errorData)}`,
+            image: imageUrl,
             imageDescription,
-            timestamp: new Date().toISOString()
+            requestId,
+            contentSummary,
+            blockType,
+            timing: { 
+              totalDuration,
+              timestamp: new Date().toISOString() 
+            }
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
         );
-      }
-      
-      const imageData = await openaiResponse.json();
-      
-      if (!imageData.data || !imageData.data[0] || !imageData.data[0].url) {
-        console.error(`[${requestId}] Invalid response from DALL-E API:`, imageData);
+      } catch (dalleError) {
+        console.error(`[${requestId}] DALL-E generation failed:`, dalleError);
+        
+        // Return a response with the image description even on error
         return new Response(
           JSON.stringify({ 
-            error: 'Invalid response from DALL-E API',
+            error: dalleError.message,
             imageDescription,
             timestamp: new Date().toISOString()
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
         );
       }
+    } catch (error) {
+      console.error('Error generating image:', error);
       
-      const imageUrl = imageData.data[0].url;
-      console.log(`[${requestId}] Successfully generated image URL`);
-      
-      const totalDuration = (Date.now() - startTime) / 1000;
-      console.log(`[${requestId}] Generated image in ${totalDuration} seconds`);
-      
+      // Return a suitable error with image description
       return new Response(
         JSON.stringify({ 
-          image: imageUrl,
-          imageDescription,
-          requestId,
-          contentSummary,
-          blockType,
-          timing: { 
-            totalDuration,
-            timestamp: new Date().toISOString() 
-          }
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-      );
-    } catch (dalleError) {
-      console.error(`[${requestId}] DALL-E generation failed:`, dalleError);
-      
-      // Return a response with the image description even on error
-      return new Response(
-        JSON.stringify({ 
-          error: dalleError.message,
-          imageDescription,
+          error: error.message, 
+          imageDescription: "A fun picture about learning! (We're creating more soon!)",
           timestamp: new Date().toISOString()
         }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
+          status: 200 // Always return 200 to prevent client errors
+        }
       );
     }
   } catch (error) {
