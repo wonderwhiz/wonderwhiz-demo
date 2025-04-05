@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const CLAUDE_API_KEY = Deno.env.get('CLAUDE_API_KEY')!;
+const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')!;
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -30,18 +30,14 @@ serve(async (req) => {
     
     const specialist = specialists[specialistId] || specialists.prism;
 
-    console.log("Sending request to Claude API for creative analysis");
+    console.log("Sending request to OpenAI API for creative analysis");
     
-    // Create a system prompt that will analyze the creative work
-    const systemPrompt = `You are ${specialist.name}, a friendly educational specialist in ${specialist.expertise} for WonderWhiz, an educational platform for children.
+    // Create a system message for OpenAI that will analyze the creative work
+    const systemMessage = `You are ${specialist.name}, a friendly educational specialist in ${specialist.expertise} for WonderWhiz, an educational platform for children.
 
 You are analyzing a creative submission from a child who is ${childProfile.age} years old and has interests in: ${childProfile.interests.join(', ')}.
 
-The child was responding to this creative prompt: "${prompt}"
-
-The child has uploaded an image in response. Please analyze this image and provide a thoughtful, encouraging response.
-
-VERY IMPORTANT: You must respond in ${language} language.
+You must respond in ${language} language.
 
 Please provide feedback that:
 1. Is positive, friendly, and encouraging
@@ -54,64 +50,84 @@ Please provide feedback that:
 
 Keep your response brief (4-5 sentences) but specific to what you observe in their work.`;
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': CLAUDE_API_KEY,
-        'Anthropic-Version': '2023-06-01'
+    const userContent = [
+      {
+        type: "text",
+        text: `The child was responding to this creative prompt: "${prompt}"\n\nPlease analyze their submitted work and provide encouraging feedback.`
       },
-      body: JSON.stringify({
-        model: 'claude-3-haiku-20240307',
-        max_tokens: 300,
-        messages: [
-          { 
-            role: 'user', 
-            content: [
-              {
-                type: 'text',
-                text: systemPrompt
-              },
-              {
-                type: 'image',
-                source: {
-                  type: 'url',
-                  url: imageUrl
-                }
-              }
-            ]
-          }
-        ]
-      })
-    });
+      {
+        type: "image_url",
+        image_url: {
+          url: imageUrl
+        }
+      }
+    ];
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Claude API error:", errorText);
-      throw new Error(`Claude API error: ${response.status} ${errorText}`);
-    }
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENAI_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: [
+            { role: 'system', content: systemMessage },
+            { role: 'user', content: userContent }
+          ],
+          max_tokens: 300
+        })
+      });
 
-    const data = await response.json();
-    console.log("Claude analysis received");
-    
-    if (!data.content || !data.content[0] || !data.content[0].text) {
-      throw new Error("Invalid response format from Claude API");
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("OpenAI API error:", errorText);
+        throw new Error(`OpenAI API error: ${response.status} ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log("OpenAI analysis received");
+      
+      if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
+        throw new Error("Invalid response format from OpenAI API");
+      }
+      
+      // Get the analysis response from OpenAI
+      const analysisReply = data.choices[0].message.content.trim();
+      
+      return new Response(JSON.stringify({ 
+        analysis: analysisReply,
+        specialistId: specialistId 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200
+      });
+    } catch (error) {
+      console.error('Error analyzing creative work:', error);
+      
+      // Handle error gracefully with a child-friendly fallback message
+      const fallbackAnalysis = `Oh wow! I absolutely love what you've created! Your imagination is incredible, and I can see how much thought you put into this. Great job exploring the theme of "${prompt}"! Would you like to tell me more about what inspired you to create this?`;
+      
+      return new Response(JSON.stringify({ 
+        analysis: fallbackAnalysis,
+        specialistId: specialistId,
+        error: error.message
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200 // Return 200 even with errors to prevent client issues
+      });
     }
-    
-    // Get the analysis response from Claude
-    const analysisReply = data.content[0].text.trim();
-    
-    return new Response(JSON.stringify({ 
-      analysis: analysisReply,
-      specialistId: specialistId 
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
-    
   } catch (error) {
-    console.error('Error analyzing creative work:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
+    console.error('Error in analyze-creative-work function:', error);
+    
+    // Return a friendly fallback response
+    return new Response(JSON.stringify({ 
+      analysis: "Your artwork is amazing! I love the colors and creativity you've shown. You're a wonderful artist!",
+      specialistId: "prism",
+      error: error.message 
+    }), {
+      status: 200, // Return 200 even with errors
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }

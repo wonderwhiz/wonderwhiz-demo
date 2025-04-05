@@ -32,3 +32,18 @@ port = 54328
 
 [functions.generate-contextual-image]
 verify_jwt = false
+
+[functions.analyze-image]
+verify_jwt = false
+
+[functions.analyze-creative-work]
+verify_jwt = false
+
+[functions.generate-curio-suggestions]
+verify_jwt = false
+
+[functions.generate-curiosity-blocks]
+verify_jwt = false
+
+[functions.handle-block-chat]
+verify_jwt = false

@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const CLAUDE_API_KEY = Deno.env.get('CLAUDE_API_KEY')!;
+const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')!;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -40,66 +40,78 @@ serve(async (req) => {
     const language = childProfile.language || 'English';
 
     // Updated prompt to generate shorter, more engaging suggestions in the child's preferred language
-    const systemPrompt = `Generate 4 short, fun curiosity prompts for a ${childProfile.age} year old child 
-    with interests in: ${interests.join(', ')}.
+    const systemMessage = `Generate 4 fun, exciting curiosity prompts for a ${childProfile.age} year old child who has interests in: ${interests.join(', ')}. These should be questions that spark curiosity and wonder. The suggestions MUST be in ${language} language.`;
     
-    Their recent queries were: ${recentQueries.length ? recentQueries.join(', ') : 'None yet'}.
+    const userMessage = `
+    I need 4 short, fun question suggestions for a child to explore.
     
-    Based on their age, interests, and past queries, generate 4 interesting, age-appropriate questions.
+    Their recent searches were: ${recentQueries.length ? recentQueries.join(', ') : 'None yet'}.
     
-    VERY IMPORTANT: 
-    - Each prompt must be SHORT (max 5-6 words), punchy, and exciting for a child.
-    - Your response MUST be in ${language} language.
+    Please make each question:
+    - SHORT (max 5-6 words)
+    - Exciting and engaging
+    - Age-appropriate for a ${childProfile.age} year old
+    - Diverse across different topics
+    - Educational but fun
+    - Avoid repeating the past searches
     
     Return your response as a simple JSON array of strings:
-    ["Short prompt 1?", "Short prompt 2?", "Short prompt 3?", "Short prompt 4?"]
-    
-    Make the questions engaging, diverse, educational, and FUN! Avoid repeating past queries.`;
+    ["Short question 1?", "Short question 2?", "Short question 3?", "Short question 4?"]
+    `;
 
-    console.log("Sending request to Claude API for curio suggestions");
+    console.log("Sending request to OpenAI API for curio suggestions");
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-API-Key': CLAUDE_API_KEY,
-        'Anthropic-Version': '2023-06-01'
+        'Authorization': `Bearer ${OPENAI_API_KEY}`
       },
       body: JSON.stringify({
-        model: 'claude-3-haiku-20240307',
-        max_tokens: 500,
+        model: 'gpt-4o',
         messages: [
-          { role: 'user', content: systemPrompt }
-        ]
+          { role: 'system', content: systemMessage },
+          { role: 'user', content: userMessage }
+        ],
+        response_format: { type: "json_object" },
+        max_tokens: 500,
+        temperature: 0.7
       })
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Claude API error:", errorText);
-      throw new Error(`Claude API error: ${response.status} ${errorText}`);
+      console.error("OpenAI API error:", errorText);
+      throw new Error(`OpenAI API error: ${response.status} ${errorText}`);
     }
 
     const data = await response.json();
     
-    if (!data.content || !data.content[0] || !data.content[0].text) {
-      throw new Error("Invalid response format from Claude API");
+    if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
+      throw new Error("Invalid response format from OpenAI API");
     }
     
-    const text = data.content[0].text;
+    const content = data.choices[0].message.content;
     
-    // Extract the JSON array from Claude's response
+    // Extract the JSON array from OpenAI's response
     let suggestionsJSON;
     try {
-      const jsonMatch = text.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
-        suggestionsJSON = JSON.parse(jsonMatch[0]);
+      const parsedData = JSON.parse(content);
+      
+      // Look for any array property that might contain our suggestions
+      if (Array.isArray(parsedData)) {
+        suggestionsJSON = parsedData;
       } else {
-        throw new Error("No JSON array found in Claude's response");
+        const arrayProps = Object.keys(parsedData).filter(key => Array.isArray(parsedData[key]));
+        if (arrayProps.length > 0) {
+          suggestionsJSON = parsedData[arrayProps[0]];
+        } else {
+          throw new Error("Could not find suggestions array in response");
+        }
       }
     } catch (error) {
-      console.error("Error parsing Claude's response:", error);
-      console.log("Raw response:", text);
+      console.error("Error parsing OpenAI's response:", error);
+      console.log("Raw response:", content);
       
       // Fallback to default short suggestions if parsing fails
       suggestionsJSON = [
@@ -124,7 +136,7 @@ serve(async (req) => {
         "Ocean mysteries?"
       ] 
     }), {
-      status: 500,
+      status: 200, // Return 200 even on error for client resilience
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }

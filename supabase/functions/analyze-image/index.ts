@@ -1,6 +1,5 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.6";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,9 +13,9 @@ serve(async (req) => {
   }
 
   try {
-    const claudeApiKey = Deno.env.get('CLAUDE_API_KEY');
-    if (!claudeApiKey) {
-      throw new Error('Missing Claude API key');
+    const openAiApiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openAiApiKey) {
+      throw new Error('Missing OpenAI API key');
     }
 
     const requestId = crypto.randomUUID();
@@ -42,55 +41,56 @@ serve(async (req) => {
     
     console.log(`[${requestId}] Image converted to base64, size: ${base64String.length} chars, type: ${mimeType}`);
     
-    // Prepare Claude API request with better error handling and retries
+    // Prepare OpenAI API request with better error handling and retries
     let attempts = 0;
     const maxAttempts = 3;
-    let claudeResponse = null;
+    let openAiResponse = null;
     let data = null;
     
     while (attempts < maxAttempts) {
       attempts++;
       try {
-        console.log(`[${requestId}] Attempting Claude API request (attempt ${attempts}/${maxAttempts})`);
+        console.log(`[${requestId}] Attempting OpenAI API request (attempt ${attempts}/${maxAttempts})`);
         
-        claudeResponse = await fetch("https://api.anthropic.com/v1/messages", {
+        openAiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "x-api-key": claudeApiKey,
-            "anthropic-version": "2023-06-01"
+            "Authorization": `Bearer ${openAiApiKey}`
           },
           body: JSON.stringify({
-            model: "claude-3-opus-20240229",
-            max_tokens: 1000,
+            model: "gpt-4o",
             messages: [
+              {
+                role: "system",
+                content: "You are an AI assistant specialized in analyzing images and explaining them to children in a fun, educational way. Your analysis should be accurate, engaging, and provide educational content suitable for children."
+              },
               {
                 role: "user",
                 content: [
                   {
-                    type: "image",
-                    source: {
-                      type: "base64",
-                      media_type: mimeType,
-                      data: base64Image
-                    }
+                    type: "text", 
+                    text: `${query}\n\nPlease generate a fun, educational response about the image that would be engaging for children. Include 3-5 interesting facts or observations about what you see.`
                   },
                   {
-                    type: "text",
-                    text: `${query}\n\nPlease generate a fun, educational response about the image that would be engaging for children. Include 3-5 interesting facts or observations about what you see.`
+                    type: "image_url",
+                    image_url: {
+                      url: base64String
+                    }
                   }
                 ]
               }
-            ]
+            ],
+            max_tokens: 1000
           })
         });
         
-        if (!claudeResponse.ok) {
-          const errorData = await claudeResponse.json().catch(() => ({}));
-          console.error(`[${requestId}] Claude API error (attempt ${attempts}):`, errorData);
+        if (!openAiResponse.ok) {
+          const errorData = await openAiResponse.json().catch(() => ({}));
+          console.error(`[${requestId}] OpenAI API error (attempt ${attempts}):`, errorData);
           
           if (attempts >= maxAttempts) {
-            throw new Error(`Claude API error (status ${claudeResponse.status}): ${errorData.error?.message || JSON.stringify(errorData)}`);
+            throw new Error(`OpenAI API error (status ${openAiResponse.status}): ${errorData.error?.message || JSON.stringify(errorData)}`);
           }
           
           // Wait before retrying
@@ -98,10 +98,10 @@ serve(async (req) => {
           continue;
         }
         
-        data = await claudeResponse.json();
+        data = await openAiResponse.json();
         break; // Success, exit loop
       } catch (apiError) {
-        console.error(`[${requestId}] Claude API call failed (attempt ${attempts}):`, apiError);
+        console.error(`[${requestId}] OpenAI API call failed (attempt ${attempts}):`, apiError);
         
         if (attempts >= maxAttempts) {
           throw new Error(`Failed to analyze image after ${maxAttempts} attempts: ${apiError.message}`);
@@ -113,14 +113,14 @@ serve(async (req) => {
     }
     
     const apiDuration = (Date.now() - startTime) / 1000;
-    console.log(`[${requestId}] Claude API response received in ${apiDuration}s after ${attempts} attempt(s)`);
+    console.log(`[${requestId}] OpenAI API response received in ${apiDuration}s after ${attempts} attempt(s)`);
     
-    if (!data || !data.content || !data.content[0] || !data.content[0].text) {
-      throw new Error('Invalid or empty response from Claude API');
+    if (!data || !data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
+      throw new Error('Invalid or empty response from OpenAI API');
     }
 
     // Structure the response data to match content blocks format
-    const responseContent = data.content[0].text;
+    const responseContent = data.choices[0].message.content;
     
     // Create a new curio block to be saved
     const newBlock = {
@@ -135,7 +135,7 @@ serve(async (req) => {
       created_at: new Date().toISOString()
     };
     
-    console.log(`[${requestId}] Successfully generated response from Claude`);
+    console.log(`[${requestId}] Successfully generated response from OpenAI`);
 
     return new Response(
       JSON.stringify({

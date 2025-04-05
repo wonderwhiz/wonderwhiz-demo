@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const CLAUDE_API_KEY = Deno.env.get('CLAUDE_API_KEY')!;
+const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')!;
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -52,13 +52,11 @@ serve(async (req) => {
       contextInfo = `The child was doing this mindfulness exercise: "${blockContent.exercise}"`;
     }
     
-    const systemPrompt = `You are ${specialist.name}, a friendly educational specialist in ${specialist.expertise} for WonderWhiz, an educational platform for children.
+    const systemMessage = `You are ${specialist.name}, a friendly educational specialist in ${specialist.expertise} for WonderWhiz, an educational platform for children.
 
 You are chatting with a child who is ${childProfile.age} years old and has interests in: ${childProfile.interests.join(', ')}.
 
 ${contextInfo}
-
-The child has sent you this message: "${messageContent}"
 
 VERY IMPORTANT: You must respond in ${language} language.
 
@@ -74,53 +72,74 @@ Please respond to their message in a friendly, educational way that:
 
 While being educational, maintain a warm and friendly character voice that aligns with your specialist personality. Make the child feel their questions are valued and important.
 
-Keep your response relatively brief (3-4 sentences) and engaging - just enough to spark further curiosity and provide useful knowledge.`;
+Keep your response relatively brief (3-4 sentences) but engaging - just enough to spark further curiosity and provide useful knowledge.`;
 
-    console.log("Sending request to Claude API for chat response");
+    console.log("Sending request to OpenAI API for chat response");
     
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': CLAUDE_API_KEY,
-        'Anthropic-Version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-3-haiku-20240307',
-        max_tokens: 300,
-        messages: [
-          { role: 'user', content: systemPrompt }
-        ]
-      })
-    });
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENAI_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: [
+            { role: 'system', content: systemMessage },
+            { role: 'user', content: messageContent }
+          ],
+          max_tokens: 300,
+          temperature: 0.7
+        })
+      });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Claude API error:", errorText);
-      throw new Error(`Claude API error: ${response.status} ${errorText}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("OpenAI API error:", errorText);
+        throw new Error(`OpenAI API error: ${response.status} ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log("OpenAI chat response received");
+      
+      if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
+        throw new Error("Invalid response format from OpenAI API");
+      }
+      
+      // Get the text response from OpenAI
+      const specialistReply = data.choices[0].message.content.trim();
+      
+      return new Response(JSON.stringify({ 
+        reply: specialistReply,
+        specialistId: specialistId 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    } catch (error) {
+      console.error('Error getting chat response:', error);
+      
+      // Generate a friendly fallback response
+      const fallbackReply = `Great question! I'd love to tell you more about that. Let's explore this topic together next time. What else would you like to know about?`;
+      
+      return new Response(JSON.stringify({ 
+        reply: fallbackReply,
+        specialistId: specialistId,
+        error: error.message
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200 // Return 200 for client-side resilience
+      });
     }
-
-    const data = await response.json();
-    console.log("Claude chat response received");
-    
-    if (!data.content || !data.content[0] || !data.content[0].text) {
-      throw new Error("Invalid response format from Claude API");
-    }
-    
-    // Get the text response from Claude
-    const specialistReply = data.content[0].text.trim();
-    
-    return new Response(JSON.stringify({ 
-      reply: specialistReply,
-      specialistId: specialistId 
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
-    
   } catch (error) {
     console.error('Error handling block chat:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
+    
+    return new Response(JSON.stringify({ 
+      reply: "I'm excited to chat with you! What would you like to explore today?",
+      specialistId: "nova",
+      error: error.message 
+    }), {
+      status: 200, // Return 200 even with errors for client resilience
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }

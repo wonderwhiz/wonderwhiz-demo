@@ -16,6 +16,7 @@ export type Database = {
           created_at: string
           from_user: boolean
           id: string
+          user_id: string | null
         }
         Insert: {
           block_id: string
@@ -23,6 +24,7 @@ export type Database = {
           created_at?: string
           from_user?: boolean
           id?: string
+          user_id?: string | null
         }
         Update: {
           block_id?: string
@@ -30,6 +32,7 @@ export type Database = {
           created_at?: string
           from_user?: boolean
           id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -416,6 +419,13 @@ export type Database = {
           task_id: string
         }
         Returns: undefined
+      }
+      increment_sparks: {
+        Args: {
+          profile_id_input: string
+          amount_input: number
+        }
+        Returns: number
       }
       increment_sparks_balance: {
         Args: {

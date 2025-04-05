@@ -5,9 +5,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const CLAUDE_API_KEY = Deno.env.get('CLAUDE_API_KEY')!;
+const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')!;
 
-// Basic fallback content for when Claude API is unavailable or for quick first rendering
+// Basic fallback content for when OpenAI API is unavailable or for quick first rendering
 const generateFallbackContent = (query: string, blockCount: number) => {
   const blocks = [];
   const specialistIds = ['nova', 'spark', 'prism', 'pixel', 'atlas', 'lotus'];
@@ -92,7 +92,7 @@ const generateFallbackContent = (query: string, blockCount: number) => {
   return blocks;
 };
 
-// Maximum retry attempts for Claude API
+// Maximum retry attempts for OpenAI API
 const MAX_RETRIES = 2;
 
 serve(async (req) => {
@@ -130,107 +130,84 @@ serve(async (req) => {
       });
     }
 
-    // OPTIMIZATION: Adjust the system prompt based on whether this is a quick generation or not
-    let systemPrompt;
+    // Prepare system message and user message for the API
+    let systemMessage = `You are an AI assistant creating highly engaging, educational content for children aged ${childProfile.age}. 
+    Each piece of content should be rich with interesting facts, deeply relevant to the topic, and presented in an engaging way.
+    The content must be 100% accurate, age-appropriate, and optimized to capture a child's curiosity and imagination.
+    Content must be in ${language} language.`;
     
-    if (quickGeneration) {
-      // Simplified prompt for faster initial generation
-      systemPrompt = `You are an AI assistant creating educational content for children aged ${childProfile.age}. 
-      Generate ${blockCount} diverse, engaging content blocks about the topic: "${query}".
-      
-      Each block should be appropriate for the age group, aligned with these interests: ${childProfile.interests.join(', ')}.
-      
-      VERY IMPORTANT: All content must be in ${language} language.
-      Content must be factually accurate and educational.
+    let userMessage = `Generate ${blockCount} diverse, engaging content blocks about the topic: "${query}". 
+    ${skipInitial > 0 ? `Skip the first ${skipInitial} most obvious blocks as they've already been generated.` : ''}
 
-      Return your response as a JSON array with ${blockCount} objects, each having this structure:
-      {
-        "type": "one of: fact, quiz, flashcard, creative, task, riddle, funFact, activity, news, mindfulness",
-        "specialist_id": "one of: nova, spark, prism, pixel, atlas, lotus",
-        "content": {
-          // Different fields based on block type
-        }
+    Each block should:
+    1. Be extremely relevant to "${query}"
+    2. Contain accurate, fascinating information that would amaze a ${childProfile.age}-year-old
+    3. Be written in a fun, engaging style with simple language
+    4. Include visual descriptions that could be used to generate related images
+    5. Align with these interests: ${childProfile.interests.join(', ')}
+
+    Return your response as a JSON array with ${blockCount} objects, each having this structure:
+    {
+      "type": "one of: fact, quiz, flashcard, creative, task, riddle, funFact, activity, news, mindfulness",
+      "specialist_id": "one of: nova, spark, prism, pixel, atlas, lotus",
+      "content": {
+        // Different fields based on block type
       }
-      
-      Keep content simple but educational. Focus on speed of generation.`;
-    } else {
-      // OPTIMIZATION: Streamlined detailed prompt for better performance
-      systemPrompt = `You are an AI assistant creating educational content for children aged ${childProfile.age}. 
-      Generate ${blockCount} diverse, engaging content blocks about the topic: "${query}". 
-      ${skipInitial > 0 ? `Skip the first ${skipInitial} most obvious blocks as they've already been generated.` : ''}
-
-      Each block should be appropriate for the age group, aligned with these interests: ${childProfile.interests.join(', ')}, and demonstrate these qualities:
-      
-      1. Educational value - Provide accurate, interesting information
-      2. Age-appropriate explanations - Use examples and language children can understand
-      3. Visual descriptiveness - Include details that could be used to generate related images
-      
-      VERY IMPORTANT: All content must be in ${language} language.
-
-      Return your response as a JSON array with ${blockCount} objects, each having this structure:
-      {
-        "type": "one of: fact, quiz, flashcard, creative, task, riddle, funFact, activity, news, mindfulness",
-        "specialist_id": "one of: nova, spark, prism, pixel, atlas, lotus",
-        "content": {
-          // Different fields based on block type
-        }
-      }
-
-      For each block type, include these specific fields:
-      - fact/funFact: { "fact": "detailed fact", "rabbitHoles": ["question 1", "question 2"] }
-      - quiz: { "question": "quiz question", "options": ["option1", "option2", "option3", "option4"], "correctIndex": 0-3 }
-      - flashcard: { "front": "question", "back": "answer" }
-      - creative: { "prompt": "creative prompt", "type": "drawing or writing" }
-      - task: { "task": "activity description", "reward": 5-10 }
-      - riddle: { "riddle": "riddle text", "answer": "answer" }
-      - activity: { "activity": "activity description" }
-      - news: { "headline": "headline", "summary": "summary", "source": "WonderWhiz News" }
-      - mindfulness: { "exercise": "exercise description", "duration": 30-60 }
-
-      Match specialists with appropriate content topics. Make content educational and visually descriptive in ${language} language!`;
     }
-    
-    // OPTIMIZATION: Choose appropriate model based on generation type
-    // Always use haiku for faster generation
-    const model = 'claude-3-haiku-20240307';
-    const maxTokens = quickGeneration ? 1500 : 3000; // OPTIMIZATION: Reduced token counts for faster responses
 
-    console.log(`Using model: ${model} with max_tokens: ${maxTokens}`);
+    For each block type, include these specific fields:
+    - fact/funFact: { "fact": "detailed fact", "rabbitHoles": ["question 1", "question 2"] }
+    - quiz: { "question": "quiz question", "options": ["option1", "option2", "option3", "option4"], "correctIndex": 0-3 }
+    - flashcard: { "front": "question", "back": "answer" }
+    - creative: { "prompt": "creative prompt", "type": "drawing or writing" }
+    - task: { "task": "activity description", "reward": 5-10 }
+    - riddle: { "riddle": "riddle text", "answer": "answer" }
+    - activity: { "activity": "activity description" }
+    - news: { "headline": "headline", "summary": "summary", "source": "WonderWhiz News" }
+    - mindfulness: { "exercise": "exercise description", "duration": 30-60 }
+
+    Match specialists with appropriate content topics. Make content highly educational, fun, and visually descriptive!
     
-    // Implement retry logic for Claude API
+    NOTE: Make sure all content is 100% accurate, exceptionally relevant to "${query}", and deeply engaging for children.`;
+    
+    // OPTIMIZATION: Choose appropriate model
+    const model = 'gpt-4o';  // Using GPT-4o for high quality content
+
+    console.log(`Using model: ${model}`);
+    
+    // Implement retry logic for OpenAI API
     let attempt = 0;
     let contentBlocksJSON;
     
     while (attempt <= MAX_RETRIES) {
       try {
         attempt++;
-        console.log(`Claude API attempt ${attempt} of ${MAX_RETRIES + 1}`);
+        console.log(`OpenAI API attempt ${attempt} of ${MAX_RETRIES + 1}`);
         
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-API-Key': CLAUDE_API_KEY,
-            'Anthropic-Version': '2023-06-01'
+            'Authorization': `Bearer ${OPENAI_API_KEY}`
           },
           body: JSON.stringify({
             model: model,
-            max_tokens: maxTokens,
             messages: [
-              { role: 'user', content: systemPrompt }
+              { role: 'system', content: systemMessage },
+              { role: 'user', content: userMessage }
             ],
-            // OPTIMIZATION: Higher temperature for quick generation for more variety
-            temperature: quickGeneration ? 0.8 : 0.7
+            response_format: { type: "json_object" },
+            temperature: quickGeneration ? 0.9 : 0.7
           })
         });
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error(`Claude API error (attempt ${attempt}):`, errorText);
+          console.error(`OpenAI API error (attempt ${attempt}):`, errorText);
           
-          // If this is our last retry and there's an Overloaded error, use fallback content
+          // If this is our last retry or there's an overloaded error, use fallback content
           if (attempt > MAX_RETRIES || errorText.includes("overloaded")) {
-            console.log("Claude API overloaded or max retries reached, using fallback content");
+            console.log("OpenAI API overloaded or max retries reached, using fallback content");
             contentBlocksJSON = generateFallbackContent(query, blockCount);
             break;
           }
@@ -243,36 +220,44 @@ serve(async (req) => {
             continue;
           }
           
-          throw new Error(`Claude API error: ${response.status} ${errorText}`);
+          throw new Error(`OpenAI API error: ${response.status} ${errorText}`);
         }
 
         const data = await response.json();
-        console.log("Claude response received");
+        console.log("OpenAI response received");
         
-        if (!data.content || !data.content[0] || !data.content[0].text) {
-          throw new Error("Invalid response format from Claude API");
+        if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
+          throw new Error("Invalid response format from OpenAI API");
         }
         
-        // Extract the JSON content from Claude's response
-        const text = data.content[0].text;
+        // Extract the JSON content from OpenAI's response
+        const content = data.choices[0].message.content;
         
-        // Find and parse the JSON array in Claude's response
         try {
-          // Try to extract a JSON array from the response
-          const jsonMatch = text.match(/\[[\s\S]*\]/);
-          if (jsonMatch) {
-            contentBlocksJSON = JSON.parse(jsonMatch[0]);
+          // Parse the JSON response
+          const parsedData = JSON.parse(content);
+          
+          // Check if we have a blocks array directly or nested under a property
+          if (Array.isArray(parsedData)) {
+            contentBlocksJSON = parsedData;
+          } else if (parsedData.blocks && Array.isArray(parsedData.blocks)) {
+            contentBlocksJSON = parsedData.blocks;
           } else {
-            // If no JSON array found, try parsing the whole text as JSON
-            contentBlocksJSON = JSON.parse(text);
+            // Look for any array property that might contain our blocks
+            const arrayProps = Object.keys(parsedData).filter(key => Array.isArray(parsedData[key]));
+            if (arrayProps.length > 0) {
+              contentBlocksJSON = parsedData[arrayProps[0]];
+            } else {
+              throw new Error("Could not find blocks array in response");
+            }
           }
           
           // We got valid content, break the retry loop
           break;
           
         } catch (parseError) {
-          console.error("Error parsing Claude's response:", parseError);
-          console.log("Raw response:", text);
+          console.error("Error parsing OpenAI's response:", parseError);
+          console.log("Raw response:", content);
           
           // If this is our last retry, use fallback content
           if (attempt > MAX_RETRIES) {
@@ -287,7 +272,7 @@ serve(async (req) => {
           await new Promise(resolve => setTimeout(resolve, delay));
         }
       } catch (error) {
-        console.error(`Error in Claude API request (attempt ${attempt}):`, error);
+        console.error(`Error in OpenAI API request (attempt ${attempt}):`, error);
         
         // If this is our last retry, use fallback content
         if (attempt > MAX_RETRIES) {
