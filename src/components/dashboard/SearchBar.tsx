@@ -22,13 +22,15 @@ const SearchBar: React.FC<SearchBarProps> = ({ query, setQuery, handleSubmitQuer
       <MagicalBorder active={true} type="rainbow" className="rounded-2xl overflow-hidden shadow-lg">
         <form onSubmit={e => {
           e.preventDefault();
-          handleSubmitQuery();
+          if (query.trim()) {
+            handleSubmitQuery();
+          }
         }} className="relative">
           <Input 
             placeholder={isMobile ? "Ask me anything!" : "What do you want to explore today? Ask me anything!"} 
             value={query} 
             onChange={e => setQuery(e.target.value)} 
-            disabled={isGenerating} 
+            disabled={false} 
             className="py-6 bg-white/10 border-white/20 text-white text-base sm:text-lg placeholder:text-white/60 placeholder:text-center focus:ring-2 focus:ring-wonderwhiz-gold/50 focus:border-wonderwhiz-gold px-[40px] my-0 sm:py-[40px]" 
           />
           

@@ -3,6 +3,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import WonderWhizLogo from '@/components/WonderWhizLogo';
+import { User } from 'lucide-react';
 
 const Navbar = () => {
   return (
@@ -23,9 +24,10 @@ const Navbar = () => {
             Login
           </Button>
         </Link>
-        <Link to="/register">
-          <Button className="jelly-button">
-            Sign Up Free
+        <Link to="/profiles">
+          <Button className="bg-wonderwhiz-gold hover:bg-wonderwhiz-gold/90 text-wonderwhiz-dark rounded-full shadow-glow-gold">
+            <User className="h-5 w-5 mr-2" />
+            Profile
           </Button>
         </Link>
       </div>

@@ -42,7 +42,9 @@ const CurioSearch: React.FC<CurioSearchProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    handleSearch(searchQuery);
+    if (searchQuery.trim()) {
+      handleSearch(searchQuery);
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -84,7 +86,7 @@ const CurioSearch: React.FC<CurioSearchProps> = ({
             type="submit" 
             size="sm" 
             className="h-7 px-3 bg-wonderwhiz-purple hover:bg-wonderwhiz-purple/80"
-            disabled={isSearching}
+            disabled={isSearching || !searchQuery.trim()}
           >
             Search
           </Button>

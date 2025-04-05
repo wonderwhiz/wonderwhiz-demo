@@ -1,6 +1,8 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { RefreshCw, Image as ImageIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface ContextualImageProps {
   isFirstBlock: boolean;
@@ -11,7 +13,7 @@ interface ContextualImageProps {
   blockTitle: string;
   handleImageLoadError: () => void;
   handleRetryImage: () => void;
-  getContextualImageStyle: (error: boolean) => string;
+  getContextualImageStyle: (blockType: string) => string;
 }
 
 const ContextualImage: React.FC<ContextualImageProps> = ({
@@ -25,119 +27,66 @@ const ContextualImage: React.FC<ContextualImageProps> = ({
   handleRetryImage,
   getContextualImageStyle,
 }) => {
-  if (!isFirstBlock) return null;
-
   return (
     <AnimatePresence mode="wait">
-      {imageLoading ? (
+      {imageLoading && (
         <motion.div
           key="loading"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className={`w-full h-48 sm:h-56 md:h-64 rounded-lg flex flex-col items-center justify-center ${getContextualImageStyle(false)}`}
+          transition={{ duration: 0.2 }}
+          className="relative aspect-[16/9] w-full bg-gradient-to-r from-purple-900/20 to-indigo-900/20 rounded-lg overflow-hidden flex items-center justify-center"
         >
-          <div className="flex flex-col items-center justify-center space-y-3">
-            <div className="relative">
-              <div className="w-8 h-8 rounded-full border-4 border-t-wonderwhiz-pink border-r-wonderwhiz-pink border-b-transparent border-l-transparent animate-spin"></div>
-              <div className="absolute inset-0 w-8 h-8 rounded-full border-4 border-t-transparent border-r-transparent border-b-wonderwhiz-purple border-l-wonderwhiz-purple animate-spin"></div>
-            </div>
-            <motion.p 
-              className="text-white text-sm"
-              initial={{ opacity: 0.7 }}
-              animate={{ opacity: 1 }}
-              transition={{ repeat: Infinity, repeatType: "reverse", duration: 1.5 }}
-            >
-              Creating a magical Disney-style picture just for you...
-            </motion.p>
+          <div className="flex flex-col items-center text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mb-3"></div>
+            <p className="text-white/80 text-sm px-4">Creating a magical picture just for you!</p>
           </div>
         </motion.div>
-      ) : imageError ? (
+      )}
+
+      {!imageLoading && contextualImage && (
+        <motion.div
+          key="success"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.5 }}
+          className="relative aspect-[16/9] w-full max-h-[400px] rounded-lg overflow-hidden"
+        >
+          <img
+            src={contextualImage}
+            alt={imageDescription || blockTitle}
+            onError={handleImageLoadError}
+            className="w-full h-full object-cover rounded-lg object-center"
+          />
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-4 py-3">
+            <p className="text-white text-xs md:text-sm italic">{imageDescription}</p>
+          </div>
+        </motion.div>
+      )}
+
+      {!imageLoading && !contextualImage && (
         <motion.div
           key="error"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className={`w-full h-48 sm:h-56 md:h-64 rounded-lg flex flex-col items-center justify-center text-center px-4 ${getContextualImageStyle(true)}`}
+          transition={{ duration: 0.2 }}
+          className="relative aspect-[16/9] w-full bg-gradient-to-r from-purple-900/20 to-indigo-900/20 rounded-lg overflow-hidden flex items-center justify-center p-4"
         >
-          <div className="space-y-3 max-w-md">
-            <div className="flex justify-center">
-              <motion.div 
-                className="text-white text-opacity-90"
-                initial={{ scale: 0.9 }}
-                animate={{ scale: 1 }}
-                transition={{ 
-                  repeat: Infinity, 
-                  repeatType: "reverse", 
-                  duration: 2.5 
-                }}
-              >
-                <div className="flex items-center justify-center bg-wonderwhiz-purple bg-opacity-30 w-16 h-16 rounded-full">
-                  <span className="text-3xl">✨</span>
-                </div>
-              </motion.div>
-            </div>
-            
-            <motion.div
-              initial={{ y: 10, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.2 }}
+          <div className="flex flex-col items-center text-center">
+            <ImageIcon className="h-10 w-10 text-white/40 mb-3" />
+            <p className="text-white/80 text-sm mb-3">{imageError || "No image available"}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRetryImage}
+              className="bg-wonderwhiz-purple/20 border-wonderwhiz-purple/40 text-white hover:bg-wonderwhiz-purple/30"
             >
-              <h4 className="text-lg font-medium text-white mb-1">{imageDescription}</h4>
-              <p className="text-white text-opacity-80 text-sm">
-                Use your amazing imagination to picture this while you learn about {blockTitle.toLowerCase()}!
-              </p>
-            </motion.div>
-          </div>
-        </motion.div>
-      ) : contextualImage ? (
-        <motion.div
-          key="image"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0 }}
-          className="w-full h-48 sm:h-56 md:h-64 rounded-lg overflow-hidden relative"
-        >
-          <img
-            src={contextualImage}
-            alt={imageDescription}
-            className="w-full h-full object-cover"
-            onError={handleImageLoadError}
-          />
-          <motion.div 
-            className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-          >
-            <p className="text-white text-xs md:text-sm text-center font-medium drop-shadow-lg">{imageDescription}</p>
-          </motion.div>
-        </motion.div>
-      ) : (
-        <motion.div
-          key="placeholder"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className={`w-full h-48 sm:h-56 md:h-64 rounded-lg flex flex-col items-center justify-center ${getContextualImageStyle(false)}`}
-        >
-          <div className="space-y-3 text-center px-4">
-            <motion.div 
-              className="flex justify-center"
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1.05 }}
-              transition={{ 
-                repeat: Infinity, 
-                repeatType: "reverse", 
-                duration: 2 
-              }}
-            >
-              <span className="text-4xl">✨</span>
-            </motion.div>
-            <h4 className="text-lg font-medium text-white">{imageDescription}</h4>
-            <p className="text-white text-opacity-70 text-sm">
-              Imagine all the wonderful things you'll learn about {blockTitle.toLowerCase()}!
-            </p>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Try Again
+            </Button>
           </div>
         </motion.div>
       )}

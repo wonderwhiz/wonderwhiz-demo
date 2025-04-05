@@ -14,11 +14,16 @@ import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { User, Settings } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Link } from 'react-router-dom';
 
 const CurioPage: React.FC = () => {
   const { profileId, curioId } = useParams<{ profileId: string; curioId: string }>();
   const [animateBlocks, setAnimateBlocks] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const isMobile = useIsMobile();
   
   const {
     blocks,
@@ -212,22 +217,33 @@ const CurioPage: React.FC = () => {
         <script src="https://elevenlabs.io/convai-widget/index.js" async type="text/javascript"></script>
       </Helmet>
       
-      <div className="container px-4 py-3 sm:py-5">
-        <AnimatePresence mode="wait">
-          <motion.h1 
-            key={title || 'loading'}
-            className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2 sm:mb-3 text-center"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            {title || (
-              <div className="flex justify-center items-center">
-                <Skeleton className="h-8 w-3/5 bg-white/10 rounded" />
-              </div>
-            )}
-          </motion.h1>
-        </AnimatePresence>
+      <div className="container px-4 py-3 sm:py-5 max-w-4xl mx-auto">
+        <div className="flex justify-between items-center mb-3">
+          <AnimatePresence mode="wait">
+            <motion.h1 
+              key={title || 'loading'}
+              className="text-xl sm:text-2xl md:text-3xl font-bold text-white text-center flex-1"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+            >
+              {title || (
+                <div className="flex justify-center items-center">
+                  <Skeleton className="h-8 w-3/5 bg-white/10 rounded" />
+                </div>
+              )}
+            </motion.h1>
+          </AnimatePresence>
+          
+          <Link to={`/dashboard/${profileId}`}>
+            <Button 
+              className="bg-wonderwhiz-gold hover:bg-wonderwhiz-gold/90 text-wonderwhiz-dark rounded-full shadow-glow-gold p-2 sm:p-3"
+              size="icon"
+            >
+              <User className="h-5 w-5" />
+            </Button>
+          </Link>
+        </div>
         
         <CurioSearch
           searchQuery={searchQuery}
@@ -271,8 +287,8 @@ const CurioPage: React.FC = () => {
           </motion.div>
         )}
         
-        <Card className="bg-black/40 border-white/10 p-2 sm:p-4 md:p-6">
-          <ScrollArea ref={scrollAreaRef} className="h-[calc(100vh-230px)]">
+        <Card className="bg-black/40 border-white/10 p-2 sm:p-4 md:p-6 overflow-hidden rounded-xl">
+          <ScrollArea ref={scrollAreaRef} className={isMobile ? "h-[calc(100vh-200px)]" : "h-[calc(100vh-230px)]"}>
             {isGeneratingContent && (
               <motion.div 
                 className="flex items-center justify-center py-4 mb-4 bg-purple-900/20 rounded-lg border border-purple-500/30"

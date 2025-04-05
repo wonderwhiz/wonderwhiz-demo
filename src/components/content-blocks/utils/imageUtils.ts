@@ -1,6 +1,16 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
+// Cute character images as placeholders
+const PLACEHOLDER_IMAGES = [
+  "https://storage.googleapis.com/wonderwhiz-assets/characters/nova-placeholder-1.png",
+  "https://storage.googleapis.com/wonderwhiz-assets/characters/spark-placeholder-1.png",
+  "https://storage.googleapis.com/wonderwhiz-assets/characters/prism-placeholder-1.png",
+  "https://storage.googleapis.com/wonderwhiz-assets/characters/pixel-placeholder-1.png",
+  "https://storage.googleapis.com/wonderwhiz-assets/characters/atlas-placeholder-1.png",
+  "https://storage.googleapis.com/wonderwhiz-assets/characters/lotus-placeholder-1.png"
+];
+
 export const getContextualImage = async (
   block: any,
   isFirstBlock: boolean, 
@@ -9,10 +19,11 @@ export const getContextualImage = async (
 ) => {
   // Don't attempt image generation if this is not the first block or we've hit the retry limit
   if (!isFirstBlock || imageRetryCountRef.current > 2) {
+    const randomPlaceholder = PLACEHOLDER_IMAGES[Math.floor(Math.random() * PLACEHOLDER_IMAGES.length)];
     return { 
       imageLoading: false, 
       imageRequestInProgress: false, 
-      contextualImage: null, 
+      contextualImage: randomPlaceholder, 
       imageError: null,
       imageDescription: "A magical adventure awaits!"
     };
@@ -20,6 +31,18 @@ export const getContextualImage = async (
 
   try {
     console.log(`[${requestId}][${block.id}] Starting image generation`);
+    
+    // Check for cached image first
+    const cachedImage = checkImageCache(block.id);
+    if (cachedImage) {
+      return {
+        imageLoading: false,
+        imageRequestInProgress: false,
+        contextualImage: cachedImage,
+        imageError: null,
+        imageDescription: "A magical picture just for you!"
+      };
+    }
     
     // Set loading state
     const result = {
@@ -38,7 +61,8 @@ export const getContextualImage = async (
         blockContent: block.content,
         blockType: block.type,
         requestId: requestId,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        style: "cute disney pixar style, child-friendly, colorful, vibrant, magical"
       }
     });
     
@@ -54,22 +78,26 @@ export const getContextualImage = async (
       const errorMessage = error.message || "Error generating image";
       const isBillingError = errorMessage.includes("Billing") || errorMessage.includes("quota");
       
+      // Return a placeholder image instead of an error
+      const randomPlaceholder = PLACEHOLDER_IMAGES[Math.floor(Math.random() * PLACEHOLDER_IMAGES.length)];
+      
       return { 
         imageLoading: false, 
         imageRequestInProgress: false,
-        contextualImage: null,
-        imageError: isBillingError ? "Our magical artists are taking a break right now!" : `Error: ${errorMessage}`,
+        contextualImage: randomPlaceholder,
+        imageError: null,
         imageDescription: data?.imageDescription || "Imagine a colorful world of discovery!" 
       };
     }
     
     // Handle missing data
     if (!data) {
+      const randomPlaceholder = PLACEHOLDER_IMAGES[Math.floor(Math.random() * PLACEHOLDER_IMAGES.length)];
       return { 
         imageLoading: false,
         imageRequestInProgress: false,
-        contextualImage: null,
-        imageError: "No data returned from image generation function",
+        contextualImage: randomPlaceholder,
+        imageError: null,
         imageDescription: "A magical journey awaits you!" 
       };
     }
@@ -78,14 +106,14 @@ export const getContextualImage = async (
     if (data.error) {
       console.error(`[${requestId}][${block.id}] Image generation error:`, data.error);
       
-      // Friendly error message for billing issues
-      const isBillingError = data.error.includes("Billing") || data.error.includes("quota");
+      // Return a placeholder image instead of an error message
+      const randomPlaceholder = PLACEHOLDER_IMAGES[Math.floor(Math.random() * PLACEHOLDER_IMAGES.length)];
       
       return { 
         imageLoading: false,
         imageRequestInProgress: false,
-        contextualImage: null,
-        imageError: isBillingError ? "Our magical artists are taking a little break!" : data.error,
+        contextualImage: randomPlaceholder,
+        imageError: null,
         imageDescription: data.imageDescription || "Picture a world full of wonders!" 
       };
     }
@@ -112,23 +140,25 @@ export const getContextualImage = async (
         imageDescription: data.imageDescription || "A magical adventure in learning!" 
       };
     } else {
-      // Handle missing image in response but with a nice description
+      // If no image, use a placeholder
+      const randomPlaceholder = PLACEHOLDER_IMAGES[Math.floor(Math.random() * PLACEHOLDER_IMAGES.length)];
       return { 
         imageLoading: false,
         imageRequestInProgress: false,
-        contextualImage: null,
-        imageError: "Our magical artists are still working on your picture!",
+        contextualImage: randomPlaceholder,
+        imageError: null,
         imageDescription: data.imageDescription || "A wonderful adventure through knowledge!" 
       };
     }
   } catch (err) {
-    // Handle any other errors with a child-friendly message
+    // Handle any other errors with a placeholder image
     console.error(`[${block.id}] Error generating contextual image:`, err);
+    const randomPlaceholder = PLACEHOLDER_IMAGES[Math.floor(Math.random() * PLACEHOLDER_IMAGES.length)];
     return { 
       imageLoading: false, 
       imageRequestInProgress: false, 
-      contextualImage: null, 
-      imageError: "Our magical picture machine needs a rest!",
+      contextualImage: randomPlaceholder, 
+      imageError: null,
       imageDescription: "Imagine a colorful world of discovery!" 
     };
   }
