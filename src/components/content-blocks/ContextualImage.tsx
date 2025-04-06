@@ -54,7 +54,7 @@ const ContextualImage: React.FC<ContextualImageProps> = ({
           transition={{ duration: 0.5 }}
           className="relative w-full rounded-lg overflow-hidden"
         >
-          <div className="aspect-[16/9] max-h-[450px] w-full overflow-hidden rounded-lg">
+          <div className="aspect-[16/9] w-full overflow-hidden rounded-lg">
             <img
               src={contextualImage}
               alt={imageDescription || blockTitle}
