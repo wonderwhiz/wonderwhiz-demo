@@ -7,6 +7,7 @@ const corsHeaders = {
 };
 
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')!;
+const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY')!;
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -74,17 +75,18 @@ While being educational, maintain a warm and friendly character voice that align
 
 Keep your response relatively brief (3-4 sentences) but engaging - just enough to spark further curiosity and provide useful knowledge.`;
 
-    console.log("Sending request to OpenAI API for chat response");
+    console.log("Sending request to Groq API for chat response");
     
     try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      // First try using Groq API with Llama model
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENAI_API_KEY}`
+          'Authorization': `Bearer ${GROQ_API_KEY}`
         },
         body: JSON.stringify({
-          model: 'gpt-4o',
+          model: 'meta-llama/llama-4-scout-17b-16e-instruct',
           messages: [
             { role: 'system', content: systemMessage },
             { role: 'user', content: messageContent }
@@ -96,18 +98,18 @@ Keep your response relatively brief (3-4 sentences) but engaging - just enough t
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("OpenAI API error:", errorText);
-        throw new Error(`OpenAI API error: ${response.status} ${errorText}`);
+        console.error("Groq API error:", errorText);
+        throw new Error(`Groq API error: ${response.status} ${errorText}`);
       }
 
       const data = await response.json();
-      console.log("OpenAI chat response received");
+      console.log("Groq chat response received");
       
       if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
-        throw new Error("Invalid response format from OpenAI API");
+        throw new Error("Invalid response format from Groq API");
       }
       
-      // Get the text response from OpenAI
+      // Get the text response from Groq
       const specialistReply = data.choices[0].message.content.trim();
       
       return new Response(JSON.stringify({ 
@@ -116,20 +118,67 @@ Keep your response relatively brief (3-4 sentences) but engaging - just enough t
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
-    } catch (error) {
-      console.error('Error getting chat response:', error);
+    } catch (groqError) {
+      console.error('Error getting chat response from Groq:', groqError);
       
-      // Generate a friendly fallback response
-      const fallbackReply = `Great question! I'd love to tell you more about that. Let's explore this topic together next time. What else would you like to know about?`;
-      
-      return new Response(JSON.stringify({ 
-        reply: fallbackReply,
-        specialistId: specialistId,
-        error: error.message
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200 // Return 200 for client-side resilience
-      });
+      // Fallback to OpenAI if Groq fails
+      try {
+        console.log("Falling back to OpenAI API for chat response");
+        
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${OPENAI_API_KEY}`
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o',
+            messages: [
+              { role: 'system', content: systemMessage },
+              { role: 'user', content: messageContent }
+            ],
+            max_tokens: 300,
+            temperature: 0.7
+          })
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("OpenAI API error:", errorText);
+          throw new Error(`OpenAI API error: ${response.status} ${errorText}`);
+        }
+
+        const data = await response.json();
+        console.log("OpenAI chat response received");
+        
+        if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
+          throw new Error("Invalid response format from OpenAI API");
+        }
+        
+        // Get the text response from OpenAI
+        const specialistReply = data.choices[0].message.content.trim();
+        
+        return new Response(JSON.stringify({ 
+          reply: specialistReply,
+          specialistId: specialistId 
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      } catch (openaiError) {
+        console.error('Error getting chat response from OpenAI:', openaiError);
+        
+        // Generate a friendly fallback response
+        const fallbackReply = `Great question! I'd love to tell you more about that. Let's explore this topic together next time. What else would you like to know about?`;
+        
+        return new Response(JSON.stringify({ 
+          reply: fallbackReply,
+          specialistId: specialistId,
+          error: openaiError.message
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200 // Return 200 for client-side resilience
+        });
+      }
     }
   } catch (error) {
     console.error('Error handling block chat:', error);

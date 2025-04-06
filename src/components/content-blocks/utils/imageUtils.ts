@@ -25,7 +25,7 @@ export const getContextualImage = async (
       imageRequestInProgress: false, 
       contextualImage: randomPlaceholder, 
       imageError: null,
-      imageDescription: "A magical adventure awaits!"
+      imageDescription: getDescriptiveImageText(block) || "A magical adventure awaits!"
     };
   }
 
@@ -40,7 +40,7 @@ export const getContextualImage = async (
         imageRequestInProgress: false,
         contextualImage: cachedImage,
         imageError: null,
-        imageDescription: "A magical picture just for you!"
+        imageDescription: getDescriptiveImageText(block) || "A magical picture just for you!"
       };
     }
     
@@ -86,7 +86,7 @@ export const getContextualImage = async (
         imageRequestInProgress: false,
         contextualImage: randomPlaceholder,
         imageError: null,
-        imageDescription: data?.imageDescription || "Imagine a colorful world of discovery!" 
+        imageDescription: getDescriptiveImageText(block) || "Imagine a colorful world of discovery!" 
       };
     }
     
@@ -98,7 +98,7 @@ export const getContextualImage = async (
         imageRequestInProgress: false,
         contextualImage: randomPlaceholder,
         imageError: null,
-        imageDescription: "A magical journey awaits you!" 
+        imageDescription: getDescriptiveImageText(block) || "A magical journey awaits you!" 
       };
     }
     
@@ -114,7 +114,7 @@ export const getContextualImage = async (
         imageRequestInProgress: false,
         contextualImage: randomPlaceholder,
         imageError: null,
-        imageDescription: data.imageDescription || "Picture a world full of wonders!" 
+        imageDescription: data.imageDescription || getDescriptiveImageText(block) || "Picture a world full of wonders!" 
       };
     }
     
@@ -137,7 +137,7 @@ export const getContextualImage = async (
         imageRequestInProgress: false, 
         contextualImage: data.image, 
         imageError: null,
-        imageDescription: data.imageDescription || "A magical adventure in learning!" 
+        imageDescription: data.imageDescription || getDescriptiveImageText(block) || "A magical adventure in learning!" 
       };
     } else {
       // If no image, use a placeholder
@@ -147,7 +147,7 @@ export const getContextualImage = async (
         imageRequestInProgress: false,
         contextualImage: randomPlaceholder,
         imageError: null,
-        imageDescription: data.imageDescription || "A wonderful adventure through knowledge!" 
+        imageDescription: data.imageDescription || getDescriptiveImageText(block) || "A wonderful adventure through knowledge!" 
       };
     }
   } catch (err) {
@@ -159,7 +159,7 @@ export const getContextualImage = async (
       imageRequestInProgress: false, 
       contextualImage: randomPlaceholder, 
       imageError: null,
-      imageDescription: "Imagine a colorful world of discovery!" 
+      imageDescription: getDescriptiveImageText(block) || "Imagine a colorful world of discovery!" 
     };
   }
 };
@@ -171,5 +171,39 @@ export const checkImageCache = (blockId: string) => {
   } catch (e) {
     console.error(`Error checking image cache for block ${blockId}:`, e);
     return null;
+  }
+};
+
+// Helper function to create more descriptive image text based on block content
+const getDescriptiveImageText = (block: any): string => {
+  if (!block || !block.content) return "";
+  
+  try {
+    switch (block.type) {
+      case 'fact':
+      case 'funFact':
+        return `A colorful Pixar-style illustration about "${block.content.fact?.substring(0, 50)}..."`;
+      case 'quiz':
+        return `A fun Disney-style picture illustrating "${block.content.question?.substring(0, 50)}..."`;
+      case 'flashcard':
+        return `A charming Pixar-inspired illustration of ${block.content.front?.substring(0, 50)}...`;
+      case 'creative':
+        return `An imaginative Disney-style picture showing "${block.content.prompt?.substring(0, 50)}..."`;
+      case 'task':
+        return `A motivational Pixar-style illustration of ${block.content.task?.substring(0, 50)}...`;
+      case 'riddle':
+        return `A mysterious Disney-inspired picture about "${block.content.riddle?.substring(0, 50)}..."`;
+      case 'activity':
+        return `A playful Disney-inspired picture showing ${block.content.activity?.substring(0, 50)}...`;
+      case 'news':
+        return `A vibrant Pixar-style illustration depicting "${block.content.headline?.substring(0, 50)}..."`;
+      case 'mindfulness':
+        return `A soothing Pixar-inspired picture of ${block.content.exercise?.substring(0, 50)}...`;
+      default:
+        return "A magical Disney-inspired picture about learning and discovery!";
+    }
+  } catch (e) {
+    console.error("Error generating descriptive image text:", e);
+    return "A wonderful Disney-inspired illustration about learning!";
   }
 };

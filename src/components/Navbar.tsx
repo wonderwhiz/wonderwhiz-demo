@@ -25,7 +25,7 @@ const Navbar = () => {
           </Button>
         </Link>
         <Link to="/profiles">
-          <Button className="bg-wonderwhiz-gold hover:bg-wonderwhiz-gold/90 text-wonderwhiz-dark rounded-full shadow-glow-gold">
+          <Button className="bg-wonderwhiz-yellow hover:bg-wonderwhiz-yellow/90 text-wonderwhiz-dark font-medium rounded-full shadow-glow-gold transition-all duration-200 transform hover:scale-105">
             <User className="h-5 w-5 mr-2" />
             Profile
           </Button>
