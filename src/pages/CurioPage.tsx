@@ -15,7 +15,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { User, Settings } from 'lucide-react';
+import { User, Settings, Sparkles, Rocket } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Link } from 'react-router-dom';
 
@@ -23,6 +23,7 @@ const CurioPage: React.FC = () => {
   const { profileId, curioId } = useParams<{ profileId: string; curioId: string }>();
   const [animateBlocks, setAnimateBlocks] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [showFloatingElements, setShowFloatingElements] = useState(true);
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   
@@ -65,7 +66,7 @@ const CurioPage: React.FC = () => {
       toast.success("Task completed! +8 sparks", {
         position: 'top-center',
         classNames: {
-          toast: 'bg-wonderwhiz-purple text-white'
+          toast: 'bg-[#3D2A7D] text-white'
         }
       });
     } catch (error) {
@@ -84,7 +85,7 @@ const CurioPage: React.FC = () => {
       toast.success("Activity completed! +3 sparks", {
         position: 'top-center',
         classNames: {
-          toast: 'bg-wonderwhiz-purple text-white'
+          toast: 'bg-[#3D2A7D] text-white'
         }
       });
     } catch (error) {
@@ -103,7 +104,7 @@ const CurioPage: React.FC = () => {
       toast.success("Mindfulness exercise completed! +5 sparks", {
         position: 'top-center',
         classNames: {
-          toast: 'bg-wonderwhiz-purple text-white'
+          toast: 'bg-[#3D2A7D] text-white'
         }
       });
     } catch (error) {
@@ -124,10 +125,9 @@ const CurioPage: React.FC = () => {
       const { data: newCurio, error } = await supabase
         .from('curios')
         .insert({
-          profile_id: profileId,
+          child_id: profileId,  // Fixed: using child_id instead of profile_id
           title: question,
           query: question,
-          source: 'rabbit_hole'
         })
         .select('id')
         .single();
@@ -246,23 +246,87 @@ const CurioPage: React.FC = () => {
     }
   }, [isLoadTriggerVisible, hasMoreBlocks, loadingMoreBlocks, isLoading, initialLoadComplete, loadMoreBlocks]);
 
+  // Toggle floating elements when scrolling
+  useEffect(() => {
+    const handleScroll = () => {
+      if (scrollAreaRef.current) {
+        const scrollTop = scrollAreaRef.current.scrollTop;
+        setShowFloatingElements(scrollTop < 100);
+      }
+    };
+
+    if (scrollAreaRef.current) {
+      scrollAreaRef.current.addEventListener('scroll', handleScroll);
+    }
+
+    return () => {
+      if (scrollAreaRef.current) {
+        scrollAreaRef.current.removeEventListener('scroll', handleScroll);
+      }
+    };
+  }, [scrollAreaRef]);
+
   // Show loading indicator immediately on first page load
   if (isLoading && blocks.length === 0 && !isGeneratingContent) {
     return <CurioLoading />;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black pb-20">
+    <div className="min-h-screen bg-gradient-to-b from-[#2A1B5D] via-[#3D2A7D] to-[#2A1B5D] pb-20 relative overflow-hidden">
       <Helmet>
         <script src="https://elevenlabs.io/convai-widget/index.js" async type="text/javascript"></script>
       </Helmet>
       
-      <div className="container px-4 py-3 sm:py-5 max-w-4xl mx-auto">
+      {/* Floating Background Elements */}
+      {showFloatingElements && (
+        <>
+          {[1, 2, 3, 4, 5].map((i) => (
+            <motion.div
+              key={`star-${i}`}
+              className="absolute w-2 h-2 bg-[#FFD54F] rounded-full opacity-70"
+              style={{
+                top: `${Math.random() * 100}%`,
+                left: `${Math.random() * 100}%`,
+                scale: Math.random() * 0.5 + 0.5,
+              }}
+              animate={{
+                opacity: [0.4, 1, 0.4],
+                scale: [1, 1.2, 1],
+              }}
+              transition={{
+                duration: 3 + Math.random() * 2,
+                repeat: Infinity,
+                delay: Math.random() * 2,
+              }}
+            />
+          ))}
+          <motion.div
+            className="absolute w-40 h-40 rounded-full bg-gradient-to-r from-[#FF5BA3]/10 to-[#4A6FFF]/10 blur-3xl"
+            style={{ top: '10%', right: '5%' }}
+            animate={{
+              translateY: [0, -20, 0],
+              scale: [1, 1.05, 1],
+            }}
+            transition={{ duration: 15, repeat: Infinity }}
+          />
+          <motion.div
+            className="absolute w-60 h-60 rounded-full bg-gradient-to-r from-[#00E2FF]/10 to-[#FF8A3D]/10 blur-3xl"
+            style={{ bottom: '10%', left: '5%' }}
+            animate={{
+              translateY: [0, 20, 0],
+              scale: [1, 1.08, 1],
+            }}
+            transition={{ duration: 18, repeat: Infinity }}
+          />
+        </>
+      )}
+      
+      <div className="container px-4 py-3 sm:py-5 max-w-4xl mx-auto relative z-10">
         <div className="flex justify-between items-center mb-3">
           <AnimatePresence mode="wait">
             <motion.h1 
               key={title || 'loading'}
-              className="text-xl sm:text-2xl md:text-3xl font-bold text-white text-center flex-1"
+              className="text-xl sm:text-2xl md:text-3xl font-bold text-white flex-1 font-nunito"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
@@ -275,14 +339,35 @@ const CurioPage: React.FC = () => {
             </motion.h1>
           </AnimatePresence>
           
-          <Link to={`/dashboard/${profileId}`}>
-            <Button 
-              className="bg-wonderwhiz-gold hover:bg-wonderwhiz-gold/90 text-wonderwhiz-dark rounded-full shadow-glow-gold p-2 sm:p-3"
-              size="icon"
+          <div className="flex gap-2">
+            <motion.div
+              initial={{ scale: 0, rotate: -20 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: "spring", delay: 0.3 }}
             >
-              <User className="h-5 w-5" />
-            </Button>
-          </Link>
+              <Link to={`/dashboard/${profileId}`}>
+                <Button 
+                  className="bg-[#FFD54F] hover:bg-[#FFD54F]/90 text-[#2A1B5D] rounded-full shadow-[0_0_15px_rgba(255,213,79,0.4)] p-2 sm:p-3"
+                  size="icon"
+                >
+                  <User className="h-5 w-5" />
+                </Button>
+              </Link>
+            </motion.div>
+            
+            <motion.div
+              initial={{ scale: 0, rotate: 20 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: "spring", delay: 0.5 }}
+            >
+              <Button 
+                className="bg-[#00E2FF] hover:bg-[#00E2FF]/90 text-[#2A1B5D] rounded-full shadow-[0_0_15px_rgba(0,226,255,0.4)] p-2 sm:p-3"
+                size="icon"
+              >
+                <Rocket className="h-5 w-5" />
+              </Button>
+            </motion.div>
+          </div>
         </div>
         
         <CurioSearch
@@ -297,7 +382,7 @@ const CurioPage: React.FC = () => {
         
         {isUploadingImage && (
           <motion.div 
-            className="flex items-center justify-center py-4 mb-4 bg-purple-900/20 rounded-lg border border-purple-500/30"
+            className="flex items-center justify-center py-4 mb-4 bg-[#3D2A7D]/50 rounded-lg border border-[#FF5BA3]/30 backdrop-blur-sm"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
@@ -307,7 +392,7 @@ const CurioPage: React.FC = () => {
                 {[0, 1, 2].map((i) => (
                   <motion.div
                     key={i}
-                    className="w-3 h-3 rounded-full bg-wonderwhiz-purple"
+                    className="w-3 h-3 rounded-full bg-[#FF5BA3]"
                     animate={{
                       y: [0, -10, 0],
                     }}
@@ -320,18 +405,18 @@ const CurioPage: React.FC = () => {
                   />
                 ))}
               </div>
-              <p className="text-sm text-white/80">
+              <p className="text-sm text-white/80 font-inter">
                 Analyzing your image with AI...
               </p>
             </div>
           </motion.div>
         )}
         
-        <Card className="bg-black/40 border-white/10 p-2 sm:p-4 md:p-6 overflow-hidden rounded-xl">
+        <Card className="bg-[#2A1B5D]/60 border-white/5 p-2 sm:p-4 md:p-6 overflow-hidden rounded-xl backdrop-blur-sm shadow-lg">
           <ScrollArea ref={scrollAreaRef} className={isMobile ? "h-[calc(100vh-200px)]" : "h-[calc(100vh-230px)]"}>
             {isGeneratingContent && (
               <motion.div 
-                className="flex items-center justify-center py-4 mb-4 bg-purple-900/20 rounded-lg border border-purple-500/30"
+                className="flex items-center justify-center py-4 mb-4 bg-[#3D2A7D]/50 rounded-lg border border-[#FF5BA3]/30"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
@@ -341,7 +426,7 @@ const CurioPage: React.FC = () => {
                     {[0, 1, 2].map((i) => (
                       <motion.div
                         key={i}
-                        className="w-3 h-3 rounded-full bg-wonderwhiz-purple"
+                        className="w-3 h-3 rounded-full bg-[#FF5BA3]"
                         animate={{
                           y: [0, -10, 0],
                         }}
@@ -354,7 +439,7 @@ const CurioPage: React.FC = () => {
                       />
                     ))}
                   </div>
-                  <p className="text-sm text-white/80">
+                  <p className="text-sm text-white/80 font-inter">
                     Generating amazing content for you...
                   </p>
                 </div>

@@ -1,8 +1,9 @@
 
 import React, { useRef, useEffect } from 'react';
-import { Search, UploadCloud, X } from 'lucide-react';
+import { Search, UploadCloud, X, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { motion } from 'framer-motion';
 
 interface CurioSearchProps {
   searchQuery: string;
@@ -65,26 +66,37 @@ const CurioSearch: React.FC<CurioSearchProps> = ({
   };
 
   return (
-    <div className="mb-3 sm:mb-4">
+    <div className="mb-5">
       <form onSubmit={handleSubmit} className="relative">
-        <Input
-          ref={searchInputRef}
-          type="text"
-          placeholder="Search in this curio (Ctrl+K)"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="bg-black/40 border-white/10 text-white pl-9 pr-12 py-2 h-10"
-          disabled={isSearching}
-        />
-        <Search className="absolute left-2.5 top-2.5 h-5 w-5 text-white/60" />
+        <div className="relative group">
+          {/* Animated glow effect */}
+          <motion.div 
+            className="absolute -inset-0.5 bg-gradient-to-r from-[#FF5BA3] to-[#4A6FFF] rounded-full opacity-50 blur-sm group-hover:opacity-75 transition duration-300"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.5 }}
+            whileHover={{ opacity: 0.75 }}
+          />
+          
+          <Input
+            ref={searchInputRef}
+            type="text"
+            placeholder="Search in this curio (Ctrl+K)"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="bg-[#2A1B5D]/70 border-white/10 text-white pl-10 pr-12 py-3 h-12 rounded-full relative font-inter"
+            disabled={isSearching}
+          />
+        </div>
         
-        <div className="absolute right-2 top-1.5 flex items-center gap-1">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[#FF5BA3]" />
+        
+        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
           {searchQuery && (
             <Button 
               type="button" 
               variant="ghost" 
               size="sm" 
-              className="h-7 px-2 text-white/60 hover:text-white"
+              className="h-8 px-2 text-white/70 hover:text-white hover:bg-[#3D2A7D]/50"
               onClick={handleClearSearch}
               disabled={isSearching}
             >
@@ -95,7 +107,7 @@ const CurioSearch: React.FC<CurioSearchProps> = ({
           <Button 
             type="submit" 
             size="sm" 
-            className="h-7 px-3 bg-wonderwhiz-purple hover:bg-wonderwhiz-purple/80"
+            className="h-8 px-3 bg-gradient-to-r from-[#FF5BA3] to-[#4A6FFF] hover:from-[#FF5BA3]/90 hover:to-[#4A6FFF]/90 text-white rounded-full border-none"
             disabled={isSearching || !searchQuery.trim()}
           >
             {isSearching ? (
@@ -108,17 +120,29 @@ const CurioSearch: React.FC<CurioSearchProps> = ({
         </div>
       </form>
       
-      <div className="flex justify-between items-center mt-2">
-        <div className="text-xs text-white/50">
+      <div className="flex justify-between items-center mt-3">
+        <div className="text-sm text-white/60 font-inter italic">
           {searchQuery ? (
             isSearching ? 'Searching...' : 'Search results'
           ) : (
-            `${totalBlocksLoaded} blocks loaded`
+            <motion.div 
+              className="flex items-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              <Sparkles className="h-3 w-3 mr-1.5 text-[#FFD54F]" />
+              <span>{totalBlocksLoaded} wonders loaded</span>
+            </motion.div>
           )}
         </div>
         
         {onImageUpload && (
-          <div>
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.3, type: "spring" }}
+          >
             <input 
               type="file" 
               ref={fileInputRef} 
@@ -129,14 +153,13 @@ const CurioSearch: React.FC<CurioSearchProps> = ({
             <Button 
               type="button" 
               size="sm" 
-              variant="outline" 
               onClick={triggerFileUpload}
-              className="h-8 bg-wonderwhiz-purple/20 border-wonderwhiz-purple/40 text-white hover:bg-wonderwhiz-purple/30"
+              className="h-10 bg-gradient-to-r from-[#00E2FF] to-[#00D68F] hover:from-[#00E2FF]/90 hover:to-[#00D68F]/90 text-[#2A1B5D] font-medium rounded-full shadow-[0_0_15px_rgba(0,226,255,0.2)] transition-all duration-300 hover:shadow-[0_0_20px_rgba(0,226,255,0.4)]"
             >
               <UploadCloud className="h-4 w-4 mr-2" />
               Upload Image
             </Button>
-          </div>
+          </motion.div>
         )}
       </div>
     </div>

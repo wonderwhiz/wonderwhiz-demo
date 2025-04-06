@@ -2,26 +2,26 @@
 export const getBackgroundColor = (colorVariant: number): string => {
   switch (colorVariant) {
     case 0:
-      return 'bg-gradient-to-br from-white/5 to-white/10';  // Softer neutral
+      return 'bg-gradient-to-br from-[#3D2A7D]/20 to-[#2A1B5D]/30';  // Primary purple
     case 1:
-      return 'bg-gradient-to-br from-wonderwhiz-purple/5 to-wonderwhiz-purple/10';  // Softer purple
+      return 'bg-gradient-to-br from-[#FF5BA3]/10 to-[#FF5BA3]/5';   // Pink
     case 2:
-      return 'bg-gradient-to-br from-wonderwhiz-blue/5 to-wonderwhiz-blue/10';  // Softer blue
+      return 'bg-gradient-to-br from-[#00E2FF]/10 to-[#00E2FF]/5';   // Cyan/Teal
     default:
-      return 'bg-gradient-to-br from-white/5 to-white/10';
+      return 'bg-gradient-to-br from-[#3D2A7D]/20 to-[#2A1B5D]/30';
   }
 };
 
 export const getBorderColor = (colorVariant: number): string => {
   switch (colorVariant) {
     case 0:
-      return 'border-white/5';
+      return 'border-[#3D2A7D]/30';
     case 1:
-      return 'border-wonderwhiz-purple/10';
+      return 'border-[#FF5BA3]/20';
     case 2:
-      return 'border-wonderwhiz-blue/10';
+      return 'border-[#00E2FF]/20';
     default:
-      return 'border-white/5';
+      return 'border-[#3D2A7D]/30';
   }
 };
 
@@ -43,5 +43,5 @@ export const getTextSize = (type: string): string => {
 };
 
 export const getContextualImageStyle = (): string => {
-  return 'rounded-lg overflow-hidden w-full h-40 sm:h-48 md:h-56 object-cover mb-4 bg-gray-800/40';
+  return 'rounded-xl overflow-hidden w-full h-40 sm:h-48 md:h-56 object-cover mb-4 bg-[#2A1B5D]/40 backdrop-blur-sm';
 };

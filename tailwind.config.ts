@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -58,7 +59,16 @@ export default {
 					gold: '#FFC72C',
 					blue: '#00E0FF',
 					yellow: '#FFE883',
-					dark: '#20053D'
+					dark: '#20053D',
+					// New brand colors
+					'deep-purple': '#2A1B5D',
+					'light-purple': '#3D2A7D',
+					'bright-pink': '#FF5BA3',
+					'vibrant-yellow': '#FFD54F',
+					'cyan': '#00E2FF',
+					'blue-accent': '#4A6FFF',
+					'green': '#00D68F',
+					'orange': '#FF8A3D'
 				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
@@ -82,6 +92,9 @@ export default {
 			fontFamily: {
 				'baloo': ['"Baloo 2"', 'sans-serif'],
 				'lexend': ['Lexend Deca', 'sans-serif'],
+				// New brand fonts
+				'nunito': ['Nunito', 'sans-serif'],
+				'inter': ['Inter', 'sans-serif']
 			},
 			keyframes: {
 				'accordion-down': {
@@ -145,12 +158,20 @@ export default {
 				'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
 				'wonderwhiz-gradient': 'linear-gradient(to bottom, #20053D, #3D0E64)',
 				'button-gradient': 'linear-gradient(90deg, #FF5EBA 0%, #FF8FD9 100%)',
+				// New brand gradients
+				'cosmic-gradient': 'linear-gradient(to bottom, #2A1B5D, #3D2A7D)',
+				'accent-gradient': 'linear-gradient(90deg, #FF5BA3 0%, #4A6FFF 100%)',
+				'accent-gradient-2': 'linear-gradient(90deg, #00E2FF 0%, #00D68F 100%)',
 			},
 			boxShadow: {
 				'glow': '0 0 15px rgba(126, 48, 225, 0.5)',
 				'glow-blue': '0 0 15px rgba(0, 224, 255, 0.5)',
 				'glow-pink': '0 0 15px rgba(255, 94, 186, 0.5)',
 				'glow-gold': '0 0 15px rgba(255, 199, 44, 0.5)',
+				// New brand shadows
+				'glow-brand-pink': '0 0 15px rgba(255, 91, 163, 0.5)',
+				'glow-brand-yellow': '0 0 15px rgba(255, 213, 79, 0.5)',
+				'glow-brand-cyan': '0 0 15px rgba(0, 226, 255, 0.5)',
 			},
 			cursor: {
 				'wand': 'url(/wand-cursor.png), pointer',
