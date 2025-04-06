@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -28,6 +27,8 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
   const blockLoadingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const generationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const blockGenerationInProgress = useRef<boolean>(false);
+  // Add the missing ref that was causing errors
+  const searchResponseRef = useRef<any>(null);
 
   const convertToContentBlocks = (dbBlocks: any[]): ContentBlock[] => {
     return dbBlocks.map(block => {
@@ -527,7 +528,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
   }, [blocks]);
 
   const handleSearch = debounce(async (value: string) => {
-    claudeResponseRef.current = null;
+    searchResponseRef.current = null;
     
     if (!curioId || value.trim() === '') return;
     
@@ -565,7 +566,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
   }, 300);
 
   const clearSearch = () => {
-    claudeResponseRef.current = null;
+    searchResponseRef.current = null;
     
     setSearchQuery('');
     fetchInitialBlocks(curioId || '');
