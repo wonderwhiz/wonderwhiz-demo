@@ -21,12 +21,36 @@ serve(async (req) => {
 
     // Get specialist info
     const specialists = {
-      'nova': { name: 'Nova the Explorer', expertise: 'exploration and discovery' },
-      'spark': { name: 'Spark the Scientist', expertise: 'science and experiments' },
-      'prism': { name: 'Prism the Artist', expertise: 'arts and creativity' },
-      'pixel': { name: 'Pixel the Robot', expertise: 'technology and coding' },
-      'atlas': { name: 'Atlas the Turtle', expertise: 'geography and history' },
-      'lotus': { name: 'Lotus the Wellbeing Panda', expertise: 'wellbeing and mindfulness' },
+      'nova': { 
+        name: 'Nova the Explorer', 
+        expertise: 'exploration and discovery', 
+        personality: 'enthusiastic, adventurous, and curious. Nova loves mysteries, discoveries, and sharing amazing facts about the world.'
+      },
+      'spark': { 
+        name: 'Spark the Scientist', 
+        expertise: 'science and experiments',
+        personality: 'analytical, logical, but extremely excited about science. Spark loves explaining complex topics in fun, simple ways with lots of "WOW" facts.'
+      },
+      'prism': { 
+        name: 'Prism the Artist', 
+        expertise: 'arts and creativity',
+        personality: 'imaginative, colorful, and expressive. Prism sees beauty everywhere and encourages all forms of creativity with boundless enthusiasm.'
+      },
+      'pixel': { 
+        name: 'Pixel the Robot', 
+        expertise: 'technology and coding',
+        personality: 'precise but friendly, with occasional robot-like speech patterns. Pixel is fascinated by human creativity and loves explaining how technology works.'
+      },
+      'atlas': { 
+        name: 'Atlas the Turtle', 
+        expertise: 'geography and history',
+        personality: 'wise, patient, and full of stories. Atlas has "been everywhere" and shares historical and geographical knowledge with a sense of wonder.'
+      },
+      'lotus': { 
+        name: 'Lotus the Wellbeing Panda', 
+        expertise: 'wellbeing and mindfulness',
+        personality: 'calm, nurturing, and encouraging. Lotus speaks in a gentle, soothing way and helps children understand their emotions and find inner peace.'
+      },
     };
     
     const specialist = specialists[specialistId] || specialists.nova;
@@ -57,23 +81,27 @@ serve(async (req) => {
 
 You are chatting with a child who is ${childProfile.age} years old and has interests in: ${childProfile.interests.join(', ')}.
 
+Your personality is: ${specialist.personality}
+
 ${contextInfo}
 
 VERY IMPORTANT: You must respond in ${language} language.
 
-Please respond to their message in a friendly, educational way that:
-1. Is age-appropriate for a ${childProfile.age}-year-old
-2. Provides helpful, accurate information related to their question
-3. Encourages curiosity and deeper exploration of the topic
-4. Expands their knowledge with 1-2 interesting new facts they might not know
-5. Uses simple language a child would understand
-6. Has an encouraging, enthusiastic tone
+Please respond to their message in an EXTREMELY engaging, educational way that:
+1. Is perfectly age-appropriate for a ${childProfile.age}-year-old
+2. Provides fascinating, accurate information that will make them say "WOW!"
+3. Encourages curiosity and deeper exploration with enthusiasm
+4. Shares 1-2 mind-blowing facts they likely don't know (facts that would make even adults say "I didn't know that!")
+5. Uses simple language a ${childProfile.age}-year-old would understand, but doesn't talk down to them
+6. Has an encouraging, animated, enthusiastic tone with appropriate exclamation marks
 7. Connects the topic to real-world examples they can relate to
 8. Gently corrects any misconceptions in a supportive way
 
-While being educational, maintain a warm and friendly character voice that aligns with your specialist personality. Make the child feel their questions are valued and important.
+While being educational, maintain the unique character voice that aligns with your specialist personality. Make the child feel their questions are incredible and worth exploring!
 
-Keep your response relatively brief (3-4 sentences) but engaging - just enough to spark further curiosity and provide useful knowledge.`;
+Keep your response relatively brief (3-5 sentences) but packed with fascinating information - just enough to spark further curiosity and provide useful knowledge.
+
+End with a question that encourages them to think more deeply about the topic or share their own thoughts.`;
 
     console.log("Sending request to Groq API for chat response");
     
@@ -92,7 +120,7 @@ Keep your response relatively brief (3-4 sentences) but engaging - just enough t
             { role: 'user', content: messageContent }
           ],
           max_tokens: 300,
-          temperature: 0.7
+          temperature: 0.8
         })
       });
 
@@ -138,7 +166,7 @@ Keep your response relatively brief (3-4 sentences) but engaging - just enough t
               { role: 'user', content: messageContent }
             ],
             max_tokens: 300,
-            temperature: 0.7
+            temperature: 0.8
           })
         });
 
@@ -168,7 +196,7 @@ Keep your response relatively brief (3-4 sentences) but engaging - just enough t
         console.error('Error getting chat response from OpenAI:', openaiError);
         
         // Generate a friendly fallback response
-        const fallbackReply = `Great question! I'd love to tell you more about that. Let's explore this topic together next time. What else would you like to know about?`;
+        const fallbackReply = `Great question! I'd love to tell you more about that. Let's explore this fascinating topic together next time. What else would you like to know about?`;
         
         return new Response(JSON.stringify({ 
           reply: fallbackReply,

@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -132,21 +133,38 @@ serve(async (req) => {
     }
 
     // Prepare system message and user message for the API
-    let systemMessage = `You are an AI assistant creating highly engaging, educational content for children aged ${childProfile.age}. 
-    Each piece of content should be rich with interesting facts, deeply relevant to the topic, and presented in an engaging way.
-    The content must be 100% accurate, age-appropriate, and optimized to capture a child's curiosity and imagination.
+    let systemMessage = `You are an AI assistant creating EXTREMELY engaging, educational content for children aged ${childProfile.age}. 
+    Each piece of content should be rich with fascinating facts, deeply relevant to the topic, and presented in a way that sparks wonder and curiosity.
+    The content must be 100% accurate, age-appropriate, and designed to captivate a child's imagination and make them say "Wow!".
+    Use vivid, captivating language that makes concepts come alive. Incorporate elements of mystery, surprise, and discovery.
+    Remember that children are naturally curious - make them want to learn more!
+    Present information in a way that connects to a child's everyday experiences when possible.
     Content must be in ${language} language.`;
     
-    let userMessage = `Generate ${blockCount} diverse, engaging content blocks about the topic: "${query}". 
+    let userMessage = `Generate ${blockCount} diverse, HIGHLY ENGAGING content blocks about the topic: "${query}". 
     ${skipInitial > 0 ? `Skip the first ${skipInitial} most obvious blocks as they've already been generated.` : ''}
 
     Each block should:
-    1. Be extremely relevant to "${query}"
-    2. Contain accurate, fascinating information that would amaze a ${childProfile.age}-year-old
-    3. Be written in a fun, engaging style with simple language
-    4. Include visual descriptions that could be used to generate related images
-    5. Align with these interests: ${childProfile.interests.join(', ')}
+    1. Be ultra-relevant to "${query}"
+    2. Contain mind-blowing, fascinating information that would make a ${childProfile.age}-year-old say "WOW!"
+    3. Be written in an exciting, dynamic style with age-appropriate but rich vocabulary
+    4. Include vivid visual descriptions that would make amazing images
+    5. Connect with these interests: ${childProfile.interests.join(', ')}
+    6. Include interactive elements that make children feel involved in the discovery
 
+    For each block type, make them EXTRAORDINARILY engaging:
+    - fact/funFact: Include truly surprising, counter-intuitive facts that children wouldn't expect. Use comparisons to things children understand.
+    - quiz: Create clever, thought-provoking questions with interesting options that teach even if they get it wrong.
+    - flashcard: Frame concepts as exciting mysteries to uncover with a surprising reveal.
+    - creative: Provide imaginative prompts that spark creativity and connect to the topic.
+    - task: Design fun, hands-on activities that feel like play while teaching concepts.
+    - riddle: Create clever wordplay or logic puzzles that make children feel smart when they solve them.
+    - activity: Design interactive experiences that bring the topic to life.
+    - news: Frame information as exciting "breaking news" with dramatic headlines and discoveries.
+    - mindfulness: Connect the topic to sensory experiences and wonder.
+
+    Rabbit hole questions should be intriguing and lead to fascinating new directions of exploration.
+    
     Return your response as a JSON array with ${blockCount} objects, each having this structure:
     {
       "type": "one of: fact, quiz, flashcard, creative, task, riddle, funFact, activity, news, mindfulness",
@@ -157,15 +175,15 @@ serve(async (req) => {
     }
 
     For each block type, include these specific fields:
-    - fact/funFact: { "fact": "detailed fact", "rabbitHoles": ["question 1", "question 2"] }
-    - quiz: { "question": "quiz question", "options": ["option1", "option2", "option3", "option4"], "correctIndex": 0-3 }
-    - flashcard: { "front": "question", "back": "answer" }
-    - creative: { "prompt": "creative prompt", "type": "drawing or writing" }
-    - task: { "task": "activity description", "reward": 5-10 }
-    - riddle: { "riddle": "riddle text", "answer": "answer" }
-    - activity: { "activity": "activity description" }
-    - news: { "headline": "headline", "summary": "summary", "source": "WonderWhiz News" }
-    - mindfulness: { "exercise": "exercise description", "duration": 30-60 }
+    - fact/funFact: { "fact": "detailed surprising fact", "rabbitHoles": ["intriguing question 1", "fascinating question 2"] }
+    - quiz: { "question": "thought-provoking question", "options": ["clever option1", "clever option2", "clever option3", "clever option4"], "correctIndex": 0-3, "explanation": "fascinating explanation why" }
+    - flashcard: { "front": "intriguing question", "back": "surprising answer with wow factor" }
+    - creative: { "prompt": "imaginative creative prompt", "type": "drawing or writing", "guidelines": "helpful tips for creativity" }
+    - task: { "task": "fun activity description", "reward": 5-10 }
+    - riddle: { "riddle": "clever riddle text", "answer": "surprising answer" }
+    - activity: { "activity": "engaging hands-on activity description" }
+    - news: { "headline": "exciting headline", "summary": "fascinating discovery summary", "source": "WonderWhiz News" }
+    - mindfulness: { "exercise": "sensory-rich exercise description", "duration": 30-60 }
 
     Match specialists with appropriate content topics. Make content highly educational, fun, and visually descriptive!
     
@@ -194,7 +212,7 @@ serve(async (req) => {
               { role: 'user', content: userMessage }
             ],
             response_format: { type: "json_object" },
-            temperature: quickGeneration ? 0.9 : 0.7,
+            temperature: quickGeneration ? 0.9 : 0.8,
             max_tokens: 4000
           })
         });

@@ -1,6 +1,6 @@
 
 import React, { useRef, useEffect } from 'react';
-import { Search, UploadCloud } from 'lucide-react';
+import { Search, UploadCloud, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
@@ -50,11 +50,18 @@ const CurioSearch: React.FC<CurioSearchProps> = ({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0] && onImageUpload) {
       onImageUpload(e.target.files[0]);
+      // Clear the input value so the same file can be selected again
+      e.target.value = '';
     }
   };
 
   const triggerFileUpload = () => {
     fileInputRef.current?.click();
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    clearSearch();
   };
 
   return (
@@ -67,6 +74,7 @@ const CurioSearch: React.FC<CurioSearchProps> = ({
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="bg-black/40 border-white/10 text-white pl-9 pr-12 py-2 h-10"
+          disabled={isSearching}
         />
         <Search className="absolute left-2.5 top-2.5 h-5 w-5 text-white/60" />
         
@@ -77,8 +85,10 @@ const CurioSearch: React.FC<CurioSearchProps> = ({
               variant="ghost" 
               size="sm" 
               className="h-7 px-2 text-white/60 hover:text-white"
-              onClick={clearSearch}
+              onClick={handleClearSearch}
+              disabled={isSearching}
             >
+              <X className="h-4 w-4 mr-1" />
               Clear
             </Button>
           )}
@@ -88,7 +98,12 @@ const CurioSearch: React.FC<CurioSearchProps> = ({
             className="h-7 px-3 bg-wonderwhiz-purple hover:bg-wonderwhiz-purple/80"
             disabled={isSearching || !searchQuery.trim()}
           >
-            Search
+            {isSearching ? (
+              <div className="flex items-center">
+                <div className="h-3 w-3 rounded-full border-2 border-t-transparent border-white animate-spin mr-1"></div>
+                Searching...
+              </div>
+            ) : "Search"}
           </Button>
         </div>
       </form>

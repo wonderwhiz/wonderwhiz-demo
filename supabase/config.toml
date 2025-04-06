@@ -1,49 +1,17 @@
 
 project_id = "turexhnvsvmllwitllmg"
 
-[api]
-enabled = true
-port = 54321
-schemas = ["public", "storage", "graphql_public"]
-
-[db]
-port = 54322
-
-[studio]
-port = 54323
-
-[inbucket]
-port = 54324
-
-[auth]
-enabled = true
-port = 54325
-
-[realtime]
-enabled = true
-port = 54326
-
-[storage]
-enabled = true
-port = 54327
-
-[functions]
-port = 54328
-
-[functions.generate-contextual-image]
-verify_jwt = false
-
 [functions.analyze-image]
 verify_jwt = false
 
-[functions.analyze-creative-work]
-verify_jwt = false
-
-[functions.generate-curio-suggestions]
+[functions.generate-contextual-image]
 verify_jwt = false
 
 [functions.generate-curiosity-blocks]
 verify_jwt = false
 
 [functions.handle-block-chat]
+verify_jwt = false
+
+[functions.increment-sparks-balance]
 verify_jwt = false

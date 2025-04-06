@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
@@ -24,6 +24,7 @@ const CurioPage: React.FC = () => {
   const [animateBlocks, setAnimateBlocks] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   
   const {
     blocks,
@@ -110,6 +111,45 @@ const CurioPage: React.FC = () => {
     }
   };
 
+  const handleRabbitHoleClick = async (question: string) => {
+    if (!profileId) return;
+    
+    try {
+      toast.loading("Creating new exploration...", {
+        id: "create-curio",
+        duration: 3000
+      });
+      
+      // Create a new curio based on the rabbit hole question
+      const { data: newCurio, error } = await supabase
+        .from('curios')
+        .insert({
+          profile_id: profileId,
+          title: question,
+          query: question,
+          source: 'rabbit_hole'
+        })
+        .select('id')
+        .single();
+        
+      if (error) throw error;
+      
+      if (newCurio) {
+        toast.success("New exploration created!", {
+          id: "create-curio"
+        });
+        
+        // Navigate to the new curio
+        navigate(`/curio/${profileId}/${newCurio.id}`);
+      }
+    } catch (error) {
+      console.error('Error creating rabbit hole curio:', error);
+      toast.error("Could not create new exploration", {
+        id: "create-curio"
+      });
+    }
+  };
+
   const handleImageUpload = async (file: File) => {
     if (!curioId || !profileId) {
       toast.error("Unable to process image without proper context");
@@ -155,7 +195,7 @@ const CurioPage: React.FC = () => {
           curio_id: curioId
         });
         
-        toast.success("Image analyzed successfully!", {
+        toast.success(data.feedback || "Image analyzed successfully!", {
           duration: 3000,
         });
         
@@ -337,6 +377,7 @@ const CurioPage: React.FC = () => {
               handleTaskComplete={handleTaskComplete}
               handleActivityComplete={handleActivityComplete}
               handleMindfulnessComplete={handleMindfulnessComplete}
+              handleRabbitHoleClick={handleRabbitHoleClick}
               profileId={profileId}
               isFirstLoad={isFirstLoad}
             />
