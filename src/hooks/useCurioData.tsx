@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -23,7 +24,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const [generationStartTime, setGenerationStartTime] = useState<number | null>(null);
   
-  const claudeResponseRef = useRef<any>(null);
+  const generatedBlocksRef = useRef<any>(null);
   const blockLoadingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const generationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const blockGenerationInProgress = useRef<boolean>(false);
@@ -213,7 +214,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
     blockGenerationInProgress.current = true;
     
     try {
-      console.log('Generating new blocks from Claude API');
+      console.log('Generating new blocks from Groq API');
       
       const { data: profileData, error: profileError } = await supabase
         .from('child_profiles')
@@ -294,7 +295,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
           const remainingBlocks = remainingData || [];
           console.log(`Generated remaining ${remainingBlocks.length} blocks in ${(Date.now() - remainingApiStartTime) / 1000} seconds`);
           
-          claudeResponseRef.current = remainingBlocks;
+          generatedBlocksRef.current = remainingBlocks;
           
           if (remainingBlocks.length > 0) {
             setHasMoreBlocks(true);
@@ -392,10 +393,10 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
   const loadMoreBlocks = useCallback(async () => {
     if (!hasMoreBlocks || loadingMoreBlocks || !curioId) return;
     
-    if (claudeResponseRef.current && Array.isArray(claudeResponseRef.current)) {
-      const remainingBlocks = claudeResponseRef.current.slice(totalBlocksLoaded - INITIAL_BLOCKS_TO_LOAD);
+    if (generatedBlocksRef.current && Array.isArray(generatedBlocksRef.current)) {
+      const remainingBlocks = generatedBlocksRef.current.slice(totalBlocksLoaded - INITIAL_BLOCKS_TO_LOAD);
       if (remainingBlocks.length > 0) {
-        console.log(`Loading more blocks from Claude's response: ${totalBlocksLoaded + 1} to ${totalBlocksLoaded + Math.min(BATCH_SIZE, remainingBlocks.length)}`);
+        console.log(`Loading more blocks from generated response: ${totalBlocksLoaded + 1} to ${totalBlocksLoaded + Math.min(BATCH_SIZE, remainingBlocks.length)}`);
         setLoadingMoreBlocks(true);
         
         try {
@@ -409,7 +410,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
           setBlocks(prev => [...prev, ...convertToContentBlocks(blocksWithCurioId)]);
           setTotalBlocksLoaded(prev => prev + nextBatch.length);
           
-          setHasMoreBlocks(totalBlocksLoaded + nextBatch.length - INITIAL_BLOCKS_TO_LOAD < claudeResponseRef.current.length);
+          setHasMoreBlocks(totalBlocksLoaded + nextBatch.length - INITIAL_BLOCKS_TO_LOAD < generatedBlocksRef.current.length);
           
           const savePromises = nextBatch.map(block => 
             supabase.from('content_blocks').insert({
@@ -420,7 +421,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
           
           await Promise.all(savePromises);
         } catch (error) {
-          console.error('Error loading more blocks from Claude response:', error);
+          console.error('Error loading more blocks from generated response:', error);
           toast("Could not load more content");
         } finally {
           setLoadingMoreBlocks(false);
@@ -578,12 +579,12 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
     isGeneratingContent,
     hasMoreBlocks,
     loadingMoreBlocks,
+    loadMoreBlocks,
     totalBlocksLoaded,
     initialLoadComplete,
     setInitialLoadComplete,
     searchQuery,
     setSearchQuery,
-    loadMoreBlocks,
     handleToggleLike,
     handleToggleBookmark,
     handleSearch,
