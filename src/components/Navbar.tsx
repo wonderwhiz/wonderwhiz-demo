@@ -17,7 +17,7 @@ const Navbar = () => {
       </div>
       <div className="flex items-center space-x-4">
         <Link to="/login">
-          <Button variant="ghost" className="text-white hover:text-wonderwhiz-yellow hover:bg-opacity-20">
+          <Button variant="ghost" className="hover:bg-opacity-20 text-white bg-wonderwhiz-gold">
             Login
           </Button>
         </Link>
