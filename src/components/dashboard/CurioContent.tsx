@@ -1,15 +1,10 @@
 
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ContentBlock from '@/components/ContentBlock';
-import useInfiniteScroll from '@/hooks/useInfiniteScroll';
-
-interface Curio {
-  id: string;
-  title: string;
-  query: string;
-  created_at: string;
-}
+import CurioLoading from '@/components/CurioLoading';
+import CurioLoadMore from '@/components/CurioLoadMore';
+import { Sparkles } from 'lucide-react';
 
 interface ContentBlock {
   id: string;
@@ -25,6 +20,13 @@ interface BlockReply {
   block_id: string;
   content: string;
   from_user: boolean;
+  created_at: string;
+}
+
+interface Curio {
+  id: string;
+  title: string;
+  query: string;
   created_at: string;
 }
 
@@ -67,199 +69,122 @@ const CurioContent: React.FC<CurioContentProps> = ({
   onNewsRead,
   onCreativeUpload
 }) => {
-  const feedEndRef = useRef<HTMLDivElement>(null);
-  const [renderedBlocks, setRenderedBlocks] = useState<ContentBlock[]>([]);
-  const [imageGenerationRequested, setImageGenerationRequested] = useState<boolean>(false);
-  
-  // Performance optimization: Only render a max number of blocks at once
-  const MAX_VISIBLE_BLOCKS = 10;
-  
-  // Progressive rendering with immediate first block for better UX
-  useEffect(() => {
-    if (contentBlocks.length === 0) {
-      setRenderedBlocks([]);
-      return;
-    }
-    
-    // Always render the first block immediately for instant feedback
-    if (contentBlocks.length > 0 && renderedBlocks.length === 0) {
-      console.log("Immediately rendering first block for fast initial display");
-      setRenderedBlocks([contentBlocks[0]]);
-      
-      // Then add the rest of the initial blocks quickly
-      if (contentBlocks.length > 1) {
-        const timer = setTimeout(() => {
-          console.log(`Rendering all visible blocks after initial display`);
-          // Limit number of rendered blocks for performance
-          setRenderedBlocks(contentBlocks.slice(0, MAX_VISIBLE_BLOCKS));
-        }, 50); // Very short delay for the rest
-        return () => clearTimeout(timer);
-      }
-    } else {
-      // Fast update when blocks change but not on initial render
-      // Only render the visible blocks for performance
-      setRenderedBlocks(contentBlocks.slice(0, Math.min(contentBlocks.length, MAX_VISIBLE_BLOCKS)));
-    }
-  }, [contentBlocks, renderedBlocks.length]);
+  // Use memoization to avoid unnecessary re-renders
+  const visibleBlocks = useMemo(() => {
+    if (!contentBlocks) return [];
+    return contentBlocks.slice(0, visibleBlocksCount);
+  }, [contentBlocks, visibleBlocksCount]);
 
-  // Request image generation for first block only once
-  useEffect(() => {
-    if (contentBlocks.length > 0 && !imageGenerationRequested) {
-      console.log("Setting image generation flag for first block");
-      setImageGenerationRequested(true);
-    }
-  }, [contentBlocks, imageGenerationRequested]);
-  
-  // Set up infinite scroll with improved configuration
-  const observerTarget = useInfiniteScroll({
-    loadMore: onLoadMore,
-    isLoading: loadingBlocks,
-    hasMore: hasMoreBlocks,
-    threshold: 0.2, // Start loading earlier
-    rootMargin: '400px', // Load much earlier for smoother experience
-    delayMs: 50, // Faster response time
-  });
-
-  // Memoize block replies to prevent unnecessary re-renders
-  const memoizedReplies = useMemo(() => blockReplies, [blockReplies]);
-
-  if (!currentCurio) return null;
-
-  // Calculate a unique but consistent color variant for each block based on index and block type
-  const getColorVariant = (index: number, blockType: string) => {
-    const typeMultiplier = {
-      'fact': 0,
-      'quiz': 1,
-      'flashcard': 2,
-      'creative': 3,
-      'task': 4,
-      'riddle': 0,
-      'funFact': 1,
-      'activity': 2,
-      'news': 3,
-      'mindfulness': 4
-    };
-    
-    // Get multiplier based on block type or default to 0
-    const multiplier = (blockType in typeMultiplier) ? typeMultiplier[blockType as keyof typeof typeMultiplier] : 0;
-    
-    // Create a more varied pattern using both index and block type
-    // This gives us 5 different color variants (0-4)
-    return (index + multiplier) % 5;
-  };
+  if (!currentCurio) {
+    return null;
+  }
 
   return (
-    <div className="relative">
-      <AnimatePresence>
-        {(isGenerating || loadingBlocks) && (
-          <motion.div 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
-            exit={{ opacity: 0 }} 
-            transition={{ duration: 0.2 }}
-            className="p-3 mb-4 bg-gradient-to-r from-wonderwhiz-bright-pink/20 to-wonderwhiz-light-purple/30 backdrop-blur-sm rounded-lg border border-wonderwhiz-bright-pink/30 flex items-center"
-          >
-            <motion.div 
-              className="mr-3"
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+    <div className="py-6 sm:py-8 px-4 sm:px-6">
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={currentCurio.id}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <div className="max-w-4xl mx-auto">
+            <motion.h1
+              className="text-2xl sm:text-3xl md:text-4xl font-bold mb-6 text-center text-white font-nunito"
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.4 }}
             >
-              <div className="rounded-full h-5 w-5 border-t-2 border-r-2 border-wonderwhiz-bright-pink"></div>
-            </motion.div>
-            <p className="text-white text-sm font-nunito">
-              {isGenerating ? "Generating your personalized content with amazing facts..." : "Loading more fascinating content..."}
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      
-      <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 px-3 sm:px-4 pt-4 font-nunito animate-in fade-in-50 duration-500">{currentCurio.title}</h2>
-      <div className="space-y-5 px-3 sm:px-4 pb-6">
-        {renderedBlocks.map((block, index) => (
-          <motion.div 
-            key={block.id} 
-            className="space-y-2" 
-            initial={{ opacity: 0, y: 20 }} 
-            animate={{ opacity: 1, y: 0 }} 
-            transition={{ 
-              delay: Math.min(index * 0.05, 0.2), // Cap the delay for smoother loading
-              duration: 0.3
-            }}
-          >
-            <ContentBlock 
-              block={block} 
-              onToggleLike={() => onToggleLike(block.id)} 
-              onToggleBookmark={() => onToggleBookmark(block.id)} 
-              onReply={(message) => onReply(block.id, message)} 
-              onSetQuery={onSetQuery} 
-              onRabbitHoleFollow={onRabbitHoleFollow} 
-              onQuizCorrect={() => onQuizCorrect(block.id)} 
-              onNewsRead={() => onNewsRead(block.id)} 
-              onCreativeUpload={() => onCreativeUpload(block.id)} 
-              colorVariant={getColorVariant(index, block.type)} 
-              userId={profileId} 
-              childProfileId={profileId} 
-              isFirstBlock={index === 0} // Always generate image for first block
-              curioId={currentCurio.id}
-            />
-            
-            {memoizedReplies[block.id] && memoizedReplies[block.id].length > 0 && (
-              <div className="pl-3 sm:pl-4 border-l-2 border-white/20 ml-3 sm:ml-4">
-                {memoizedReplies[block.id].map(reply => (
-                  <div 
-                    key={reply.id}
-                    className={`mb-3 ${reply.from_user ? 'ml-auto' : ''}`}
+              {currentCurio.title}
+            </motion.h1>
+
+            {/* Curio content blocks */}
+            <div className="space-y-6 sm:space-y-8">
+              {/* Show loading state when no blocks and generating */}
+              {visibleBlocks.length === 0 && isGenerating && (
+                <div className="flex flex-col items-center justify-center">
+                  <CurioLoading />
+                </div>
+              )}
+
+              {/* Render visible blocks */}
+              <AnimatePresence initial={false}>
+                {visibleBlocks.map((block, index) => (
+                  <motion.div
+                    key={block.id}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{
+                      duration: 0.5,
+                      delay: 0.2 + (index * 0.1),
+                      ease: [0.23, 1, 0.32, 1]
+                    }}
+                    className="block-container overflow-visible"
                   >
-                    <div className={`
-                      p-3
-                      rounded-lg
-                      max-w-[85%]
-                      ${reply.from_user 
-                        ? 'bg-wonderwhiz-bright-pink/30 ml-auto' 
-                        : 'bg-wonderwhiz-deep-purple/40'
-                      }
-                    `}>
-                      <p className="text-white text-sm font-inter">{reply.content}</p>
-                      <div className="text-xs text-white/50 mt-1">
-                        {new Date(reply.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </div>
-                    </div>
-                  </div>
+                    <ContentBlock
+                      block={block}
+                      onToggleLike={() => onToggleLike(block.id)}
+                      onToggleBookmark={() => onToggleBookmark(block.id)}
+                      onReply={(message) => onReply(block.id, message)}
+                      onSetQuery={onSetQuery}
+                      onRabbitHoleFollow={onRabbitHoleFollow}
+                      onQuizCorrect={() => onQuizCorrect(block.id)}
+                      onNewsRead={() => onNewsRead(block.id)}
+                      onCreativeUpload={() => onCreativeUpload(block.id)}
+                      profileId={profileId}
+                      replies={blockReplies[block.id] || []}
+                      isFirstBlock={index === 0}
+                    />
+                  </motion.div>
                 ))}
-              </div>
-            )}
-          </motion.div>
-        ))}
-        
-        {/* Invisible loading sentinel for infinite scroll - positioned earlier for preloading */}
-        {hasMoreBlocks && <div ref={observerTarget} className="h-20 w-full" />}
-        
-        {/* Loading indicator shown when fetching more blocks */}
-        {loadingBlocks && hasMoreBlocks && (
-          <div className="h-10 flex items-center justify-center text-white/50 text-sm">
-            <div className="animate-pulse flex items-center space-x-2">
-              <motion.div 
-                className="w-3 h-3 bg-wonderwhiz-bright-pink/60 rounded-full"
-                animate={{ y: [0, -5, 0] }}
-                transition={{ duration: 1, repeat: Infinity }}
-              />
-              <motion.div 
-                className="w-3 h-3 bg-wonderwhiz-cyan/60 rounded-full"
-                animate={{ y: [0, -5, 0] }}
-                transition={{ duration: 1, repeat: Infinity, delay: 0.2 }}
-              />
-              <motion.div 
-                className="w-3 h-3 bg-wonderwhiz-vibrant-yellow/60 rounded-full" 
-                animate={{ y: [0, -5, 0] }}
-                transition={{ duration: 1, repeat: Infinity, delay: 0.4 }}
-              />
-              <span className="ml-2">Loading more content...</span>
+              </AnimatePresence>
+
+              {/* Show "still generating" message */}
+              {visibleBlocks.length > 0 && isGenerating && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex flex-col items-center justify-center mt-8 space-y-3"
+                >
+                  <div className="bg-wonderwhiz-gold/20 px-4 py-2 rounded-full flex items-center">
+                    <div className="animate-spin mr-2 h-4 w-4 border-2 border-wonderwhiz-gold border-t-transparent rounded-full" />
+                    <span className="text-wonderwhiz-gold text-sm">Still creating magic for you...</span>
+                  </div>
+                  <p className="text-white/70 text-sm text-center">
+                    Our specialists are working on more amazing content!
+                  </p>
+                </motion.div>
+              )}
+
+              {/* Load more button - Only show when not initially loading and there are more blocks */}
+              {!isGenerating && hasMoreBlocks && visibleBlocks.length > 0 && (
+                <CurioLoadMore 
+                  onLoadMore={onLoadMore} 
+                  loading={loadingBlocks} 
+                />
+              )}
+              
+              {/* End of curio indicator */}
+              {!isGenerating && !hasMoreBlocks && visibleBlocks.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="flex flex-col items-center py-8"
+                >
+                  <div className="w-12 h-12 rounded-full bg-wonderwhiz-deep-purple/80 flex items-center justify-center mb-3 shadow-glow-brand-gold">
+                    <Sparkles className="h-6 w-6 text-wonderwhiz-gold" />
+                  </div>
+                  <h3 className="text-white text-lg font-medium">You've reached the end!</h3>
+                  <p className="text-white/70 text-sm mt-1">
+                    Ask another question to keep exploring
+                  </p>
+                </motion.div>
+              )}
             </div>
           </div>
-        )}
-      </div>
-      
-      <div ref={feedEndRef} />
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 };

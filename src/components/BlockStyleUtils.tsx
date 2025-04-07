@@ -55,3 +55,31 @@ export const getTextSize = (type: string): string => {
 export const getContextualImageStyle = (): string => {
   return 'rounded-xl overflow-hidden w-full aspect-[16/9] h-auto sm:h-48 md:h-56 object-cover mb-4 bg-wonderwhiz-deep-purple/40 backdrop-blur-sm shadow-glow-brand-cyan transition-all duration-300 hover:shadow-glow-brand-pink';
 };
+
+// New utility functions for the personalized dashboard
+export const getSpecialistColor = (specialistId: string): string => {
+  switch (specialistId) {
+    case 'nova':
+      return 'from-wonderwhiz-blue-accent/30 to-wonderwhiz-deep-purple/40';
+    case 'spark':
+      return 'from-wonderwhiz-bright-pink/30 to-wonderwhiz-orange/20';
+    case 'prism':
+      return 'from-wonderwhiz-vibrant-yellow/30 to-wonderwhiz-bright-pink/20';
+    case 'pixel':
+      return 'from-wonderwhiz-cyan/30 to-wonderwhiz-blue-accent/20';
+    case 'atlas':
+      return 'from-wonderwhiz-green/30 to-wonderwhiz-cyan/20';
+    case 'lotus':
+      return 'from-wonderwhiz-light-purple/30 to-wonderwhiz-blue-accent/20';
+    default:
+      return 'from-wonderwhiz-deep-purple/40 to-wonderwhiz-light-purple/50';
+  }
+};
+
+export const getCardHoverEffect = (): string => {
+  return 'transition-all duration-300 transform hover:translate-y-[-5px] hover:shadow-lg';
+};
+
+export const getAnimatedGradient = (): string => {
+  return 'bg-gradient-to-r from-wonderwhiz-bright-pink via-wonderwhiz-gold to-wonderwhiz-cyan bg-[length:200%_auto] animate-shimmer';
+};

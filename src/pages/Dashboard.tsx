@@ -66,7 +66,6 @@ const Dashboard = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const { streakDays } = useSparksSystem(profileId);
 
-  // OPTIMIZATION: Use the optimized useCurioData hook for faster loading
   const {
     blocks: contentBlocks,
     title: curioTitle,
@@ -87,7 +86,6 @@ const Dashboard = () => {
     isFirstLoad
   } = useCurioData(currentCurio?.id, profileId);
 
-  // OPTIMIZATION: Preload child profile and curios in parallel
   useEffect(() => {
     const loadProfileAndCurios = async () => {
       if (!profileId) {
@@ -98,7 +96,6 @@ const Dashboard = () => {
       try {
         setIsLoading(true);
         
-        // Load profile and curios in parallel
         const [profileResponse, curiosResponse] = await Promise.all([
           supabase
             .from('child_profiles')
@@ -172,13 +169,11 @@ const Dashboard = () => {
     }
   };
 
-  // OPTIMIZATION: Optimize submission by splitting concerns
   const handleSubmitQuery = async () => {
     if (!query.trim() || isGenerating || !childProfile) return;
     setIsGenerating(true);
     
     try {
-      // OPTIMIZATION: First, create the curio record immediately
       const { data: newCurio, error: curioError } = await supabase
         .from('curios')
         .insert({
@@ -191,12 +186,10 @@ const Dashboard = () => {
         
       if (curioError) throw curioError;
 
-      // Set the current curio immediately so UI updates
       setPastCurios(prev => [newCurio, ...prev]);
       setCurrentCurio(newCurio);
       setQuery('');
       
-      // Award sparks for starting a new curio (non-blocking)
       setTimeout(async () => {
         try {
           await supabase.functions.invoke('increment-sparks-balance', {
@@ -206,7 +199,6 @@ const Dashboard = () => {
             })
           });
   
-          // Update the local state with new sparks balance
           if (childProfile) {
             setChildProfile({
               ...childProfile,
@@ -214,7 +206,6 @@ const Dashboard = () => {
             });
           }
   
-          // Add the transaction record
           await supabase.from('sparks_transactions').insert({
             child_id: profileId,
             amount: 1,
@@ -230,8 +221,6 @@ const Dashboard = () => {
         }
       }, 100);
       
-      // Rest of content generation is handled through useCurioData
-      
     } catch (error) {
       console.error('Error creating curio:', error);
       toast.error("Oops! Something went wrong with your question.");
@@ -239,16 +228,13 @@ const Dashboard = () => {
     }
   };
 
-  // OPTIMIZATION: Simplified curio loading that uses useCurioData
   const handleLoadCurio = (curio: Curio) => {
     setCurrentCurio(curio);
-    // The useCurioData hook will load the blocks when the currentCurio ID changes
   };
 
   const handleFollowRabbitHole = async (question: string) => {
     setQuery(question);
     
-    // OPTIMIZATION: Start spark award in parallel
     Promise.resolve().then(async () => {
       try {
         await supabase.functions.invoke('increment-sparks-balance', {
@@ -451,7 +437,6 @@ const Dashboard = () => {
     }
   };
 
-  // OPTIMIZATION: Reuse the same handleSubmitQuery function for suggestions
   const handleCurioSuggestionClick = async (suggestion: string) => {
     setQuery(suggestion);
     setTimeout(() => {
@@ -475,7 +460,6 @@ const Dashboard = () => {
           <meta name="description" content="Explore topics, ask questions, and learn in a fun, interactive way with WonderWhiz." />
         </Helmet>
         
-        {/* Dashboard sidebar component */}
         <DashboardSidebar 
           childId={profileId || ''} 
           sparksBalance={childProfile?.sparks_balance || 0}
@@ -485,12 +469,10 @@ const Dashboard = () => {
         />
         
         <main className="flex-1 flex flex-col min-h-screen relative">
-          {/* Dashboard header component */}
           <DashboardHeader childName={childProfile?.name || 'Explorer'} profileId={profileId} />
           
           <div className="flex-1 overflow-y-auto py-4 px-3 sm:px-4 md:px-6">
             <div className="max-w-6xl mx-auto space-y-6">
-              {/* Search bar component */}
               <div className="relative">
                 <FloatingElements type="stars" density="low" className="absolute inset-0 pointer-events-none opacity-50" />
                 <SearchBar 
@@ -508,6 +490,9 @@ const Dashboard = () => {
                     isLoadingSuggestions={isLoadingSuggestions}
                     handleRefreshSuggestions={handleRefreshSuggestions}
                     handleCurioSuggestionClick={handleCurioSuggestionClick}
+                    childProfile={childProfile}
+                    pastCurios={pastCurios}
+                    childId={profileId || ''}
                   />
                 ) : (
                   <CurioContent
@@ -518,8 +503,8 @@ const Dashboard = () => {
                     loadingBlocks={loadingMoreBlocks}
                     visibleBlocksCount={totalBlocksLoaded}
                     profileId={profileId}
-                    onLoadMore={loadMoreBlocks} // New prop for infinite scrolling
-                    hasMoreBlocks={hasMoreBlocks} // New prop for infinite scrolling
+                    onLoadMore={loadMoreBlocks}
+                    hasMoreBlocks={hasMoreBlocks}
                     onToggleLike={handleToggleLike}
                     onToggleBookmark={handleToggleBookmark}
                     onReply={handleBlockReply}
@@ -532,7 +517,6 @@ const Dashboard = () => {
                 )}
               </Card>
               
-              {/* Discovery section with sparks and tasks */}
               {childProfile && (
                 <DiscoverySection 
                   childId={profileId || ''}
