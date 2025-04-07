@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
@@ -248,53 +249,71 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       setIsLoading(true);
       console.log('Ensuring block exists in database:', block.id);
 
-      const {
-        data: ensureBlockData,
-        error: ensureBlockError
-      } = await supabase.functions.invoke('ensure-block-exists', {
-        body: {
-          block: {
-            id: block.id,
-            curio_id: block.curio_id || null,
-            type: block.type,
-            specialist_id: block.specialist_id,
-            content: block.content,
-            liked: block.liked,
-            bookmarked: block.bookmarked,
-            child_profile_id: childProfileId
+      // Skip the ensure-block-exists call for temporary blocks
+      if (!block.id.startsWith('generating-') && !block.id.startsWith('error-')) {
+        try {
+          const {
+            data: ensureBlockData,
+            error: ensureBlockError
+          } = await supabase.functions.invoke('ensure-block-exists', {
+            body: {
+              block: {
+                id: block.id,
+                curio_id: block.curio_id || null,
+                type: block.type,
+                specialist_id: block.specialist_id,
+                content: block.content,
+                liked: block.liked,
+                bookmarked: block.bookmarked,
+                child_profile_id: childProfileId
+              }
+            }
+          });
+          
+          if (ensureBlockError) {
+            console.error('Error ensuring block exists:', ensureBlockError);
+            // Continue with the reply even if block ensure fails
+          } else {
+            console.log('Block ensured in database:', ensureBlockData);
           }
+        } catch (ensureError) {
+          console.error('Exception ensuring block exists:', ensureError);
+          // Continue with the reply even if block ensure fails
         }
-      });
-      
-      if (ensureBlockError) {
-        throw new Error(`Failed to save block: ${ensureBlockError}`);
-      }
-      
-      console.log('Block ensured in database:', ensureBlockData);
-
-      const {
-        data: replyData,
-        error: replyError
-      } = await supabase.functions.invoke('handle-block-replies', {
-        body: {
-          block_id: block.id,
-          content: replyText,
-          from_user: true,
-          user_id: userId,
-          child_profile_id: childProfileId
-        }
-      });
-      
-      if (replyError) {
-        throw new Error(`Reply error: ${replyError}`);
       }
 
-      await handleSpecialistReply(block.id, replyText);
-
-      onReply(block.id, replyText);
+      // Directly add the reply to supabase without the extra ensure-block step
+      try {
+        const {
+          data: replyData,
+          error: replyError
+        } = await supabase
+          .from('block_replies')
+          .insert({
+            block_id: block.id,
+            content: replyText,
+            from_user: true
+          })
+          .select();
+          
+        if (replyError) {
+          throw new Error(`Reply error: ${replyError.message}`);
+        }
+        
+        console.log('Reply added successfully:', replyData);
+        
+        // Now get the specialist reply
+        await handleSpecialistReply(block.id, replyText);
+        
+        onReply(block.id, replyText);
+      } catch (replyError) {
+        console.error('Error adding reply directly:', replyError);
+        throw replyError;
+      }
     } catch (error) {
       console.error('Error handling reply:', error);
 
+      // Remove the temporary reply if there was an error
       setReplies(prev => prev.filter(r => r.id !== tempId));
       
       toast.error("There was an error sending your message. Please try again.");

@@ -2,46 +2,56 @@
 export const getBackgroundColor = (colorVariant: number): string => {
   switch (colorVariant) {
     case 0:
-      return 'bg-gradient-to-br from-[#3D2A7D]/20 to-[#2A1B5D]/30';  // Primary purple
+      return 'bg-gradient-to-br from-wonderwhiz-deep-purple/30 to-wonderwhiz-light-purple/40';  // Primary purples
     case 1:
-      return 'bg-gradient-to-br from-[#FF5BA3]/10 to-[#FF5BA3]/5';   // Pink
+      return 'bg-gradient-to-br from-wonderwhiz-bright-pink/20 to-wonderwhiz-blue-accent/10';   // Pink to blue
     case 2:
-      return 'bg-gradient-to-br from-[#00E2FF]/10 to-[#00E2FF]/5';   // Cyan/Teal
+      return 'bg-gradient-to-br from-wonderwhiz-cyan/20 to-wonderwhiz-green/10';   // Cyan to green
+    case 3:
+      return 'bg-gradient-to-br from-wonderwhiz-blue-accent/20 to-wonderwhiz-deep-purple/30';  // Blue to purple
+    case 4:
+      return 'bg-gradient-to-br from-wonderwhiz-vibrant-yellow/20 to-wonderwhiz-orange/10';  // Yellow to orange
     default:
-      return 'bg-gradient-to-br from-[#3D2A7D]/20 to-[#2A1B5D]/30';
+      return 'bg-gradient-to-br from-wonderwhiz-deep-purple/30 to-wonderwhiz-light-purple/40';
   }
 };
 
 export const getBorderColor = (colorVariant: number): string => {
   switch (colorVariant) {
     case 0:
-      return 'border-[#3D2A7D]/30';
+      return 'border-wonderwhiz-light-purple/40';
     case 1:
-      return 'border-[#FF5BA3]/20';
+      return 'border-wonderwhiz-bright-pink/30';
     case 2:
-      return 'border-[#00E2FF]/20';
+      return 'border-wonderwhiz-cyan/30';
+    case 3:
+      return 'border-wonderwhiz-blue-accent/30';
+    case 4:
+      return 'border-wonderwhiz-vibrant-yellow/30';
     default:
-      return 'border-[#3D2A7D]/30';
+      return 'border-wonderwhiz-light-purple/40';
   }
 };
 
 export const getTextColor = (): string => {
-  return 'text-white/90';  // Slightly less intense white for better readability
+  return 'text-white/95';  // Bright text for better readability
 };
 
 export const getTextSize = (type: string): string => {
   switch (type) {
     case 'fact':
-      return 'text-sm sm:text-base';  // Slightly larger for facts
+      return 'text-sm sm:text-base font-inter';  // Facts with Inter font
     case 'quiz':
-      return 'text-base sm:text-lg';  // Even larger for quizzes
+      return 'text-base sm:text-lg font-nunito';  // Quizzes with Nunito font
     case 'creative':
-      return 'text-sm sm:text-base';  // Consistent with facts
+      return 'text-sm sm:text-base font-inter';  // Creative with Inter font
+    case 'news':
+      return 'text-sm sm:text-base font-inter';  // News with Inter font
     default:
-      return 'text-sm sm:text-base';
+      return 'text-sm sm:text-base font-inter';
   }
 };
 
 export const getContextualImageStyle = (): string => {
-  return 'rounded-xl overflow-hidden w-full h-40 sm:h-48 md:h-56 object-cover mb-4 bg-[#2A1B5D]/40 backdrop-blur-sm';
+  return 'rounded-xl overflow-hidden w-full h-40 sm:h-48 md:h-56 object-cover mb-4 bg-wonderwhiz-deep-purple/40 backdrop-blur-sm shadow-glow-brand-cyan';
 };

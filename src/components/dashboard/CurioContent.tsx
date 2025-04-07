@@ -125,6 +125,29 @@ const CurioContent: React.FC<CurioContentProps> = ({
 
   if (!currentCurio) return null;
 
+  // Calculate a unique but consistent color variant for each block based on index and block type
+  const getColorVariant = (index: number, blockType: string) => {
+    const typeMultiplier = {
+      'fact': 0,
+      'quiz': 1,
+      'flashcard': 2,
+      'creative': 3,
+      'task': 4,
+      'riddle': 0,
+      'funFact': 1,
+      'activity': 2,
+      'news': 3,
+      'mindfulness': 4
+    };
+    
+    // Get multiplier based on block type or default to 0
+    const multiplier = (blockType in typeMultiplier) ? typeMultiplier[blockType as keyof typeof typeMultiplier] : 0;
+    
+    // Create a more varied pattern using both index and block type
+    // This gives us 5 different color variants (0-4)
+    return (index + multiplier) % 5;
+  };
+
   return (
     <div className="relative">
       <AnimatePresence>
@@ -134,19 +157,19 @@ const CurioContent: React.FC<CurioContentProps> = ({
             animate={{ opacity: 1 }} 
             exit={{ opacity: 0 }} 
             transition={{ duration: 0.2 }}
-            className="p-3 mb-4 bg-wonderwhiz-purple/20 backdrop-blur-sm rounded-lg border border-wonderwhiz-purple/30 flex items-center"
+            className="p-3 mb-4 bg-wonderwhiz-light-purple/20 backdrop-blur-sm rounded-lg border border-wonderwhiz-bright-pink/30 flex items-center"
           >
             <div className="mr-2">
               <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
             </div>
-            <p className="text-white text-sm">
+            <p className="text-white text-sm font-inter">
               {isGenerating ? "Generating your personalized content..." : "Loading more content..."}
             </p>
           </motion.div>
         )}
       </AnimatePresence>
       
-      <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 px-3 sm:px-4 pt-4">{currentCurio.title}</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 px-3 sm:px-4 pt-4 font-nunito">{currentCurio.title}</h2>
       <div className="space-y-4 px-3 sm:px-4 pb-4">
         {renderedBlocks.map((block, index) => (
           <motion.div 
@@ -169,7 +192,7 @@ const CurioContent: React.FC<CurioContentProps> = ({
               onQuizCorrect={() => onQuizCorrect(block.id)} 
               onNewsRead={() => onNewsRead(block.id)} 
               onCreativeUpload={() => onCreativeUpload(block.id)} 
-              colorVariant={index % 3} 
+              colorVariant={getColorVariant(index, block.type)} 
               userId={profileId} 
               childProfileId={profileId} 
               isFirstBlock={index === 0} // Always generate image for first block
@@ -187,11 +210,11 @@ const CurioContent: React.FC<CurioContentProps> = ({
                       rounded-lg
                       max-w-[85%]
                       ${reply.from_user 
-                        ? 'bg-wonderwhiz-purple/30 ml-auto' 
-                        : 'bg-white/10'
+                        ? 'bg-wonderwhiz-bright-pink/30 ml-auto' 
+                        : 'bg-wonderwhiz-deep-purple/40'
                       }
                     `}>
-                      <p className="text-white text-sm">{reply.content}</p>
+                      <p className="text-white text-sm font-inter">{reply.content}</p>
                       <div className="text-xs text-white/50 mt-1">
                         {new Date(reply.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
@@ -210,7 +233,7 @@ const CurioContent: React.FC<CurioContentProps> = ({
         {loadingBlocks && hasMoreBlocks && (
           <div className="h-10 flex items-center justify-center text-white/50 text-sm">
             <div className="animate-pulse flex items-center">
-              <div className="w-3 h-3 bg-wonderwhiz-purple/60 rounded-full mr-2 animate-bounce" />
+              <div className="w-3 h-3 bg-wonderwhiz-bright-pink/60 rounded-full mr-2 animate-bounce" />
               Loading more content...
             </div>
           </div>
