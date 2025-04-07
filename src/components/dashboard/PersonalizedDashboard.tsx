@@ -15,6 +15,8 @@ import { Button } from '@/components/ui/button';
 import MagicalBorder from '@/components/MagicalBorder';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { getBackgroundColor } from '@/components/BlockStyleUtils';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 interface PersonalizedDashboardProps {
   childId: string;
@@ -37,9 +39,9 @@ const PersonalizedDashboard: React.FC<PersonalizedDashboardProps> = ({
 }) => {
   const [recentInterests, setRecentInterests] = useState<string[]>([]);
   const [popularTopics, setPopularTopics] = useState<{topic: string, count: number}[]>([]);
-  const [achievements, setAchievements] = useState<{title: string, description: string, icon: string}[]>([]);
+  const [achievements, setAchievements<{title: string, description: string, icon: string}[]>([]);
   const [userStreakDays, setUserStreakDays] = useState(childProfile?.streak_days || 0);
-  const [timeOfDay, setTimeOfDay] = useState<'morning' | 'afternoon' | 'evening'>('morning');
+  const [timeOfDay, setTimeOfDay<'morning' | 'afternoon' | 'evening'>('morning');
   const [welcomeMessage, setWelcomeMessage] = useState('');
   const isMobile = useIsMobile();
 
@@ -169,6 +171,46 @@ const PersonalizedDashboard: React.FC<PersonalizedDashboardProps> = ({
       'bg-wonderwhiz-vibrant-yellow/30',
     ];
     return colors[index % colors.length];
+  };
+
+  const navigate = useNavigate();
+  
+  const handleDailyChallengeClick = async (question: string) => {
+    try {
+      toast.loading("Creating new exploration...", {
+        id: "create-challenge",
+        duration: 3000
+      });
+      
+      // Create a new curio based on the daily challenge
+      const { data: newCurio, error } = await supabase
+        .from('curios')
+        .insert({
+          child_id: childId,
+          title: question,
+          query: question,
+        })
+        .select('id')
+        .single();
+        
+      if (error) throw error;
+      
+      if (newCurio) {
+        toast.success("New exploration created!", {
+          id: "create-challenge"
+        });
+        
+        // Navigate to the new curio
+        navigate(`/curio/${childId}/${newCurio.id}`);
+      }
+    } catch (error) {
+      console.error('Error creating daily challenge curio:', error);
+      toast.error("Could not create new exploration", {
+        id: "create-challenge"
+      });
+      // Fallback to original behavior
+      onCurioSuggestionClick(question);
+    }
   };
   
   return (
@@ -373,24 +415,13 @@ const PersonalizedDashboard: React.FC<PersonalizedDashboardProps> = ({
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ duration: 0.3, delay: 0.1 * index }}
                   >
-                    <MagicalBorder active={index === 0} type={index === 0 ? 'rainbow' : 'purple'}>
-                      <div 
-                        className={`flip-card h-28 sm:h-32 rounded-xl overflow-hidden ${getBackgroundColor(index)}`}
-                        onClick={() => onCurioSuggestionClick(suggestion)}
-                      >
-                        <div className="flip-card-inner">
-                          <div className="flip-card-front p-4 flex items-center justify-center">
-                            <p className="text-white text-center font-medium text-base sm:text-lg font-nunito">
-                              {suggestion}
-                            </p>
-                          </div>
-                          <div className="flip-card-back p-4 flex flex-col items-center justify-center">
-                            <Star className="h-5 w-5 text-wonderwhiz-gold mb-2" />
-                            <p className="text-white text-center text-sm">Tap to explore!</p>
-                          </div>
-                        </div>
-                      </div>
-                    </MagicalBorder>
+                    <CurioSuggestion 
+                      suggestion={suggestion}
+                      onClick={onCurioSuggestionClick}
+                      index={index}
+                      directGenerate={true}
+                      profileId={childId}
+                    />
                   </motion.div>
                 ))
               )}
@@ -423,7 +454,7 @@ const PersonalizedDashboard: React.FC<PersonalizedDashboardProps> = ({
             
             <Button 
               className="bg-wonderwhiz-vibrant-yellow hover:bg-wonderwhiz-vibrant-yellow/90 text-wonderwhiz-deep-purple font-medium" 
-              onClick={() => onCurioSuggestionClick("Why can birds fly but humans can't?")}
+              onClick={() => handleDailyChallengeClick("Why can birds fly but humans can't?")}
             >
               Start Exploring
             </Button>

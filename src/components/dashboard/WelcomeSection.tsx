@@ -89,6 +89,7 @@ const WelcomeSection: React.FC<WelcomeSectionProps> = ({
                 onClick={handleCurioSuggestionClick} 
                 index={index} 
                 directGenerate={true} 
+                profileId={childId}
               />
             ))}
           </div>
