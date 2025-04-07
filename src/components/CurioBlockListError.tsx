@@ -1,24 +1,41 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const CurioBlockListError = () => {
   return (
     <motion.div 
-      className="text-center py-8 text-white/70"
+      className="text-center py-10 px-4 text-white/70 max-w-md mx-auto"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="flex justify-center mb-3">
-        <div className="bg-red-500/20 p-2 rounded-full">
-          <AlertTriangle className="w-5 h-5 text-red-500" />
-        </div>
+      <div className="flex justify-center mb-4">
+        <motion.div 
+          className="bg-red-500/20 p-4 rounded-full"
+          animate={{ 
+            boxShadow: ['0 0 0 0 rgba(239, 68, 68, 0.2)', '0 0 0 10px rgba(239, 68, 68, 0)'],
+          }}
+          transition={{ duration: 2, repeat: Infinity }}
+        >
+          <AlertTriangle className="w-8 h-8 text-red-500" />
+        </motion.div>
       </div>
-      <p className="text-sm font-inter">
-        Something went wrong while loading your content. Please try again!
+      <h3 className="text-xl font-bold text-white mb-2">Oops, something went wrong</h3>
+      <p className="text-sm font-inter mb-4">
+        Don't worry! Even the greatest explorers face challenges. Let's try again on our adventure!
       </p>
+      <div className="flex justify-center">
+        <Button 
+          variant="outline" 
+          className="border-wonderwhiz-cyan text-wonderwhiz-cyan hover:bg-wonderwhiz-cyan/10 group"
+        >
+          <RefreshCw className="w-4 h-4 mr-2 group-hover:animate-spin" />
+          <span>Try Again</span>
+        </Button>
+      </div>
     </motion.div>
   );
 };

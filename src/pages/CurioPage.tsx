@@ -23,6 +23,8 @@ import CurioBlockListSearchLoading from '@/components/CurioBlockListSearchLoadin
 import CurioBlockListSearchNoMore from '@/components/CurioBlockListSearchNoMore';
 import CurioBlockListWelcome from '@/components/CurioBlockListWelcome';
 import { useBlockInteractions } from '@/hooks/useBlockInteractions';
+import { Search, ArrowLeft, Sparkles } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const CurioPage: React.FC = () => {
   const { childId, curioId } = useParams<{ childId: string, curioId: string }>();
@@ -45,12 +47,29 @@ const CurioPage: React.FC = () => {
   } = useBlockInteractions(childId);
 
   const [animateBlocks, setAnimateBlocks] = useState(true);
+  const [curioTitle, setCurioTitle] = useState<string | null>(null);
 
   useEffect(() => {
     if (user && !childId) {
       navigate('/profiles');
     }
   }, [user, childId, navigate]);
+
+  useEffect(() => {
+    // Fetch curio title
+    if (curioId) {
+      supabase
+        .from('curios')
+        .select('title')
+        .eq('id', curioId)
+        .single()
+        .then(({ data, error }) => {
+          if (data && !error) {
+            setCurioTitle(data.title);
+          }
+        });
+    }
+  }, [curioId]);
 
   useEffect(() => {
     if (blocks.length > 0) {
@@ -130,6 +149,30 @@ const CurioPage: React.FC = () => {
       if (newCurio) {
         toast.success("New exploration created!");
         
+        // Add a spark reward for following curiosity
+        try {
+          await supabase.functions.invoke('increment-sparks-balance', {
+            body: JSON.stringify({
+              profileId: childId,
+              amount: 2
+            })
+          });
+          
+          await supabase.from('sparks_transactions').insert({
+            child_id: childId,
+            amount: 2,
+            reason: 'Following curiosity'
+          });
+          
+          toast.success('You earned 2 sparks for exploring your curiosity!', {
+            icon: '✨',
+            position: 'bottom-right',
+            duration: 3000
+          });
+        } catch (err) {
+          console.error('Error awarding sparks:', err);
+        }
+        
         // Navigate to the new curio
         navigate(`/curio/${childId}/${newCurio.id}`);
       }
@@ -138,32 +181,72 @@ const CurioPage: React.FC = () => {
       toast.error("Could not create new exploration. Please try again later.");
     }
   };
+  
+  const handleBackToDashboard = () => {
+    navigate(`/dashboard/${childId}`);
+  };
 
   return (
     <div className="flex flex-col h-full">
-      {/* Search Bar */}
-      <div className="p-4 sm:p-6 bg-wonderwhiz-deep-purple/40 border-b border-white/5">
+      {/* Header with title */}
+      <motion.div 
+        className="py-4 sm:py-6 px-4 sm:px-6 bg-wonderwhiz-deep-purple/60 border-b border-white/5"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
         <div className="max-w-3xl mx-auto">
-          <form onSubmit={handleSearch} className="flex items-center">
-            <Input
-              type="text"
-              placeholder="What do you want to explore?"
-              className="flex-grow rounded-full bg-white/10 border-white/20 text-white placeholder:text-white/60 font-inter"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <Button type="submit" className="ml-3 bg-wonderwhiz-vibrant-yellow hover:bg-wonderwhiz-vibrant-yellow/90 text-wonderwhiz-deep-purple font-medium rounded-full">
-              Search
-            </Button>
-          </form>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleBackToDashboard}
+                className="mb-2 text-white/70 hover:text-white -ml-2"
+              >
+                <ArrowLeft className="w-4 h-4 mr-1" />
+                <span>Back to Dashboard</span>
+              </Button>
+              
+              {curioTitle && (
+                <h1 className="text-xl sm:text-2xl font-bold text-white leading-tight">
+                  {curioTitle}
+                </h1>
+              )}
+            </div>
+            
+            <div className="flex items-center bg-white/10 rounded-full px-3 py-1.5 text-xs text-wonderwhiz-gold">
+              <Sparkles className="w-3 h-3 mr-1" />
+              <span>Use the search to find specific content</span>
+            </div>
+          </div>
+          
+          {/* Search Bar */}
+          <div className="mt-4">
+            <form onSubmit={handleSearch} className="flex items-center gap-2">
+              <div className="relative flex-grow">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
+                <Input
+                  type="text"
+                  placeholder="Search within this exploration..."
+                  className="pl-9 rounded-full bg-white/10 border-white/20 text-white placeholder:text-white/40 font-inter"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <Button type="submit" className="bg-wonderwhiz-vibrant-yellow hover:bg-wonderwhiz-vibrant-yellow/90 text-wonderwhiz-deep-purple font-medium rounded-full">
+                Search
+              </Button>
+            </form>
+          </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Content Area */}
       <div className="flex-grow overflow-y-auto relative">
         <div className="max-w-3xl mx-auto py-6 sm:py-8 px-2 sm:px-0">
           {/* Welcome Message */}
-          {isFirstLoad && !searchQuery && (
+          {isFirstLoad && !searchQuery && !isLoadingBlocks && blocks.length === 0 && (
             <CurioBlockListWelcome childProfile={childProfile} />
           )}
 
@@ -189,7 +272,7 @@ const CurioPage: React.FC = () => {
             <CurioBlockListError />
           )}
 
-          {!searchQuery && blocks.length === 0 && !isLoadingBlocks && !blocksError && (
+          {!searchQuery && blocks.length === 0 && !isLoadingBlocks && !blocksError && !isFirstLoad && (
             <CurioBlockListEmpty />
           )}
 
@@ -217,15 +300,15 @@ const CurioPage: React.FC = () => {
           )}
 
           {/* Load More */}
-          {searchQuery && !hasMore && (
+          {blocks.length > 0 && searchQuery && !hasMore && blocks.length > 0 && (
             <CurioBlockListSearchNoMore />
           )}
 
-          {!searchQuery && !hasMore && (
+          {blocks.length > 0 && !searchQuery && !hasMore && blocks.length > 0 && (
             <CurioBlockListNoMore />
           )}
 
-          {hasMore && (
+          {hasMore && blocks.length > 0 && (
             <CurioBlockListLoadMore loadTriggerRef={loadTriggerRef} loadingMore={loadingMore} />
           )}
         </div>

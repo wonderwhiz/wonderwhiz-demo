@@ -1,23 +1,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Sparkles, 
-  TrendingUp, 
-  Lightbulb, 
-  BookOpen, 
-  Rocket, 
-  Brain,
-  Star
-} from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import CurioSuggestion from '@/components/CurioSuggestion';
 import { Button } from '@/components/ui/button';
-import MagicalBorder from '@/components/MagicalBorder';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { getBackgroundColor } from '@/components/BlockStyleUtils';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
+import { RefreshCw, Star, BookOpen, Lightbulb, Rocket, Calendar } from 'lucide-react';
+import CurioSuggestion from '@/components/CurioSuggestion';
+import { format } from 'date-fns';
+import ChildTaskList from '@/components/ChildTaskList';
+import DailyChallenge from './DailyChallenge';
+import { Card, CardContent } from '@/components/ui/card';
+import StreakDisplay from '@/components/StreakDisplay';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PersonalizedDashboardProps {
   childId: string;
@@ -38,430 +30,229 @@ const PersonalizedDashboard: React.FC<PersonalizedDashboardProps> = ({
   handleRefreshSuggestions,
   pastCurios
 }) => {
-  const [recentInterests, setRecentInterests] = useState<string[]>([]);
-  const [popularTopics, setPopularTopics] = useState<{topic: string, count: number}[]>([]);
-  const [achievements, setAchievements] = useState<{title: string, description: string, icon: string}[]>([]);
-  const [userStreakDays, setUserStreakDays] = useState(childProfile?.streak_days || 0);
-  const [timeOfDay, setTimeOfDay] = useState<'morning' | 'afternoon' | 'evening'>('morning');
-  const [welcomeMessage, setWelcomeMessage] = useState('');
-  const isMobile = useIsMobile();
-
-  // Initialize the time of day
-  useEffect(() => {
-    const now = new Date();
-    const hour = now.getHours();
-    
-    if (hour >= 5 && hour < 12) {
-      setTimeOfDay('morning');
-    } else if (hour >= 12 && hour < 18) {
-      setTimeOfDay('afternoon');
-    } else {
-      setTimeOfDay('evening');
-    }
-  }, []);
-
-  // Generate welcome message based on profile and time of day
-  useEffect(() => {
-    if (!childProfile) return;
-    
-    const name = childProfile.name;
-    const messages = {
-      morning: [
-        `Good morning, ${name}! Ready for a day of discovery?`,
-        `Rise and shine, ${name}! What shall we explore today?`,
-        `Hello ${name}! The morning is full of wonders to discover!`
-      ],
-      afternoon: [
-        `Good afternoon, ${name}! What are you curious about today?`,
-        `Hi ${name}! The afternoon is perfect for exploration!`,
-        `Hello ${name}! What amazing things shall we learn this afternoon?`
-      ],
-      evening: [
-        `Good evening, ${name}! There's still time for one more adventure!`,
-        `Hi ${name}! The evening sky is full of wonders to explore!`,
-        `Hello ${name}! Ready for some evening curiosity?`
-      ]
-    };
-    
-    const randomIndex = Math.floor(Math.random() * messages[timeOfDay].length);
-    setWelcomeMessage(messages[timeOfDay][randomIndex]);
-  }, [childProfile, timeOfDay]);
-
-  // Extract recent interests from past curios
-  useEffect(() => {
-    if (!pastCurios || pastCurios.length === 0) return;
-    
-    // Simple NLP-like approach to extract topics
-    const allWords = pastCurios
-      .map(curio => curio.query.toLowerCase())
-      .join(' ')
-      .split(/\s+/)
-      .filter(word => word.length > 3) // Filter out short words
-      .filter(word => !['what', 'when', 'where', 'which', 'who', 'why', 'how', 'does', 'did', 'will', 'could', 'should', 'would', 'about', 'with', 'from', 'have', 'this', 'that', 'there', 'their', 'they', 'were', 'because'].includes(word));
-    
-    // Count word frequencies
-    const wordCounts: Record<string, number> = {};
-    allWords.forEach(word => {
-      wordCounts[word] = (wordCounts[word] || 0) + 1;
-    });
-    
-    // Sort and get top topics
-    const sortedTopics = Object.entries(wordCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([topic, count]) => ({ topic, count }));
-    
-    setPopularTopics(sortedTopics);
-    
-    // Extract unique interests
-    const interests = Array.from(new Set(allWords.slice(0, 20)));
-    setRecentInterests(interests.slice(0, 5));
-  }, [pastCurios]);
-
-  // Generate achievements based on profile data
-  useEffect(() => {
-    if (!childProfile) return;
-    
-    const newAchievements = [];
-    
-    // Streak achievement
-    if (childProfile.streak_days >= 3) {
-      newAchievements.push({
-        title: 'Curiosity Streak',
-        description: `You've explored for ${childProfile.streak_days} days in a row!`,
-        icon: 'fire'
-      });
-    }
-    
-    // Sparks achievement
-    if (childProfile.sparks_balance >= 50) {
-      newAchievements.push({
-        title: 'Spark Collector',
-        description: `You've earned ${childProfile.sparks_balance} sparks!`,
-        icon: 'sparkles'
-      });
-    }
-    
-    // Questions achievement
-    if (pastCurios && pastCurios.length >= 5) {
-      newAchievements.push({
-        title: 'Question Master',
-        description: `You've asked ${pastCurios.length} questions!`,
-        icon: 'brain'
-      });
-    }
-    
-    setAchievements(newAchievements);
-  }, [childProfile, pastCurios]);
-
-  // Animated background items
-  const backgroundItems = [
-    { icon: '✨', delay: 0, x: '10%', y: '10%' },
-    { icon: '🌟', delay: 2, x: '80%', y: '15%' },
-    { icon: '💫', delay: 1, x: '60%', y: '70%' },
-    { icon: '⭐', delay: 3, x: '20%', y: '80%' },
-    { icon: '🔭', delay: 2.5, x: '85%', y: '60%' },
-  ];
-
-  const getColorForIndex = (index: number) => {
-    const colors = [
-      'bg-wonderwhiz-deep-purple/40',
-      'bg-wonderwhiz-bright-pink/30', 
-      'bg-wonderwhiz-cyan/30',
-      'bg-wonderwhiz-blue-accent/30',
-      'bg-wonderwhiz-vibrant-yellow/30',
-    ];
-    return colors[index % colors.length];
-  };
-
-  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('recommendations');
+  const [recentTopics, setRecentTopics] = useState<string[]>([]);
+  const [lastActiveDate, setLastActiveDate] = useState<string | null>(null);
   
-  const handleDailyChallengeClick = async (question: string) => {
-    try {
-      toast.loading("Creating new exploration...", {
-        id: "create-challenge",
-        duration: 3000
-      });
-      
-      // Create a new curio based on the daily challenge
-      const { data: newCurio, error } = await supabase
-        .from('curios')
-        .insert({
-          child_id: childId,
-          title: question,
-          query: question,
-        })
-        .select('id')
-        .single();
-        
-      if (error) throw error;
-      
-      if (newCurio) {
-        toast.success("New exploration created!", {
-          id: "create-challenge"
-        });
-        
-        // Navigate to the new curio
-        navigate(`/curio/${childId}/${newCurio.id}`);
-      }
-    } catch (error) {
-      console.error('Error creating daily challenge curio:', error);
-      toast.error("Could not create new exploration", {
-        id: "create-challenge"
-      });
-      // Fallback to original behavior
-      onCurioSuggestionClick(question);
+  useEffect(() => {
+    // Extract recent topics from past curios
+    if (pastCurios && pastCurios.length > 0) {
+      const topics = pastCurios
+        .slice(0, 3)
+        .map(curio => curio.title);
+      setRecentTopics(topics);
     }
+    
+    // Format the last active date
+    if (childProfile?.last_active) {
+      try {
+        const date = new Date(childProfile.last_active);
+        setLastActiveDate(format(date, 'MMMM do'));
+      } catch (error) {
+        console.error('Error formatting date:', error);
+      }
+    }
+  }, [pastCurios, childProfile]);
+  
+  const getTimeBasedGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  };
+  
+  const getInterestBasedMessage = () => {
+    if (!childProfile?.interests || childProfile.interests.length === 0) {
+      return "What would you like to explore today?";
+    }
+    
+    const randomInterest = childProfile.interests[Math.floor(Math.random() * childProfile.interests.length)];
+    return `Ready to discover more about ${randomInterest.toLowerCase()} today?`;
   };
   
   return (
-    <div className="py-6 sm:py-8 px-4 sm:px-6 relative overflow-hidden">
-      {/* Animated background elements */}
-      {backgroundItems.map((item, index) => (
+    <div className="px-4">
+      <div className="max-w-5xl mx-auto">
+        {/* Header greeting */}
         <motion.div
-          key={index}
-          className="absolute text-2xl sm:text-4xl pointer-events-none"
-          initial={{ opacity: 0, scale: 0 }}
-          animate={{ 
-            opacity: [0.5, 0.8, 0.5], 
-            scale: [0.8, 1.2, 0.8],
-            x: [`calc(${item.x} - 20px)`, `calc(${item.x} + 20px)`, `calc(${item.x} - 20px)`],
-            y: [`calc(${item.y} - 20px)`, `calc(${item.y} + 20px)`, `calc(${item.y} - 20px)`]
-          }}
-          transition={{ 
-            repeat: Infinity, 
-            duration: 15, 
-            delay: item.delay,
-            ease: "easeInOut" 
-          }}
-          style={{ left: item.x, top: item.y }}
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-6 text-center md:text-left"
         >
-          {item.icon}
-        </motion.div>
-      ))}
-
-      {/* Main content */}
-      <motion.div 
-        className="max-w-4xl mx-auto relative"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-      >
-        {/* Personalized welcome section */}
-        <motion.div 
-          className="mb-12 text-center"
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.6 }}
-        >
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white font-nunito mb-4">
-            {welcomeMessage}
-          </h1>
-          
-          {childProfile?.streak_days > 0 && (
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-wonderwhiz-gold/20 rounded-full text-wonderwhiz-gold">
-              <TrendingUp className="h-4 w-4" />
-              <span className="font-medium">
-                {childProfile.streak_days} day{childProfile.streak_days !== 1 ? 's' : ''} streak!
-              </span>
-            </div>
-          )}
-        </motion.div>
-
-        {/* Personal insights section */}
-        {(pastCurios?.length > 0 || popularTopics.length > 0 || recentInterests.length > 0) && (
-          <motion.div 
-            className="mb-10"
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.2, duration: 0.6 }}
-          >
-            <h2 className="text-xl sm:text-2xl font-bold text-white font-nunito mb-4 flex items-center">
-              <Brain className="mr-2 h-5 w-5 text-wonderwhiz-bright-pink" />
-              Your Learning Journey
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Popular topics */}
-              {popularTopics.length > 0 && (
-                <motion.div 
-                  className="p-4 rounded-xl bg-white/5 border border-white/10"
-                  whileHover={{ scale: 1.02 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <h3 className="text-lg font-medium text-white mb-2">Your Top Interests</h3>
-                  <div className="space-y-2">
-                    {popularTopics.slice(0, 3).map((topic, index) => (
-                      <div key={index} className="flex justify-between items-center">
-                        <span className="text-white/80 text-sm capitalize">{topic.topic}</span>
-                        <div className="w-24 h-2 bg-white/10 rounded-full overflow-hidden">
-                          <motion.div 
-                            className={`h-full ${index === 0 ? 'bg-wonderwhiz-bright-pink' : index === 1 ? 'bg-wonderwhiz-cyan' : 'bg-wonderwhiz-vibrant-yellow'}`}
-                            initial={{ width: 0 }}
-                            animate={{ width: `${Math.min((topic.count / popularTopics[0].count) * 100, 100)}%` }}
-                            transition={{ duration: 1, delay: 0.5 + (index * 0.2) }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-              
-              {/* Recent achievements */}
-              {achievements.length > 0 && (
-                <motion.div 
-                  className="p-4 rounded-xl bg-white/5 border border-white/10"
-                  whileHover={{ scale: 1.02 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <h3 className="text-lg font-medium text-white mb-2">Recent Achievements</h3>
-                  <div className="space-y-2">
-                    {achievements.slice(0, 2).map((achievement, index) => (
-                      <div key={index} className="flex items-center bg-white/10 p-2 rounded-lg">
-                        <div className="bg-wonderwhiz-gold/20 p-2 rounded-full mr-3">
-                          {achievement.icon === 'sparkles' && <Sparkles className="h-4 w-4 text-wonderwhiz-gold" />}
-                          {achievement.icon === 'fire' && <TrendingUp className="h-4 w-4 text-wonderwhiz-gold" />}
-                          {achievement.icon === 'brain' && <Brain className="h-4 w-4 text-wonderwhiz-gold" />}
-                        </div>
-                        <div>
-                          <div className="text-white font-medium text-sm">{achievement.title}</div>
-                          <div className="text-white/70 text-xs">{achievement.description}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-              
-              {/* Recent curios */}
-              {pastCurios?.length > 0 && (
-                <motion.div 
-                  className="p-4 rounded-xl bg-white/5 border border-white/10"
-                  whileHover={{ scale: 1.02 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <h3 className="text-lg font-medium text-white mb-2">Recent Explorations</h3>
-                  <div className="space-y-2">
-                    {pastCurios.slice(0, 3).map((curio, index) => (
-                      <div key={index} className="bg-white/10 p-2 rounded-lg">
-                        <div className="flex items-center">
-                          <div className="bg-wonderwhiz-cyan/20 p-1.5 rounded-full mr-2.5">
-                            <Lightbulb className="h-3.5 w-3.5 text-wonderwhiz-cyan" />
-                          </div>
-                          <div className="text-white text-sm line-clamp-1">{curio.query}</div>
-                        </div>
-                        <div className="text-white/50 text-xs mt-1 pl-7">
-                          {new Date(curio.created_at).toLocaleDateString()}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
+          <div className="flex flex-col md:flex-row md:items-center justify-between">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1">
+                {getTimeBasedGreeting()}, {childProfile?.name || 'Explorer'}!
+              </h1>
+              <p className="text-white/70">
+                {getInterestBasedMessage()}
+              </p>
+              {lastActiveDate && (
+                <div className="mt-1 text-sm text-white/50 flex items-center">
+                  <Calendar className="w-3 h-3 mr-1" />
+                  <span>Last explored: {lastActiveDate}</span>
+                </div>
               )}
             </div>
-          </motion.div>
-        )}
-
-        {/* Personalized suggestions section */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.4, duration: 0.6 }}
-          className="mb-8"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl sm:text-2xl font-bold text-white font-nunito flex items-center">
-              <Rocket className="mr-2 h-5 w-5 text-wonderwhiz-cyan" />
-              Explore These Wonders
-            </h2>
-            
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="text-white hover:text-wonderwhiz-gold transition-colors" 
-              onClick={handleRefreshSuggestions} 
-              disabled={isLoadingSuggestions}
-            >
-              <motion.div 
-                animate={isLoadingSuggestions ? { rotate: 360 } : {}} 
-                transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-              >
-                <Lightbulb className="h-5 w-5 mr-2" />
-              </motion.div>
-              <span>New Ideas</span>
-            </Button>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            <AnimatePresence mode="wait">
-              {isLoadingSuggestions ? (
-                <motion.div 
-                  className="col-span-full flex justify-center py-10"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                >
-                  <div className="flex flex-col items-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-wonderwhiz-bright-pink mb-3"></div>
-                    <p className="text-white/80 text-sm font-nunito">Brewing magical ideas for you...</p>
-                  </div>
-                </motion.div>
-              ) : (
-                curioSuggestions.map((suggestion, index) => (
-                  <motion.div
-                    key={`${suggestion}-${index}`}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.3, delay: 0.1 * index }}
-                  >
-                    <CurioSuggestion 
-                      suggestion={suggestion}
-                      onClick={onCurioSuggestionClick}
-                      index={index}
-                      directGenerate={true}
-                      profileId={childId}
-                    />
-                  </motion.div>
-                ))
-              )}
-            </AnimatePresence>
+            <StreakDisplay
+              streakDays={childProfile?.streak_days || 0}
+              showBadgesOnly={false}
+              className="mt-4 md:mt-0"
+            />
           </div>
         </motion.div>
         
-        {/* Daily challenge section */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.6, duration: 0.6 }}
-        >
-          <h2 className="text-xl sm:text-2xl font-bold text-white font-nunito mb-4 flex items-center">
-            <BookOpen className="mr-2 h-5 w-5 text-wonderwhiz-vibrant-yellow" />
-            Daily Challenge
-          </h2>
-          
-          <div className="bg-gradient-to-br from-wonderwhiz-deep-purple/60 to-wonderwhiz-bright-pink/40 rounded-xl p-5 border border-white/10">
-            <div className="flex items-center mb-3">
-              <div className="bg-wonderwhiz-vibrant-yellow/20 p-2 rounded-full mr-3">
-                <Star className="h-5 w-5 text-wonderwhiz-vibrant-yellow" />
-              </div>
-              <h3 className="text-white font-bold text-lg">Today's Wonder</h3>
-            </div>
-            
-            <p className="text-white/90 mb-4">
-              Why can birds fly but humans can't? Discover the amazing science behind flight!
-            </p>
-            
-            <Button 
-              className="bg-wonderwhiz-vibrant-yellow hover:bg-wonderwhiz-vibrant-yellow/90 text-wonderwhiz-deep-purple font-medium" 
-              onClick={() => handleDailyChallengeClick("Why can birds fly but humans can't?")}
+        {/* Dashboard Tabs */}
+        <div className="mb-6">
+          <div className="flex space-x-2 justify-center sm:justify-start overflow-x-auto pb-2">
+            <Button
+              variant={activeTab === 'recommendations' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setActiveTab('recommendations')}
+              className="text-sm flex items-center gap-1 whitespace-nowrap"
             >
-              Start Exploring
+              <Star className="w-4 h-4" />
+              <span>Recommendations</span>
+            </Button>
+            <Button
+              variant={activeTab === 'recent' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setActiveTab('recent')}
+              className="text-sm flex items-center gap-1 whitespace-nowrap"
+            >
+              <BookOpen className="w-4 h-4" />
+              <span>Recent Topics</span>
+            </Button>
+            <Button
+              variant={activeTab === 'challenges' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setActiveTab('challenges')}
+              className="text-sm flex items-center gap-1 whitespace-nowrap"
+            >
+              <Rocket className="w-4 h-4" />
+              <span>Challenges</span>
             </Button>
           </div>
-        </motion.div>
-      </motion.div>
+        </div>
+        
+        {/* Tab Content */}
+        <AnimatePresence mode="wait">
+          {activeTab === 'recommendations' && (
+            <motion.div
+              key="recommendations"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-white">We think you'll like these</h3>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="text-white hover:text-wonderwhiz-gold transition-colors" 
+                  onClick={handleRefreshSuggestions} 
+                  disabled={isLoadingSuggestions}
+                >
+                  <motion.div 
+                    animate={isLoadingSuggestions ? { rotate: 360 } : {}} 
+                    transition={{ repeat: Infinity, duration: 1, ease: "linear" }} 
+                    className={isLoadingSuggestions ? "animate-spin" : ""}
+                  >
+                    <RefreshCw className="h-5 w-5" />
+                  </motion.div>
+                </Button>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+                {curioSuggestions.map((suggestion, index) => (
+                  <CurioSuggestion 
+                    key={`${suggestion}-${index}`} 
+                    suggestion={suggestion} 
+                    onClick={onCurioSuggestionClick} 
+                    index={index} 
+                    directGenerate={true} 
+                    profileId={childId}
+                  />
+                ))}
+              </div>
+            </motion.div>
+          )}
+          
+          {activeTab === 'recent' && (
+            <motion.div
+              key="recent"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <h3 className="text-lg font-medium text-white mb-4">Pick up where you left off</h3>
+              
+              {recentTopics.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                  {pastCurios.slice(0, 6).map((curio, index) => (
+                    <Card 
+                      key={curio.id} 
+                      className="border-white/10 bg-white/5 hover:bg-white/10 transition-colors cursor-pointer relative overflow-hidden group"
+                      onClick={() => {
+                        // Navigate to the curio page
+                        window.location.href = `/curio/${childId}/${curio.id}`;
+                      }}
+                    >
+                      <motion.div 
+                        className="absolute bottom-0 left-0 h-1 bg-gradient-to-r from-wonderwhiz-pink to-wonderwhiz-gold"
+                        initial={{ width: 0 }}
+                        whileInView={{ width: '100%' }}
+                        transition={{ duration: 0.5, delay: index * 0.1 }}
+                      />
+                      <CardContent className="p-4">
+                        <div className="flex items-start">
+                          <div className="bg-white/10 p-2 rounded-full mr-3">
+                            <Lightbulb className="h-4 w-4 text-wonderwhiz-gold" />
+                          </div>
+                          <div>
+                            <h4 className="font-medium text-white line-clamp-2">{curio.title}</h4>
+                            <p className="text-xs text-white/60 mt-1">
+                              {format(new Date(curio.created_at), 'MMM d, yyyy')}
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center text-white/60 py-8">
+                  <p>Start exploring topics to see them here!</p>
+                </div>
+              )}
+            </motion.div>
+          )}
+          
+          {activeTab === 'challenges' && (
+            <motion.div
+              key="challenges"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <DailyChallenge childId={childId} />
+                
+                <Card className="border-white/10 bg-white/5">
+                  <CardContent className="p-4">
+                    <h3 className="text-lg font-medium text-white mb-4">Your Tasks</h3>
+                    <ChildTaskList childId={childId} />
+                  </CardContent>
+                </Card>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 };
