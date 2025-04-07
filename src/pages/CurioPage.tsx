@@ -15,7 +15,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { User, Settings, Sparkles, Rocket } from 'lucide-react';
+import { User, Settings, Sparkles, Rocket, ArrowLeft } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Link } from 'react-router-dom';
 
@@ -272,7 +272,7 @@ const CurioPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#2A1B5D] via-[#3D2A7D] to-[#2A1B5D] pb-20 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-b from-[#2A1B5D] via-[#3D2A7D] to-[#2A1B5D] pb-6 sm:pb-10 md:pb-20 relative overflow-hidden">
       <Helmet>
         <script src="https://elevenlabs.io/convai-widget/index.js" async type="text/javascript"></script>
       </Helmet>
@@ -283,7 +283,7 @@ const CurioPage: React.FC = () => {
           {[1, 2, 3, 4, 5].map((i) => (
             <motion.div
               key={`star-${i}`}
-              className="absolute w-2 h-2 bg-[#FFD54F] rounded-full opacity-70"
+              className="absolute w-1 h-1 sm:w-2 sm:h-2 bg-[#FFD54F] rounded-full opacity-70"
               style={{
                 top: `${Math.random() * 100}%`,
                 left: `${Math.random() * 100}%`,
@@ -301,7 +301,7 @@ const CurioPage: React.FC = () => {
             />
           ))}
           <motion.div
-            className="absolute w-40 h-40 rounded-full bg-gradient-to-r from-[#FF5BA3]/10 to-[#4A6FFF]/10 blur-3xl"
+            className="absolute w-20 h-20 sm:w-40 sm:h-40 rounded-full bg-gradient-to-r from-[#FF5BA3]/10 to-[#4A6FFF]/10 blur-3xl"
             style={{ top: '10%', right: '5%' }}
             animate={{
               translateY: [0, -20, 0],
@@ -310,7 +310,7 @@ const CurioPage: React.FC = () => {
             transition={{ duration: 15, repeat: Infinity }}
           />
           <motion.div
-            className="absolute w-60 h-60 rounded-full bg-gradient-to-r from-[#00E2FF]/10 to-[#FF8A3D]/10 blur-3xl"
+            className="absolute w-32 h-32 sm:w-60 sm:h-60 rounded-full bg-gradient-to-r from-[#00E2FF]/10 to-[#FF8A3D]/10 blur-3xl"
             style={{ bottom: '10%', left: '5%' }}
             animate={{
               translateY: [0, 20, 0],
@@ -321,19 +321,31 @@ const CurioPage: React.FC = () => {
         </>
       )}
       
-      <div className="container px-4 py-3 sm:py-5 max-w-4xl mx-auto relative z-10">
-        <div className="flex justify-between items-center mb-3">
+      <div className="container px-3 sm:px-4 py-3 sm:py-5 max-w-4xl mx-auto relative z-10">
+        <div className="flex justify-between items-center mb-2 sm:mb-3">
+          {isMobile && (
+            <Link to={`/dashboard/${profileId}`} className="mr-2">
+              <Button 
+                size="icon" 
+                variant="ghost" 
+                className="text-white hover:bg-white/10"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            </Link>
+          )}
+          
           <AnimatePresence mode="wait">
             <motion.h1 
               key={title || 'loading'}
-              className="text-xl sm:text-2xl md:text-3xl font-bold text-white flex-1 font-nunito"
+              className="text-lg sm:text-xl md:text-3xl font-bold text-white flex-1 font-nunito truncate"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
             >
               {title || (
                 <div className="flex justify-center items-center">
-                  <Skeleton className="h-8 w-3/5 bg-white/10 rounded" />
+                  <Skeleton className="h-6 sm:h-8 w-3/5 bg-white/10 rounded" />
                 </div>
               )}
             </motion.h1>
@@ -350,23 +362,25 @@ const CurioPage: React.FC = () => {
                   className="bg-[#FFD54F] hover:bg-[#FFD54F]/90 text-[#2A1B5D] rounded-full shadow-[0_0_15px_rgba(255,213,79,0.4)] p-2 sm:p-3"
                   size="icon"
                 >
-                  <User className="h-5 w-5" />
+                  <User className="h-4 w-4 sm:h-5 sm:w-5" />
                 </Button>
               </Link>
             </motion.div>
             
-            <motion.div
-              initial={{ scale: 0, rotate: 20 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ type: "spring", delay: 0.5 }}
-            >
-              <Button 
-                className="bg-[#00E2FF] hover:bg-[#00E2FF]/90 text-[#2A1B5D] rounded-full shadow-[0_0_15px_rgba(0,226,255,0.4)] p-2 sm:p-3"
-                size="icon"
+            {!isMobile && (
+              <motion.div
+                initial={{ scale: 0, rotate: 20 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: "spring", delay: 0.5 }}
               >
-                <Rocket className="h-5 w-5" />
-              </Button>
-            </motion.div>
+                <Button 
+                  className="bg-[#00E2FF] hover:bg-[#00E2FF]/90 text-[#2A1B5D] rounded-full shadow-[0_0_15px_rgba(0,226,255,0.4)] p-2 sm:p-3"
+                  size="icon"
+                >
+                  <Rocket className="h-4 w-4 sm:h-5 sm:w-5" />
+                </Button>
+              </motion.div>
+            )}
           </div>
         </div>
         
@@ -382,7 +396,7 @@ const CurioPage: React.FC = () => {
         
         {isUploadingImage && (
           <motion.div 
-            className="flex items-center justify-center py-4 mb-4 bg-[#3D2A7D]/50 rounded-lg border border-[#FF5BA3]/30 backdrop-blur-sm"
+            className="flex items-center justify-center py-3 sm:py-4 mb-3 sm:mb-4 bg-[#3D2A7D]/50 rounded-lg border border-[#FF5BA3]/30 backdrop-blur-sm"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
@@ -392,9 +406,9 @@ const CurioPage: React.FC = () => {
                 {[0, 1, 2].map((i) => (
                   <motion.div
                     key={i}
-                    className="w-3 h-3 rounded-full bg-[#FF5BA3]"
+                    className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-[#FF5BA3]"
                     animate={{
-                      y: [0, -10, 0],
+                      y: [0, -8, 0],
                     }}
                     transition={{
                       duration: 0.6,
@@ -405,7 +419,7 @@ const CurioPage: React.FC = () => {
                   />
                 ))}
               </div>
-              <p className="text-sm text-white/80 font-inter">
+              <p className="text-xs sm:text-sm text-white/80 font-inter">
                 Analyzing your image with AI...
               </p>
             </div>
@@ -413,10 +427,10 @@ const CurioPage: React.FC = () => {
         )}
         
         <Card className="bg-[#2A1B5D]/60 border-white/5 p-2 sm:p-4 md:p-6 overflow-hidden rounded-xl backdrop-blur-sm shadow-lg">
-          <ScrollArea ref={scrollAreaRef} className={isMobile ? "h-[calc(100vh-200px)]" : "h-[calc(100vh-230px)]"}>
+          <ScrollArea ref={scrollAreaRef} className={isMobile ? "h-[calc(100vh-160px)]" : "h-[calc(100vh-230px)]"}>
             {isGeneratingContent && (
               <motion.div 
-                className="flex items-center justify-center py-4 mb-4 bg-[#3D2A7D]/50 rounded-lg border border-[#FF5BA3]/30"
+                className="flex items-center justify-center py-3 sm:py-4 mb-3 sm:mb-4 bg-[#3D2A7D]/50 rounded-lg border border-[#FF5BA3]/30"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
@@ -426,9 +440,9 @@ const CurioPage: React.FC = () => {
                     {[0, 1, 2].map((i) => (
                       <motion.div
                         key={i}
-                        className="w-3 h-3 rounded-full bg-[#FF5BA3]"
+                        className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-[#FF5BA3]"
                         animate={{
-                          y: [0, -10, 0],
+                          y: [0, -8, 0],
                         }}
                         transition={{
                           duration: 0.6,
@@ -439,7 +453,7 @@ const CurioPage: React.FC = () => {
                       />
                     ))}
                   </div>
-                  <p className="text-sm text-white/80 font-inter">
+                  <p className="text-xs sm:text-sm text-white/80 font-inter">
                     Generating amazing content for you...
                   </p>
                 </div>

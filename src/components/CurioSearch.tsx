@@ -53,18 +53,17 @@ const CurioSearch: React.FC<CurioSearchProps> = ({
   };
 
   return (
-    <div className="relative mb-5">
-      <form onSubmit={handleSubmit} className="flex gap-2">
+    <div className="relative mb-4 md:mb-5">
+      <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1">
           <Input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={isMobile ? "Search..." : "Search through your journey of curiosity..."}
-            className={`pr-10 ${isFocused ? 'ring-2 ring-wonderwhiz-bright-pink' : ''}`}
+            className={`pr-10 ${isFocused ? 'ring-2 ring-wonderwhiz-bright-pink' : ''} text-wonderwhiz-purple bg-white/20 border-white/20 placeholder:text-white/60`}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
-            disabled={false}
           />
           
           <AnimatePresence>
@@ -83,34 +82,36 @@ const CurioSearch: React.FC<CurioSearchProps> = ({
           </AnimatePresence>
         </div>
         
-        <Button 
-          type="submit" 
-          className="bg-wonderwhiz-purple hover:bg-wonderwhiz-purple/90 text-white"
-          disabled={!searchQuery.trim() || isSearching}
-        >
-          <Search className="h-5 w-5" />
-          {!isMobile && <span className="ml-2">Search</span>}
-        </Button>
-        
-        {onImageUpload && (
-          <>
-            <Button 
-              type="button" 
-              className="bg-wonderwhiz-cyan hover:bg-wonderwhiz-cyan/90 text-white"
-              onClick={handleImageButtonClick}
-            >
-              <Image className="h-5 w-5" />
-              {!isMobile && <span className="ml-2">Upload Image</span>}
-            </Button>
-            <input 
-              type="file"
-              ref={fileInputRef}
-              className="hidden"
-              accept="image/*"
-              onChange={handleFileUpload}
-            />
-          </>
-        )}
+        <div className="flex gap-2">
+          <Button 
+            type="submit" 
+            className="bg-wonderwhiz-purple hover:bg-wonderwhiz-purple/90 text-white w-full sm:w-auto"
+            disabled={!searchQuery.trim() || isSearching}
+          >
+            <Search className="h-5 w-5 mr-0 sm:mr-2" />
+            <span className="hidden sm:inline">Search</span>
+          </Button>
+          
+          {onImageUpload && (
+            <>
+              <Button 
+                type="button" 
+                className="bg-wonderwhiz-cyan hover:bg-wonderwhiz-cyan/90 text-white w-full sm:w-auto"
+                onClick={handleImageButtonClick}
+              >
+                <Image className="h-5 w-5 mr-0 sm:mr-2" />
+                <span className="hidden sm:inline">Upload</span>
+              </Button>
+              <input 
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept="image/*"
+                onChange={handleFileUpload}
+              />
+            </>
+          )}
+        </div>
       </form>
       
       {totalBlocksLoaded > 0 && (

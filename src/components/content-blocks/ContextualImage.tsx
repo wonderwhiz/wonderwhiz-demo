@@ -9,7 +9,7 @@ interface ContextualImageProps {
   imageLoading: boolean;
   contextualImage: string | null;
   imageError: string | null;
-  imageDescription: string;
+  imageDescription: string | null;
   blockTitle: string;
   handleImageLoadError: () => void;
   handleRetryImage: () => void;
