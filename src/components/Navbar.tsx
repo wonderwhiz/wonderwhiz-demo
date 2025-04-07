@@ -9,15 +9,10 @@ const Navbar = () => {
         <WonderWhizLogo className="h-10 md:h-12" />
         <span className="ml-3 text-xl md:text-2xl font-baloo font-bold text-white">WonderWhiz</span>
       </div>
-      <div className="hidden md:flex items-center space-x-8">
-        <Link to="/" className="text-white hover:text-wonderwhiz-yellow transition-colors">Home</Link>
-        <Link to="/about" className="text-white hover:text-wonderwhiz-yellow transition-colors">About</Link>
-        <Link to="/features" className="text-white hover:text-wonderwhiz-yellow transition-colors">Features</Link>
-        <Link to="/pricing" className="text-white hover:text-wonderwhiz-yellow transition-colors">Pricing</Link>
-      </div>
+      
       <div className="flex items-center space-x-4">
         <Link to="/login">
-          <Button variant="ghost" className="hover:bg-opacity-20 text-white bg-wonderwhiz-gold">
+          <Button variant="ghost" className="hover:bg-opacity-20 text-white bg-wonderwhiz-pink bg-[wonderwhiz-bright-pink]">
             Login
           </Button>
         </Link>

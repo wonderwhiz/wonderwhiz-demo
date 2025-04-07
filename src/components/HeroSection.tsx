@@ -5,7 +5,6 @@ import { motion } from 'framer-motion';
 import MagicWand from './MagicWand';
 import { Sparkles, Star, Lightbulb, BookOpen, Rocket, Heart, Brain, Globe } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
-
 const HeroSection = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [curioAnimations, setCurioAnimations] = useState({
@@ -13,7 +12,6 @@ const HeroSection = () => {
     spark: false,
     prism: false
   });
-
   const handleCurioHover = (curio: keyof typeof curioAnimations) => {
     setCurioAnimations(prev => ({
       ...prev,
@@ -26,7 +24,6 @@ const HeroSection = () => {
       }));
     }, 700);
   };
-
   const personas = [{
     name: "Nova",
     icon: <Star className="h-6 w-6 text-yellow-300 filter drop-shadow-md" />,
@@ -51,11 +48,9 @@ const HeroSection = () => {
     textColor: "text-gray-800",
     type: "creative"
   }];
-
   const handleSliderChange = (value: number[]) => {
     setActiveTab(Math.round(value[0] / 100 * (personas.length - 1)));
   };
-
   return <section className="pt-10 pb-20 px-6 md:px-10 lg:px-20">
       <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center">
         <motion.div initial={{
@@ -90,12 +85,7 @@ const HeroSection = () => {
               </Button>
             </Link>
             <Link to="/demo">
-              <Button variant="outline" className="w-full sm:w-auto border-wonderwhiz-blue border-2 bg-opacity-20 hover:bg-opacity-30 text-lg group text-wonderwhiz-purple">
-                <span className="group-hover:scale-105 transition-transform inline-block flex items-center gap-2 text-wonderwhiz-purple">
-                  See the demo
-                  <Heart className="h-5 w-5 text-wonderwhiz-pink transition-transform group-hover:scale-125" />
-                </span>
-              </Button>
+              
             </Link>
           </div>
         </motion.div>
@@ -262,5 +252,4 @@ const HeroSection = () => {
       </div>
     </section>;
 };
-
 export default HeroSection;
