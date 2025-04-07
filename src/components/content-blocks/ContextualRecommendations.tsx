@@ -13,13 +13,16 @@ interface ContextualRecommendationsProps {
 }
 
 const ContextualRecommendations: React.FC<ContextualRecommendationsProps> = ({
-  recommendations,
+  recommendations = [], // Provide default empty array
   onRecommendationClick,
   profileId
 }) => {
   const navigate = useNavigate();
 
-  if (!recommendations || recommendations.length === 0) return null;
+  // Safety check
+  const safeRecommendations = Array.isArray(recommendations) ? recommendations : [];
+  
+  if (safeRecommendations.length === 0) return null;
   
   const handleRecommendationClick = async (recommendation: string) => {
     if (profileId) {
@@ -71,7 +74,7 @@ const ContextualRecommendations: React.FC<ContextualRecommendationsProps> = ({
         <span>Related wonders</span>
       </h4>
       <div className="flex flex-wrap gap-2">
-        {recommendations.map((recommendation, index) => (
+        {safeRecommendations.map((recommendation, index) => (
           <motion.button
             key={index}
             initial={{ opacity: 0, y: 10 }}

@@ -3,8 +3,21 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useNavigate, useParams } from 'react-router-dom';
 
 const CurioBlockListError = () => {
+  const { profileId } = useParams<{ profileId: string }>();
+  const navigate = useNavigate();
+  
+  const handleRetry = () => {
+    // Reload the current page or navigate back to dashboard
+    if (window.location.pathname.includes('/curio/')) {
+      window.location.reload();
+    } else if (profileId) {
+      navigate(`/dashboard/${profileId}`);
+    }
+  };
+  
   return (
     <motion.div 
       className="text-center py-10 px-4 text-white/70 max-w-md mx-auto"
@@ -31,6 +44,7 @@ const CurioBlockListError = () => {
         <Button 
           variant="outline" 
           className="border-wonderwhiz-cyan text-wonderwhiz-cyan hover:bg-wonderwhiz-cyan/10 group"
+          onClick={handleRetry}
         >
           <RefreshCw className="w-4 h-4 mr-2 group-hover:animate-spin" />
           <span>Try Again</span>

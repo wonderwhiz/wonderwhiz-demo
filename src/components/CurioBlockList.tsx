@@ -28,12 +28,12 @@ interface CurioBlockListProps {
 }
 
 const CurioBlockList: React.FC<CurioBlockListProps> = ({
-  blocks,
+  blocks = [], // Provide default empty array
   animateBlocks,
   hasMoreBlocks,
   loadingMoreBlocks,
   loadTriggerRef,
-  searchQuery,
+  searchQuery = '', // Provide default empty string
   profileId,
   isFirstLoad,
   handleToggleLike,
@@ -49,7 +49,10 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
 }) => {
   const isMobile = useIsMobile();
 
-  if (blocks.length === 0 && !searchQuery) {
+  // Safety check for blocks array
+  const safeBlocks = Array.isArray(blocks) ? blocks : [];
+  
+  if (safeBlocks.length === 0 && !searchQuery) {
     return (
       <div className="text-center py-8 sm:py-12 text-white/80">
         <motion.div
@@ -88,7 +91,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
     );
   }
 
-  if (blocks.length === 0 && searchQuery) {
+  if (safeBlocks.length === 0 && searchQuery) {
     return (
       <div className="text-center py-8 sm:py-12 text-white/80">
         <motion.div 
@@ -149,7 +152,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
       initial={animateBlocks ? "hidden" : false}
       animate={animateBlocks ? "show" : false}
     >
-      {blocks.map((block, index) => (
+      {safeBlocks.map((block, index) => (
         <motion.div
           key={block.id}
           className="relative group"

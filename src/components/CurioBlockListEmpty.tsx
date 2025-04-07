@@ -3,8 +3,18 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, LightbulbIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useNavigate, useParams } from 'react-router-dom';
 
 const CurioBlockListEmpty = () => {
+  const { profileId } = useParams<{ profileId: string }>();
+  const navigate = useNavigate();
+  
+  const handleSuggestions = () => {
+    if (profileId) {
+      navigate(`/dashboard/${profileId}`);
+    }
+  };
+  
   return (
     <motion.div 
       className="text-center py-10 px-4 text-white/70 max-w-md mx-auto"
@@ -37,6 +47,7 @@ const CurioBlockListEmpty = () => {
         <Button 
           variant="outline" 
           className="border-wonderwhiz-vibrant-yellow/50 text-wonderwhiz-vibrant-yellow hover:bg-wonderwhiz-vibrant-yellow/10 group"
+          onClick={handleSuggestions}
         >
           <LightbulbIcon className="w-4 h-4 mr-2 group-hover:text-wonderwhiz-vibrant-yellow" />
           <span>Try a suggestion</span>
