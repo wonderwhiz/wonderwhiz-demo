@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -39,9 +40,9 @@ const PersonalizedDashboard: React.FC<PersonalizedDashboardProps> = ({
 }) => {
   const [recentInterests, setRecentInterests] = useState<string[]>([]);
   const [popularTopics, setPopularTopics] = useState<{topic: string, count: number}[]>([]);
-  const [achievements, setAchievements<{title: string, description: string, icon: string}[]>([]);
+  const [achievements, setAchievements] = useState<{title: string, description: string, icon: string}[]>([]);
   const [userStreakDays, setUserStreakDays] = useState(childProfile?.streak_days || 0);
-  const [timeOfDay, setTimeOfDay<'morning' | 'afternoon' | 'evening'>('morning');
+  const [timeOfDay, setTimeOfDay] = useState<'morning' | 'afternoon' | 'evening'>('morning');
   const [welcomeMessage, setWelcomeMessage] = useState('');
   const isMobile = useIsMobile();
 
