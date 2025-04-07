@@ -47,27 +47,30 @@ export const getSpecialistStyle = (specialistId: string) => {
 };
 
 export const getBlockTitle = (block: any) => {
-  switch (block.type) {
+  // Safely access content properties
+  const content = block?.content || {};
+  
+  switch (block?.type) {
     case 'fact':
     case 'funFact':
-      return block.content.fact.split('.')[0] + '.';
+      return content.fact ? `${content.fact.split('.')[0]}.` : 'Interesting fact';
     case 'quiz':
-      return block.content.question;
+      return content.question || 'Quiz question';
     case 'flashcard':
-      return block.content.front;
+      return content.front || 'Flashcard';
     case 'creative':
-      return block.content.prompt.split('.')[0] + '.';
+      return content.prompt ? `${content.prompt.split('.')[0]}.` : 'Creative prompt';
     case 'task':
-      return block.content.task.split('.')[0] + '.';
+      return content.task ? `${content.task.split('.')[0]}.` : 'Task';
     case 'riddle':
-      return block.content.riddle.split('?')[0] + '?';
+      return content.riddle ? `${content.riddle.split('?')[0]}?` : 'Riddle';
     case 'news':
-      return block.content.headline;
+      return content.headline || 'News headline';
     case 'activity':
-      return block.content.activity.split('.')[0] + '.';
+      return content.activity ? `${content.activity.split('.')[0]}.` : 'Activity';
     case 'mindfulness':
-      return block.content.exercise.split('.')[0] + '.';
+      return content.exercise ? `${content.exercise.split('.')[0]}.` : 'Mindfulness exercise';
     default:
-      return '';
+      return 'Content block';
   }
 };
