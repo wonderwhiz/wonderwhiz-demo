@@ -1,7 +1,7 @@
 
 import { useRef, useState, useEffect, useCallback } from 'react';
 
-export function useInfiniteScroll(loadMore: () => void, hasMore: boolean) {
+export function useInfiniteScroll(loadMore: () => Promise<void> | void, hasMore: boolean) {
   const [loadingMore, setLoadingMore] = useState(false);
   const loadTriggerRef = useRef<HTMLDivElement>(null);
   const observer = useRef<IntersectionObserver | null>(null);
@@ -11,9 +11,21 @@ export function useInfiniteScroll(loadMore: () => void, hasMore: boolean) {
       const [target] = entries;
       if (target.isIntersecting && hasMore && !loadingMore) {
         setLoadingMore(true);
-        loadMore().finally(() => {
+        
+        const result = loadMore();
+        
+        // Handle both Promise and void return types
+        if (result instanceof Promise) {
+          result
+            .then(() => {
+              setLoadingMore(false);
+            })
+            .catch(() => {
+              setLoadingMore(false);
+            });
+        } else {
           setLoadingMore(false);
-        });
+        }
       }
     },
     [hasMore, loadMore, loadingMore]

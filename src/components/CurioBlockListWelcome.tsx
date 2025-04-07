@@ -7,35 +7,49 @@ interface CurioBlockListWelcomeProps {
   childProfile: any;
 }
 
-const CurioBlockListWelcome: React.FC<CurioBlockListWelcomeProps> = ({ childProfile }) => {
+const CurioBlockListWelcome = ({ childProfile }: CurioBlockListWelcomeProps) => {
   return (
-    <div className="mb-8 sm:mb-10">
+    <motion.div 
+      className="text-center py-8 sm:py-10 mb-6"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
       <motion.div 
-        className="bg-gradient-to-br from-wonderwhiz-purple/30 to-wonderwhiz-deep-purple/40 rounded-xl p-6 border border-white/10"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        className="relative mx-auto w-16 h-16 sm:w-24 sm:h-24 mb-4"
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ 
+          type: "spring", 
+          stiffness: 260, 
+          damping: 20, 
+          delay: 0.2 
+        }}
       >
-        <div className="flex items-center mb-4">
-          <div className="mr-3 bg-gradient-to-br from-wonderwhiz-vibrant-yellow to-wonderwhiz-bright-pink p-2 rounded-full">
-            <Sparkles className="h-5 w-5 text-white" />
-          </div>
-          <h3 className="text-xl font-semibold font-nunito text-white">
-            Welcome to your discovery journey!
-          </h3>
-        </div>
-        
-        <p className="text-white/80 mb-4 font-inter">
-          {childProfile?.name ? `Hi ${childProfile.name}! ` : ''}
-          We're preparing an amazing collection of wonders just for you. 
-          Scroll down to begin exploring and feed your curious mind!
-        </p>
-        
-        <div className="text-sm text-white/60 font-inter">
-          <p>Discover interesting facts, take quizzes, and go on learning adventures.</p>
+        <div className="absolute inset-0 bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-vibrant-yellow rounded-full opacity-20 blur-xl animate-pulse-gentle"></div>
+        <div className="relative flex items-center justify-center w-full h-full">
+          <Sparkles className="h-10 w-10 sm:h-16 sm:w-16 text-wonderwhiz-vibrant-yellow animate-float-gentle" />
         </div>
       </motion.div>
-    </div>
+      
+      <motion.h2 
+        className="text-xl sm:text-2xl font-bold mb-2 text-white"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3 }}
+      >
+        Welcome, {childProfile?.name || 'Explorer'}!
+      </motion.h2>
+      
+      <motion.p 
+        className="text-white/70 max-w-md mx-auto"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.4 }}
+      >
+        Your adventure is about to begin. Discover amazing things about our universe!
+      </motion.p>
+    </motion.div>
   );
 };
 

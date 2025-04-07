@@ -1,13 +1,10 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Lightbulb, BookOpen, Rocket, Brain } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { useUser } from '@/hooks/use-user';
 import { useChildProfile } from '@/hooks/use-child-profile';
 import { useCurioBlocks } from '@/hooks/use-curio-blocks';
@@ -25,13 +22,11 @@ import CurioBlockListSearchError from '@/components/CurioBlockListSearchError';
 import CurioBlockListSearchLoading from '@/components/CurioBlockListSearchLoading';
 import CurioBlockListSearchNoMore from '@/components/CurioBlockListSearchNoMore';
 import CurioBlockListWelcome from '@/components/CurioBlockListWelcome';
-import { useToast } from '@/components/ui/use-toast';
 import { useBlockInteractions } from '@/hooks/useBlockInteractions';
 
 const CurioPage: React.FC = () => {
   const { childId, curioId } = useParams<{ childId: string, curioId: string }>();
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   const { user } = useUser();
   const { childProfile, isLoading: isLoadingProfile, error: profileError } = useChildProfile(childId);
@@ -93,11 +88,7 @@ const CurioPage: React.FC = () => {
       });
     } catch (error) {
       console.error('Error toggling like:', error);
-      toast({
-        title: "Could not like this wonder",
-        description: "Please try again later.",
-        variant: "destructive",
-      });
+      toast.error("Could not like this wonder. Please try again later.");
     }
   };
 
@@ -113,11 +104,7 @@ const CurioPage: React.FC = () => {
       });
     } catch (error) {
       console.error('Error toggling bookmark:', error);
-      toast({
-        title: "Could not bookmark this wonder",
-        description: "Please try again later.",
-        variant: "destructive",
-      });
+      toast.error("Could not bookmark this wonder. Please try again later.");
     }
   };
 
@@ -125,10 +112,7 @@ const CurioPage: React.FC = () => {
     if (!childId) return;
     
     try {
-      toast({
-        title: "Creating new exploration...",
-        id: "create-curio",
-      });
+      toast.loading("Creating new exploration...");
       
       // Create a new curio based on the rabbit hole question
       const { data: newCurio, error } = await supabase
@@ -144,21 +128,14 @@ const CurioPage: React.FC = () => {
       if (error) throw error;
       
       if (newCurio) {
-        toast({
-          title: "New exploration created!",
-          id: "create-curio",
-        });
+        toast.success("New exploration created!");
         
         // Navigate to the new curio
         navigate(`/curio/${childId}/${newCurio.id}`);
       }
     } catch (error) {
       console.error('Error creating rabbit hole curio:', error);
-      toast({
-        title: "Could not create new exploration",
-        description: "Please try again later.",
-        variant: "destructive",
-      });
+      toast.error("Could not create new exploration. Please try again later.");
     }
   };
 

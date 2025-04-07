@@ -57,9 +57,7 @@ export const useBlockInteractions = (childProfileId?: string) => {
       
       console.log('Quiz completed successfully');
       
-      toast.success("Correct answer! +5 sparks", {
-        position: 'top-center',
-      });
+      toast.success("Correct answer! +5 sparks");
     } catch (error) {
       console.error('Error handling quiz completion:', error);
     } finally {

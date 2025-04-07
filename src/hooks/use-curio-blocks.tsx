@@ -2,17 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-
-export interface ContentBlock {
-  id: string;
-  curio_id: string;
-  type: string;
-  content: any;
-  specialist_id: string;
-  liked: boolean;
-  bookmarked: boolean;
-  created_at: string;
-}
+import { ContentBlock, ContentBlockType, isValidContentBlockType } from '@/types/curio';
 
 export function useCurioBlocks(childId?: string, curioId?: string, searchQuery?: string) {
   const [blocks, setBlocks] = useState<ContentBlock[]>([]);
@@ -47,7 +37,13 @@ export function useCurioBlocks(childId?: string, curioId?: string, searchQuery?:
 
         if (error) throw error;
         
-        setBlocks(data || []);
+        // Ensure the blocks have valid types
+        const validBlocks = data ? data.map(block => ({
+          ...block,
+          type: isValidContentBlockType(block.type) ? block.type : 'fact'
+        } as ContentBlock)) : [];
+        
+        setBlocks(validBlocks);
         setHasMore(data && data.length > 10); // Example condition for hasMore
         setIsFirstLoad(false);
       } catch (err) {
@@ -65,6 +61,7 @@ export function useCurioBlocks(childId?: string, curioId?: string, searchQuery?:
   const loadMore = async () => {
     // Implement load more functionality if needed
     console.log("Loading more blocks...");
+    return Promise.resolve(); // Return a promise to support .finally()
   };
 
   return { blocks, isLoading, error, hasMore, loadMore, isFirstLoad };

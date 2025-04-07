@@ -3,8 +3,20 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+interface ChildProfile {
+  id: string;
+  name: string;
+  age: number;
+  interests: string[];
+  parent_id: string;
+  avatar_url?: string;
+  created_at: string;
+  sparks_balance?: number;
+  streak_days?: number;
+}
+
 export function useChildProfile(childId?: string) {
-  const [childProfile, setChildProfile] = useState<any>(null);
+  const [childProfile, setChildProfile] = useState<ChildProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 

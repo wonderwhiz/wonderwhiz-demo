@@ -1,22 +1,17 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import { Loader } from 'lucide-react';
 
 interface CurioBlockListLoadMoreProps {
   loadTriggerRef: React.RefObject<HTMLDivElement>;
   loadingMore: boolean;
 }
 
-const CurioBlockListLoadMore: React.FC<CurioBlockListLoadMoreProps> = ({ 
-  loadTriggerRef,
-  loadingMore
-}) => {
+const CurioBlockListLoadMore = ({ loadTriggerRef, loadingMore }: CurioBlockListLoadMoreProps) => {
   return (
-    <div 
-      ref={loadTriggerRef} 
-      className="h-16 sm:h-20 w-full flex items-center justify-center"
-    >
-      {loadingMore ? (
+    <div ref={loadTriggerRef} className="h-16 sm:h-20 w-full flex items-center justify-center">
+      {loadingMore && (
         <motion.div 
           className="flex flex-col items-center"
           initial={{ opacity: 0 }}
@@ -41,10 +36,8 @@ const CurioBlockListLoadMore: React.FC<CurioBlockListLoadMoreProps> = ({
               />
             ))}
           </div>
-          <p className="text-xs sm:text-sm text-white/70 font-inter">Loading more content...</p>
+          <p className="text-xs sm:text-sm text-white/70 font-inter">Discovering more wonders...</p>
         </motion.div>
-      ) : (
-        <div className="h-12 w-12 opacity-0" />
       )}
     </div>
   );
