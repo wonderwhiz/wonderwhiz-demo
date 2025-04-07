@@ -2,16 +2,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import MagicalBorder from './MagicalBorder';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 
 interface CurioSuggestionProps {
   suggestion: string;
   onClick: (suggestion: string) => void;
   index: number;
-  directGenerate?: boolean;
-  profileId?: string;
+  directGenerate?: boolean; // Made optional with a default value
 }
 
 const COLOR_VARIANTS = [
@@ -22,54 +18,9 @@ const CurioSuggestion: React.FC<CurioSuggestionProps> = ({
   suggestion, 
   onClick,
   index,
-  directGenerate = true,
-  profileId
+  directGenerate = true // Default value provided
 }) => {
   const colorVariant = COLOR_VARIANTS[index % COLOR_VARIANTS.length];
-  const navigate = useNavigate();
-  
-  const handleClick = async () => {
-    if (directGenerate && profileId) {
-      try {
-        toast.loading("Creating new exploration...", {
-          id: "create-curio",
-          duration: 3000
-        });
-        
-        // Create a new curio based on the suggestion
-        const { data: newCurio, error } = await supabase
-          .from('curios')
-          .insert({
-            child_id: profileId,
-            title: suggestion,
-            query: suggestion,
-          })
-          .select('id')
-          .single();
-          
-        if (error) throw error;
-        
-        if (newCurio) {
-          toast.success("New exploration created!", {
-            id: "create-curio"
-          });
-          
-          // Navigate to the new curio
-          navigate(`/curio/${profileId}/${newCurio.id}`);
-        }
-      } catch (error) {
-        console.error('Error creating curio from suggestion:', error);
-        toast.error("Could not create new exploration", {
-          id: "create-curio"
-        });
-        // Fallback to just setting the query
-        onClick(suggestion);
-      }
-    } else {
-      // Original behavior
-      onClick(suggestion);
-    }
-  };
   
   return (
     <motion.div
@@ -86,7 +37,7 @@ const CurioSuggestion: React.FC<CurioSuggestionProps> = ({
         className="rounded-2xl h-full"
       >
         <button
-          onClick={handleClick}
+          onClick={() => onClick(suggestion)}
           className="w-full h-full p-4 bg-white/10 text-white text-left rounded-2xl border-white/20 hover:bg-white/20 transition-colors"
         >
           <span className="block font-medium line-clamp-2">{suggestion}</span>
