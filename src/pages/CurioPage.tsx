@@ -125,7 +125,7 @@ const CurioPage: React.FC = () => {
       const { data: newCurio, error } = await supabase
         .from('curios')
         .insert({
-          child_id: profileId,  // Fixed: using child_id instead of profile_id
+          child_id: profileId,
           title: question,
           query: question,
         })

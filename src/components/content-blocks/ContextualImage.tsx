@@ -27,6 +27,12 @@ const ContextualImage: React.FC<ContextualImageProps> = ({
   handleRetryImage,
   getContextualImageStyle,
 }) => {
+  // Add safe check to make sure we don't try to split undefined values
+  const getSafeImageDescription = () => {
+    if (!imageDescription) return ""; 
+    return typeof imageDescription === 'string' ? imageDescription : "";
+  };
+
   return (
     <AnimatePresence mode="wait">
       {imageLoading && (
@@ -57,7 +63,7 @@ const ContextualImage: React.FC<ContextualImageProps> = ({
           <div className="aspect-[16/9] w-full overflow-hidden rounded-lg bg-wonderwhiz-deep-purple/20">
             <motion.img
               src={contextualImage}
-              alt={imageDescription || blockTitle}
+              alt={getSafeImageDescription() || blockTitle || "Image"}
               onError={handleImageLoadError}
               className="w-full h-full object-cover rounded-lg object-center transform transition-transform duration-700 ease-in-out group-hover:scale-105"
               initial={{ scale: 1.02, opacity: 0 }}
@@ -71,7 +77,7 @@ const ContextualImage: React.FC<ContextualImageProps> = ({
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.2, duration: 0.3 }}
           >
-            <p className="text-white text-xs md:text-sm italic font-inter">{imageDescription}</p>
+            <p className="text-white text-xs md:text-sm italic font-inter">{getSafeImageDescription()}</p>
           </motion.div>
         </motion.div>
       )}
