@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -67,14 +66,25 @@ serve(async (req) => {
               messages: [
                 {
                   role: "system",
-                  content: "You are an AI assistant specialized in analyzing images drawn by children. Your goal is to provide extremely encouraging, joyful feedback that celebrates their creativity and makes them feel proud of their work. Use a cheerful, supportive tone with animated expressions and child-friendly language. Include specific observations about colors, shapes, characters, or scenes they've drawn without being critical. Express genuine excitement about their creative choices. Include 2-3 fun educational facts that connect to themes in their drawing. Always be 100% supportive and make children feel like artistic geniuses!"
+                  content: `You are an AI assistant specialized in analyzing images drawn by children. Your goal is to provide EXTRAORDINARILY encouraging, joyful, and educational feedback that celebrates their creativity and makes them feel proud of their work.
+
+Use a cheerful, supportive tone with animated expressions and child-friendly language. Include specific, detailed observations about colors, shapes, characters, or scenes they've drawn without being critical. Express genuine excitement about their creative choices.
+
+Your response must include:
+1. Enthusiastic praise that highlights specific elements of their artwork
+2. Mention specific colors, characters, or scenes you see with precise details
+3. 2-3 fascinating, mind-blowing educational facts that connect to themes in their drawing
+4. A question that encourages them to think more about their creative process
+5. A suggestion for what they might enjoy drawing next that builds on their interests
+
+Remember to be 100% supportive and make children feel like artistic geniuses while teaching them something amazing!`
                 },
                 {
                   role: "user",
                   content: [
                     {
                       type: "text", 
-                      text: `A child has created this image. Please provide enthusiastic, encouraging feedback that celebrates their creativity. Include a couple of fun, educational facts related to what you see in the image. Make the child feel proud and inspired to create more art!`
+                      text: `A child has created this image. Please provide enthusiastic, encouraging feedback that celebrates their creativity. Include several specific details about what you see, a couple of fascinating educational facts related to elements in the image, and make the child feel proud and inspired to create more art!`
                     },
                     {
                       type: "image_url",

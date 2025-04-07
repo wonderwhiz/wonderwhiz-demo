@@ -59,54 +59,55 @@ serve(async (req) => {
       if (typeof blockContent === 'object') {
         // Generate more detailed and specific prompts based on block type
         if (blockType === 'fact' || blockType === 'funFact') {
-          const factText = blockContent.fact?.substring(0, 200) || "";
-          prompt = `Create a whimsical Pixar/Disney-style illustration for children showing: ${factText}`;
-          contentSummary = factText.substring(0, 50);
-          imageDescription = `A colorful Pixar-style illustration about ${contentSummary.toLowerCase() || "amazing facts"}`;
+          const factText = blockContent.fact?.substring(0, 300) || "";
+          prompt = `Create a detailed, educational Pixar/Disney-style illustration for children showing: ${factText}`;
+          contentSummary = factText.substring(0, 80);
+          imageDescription = `A vibrant Pixar-style illustration about ${contentSummary.toLowerCase() || "amazing facts"}`;
         } else if (blockType === 'quiz') {
-          const questionText = blockContent.question?.substring(0, 200) || "";
-          prompt = `Create a Disney-inspired, colorful educational illustration for children about: ${questionText}`;
-          contentSummary = questionText.substring(0, 50);
-          imageDescription = `A fun Disney-style picture illustrating "${contentSummary.toLowerCase() || "this quiz question"}"`;
+          const questionText = blockContent.question?.substring(0, 300) || "";
+          prompt = `Create a detailed Disney-inspired, colorful educational illustration for children that visualizes this question: ${questionText}`;
+          contentSummary = questionText.substring(0, 80);
+          imageDescription = `A beautiful Disney-style picture illustrating "${contentSummary.toLowerCase() || "this quiz question"}"`;
         } else if (blockType === 'flashcard') {
-          const frontText = blockContent.front?.substring(0, 200) || "";
-          prompt = `Create a cute Pixar-style educational illustration for children that explains: ${frontText}`;
-          contentSummary = frontText.substring(0, 50);
+          const frontText = blockContent.front?.substring(0, 300) || "";
+          prompt = `Create a detailed, scientifically accurate Pixar-style educational illustration for children that explains: ${frontText}`;
+          contentSummary = frontText.substring(0, 80);
           imageDescription = `A charming Pixar-inspired illustration of ${contentSummary.toLowerCase() || "this concept"}`;
         } else if (blockType === 'creative') {
-          const promptText = blockContent.prompt?.substring(0, 200) || "";
-          prompt = `Create a Disney-inspired, magical illustration for children about: ${promptText}`;
-          contentSummary = promptText.substring(0, 50);
+          const promptText = blockContent.prompt?.substring(0, 300) || "";
+          prompt = `Create a magical, inspiring Disney-inspired illustration for children that visualizes: ${promptText}`;
+          contentSummary = promptText.substring(0, 80);
           imageDescription = `An imaginative Disney-style picture showing "${contentSummary.toLowerCase()}"`;
         } else if (blockType === 'task') {
-          const taskText = blockContent.task?.substring(0, 200) || "";
-          prompt = `Create a motivational Pixar-style illustration for children showing: ${taskText}`;
-          contentSummary = taskText.substring(0, 50);
+          const taskText = blockContent.task?.substring(0, 300) || "";
+          prompt = `Create a detailed, instructional Pixar-style illustration for children showing the steps for: ${taskText}`;
+          contentSummary = taskText.substring(0, 80);
           imageDescription = `A motivational Pixar-style illustration of ${contentSummary.toLowerCase()}`;
         } else if (blockType === 'riddle') {
-          const riddleText = blockContent.riddle?.substring(0, 200) || "";
-          prompt = `Create a mysterious, magical Disney-style illustration for children about: ${riddleText}`;
-          contentSummary = riddleText.substring(0, 50);
+          const riddleText = blockContent.riddle?.substring(0, 300) || "";
+          prompt = `Create an intriguing, mysterious Disney-style illustration for children that hints at but doesn't reveal the answer to this riddle: ${riddleText}`;
+          contentSummary = riddleText.substring(0, 80);
           imageDescription = `A mysterious Disney-inspired picture with clues about "${contentSummary.toLowerCase()}"`;
         } else if (blockType === 'news') {
-          const headlineText = blockContent.headline?.substring(0, 200) || "";
-          prompt = `Create a journalistic Pixar-style illustration for children about: ${headlineText}`;
-          contentSummary = headlineText.substring(0, 50);
+          const headlineText = blockContent.headline?.substring(0, 300) || "";
+          const summaryText = blockContent.summary?.substring(0, 300) || "";
+          prompt = `Create a journalistic, exciting Pixar-style illustration for children that visualizes this science news: ${headlineText} - ${summaryText}`;
+          contentSummary = headlineText.substring(0, 80);
           imageDescription = `A vibrant Pixar-style illustration depicting "${contentSummary.toLowerCase()}"`;
         } else if (blockType === 'activity') {
-          const activityText = blockContent.activity?.substring(0, 200) || "";
-          prompt = `Create a fun, Disney-style illustration for children showing: ${activityText}`;
-          contentSummary = activityText.substring(0, 50);
+          const activityText = blockContent.activity?.substring(0, 300) || "";
+          prompt = `Create a detailed, instructional Disney-style illustration for children showing how to do this activity: ${activityText}`;
+          contentSummary = activityText.substring(0, 80);
           imageDescription = `A playful Disney-inspired picture showing "${contentSummary.toLowerCase()}"`;
         } else if (blockType === 'mindfulness') {
-          const exerciseText = blockContent.exercise?.substring(0, 200) || "";
-          prompt = `Create a calm, peaceful Pixar-style illustration for children about: ${exerciseText}`;
-          contentSummary = exerciseText.substring(0, 50);
+          const exerciseText = blockContent.exercise?.substring(0, 300) || "";
+          prompt = `Create a calm, peaceful, soothing Pixar-style illustration for children that visualizes: ${exerciseText}`;
+          contentSummary = exerciseText.substring(0, 80);
           imageDescription = `A soothing Pixar-inspired picture of ${contentSummary.toLowerCase() || "this mindfulness exercise"}`;
         }
         
         // Enhanced prompts specific to DALL-E for Disney/Pixar style
-        prompt = `${prompt} in the style of modern Pixar or Disney animation. Use bright, vibrant colors, expressive characters with big eyes, and a magical, whimsical atmosphere. Make it cute, educational, and engaging for children with simple shapes and clear details. Digital art style with clean edges and slight texture.`;
+        prompt = `${prompt} in the style of modern Pixar or Disney animation. Create a SCIENTIFICALLY ACCURATE, educational image with bright, vibrant colors from the WonderWhiz palette (purples, pinks, blues, cyans, and yellows), expressive characters with big eyes, and a magical, whimsical atmosphere. Make it cute, educational, and engaging for children with simple shapes and clear details. Digital art style with clean edges and slight texture. Focus on making the image maximally relevant to the text content with accurate, clear visualization of the scientific concepts.`;
       }
     } catch (e) {
       console.error(`[${requestId}] Error creating prompt:`, e);
@@ -117,7 +118,7 @@ serve(async (req) => {
     
     // If prompt is too short, use a default
     if (!prompt || prompt.length < 20) {
-      prompt = `A colorful educational illustration in the style of Pixar/Disney animation about ${blockType} for children. Bright, engaging, cute characters with big eyes, and a magical atmosphere.`;
+      prompt = `A colorful, scientifically accurate educational illustration in the style of Pixar/Disney animation about ${blockType} for children. Bright, engaging, cute characters with big eyes, and a magical atmosphere.`;
       imageDescription = "A wonderful Disney-inspired picture about learning!";
     }
 

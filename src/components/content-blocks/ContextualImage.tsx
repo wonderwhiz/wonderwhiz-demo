@@ -52,19 +52,27 @@ const ContextualImage: React.FC<ContextualImageProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.5 }}
-          className="relative w-full rounded-lg overflow-hidden shadow-glow-brand-cyan"
+          className="relative w-full rounded-lg overflow-hidden shadow-glow-brand-cyan group"
         >
           <div className="aspect-[16/9] w-full overflow-hidden rounded-lg">
-            <img
+            <motion.img
               src={contextualImage}
               alt={imageDescription || blockTitle}
               onError={handleImageLoadError}
-              className="w-full h-full object-cover rounded-lg object-center"
+              className="w-full h-full object-cover rounded-lg object-center transform transition-transform duration-700 ease-in-out group-hover:scale-105"
+              initial={{ scale: 1.02 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.5 }}
             />
           </div>
-          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-wonderwhiz-deep-purple/80 to-transparent px-4 py-3">
+          <motion.div 
+            className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-wonderwhiz-deep-purple/90 via-wonderwhiz-deep-purple/60 to-transparent px-4 py-3"
+            initial={{ y: 10, opacity: 0.8 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.2, duration: 0.3 }}
+          >
             <p className="text-white text-xs md:text-sm italic font-inter">{imageDescription}</p>
-          </div>
+          </motion.div>
         </motion.div>
       )}
 

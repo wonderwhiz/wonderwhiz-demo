@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -132,62 +131,68 @@ serve(async (req) => {
       });
     }
 
-    // Prepare system message and user message for the API
-    let systemMessage = `You are an AI assistant creating EXTREMELY engaging, educational content for children aged ${childProfile.age}. 
-    Each piece of content should be rich with fascinating facts, deeply relevant to the topic, and presented in a way that sparks wonder and curiosity.
-    The content must be 100% accurate, age-appropriate, and designed to captivate a child's imagination and make them say "Wow!".
-    Use vivid, captivating language that makes concepts come alive. Incorporate elements of mystery, surprise, and discovery.
-    Remember that children are naturally curious - make them want to learn more!
-    Present information in a way that connects to a child's everyday experiences when possible.
-    Content must be in ${language} language.`;
+    // Prepare system message and user message for the API with enhanced prompting
+    let systemMessage = `You are an AI assistant creating EXTRAORDINARILY engaging, educational content for children aged ${childProfile.age}. 
+    Each piece of content should be scientifically accurate, richly detailed, and presented with an exciting sense of discovery and wonder.
+    Your content must have a "WOW factor" that makes children's eyes widen with amazement and makes them say "I never knew that!"
     
-    let userMessage = `Generate ${blockCount} diverse, HIGHLY ENGAGING content blocks about the topic: "${query}". 
+    EXTREMELY IMPORTANT GUIDELINES:
+    - Content must be 100% factually accurate with no embellishments that might mislead
+    - Use age-appropriate but rich vocabulary that expands a child's language while remaining accessible
+    - Frame information as exciting discoveries with expressions like "Scientists recently discovered..." or "Did you know that..."
+    - Include specific, memorable numbers, measurements, and comparisons that help children grasp scale and significance
+    - Connect abstract concepts to everyday experiences a child can relate to
+    - Create a sense of narrative and adventure in even the most factual content
+    - Use analogies and metaphors to explain complex ideas
+    - Invoke wonder by highlighting the most surprising and counter-intuitive aspects of the topic
+    - Content must be in ${language} language with an appropriate reading level for ${childProfile.age}-year-olds
+    - Always leverage child-friendly humor and a sense of playfulness`;
+    
+    let userMessage = `Generate ${blockCount} diverse, EXTRAORDINARILY ENGAGING content blocks about the query: "${query}". 
     ${skipInitial > 0 ? `Skip the first ${skipInitial} most obvious blocks as they've already been generated.` : ''}
 
-    Each block should:
-    1. Be ultra-relevant to "${query}"
-    2. Contain mind-blowing, fascinating information that would make a ${childProfile.age}-year-old say "WOW!"
-    3. Be written in an exciting, dynamic style with age-appropriate but rich vocabulary
-    4. Include vivid visual descriptions that would make amazing images
-    5. Connect with these interests: ${childProfile.interests.join(', ')}
-    6. Include interactive elements that make children feel involved in the discovery
+    Each block MUST:
+    1. Be HYPER-RELEVANT to "${query}" with laser-focused content that directly addresses the topic
+    2. Contain at least one genuinely mind-blowing, scientific fact that would make a ${childProfile.age}-year-old gasp with wonder
+    3. Include vibrant visual language suitable for generating captivating illustrations
+    4. Connect with these interests: ${childProfile.interests.join(', ')}
+    5. Have interactive elements that make children feel personally involved in the discovery
+    6. Be written with a dynamic, enthusiastic tone but avoid being cartoonishly over-excited
 
-    For each block type, make them EXTRAORDINARILY engaging:
-    - fact/funFact: Include truly surprising, counter-intuitive facts that children wouldn't expect. Use comparisons to things children understand.
-    - quiz: Create clever, thought-provoking questions with interesting options that teach even if they get it wrong.
-    - flashcard: Frame concepts as exciting mysteries to uncover with a surprising reveal.
-    - creative: Provide imaginative prompts that spark creativity and connect to the topic.
-    - task: Design fun, hands-on activities that feel like play while teaching concepts.
-    - riddle: Create clever wordplay or logic puzzles that make children feel smart when they solve them.
-    - activity: Design interactive experiences that bring the topic to life.
-    - news: Frame information as exciting "breaking news" with dramatic headlines and discoveries.
-    - mindfulness: Connect the topic to sensory experiences and wonder.
+    SPECIFIC REQUIREMENTS FOR EACH BLOCK TYPE:
+    
+    - fact/funFact: Must include a counter-intuitive or surprising SPECIFIC fact (with numbers, examples, and vivid details) that defies expectations. End with an intriguing question that makes children wonder. Example: "Stars don't actually twinkle! The apparent twinkling happens because their light passes through Earth's atmosphere, where air of different temperatures bends the light in different directions. It's like looking at a penny at the bottom of a swimming pool - the water makes it seem to move even though it's perfectly still! Did you know that some stars appear to change colors as they twinkle? That's because different wavelengths of light bend differently in our atmosphere!"
+    
+    - quiz: Create genuinely challenging but solvable questions that teach even if answered incorrectly. Options should all seem plausible but only one is correct. Include a fascinating explanation of WHY the answer is correct. Example: "When stars 'twinkle' in the night sky, what's really happening? A) The star is pulsating with energy, B) Earth's atmosphere is bending the starlight, C) The star is rotating very quickly, D) Cosmic dust is partially blocking the light"
+    
+    - flashcard: Provide question/answer pairs that reveal a genuinely surprising connection or fact. The answer should provide a complete explanation with vivid details, not just a simple word or phrase. Example: "Why do stars appear to twinkle in the night sky? [FLIP] Stars don't actually twinkle! The apparent twinkling happens because their light passes through layers of Earth's atmosphere that have different temperatures and densities. These layers act like constantly moving lenses, bending the light in different directions as it travels to your eyes."
+    
+    - creative: Design imaginative prompts that encourage open-ended exploration while teaching scientific concepts. Include specific guidance that helps channel creativity in educational directions. Example: "Imagine you're an astronaut floating in space near a pulsating variable star that changes brightness every few minutes. Draw or write about what you see and feel as the star's light grows stronger and then dims. How would the changing light affect nearby planets? What colors might flash through space?"
+    
+    - task: Design real-world, feasible experiments or activities that demonstrate scientific principles related to the query. Include specific materials, clear steps, and explain what will be learned. Example: "Create a star twinkling simulator! You'll need: a flashlight, a bowl of hot water, and a white sheet. In a dark room, shine the flashlight through the steam rising from the hot water onto the sheet. Watch how the light appears to 'twinkle' as it passes through the rising air currents, just like starlight twinkling through Earth's atmosphere!"
+    
+    - riddle: Craft clever wordplay or logic puzzles that teach scientific concepts when solved. Answers should reveal an interesting fact about the topic. Example: "I'm not a dancer, but I appear to twinkle. I'm extremely hot, but you'll never feel my heat. I'm enormous, but look tiny to your eye. What am I? Answer: A star"
+    
+    - activity: Design hands-on, feasible activities that demonstrate scientific principles with materials found at home. Include clear instructions and scientific explanations. Example: "Make a star projector! Cover a flashlight with aluminum foil, then poke tiny holes in different patterns. In a dark room, shine it on the ceiling to create your own constellations. The light passing through the small holes creates focused beams, similar to how we see individual stars in space despite their enormous size!"
+    
+    - news: Frame the most recent scientific discoveries about the topic as exciting breaking news with accurate details. Include quotes from imaginary scientists that explain concepts clearly. Example: "BREAKING: Astronomers Discover Fascinating Binary Star Dance! Scientists at the Cosmic Observatory have recorded two stars orbiting each other in a complex pattern never seen before. 'These stars complete one orbit every 15 Earth days, exchanging stellar material in the process,' explains Dr. Luna Stellar. 'It's teaching us new things about stellar evolution.'"
+    
+    - mindfulness: Connect scientific understanding with sensory awareness and appreciation of natural phenomena. Design exercises that combine learning with mindfulness. Example: "Star Gazing Mindfulness: Find a dark area outside and lie on your back. As you observe the stars, notice how some appear to twinkle more than others. The steadier stars are planets! As you breathe deeply, imagine the vast distances these light rays traveled - millions of years - just to reach your eyes in this moment."
 
-    Rabbit hole questions should be intriguing and lead to fascinating new directions of exploration.
+    For "rabbit hole" questions, create genuinely fascinating follow-up questions that lead to even more mind-blowing discoveries.
     
     Return your response as a JSON array with ${blockCount} objects, each having this structure:
     {
       "type": "one of: fact, quiz, flashcard, creative, task, riddle, funFact, activity, news, mindfulness",
       "specialist_id": "one of: nova, spark, prism, pixel, atlas, lotus",
       "content": {
-        // Different fields based on block type
+        // Different fields based on block type as specified before
       }
     }
 
-    For each block type, include these specific fields:
-    - fact/funFact: { "fact": "detailed surprising fact", "rabbitHoles": ["intriguing question 1", "fascinating question 2"] }
-    - quiz: { "question": "thought-provoking question", "options": ["clever option1", "clever option2", "clever option3", "clever option4"], "correctIndex": 0-3, "explanation": "fascinating explanation why" }
-    - flashcard: { "front": "intriguing question", "back": "surprising answer with wow factor" }
-    - creative: { "prompt": "imaginative creative prompt", "type": "drawing or writing", "guidelines": "helpful tips for creativity" }
-    - task: { "task": "fun activity description", "reward": 5-10 }
-    - riddle: { "riddle": "clever riddle text", "answer": "surprising answer" }
-    - activity: { "activity": "engaging hands-on activity description" }
-    - news: { "headline": "exciting headline", "summary": "fascinating discovery summary", "source": "WonderWhiz News" }
-    - mindfulness: { "exercise": "sensory-rich exercise description", "duration": 30-60 }
-
-    Match specialists with appropriate content topics. Make content highly educational, fun, and visually descriptive!
+    Match specialists with appropriate content (nova:exploration, spark:science, prism:creativity, pixel:technology, atlas:history/geography, lotus:wellbeing).
     
-    NOTE: Make sure all content is 100% accurate, exceptionally relevant to "${query}", and deeply engaging for children.`;
+    NOTE: Make every single block EXTRAORDINARILY relevant to "${query}" with truly amazing, scientifically accurate content!`;
     
     // Implement retry logic for API calls
     let attempt = 0;

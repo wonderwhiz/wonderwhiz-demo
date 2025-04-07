@@ -1,9 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { Upload, CheckCircle, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CreativeBlockProps {
   content: {
@@ -12,9 +13,15 @@ interface CreativeBlockProps {
   };
   onCreativeUpload: () => void;
   uploadFeedback?: string | null;
+  curioId?: string;
 }
 
-const CreativeBlock: React.FC<CreativeBlockProps> = ({ content, onCreativeUpload, uploadFeedback }) => {
+const CreativeBlock: React.FC<CreativeBlockProps> = ({ 
+  content, 
+  onCreativeUpload, 
+  uploadFeedback,
+  curioId
+}) => {
   const [isUploading, setIsUploading] = useState(false);
   const [isUploaded, setIsUploaded] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -22,28 +29,72 @@ const CreativeBlock: React.FC<CreativeBlockProps> = ({ content, onCreativeUpload
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Make sure we update the feedback state if the prop changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (uploadFeedback) {
       setFeedback(uploadFeedback);
     }
   }, [uploadFeedback]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setIsUploading(true);
       
       const reader = new FileReader();
-      reader.onload = (event) => {
+      reader.onload = async (event) => {
         if (event.target) {
-          setSelectedImage(event.target.result as string);
+          const imageDataUrl = event.target.result as string;
+          setSelectedImage(imageDataUrl);
           
-          // Simulate AI analysis with a brief delay
-          setTimeout(() => {
+          try {
+            // Create a form data object to send to the analyze-image function
+            const formData = new FormData();
+            formData.append('image', e.target.files![0]);
+            
+            // Call the analyze-image edge function
+            const { data, error } = await supabase.functions.invoke('analyze-image', {
+              body: formData,
+            });
+            
+            if (error) {
+              throw error;
+            }
+            
+            // Set the feedback from the AI
+            if (data.feedback) {
+              setFeedback(data.feedback);
+            }
+            
+            // If we have a new content block from the AI analysis
+            if (data.block && curioId) {
+              // Add the curio_id to the block
+              const blockWithCurioId = {
+                ...data.block,
+                curio_id: curioId
+              };
+              
+              // Save the new block to the database
+              const { error: saveError } = await supabase
+                .from('content_blocks')
+                .insert(blockWithCurioId);
+                
+              if (saveError) {
+                console.error('Error saving AI feedback block:', saveError);
+              }
+            }
+            
             setIsUploading(false);
             setIsUploaded(true);
-            // Call the parent handler which will trigger the API call
+            
+            // Call the parent handler which might trigger UI updates
             onCreativeUpload();
-          }, 1500);
+            
+          } catch (error) {
+            console.error('Error analyzing image:', error);
+            setFeedback("Your artwork is amazing! I love the colors and creativity you've shown. You're a wonderful artist!");
+            setIsUploading(false);
+            setIsUploaded(true);
+            onCreativeUpload();
+          }
         }
       };
       

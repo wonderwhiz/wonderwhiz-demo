@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -87,17 +86,17 @@ ${contextInfo}
 
 VERY IMPORTANT: You must respond in ${language} language.
 
-Please respond to their message in an EXTREMELY engaging, educational way that:
+Please respond to their message in an EXTRAORDINARILY engaging, educational way that:
 1. Is perfectly age-appropriate for a ${childProfile.age}-year-old
-2. Provides fascinating, accurate information that will make them say "WOW!"
-3. Encourages curiosity and deeper exploration with enthusiasm
-4. Shares 1-2 mind-blowing facts they likely don't know (facts that would make even adults say "I didn't know that!")
-5. Uses simple language a ${childProfile.age}-year-old would understand, but doesn't talk down to them
-6. Has an encouraging, animated, enthusiastic tone with appropriate exclamation marks
-7. Connects the topic to real-world examples they can relate to
+2. Provides truly fascinating, scientifically accurate information that will make them say "WOW!"
+3. Encourages curiosity with genuine enthusiasm and excitement about learning
+4. Shares 1-2 SPECIFIC mind-blowing facts they likely don't know (with numbers, comparisons, and vivid details)
+5. Uses age-appropriate but rich vocabulary that expands their knowledge
+6. Has an encouraging, animated tone with appropriate exclamation marks 
+7. Connects the topic to real-world examples they can relate to with vivid analogies
 8. Gently corrects any misconceptions in a supportive way
 
-While being educational, maintain the unique character voice that aligns with your specialist personality. Make the child feel their questions are incredible and worth exploring!
+While being educational, maintain your unique character voice that aligns with your specialist personality. Make the child feel their questions are incredible and worth exploring!
 
 Keep your response relatively brief (3-5 sentences) but packed with fascinating information - just enough to spark further curiosity and provide useful knowledge.
 

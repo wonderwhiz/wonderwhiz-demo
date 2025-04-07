@@ -157,20 +157,24 @@ const CurioContent: React.FC<CurioContentProps> = ({
             animate={{ opacity: 1 }} 
             exit={{ opacity: 0 }} 
             transition={{ duration: 0.2 }}
-            className="p-3 mb-4 bg-wonderwhiz-light-purple/20 backdrop-blur-sm rounded-lg border border-wonderwhiz-bright-pink/30 flex items-center"
+            className="p-3 mb-4 bg-gradient-to-r from-wonderwhiz-bright-pink/20 to-wonderwhiz-light-purple/30 backdrop-blur-sm rounded-lg border border-wonderwhiz-bright-pink/30 flex items-center"
           >
-            <div className="mr-2">
-              <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
-            </div>
-            <p className="text-white text-sm font-inter">
-              {isGenerating ? "Generating your personalized content..." : "Loading more content..."}
+            <motion.div 
+              className="mr-3"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+            >
+              <div className="rounded-full h-5 w-5 border-t-2 border-r-2 border-wonderwhiz-bright-pink"></div>
+            </motion.div>
+            <p className="text-white text-sm font-nunito">
+              {isGenerating ? "Generating your personalized content with amazing facts..." : "Loading more fascinating content..."}
             </p>
           </motion.div>
         )}
       </AnimatePresence>
       
-      <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 px-3 sm:px-4 pt-4 font-nunito">{currentCurio.title}</h2>
-      <div className="space-y-4 px-3 sm:px-4 pb-4">
+      <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 px-3 sm:px-4 pt-4 font-nunito animate-in fade-in-50 duration-500">{currentCurio.title}</h2>
+      <div className="space-y-5 px-3 sm:px-4 pb-6">
         {renderedBlocks.map((block, index) => (
           <motion.div 
             key={block.id} 
@@ -179,7 +183,7 @@ const CurioContent: React.FC<CurioContentProps> = ({
             animate={{ opacity: 1, y: 0 }} 
             transition={{ 
               delay: Math.min(index * 0.05, 0.2), // Cap the delay for smoother loading
-              duration: 0.2
+              duration: 0.3
             }}
           >
             <ContentBlock 
@@ -196,6 +200,7 @@ const CurioContent: React.FC<CurioContentProps> = ({
               userId={profileId} 
               childProfileId={profileId} 
               isFirstBlock={index === 0} // Always generate image for first block
+              curioId={currentCurio.id}
             />
             
             {memoizedReplies[block.id] && memoizedReplies[block.id].length > 0 && (
@@ -232,9 +237,23 @@ const CurioContent: React.FC<CurioContentProps> = ({
         {/* Loading indicator shown when fetching more blocks */}
         {loadingBlocks && hasMoreBlocks && (
           <div className="h-10 flex items-center justify-center text-white/50 text-sm">
-            <div className="animate-pulse flex items-center">
-              <div className="w-3 h-3 bg-wonderwhiz-bright-pink/60 rounded-full mr-2 animate-bounce" />
-              Loading more content...
+            <div className="animate-pulse flex items-center space-x-2">
+              <motion.div 
+                className="w-3 h-3 bg-wonderwhiz-bright-pink/60 rounded-full"
+                animate={{ y: [0, -5, 0] }}
+                transition={{ duration: 1, repeat: Infinity }}
+              />
+              <motion.div 
+                className="w-3 h-3 bg-wonderwhiz-cyan/60 rounded-full"
+                animate={{ y: [0, -5, 0] }}
+                transition={{ duration: 1, repeat: Infinity, delay: 0.2 }}
+              />
+              <motion.div 
+                className="w-3 h-3 bg-wonderwhiz-vibrant-yellow/60 rounded-full" 
+                animate={{ y: [0, -5, 0] }}
+                transition={{ duration: 1, repeat: Infinity, delay: 0.4 }}
+              />
+              <span className="ml-2">Loading more content...</span>
             </div>
           </div>
         )}
