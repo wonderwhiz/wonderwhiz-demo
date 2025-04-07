@@ -6,13 +6,18 @@ import { toast } from 'sonner';
 interface ChildProfile {
   id: string;
   name: string;
-  age: number;
-  interests: string[];
-  parent_id: string;
-  avatar_url?: string;
+  age: number | null;
+  interests: string[] | null;
+  parent_user_id: string; // Changed from parent_id to parent_user_id
+  avatar_url?: string | null;
   created_at: string;
-  sparks_balance?: number;
-  streak_days?: number;
+  sparks_balance?: number | null;
+  streak_days?: number | null;
+  grade?: string | null;
+  language?: string | null;
+  last_active?: string | null;
+  pin?: string;
+  streak_last_updated?: string | null;
 }
 
 export function useChildProfile(childId?: string) {
