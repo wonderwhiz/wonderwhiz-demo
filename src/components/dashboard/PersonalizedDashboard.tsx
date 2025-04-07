@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -374,7 +373,7 @@ const PersonalizedDashboard: React.FC<PersonalizedDashboardProps> = ({
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ duration: 0.3, delay: 0.1 * index }}
                   >
-                    <MagicalBorder active={index === 0} type={index === 0 ? 'rainbow' : 'static'}>
+                    <MagicalBorder active={index === 0} type={index === 0 ? 'rainbow' : 'purple'}>
                       <div 
                         className={`flip-card h-28 sm:h-32 rounded-xl overflow-hidden ${getBackgroundColor(index)}`}
                         onClick={() => onCurioSuggestionClick(suggestion)}

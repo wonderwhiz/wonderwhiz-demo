@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 
 interface CurioLoadMoreProps {
   loadingMoreBlocks: boolean;
-  loadTriggerRef: React.RefObject<HTMLDivElement>;
+  loadTriggerRef: React.RefObject<HTMLDivElement> | null;
 }
 
 const CurioLoadMore: React.FC<CurioLoadMoreProps> = ({ loadingMoreBlocks, loadTriggerRef }) => {

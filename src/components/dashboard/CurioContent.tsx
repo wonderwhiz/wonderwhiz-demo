@@ -131,7 +131,8 @@ const CurioContent: React.FC<CurioContentProps> = ({
                       onQuizCorrect={() => onQuizCorrect(block.id)}
                       onNewsRead={() => onNewsRead(block.id)}
                       onCreativeUpload={() => onCreativeUpload(block.id)}
-                      profileId={profileId}
+                      userId={profileId}
+                      childProfileId={profileId}
                       replies={blockReplies[block.id] || []}
                       isFirstBlock={index === 0}
                     />
@@ -159,8 +160,8 @@ const CurioContent: React.FC<CurioContentProps> = ({
               {/* Load more button - Only show when not initially loading and there are more blocks */}
               {!isGenerating && hasMoreBlocks && visibleBlocks.length > 0 && (
                 <CurioLoadMore 
-                  onLoadMore={onLoadMore} 
-                  loading={loadingBlocks} 
+                  loadingMoreBlocks={loadingBlocks} 
+                  loadTriggerRef={null}
                 />
               )}
               
