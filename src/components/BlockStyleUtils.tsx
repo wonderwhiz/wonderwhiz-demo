@@ -81,5 +81,5 @@ export const getCardHoverEffect = (): string => {
 };
 
 export const getAnimatedGradient = (): string => {
-  return 'bg-gradient-to-r from-wonderwhiz-bright-pink via-wonderwhiz-gold to-wonderwhiz-cyan bg-[length:200%_auto] animate-shimmer';
+  return 'bg-gradient-to-r from-wonderwhiz-bright-pink via-wonderwhiz-vibrant-yellow to-wonderwhiz-cyan bg-[length:200%_auto] animate-shimmer';
 };

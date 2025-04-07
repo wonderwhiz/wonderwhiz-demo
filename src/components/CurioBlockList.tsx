@@ -63,13 +63,13 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
           }}
           className="relative mx-auto w-16 h-16 sm:w-24 sm:h-24 mb-4"
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-[#FF5BA3] to-[#FFD54F] rounded-full opacity-20 blur-xl animate-pulse-gentle"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-vibrant-yellow rounded-full opacity-20 blur-xl animate-pulse-gentle"></div>
           <div className="relative flex items-center justify-center w-full h-full">
-            <Lightbulb className="h-10 w-10 sm:h-16 sm:w-16 text-[#FFD54F] animate-float-gentle" />
+            <Lightbulb className="h-10 w-10 sm:h-16 sm:w-16 text-wonderwhiz-vibrant-yellow animate-float-gentle" />
           </div>
         </motion.div>
         <motion.h3 
-          className="text-xl sm:text-2xl font-semibold mb-2 sm:mb-3 font-nunito bg-clip-text text-transparent bg-gradient-to-r from-[#FFD54F] to-[#FF5BA3]"
+          className="text-xl sm:text-2xl font-semibold mb-2 sm:mb-3 font-nunito bg-clip-text text-transparent bg-gradient-to-r from-wonderwhiz-vibrant-yellow to-wonderwhiz-bright-pink"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
@@ -101,9 +101,9 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
           }}
           className="relative mx-auto w-16 h-16 sm:w-24 sm:h-24 mb-4"
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-[#00E2FF] to-[#4A6FFF] rounded-full opacity-20 blur-xl"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-wonderwhiz-cyan to-wonderwhiz-blue-accent rounded-full opacity-20 blur-xl"></div>
           <div className="relative flex items-center justify-center w-full h-full">
-            <Lightbulb className="h-10 w-10 sm:h-16 sm:w-16 text-[#00E2FF]" />
+            <Lightbulb className="h-10 w-10 sm:h-16 sm:w-16 text-wonderwhiz-cyan" />
           </div>
         </motion.div>
         <motion.h3 
@@ -144,7 +144,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
 
   return (
     <motion.div 
-      className="space-y-4 sm:space-y-5"
+      className="space-y-4 sm:space-y-5 px-2 sm:px-0"
       variants={container}
       initial={animateBlocks ? "hidden" : false}
       animate={animateBlocks ? "show" : false}
@@ -170,7 +170,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
                 exit={{ opacity: 0, scale: 0 }}
                 transition={{ duration: 0.5 }}
               >
-                <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-[#FFD54F] animate-sparkle" />
+                <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-wonderwhiz-vibrant-yellow animate-sparkle" />
               </motion.div>
             </AnimatePresence>
           )}
@@ -188,7 +188,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
             onMindfulnessComplete={handleMindfulnessComplete}
             onRabbitHoleFollow={handleRabbitHoleClick}
             isFirstBlock={index === 0}
-            colorVariant={index % 3}
+            colorVariant={index % 5}
             userId={profileId}
             childProfileId={profileId}
           />
@@ -208,7 +208,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
                 {[0, 1, 2].map((i) => (
                   <motion.div
                     key={i}
-                    className="w-2 h-2 sm:w-3 sm:h-3 bg-[#FF5BA3] rounded-full mr-1" 
+                    className="w-2 h-2 sm:w-3 sm:h-3 bg-wonderwhiz-bright-pink rounded-full mr-1" 
                     animate={{
                       y: [0, -6, 0],
                       scale: [1, 1.2, 1]

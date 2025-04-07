@@ -34,13 +34,13 @@ const SearchBar: React.FC<SearchBarProps> = ({ query, setQuery, handleSubmitQuer
             onChange={e => setQuery(e.target.value)} 
             onKeyDown={handleKeyDown}
             disabled={isGenerating} 
-            className="py-3 sm:py-4 md:py-6 bg-white/10 border-white/20 text-white text-base sm:text-lg placeholder:text-white/60 placeholder:text-center focus:ring-2 focus:ring-wonderwhiz-gold/50 focus:border-wonderwhiz-gold px-[40px] my-0" 
+            className="py-3 sm:py-4 md:py-6 bg-white/10 border-white/20 text-white text-base sm:text-lg placeholder:text-white/70 placeholder:text-center focus:ring-2 focus:ring-wonderwhiz-bright-pink focus:border-wonderwhiz-vibrant-yellow px-[40px] my-0 font-inter" 
           />
           
           <Button 
             type="button" 
             size="icon" 
-            className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 bg-wonderwhiz-gold text-wonderwhiz-dark hover:bg-wonderwhiz-gold/80 rounded-full shadow-glow-gold" 
+            className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 bg-wonderwhiz-vibrant-yellow text-wonderwhiz-dark hover:bg-wonderwhiz-vibrant-yellow/90 rounded-full shadow-glow-brand-yellow" 
             disabled={!query.trim() || isGenerating}
             onClick={handleSubmitQuery}
             aria-label="Submit question"
@@ -53,7 +53,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ query, setQuery, handleSubmitQuer
               animate={{ rotate: [0, 15, -15, 0] }} 
               transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
             >
-              <Lightbulb className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-wonderwhiz-gold" />
+              <Lightbulb className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-wonderwhiz-vibrant-yellow" />
             </motion.div>
           </div>
         </div>

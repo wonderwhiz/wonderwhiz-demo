@@ -61,7 +61,7 @@ const CurioSearch: React.FC<CurioSearchProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={isMobile ? "Search..." : "Search through your journey of curiosity..."}
-            className={`pr-10 ${isFocused ? 'ring-2 ring-wonderwhiz-bright-pink' : ''} text-wonderwhiz-purple bg-white/20 border-white/20 placeholder:text-white/60`}
+            className={`pr-10 ${isFocused ? 'ring-2 ring-wonderwhiz-bright-pink' : ''} text-white bg-white/20 border-white/20 placeholder:text-white/70`}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
           />
@@ -73,10 +73,10 @@ const CurioSearch: React.FC<CurioSearchProps> = ({
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/70 hover:text-white focus:outline-none"
                 onClick={handleClear}
               >
-                <X className="h-5 w-5 text-wonderwhiz-purple/80" />
+                <X className="h-5 w-5" />
               </motion.button>
             )}
           </AnimatePresence>
@@ -85,22 +85,22 @@ const CurioSearch: React.FC<CurioSearchProps> = ({
         <div className="flex gap-2">
           <Button 
             type="submit" 
-            className="bg-wonderwhiz-purple hover:bg-wonderwhiz-purple/90 text-white w-full sm:w-auto"
+            className="bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/90 text-white w-full sm:w-auto shadow-glow-brand-pink"
             disabled={!searchQuery.trim() || isSearching}
           >
             <Search className="h-5 w-5 mr-0 sm:mr-2" />
-            <span className="hidden sm:inline">Search</span>
+            <span className="hidden sm:inline font-nunito">Search</span>
           </Button>
           
           {onImageUpload && (
             <>
               <Button 
                 type="button" 
-                className="bg-wonderwhiz-cyan hover:bg-wonderwhiz-cyan/90 text-white w-full sm:w-auto"
+                className="bg-wonderwhiz-cyan hover:bg-wonderwhiz-cyan/90 text-white w-full sm:w-auto shadow-glow-brand-cyan"
                 onClick={handleImageButtonClick}
               >
                 <Image className="h-5 w-5 mr-0 sm:mr-2" />
-                <span className="hidden sm:inline">Upload</span>
+                <span className="hidden sm:inline font-nunito">Upload</span>
               </Button>
               <input 
                 type="file"
@@ -119,7 +119,7 @@ const CurioSearch: React.FC<CurioSearchProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className="text-xs text-white/60 mt-1 font-inter"
+          className="text-xs text-white/70 mt-1 font-inter"
         >
           {searchQuery ? `Showing results in ${totalBlocksLoaded} blocks` : `${totalBlocksLoaded} blocks loaded`}
         </motion.div>

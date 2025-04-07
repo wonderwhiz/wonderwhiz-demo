@@ -87,7 +87,7 @@ const CurioSuggestion: React.FC<CurioSuggestionProps> = ({
       >
         <button
           onClick={handleClick}
-          className="w-full h-full p-4 bg-white/10 text-white text-left rounded-2xl border-white/20 hover:bg-white/20 transition-colors"
+          className="w-full h-full p-4 bg-white/10 text-white text-left rounded-2xl border-white/20 hover:bg-white/20 transition-colors font-nunito"
         >
           <span className="block font-medium line-clamp-2">{suggestion}</span>
         </button>
