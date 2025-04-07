@@ -21,14 +21,15 @@ export const useBlockInteractions = (childProfileId?: string) => {
     setLoadingStates(prev => ({ ...prev, reply: true }));
     
     try {
-      await supabase.functions.invoke('handle-block-replies', {
-        body: {
-          blockId,
-          message,
-          childProfileId
-        }
-      });
-      
+      await supabase
+        .from('block_replies')
+        .insert({
+          block_id: blockId,
+          content: message,
+          from_user: true,
+          user_id: childProfileId
+        });
+        
       console.log('Reply sent successfully');
     } catch (error) {
       console.error('Error sending reply:', error);
@@ -39,24 +40,25 @@ export const useBlockInteractions = (childProfileId?: string) => {
   };
 
   // Handle correct quiz answers
-  const handleQuizCorrect = async () => {
+  const handleQuizCorrect = async (blockId: string) => {
     if (!childProfileId) return;
     
     setLoadingStates(prev => ({ ...prev, quiz: true }));
     
     try {
-      // Award sparks for quiz correct answer
-      await supabase.functions.invoke('increment-sparks-balance', {
-        body: { childId: childProfileId, amount: 5 }
+      // Call edge function to handle quiz completion
+      await supabase.functions.invoke('handle-interaction', {
+        body: { 
+          type: 'quiz',
+          blockId,
+          childId: childProfileId
+        }
       });
       
       console.log('Quiz completed successfully');
       
       toast.success("Correct answer! +5 sparks", {
         position: 'top-center',
-        classNames: {
-          toast: 'bg-wonderwhiz-green text-white'
-        }
       });
     } catch (error) {
       console.error('Error handling quiz completion:', error);
@@ -66,28 +68,22 @@ export const useBlockInteractions = (childProfileId?: string) => {
   };
 
   // Handle news items being read
-  const handleNewsRead = async () => {
+  const handleNewsRead = async (blockId: string) => {
     if (!childProfileId) return;
     
     setLoadingStates(prev => ({ ...prev, news: true }));
     
     try {
-      // Award sparks for reading news
-      await supabase.functions.invoke('increment-sparks-balance', {
-        body: { childId: childProfileId, amount: 3 }
+      // Call edge function to handle news read
+      await supabase.functions.invoke('handle-interaction', {
+        body: { 
+          type: 'news',
+          blockId,
+          childId: childProfileId
+        }
       });
       
       console.log('News read successfully');
-      
-      // Update child_daily_activity counter
-      await supabase.from('child_daily_activity').upsert({
-        child_profile_id: childProfileId,
-        activity_date: new Date().toISOString().split('T')[0],
-        quizzes_completed: 1
-      }, {
-        onConflict: 'child_profile_id, activity_date',
-        ignoreDuplicates: false
-      });
     } catch (error) {
       console.error('Error handling news read:', error);
     } finally {
@@ -96,20 +92,22 @@ export const useBlockInteractions = (childProfileId?: string) => {
   };
 
   // Handle creative content uploads
-  const handleCreativeUpload = async () => {
+  const handleCreativeUpload = async (blockId: string) => {
     if (!childProfileId) return;
     
     setLoadingStates(prev => ({ ...prev, creative: true }));
     
     try {
-      // Award sparks for creative upload
-      await supabase.functions.invoke('increment-sparks-balance', {
-        body: { childId: childProfileId, amount: 10 }
+      // Call edge function to handle creative upload
+      await supabase.functions.invoke('handle-interaction', {
+        body: { 
+          type: 'creative',
+          blockId,
+          childId: childProfileId
+        }
       });
       
       console.log('Creative content uploaded successfully');
-      
-      // We don't show a toast here as the CreativeBlock component now handles its own feedback
     } catch (error) {
       console.error('Error handling creative upload:', error);
     } finally {
@@ -124,19 +122,17 @@ export const useBlockInteractions = (childProfileId?: string) => {
     setLoadingStates(prev => ({ ...prev, activity: true }));
     
     try {
-      // Award sparks for activity completion
-      await supabase.functions.invoke('increment-sparks-balance', {
-        body: { childId: childProfileId, amount: 3 }
+      // Call edge function to handle activity completion
+      await supabase.functions.invoke('handle-interaction', {
+        body: { 
+          type: 'activity',
+          childId: childProfileId
+        }
       });
       
       console.log('Activity completed successfully');
       
-      toast.success("Activity completed! +3 sparks", {
-        position: 'top-center',
-        classNames: {
-          toast: 'bg-wonderwhiz-purple text-white'
-        }
-      });
+      toast.success("Activity completed! +3 sparks");
     } catch (error) {
       console.error('Error handling activity completion:', error);
     } finally {
@@ -151,19 +147,17 @@ export const useBlockInteractions = (childProfileId?: string) => {
     setLoadingStates(prev => ({ ...prev, mindfulness: true }));
     
     try {
-      // Award sparks for mindfulness completion
-      await supabase.functions.invoke('increment-sparks-balance', {
-        body: { childId: childProfileId, amount: 5 }
+      // Call edge function to handle mindfulness completion
+      await supabase.functions.invoke('handle-interaction', {
+        body: { 
+          type: 'mindfulness',
+          childId: childProfileId
+        }
       });
       
       console.log('Mindfulness exercise completed successfully');
       
-      toast.success("Mindfulness exercise completed! +5 sparks", {
-        position: 'top-center',
-        classNames: {
-          toast: 'bg-wonderwhiz-purple text-white'
-        }
-      });
+      toast.success("Mindfulness exercise completed! +5 sparks");
     } catch (error) {
       console.error('Error handling mindfulness completion:', error);
     } finally {
@@ -178,19 +172,17 @@ export const useBlockInteractions = (childProfileId?: string) => {
     setLoadingStates(prev => ({ ...prev, task: true }));
     
     try {
-      // Award sparks for task completion
-      await supabase.functions.invoke('increment-sparks-balance', {
-        body: { childId: childProfileId, amount: 8 }
+      // Call edge function to handle task completion
+      await supabase.functions.invoke('handle-interaction', {
+        body: { 
+          type: 'task',
+          childId: childProfileId
+        }
       });
       
       console.log('Task completed successfully');
       
-      toast.success("Task completed! +8 sparks", {
-        position: 'top-center',
-        classNames: {
-          toast: 'bg-wonderwhiz-purple text-white'
-        }
-      });
+      toast.success("Task completed! +8 sparks");
     } catch (error) {
       console.error('Error handling task completion:', error);
     } finally {

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,6 +26,7 @@ import CurioBlockListSearchLoading from '@/components/CurioBlockListSearchLoadin
 import CurioBlockListSearchNoMore from '@/components/CurioBlockListSearchNoMore';
 import CurioBlockListWelcome from '@/components/CurioBlockListWelcome';
 import { useToast } from '@/components/ui/use-toast';
+import { useBlockInteractions } from '@/hooks/useBlockInteractions';
 
 const CurioPage: React.FC = () => {
   const { childId, curioId } = useParams<{ childId: string, curioId: string }>();
@@ -36,6 +38,16 @@ const CurioPage: React.FC = () => {
   const { searchQuery, setSearchQuery, handleSearch } = useSearch();
   const { blocks, isLoading: isLoadingBlocks, error: blocksError, hasMore, loadMore, isFirstLoad } = useCurioBlocks(childId, curioId, searchQuery);
   const { loadingMore, loadTriggerRef } = useInfiniteScroll(loadMore, hasMore);
+  const { 
+    handleReply,
+    handleQuizCorrect,
+    handleNewsRead,
+    handleCreativeUpload,
+    handleActivityComplete,
+    handleMindfulnessComplete,
+    handleTaskComplete,
+    loadingStates
+  } = useBlockInteractions(childId);
 
   const [animateBlocks, setAnimateBlocks] = useState(true);
 
@@ -71,17 +83,14 @@ const CurioPage: React.FC = () => {
 
   const handleToggleLike = async (blockId: string) => {
     try {
-      const { error } = await supabase
-        .from('likes')
-        .upsert({
-          block_id: blockId,
-          child_id: childId,
-        }, {
-          onConflict: 'block_id, child_id',
-          ignoreDuplicates: false,
-        });
-
-      if (error) throw error;
+      // Using edge function for handling likes instead of direct table access
+      await supabase.functions.invoke('handle-interaction', {
+        body: { 
+          type: 'like',
+          blockId,
+          childId
+        }
+      });
     } catch (error) {
       console.error('Error toggling like:', error);
       toast({
@@ -94,17 +103,14 @@ const CurioPage: React.FC = () => {
 
   const handleToggleBookmark = async (blockId: string) => {
     try {
-      const { error } = await supabase
-        .from('bookmarks')
-        .upsert({
-          block_id: blockId,
-          child_id: childId,
-        }, {
-          onConflict: 'block_id, child_id',
-          ignoreDuplicates: false,
-        });
-
-      if (error) throw error;
+      // Using edge function for handling bookmarks instead of direct table access
+      await supabase.functions.invoke('handle-interaction', {
+        body: { 
+          type: 'bookmark',
+          blockId,
+          childId
+        }
+      });
     } catch (error) {
       console.error('Error toggling bookmark:', error);
       toast({
@@ -115,155 +121,13 @@ const CurioPage: React.FC = () => {
     }
   };
 
-  const handleReply = async (blockId: string, message: string) => {
-    try {
-      const { error } = await supabase
-        .from('replies')
-        .insert({
-          block_id: blockId,
-          child_id: childId,
-          message: message,
-        });
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error submitting reply:', error);
-      toast({
-        title: "Could not submit your reply",
-        description: "Please try again later.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleQuizCorrect = async (blockId: string) => {
-    try {
-      const { error } = await supabase
-        .from('quiz_results')
-        .insert({
-          block_id: blockId,
-          child_id: childId,
-          correct: true,
-        });
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error submitting quiz result:', error);
-      toast({
-        title: "Could not submit your quiz result",
-        description: "Please try again later.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleNewsRead = async (blockId: string) => {
-    try {
-      const { error } = await supabase
-        .from('news_reads')
-        .insert({
-          block_id: blockId,
-          child_id: childId,
-        });
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error submitting news read:', error);
-      toast({
-        title: "Could not submit your news read",
-        description: "Please try again later.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleCreativeUpload = async (blockId: string) => {
-    try {
-      const { error } = await supabase
-        .from('creative_uploads')
-        .insert({
-          block_id: blockId,
-          child_id: childId,
-        });
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error submitting creative upload:', error);
-      toast({
-        title: "Could not submit your creative upload",
-        description: "Please try again later.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleTaskComplete = async () => {
-    try {
-      const { error } = await supabase
-        .from('tasks_completed')
-        .insert({
-          curio_id: curioId,
-          child_id: childId,
-        });
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error submitting task completion:', error);
-      toast({
-        title: "Could not submit your task completion",
-        description: "Please try again later.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleActivityComplete = async () => {
-    try {
-      const { error } = await supabase
-        .from('activities_completed')
-        .insert({
-          curio_id: curioId,
-          child_id: childId,
-        });
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error submitting activity completion:', error);
-      toast({
-        title: "Could not submit your activity completion",
-        description: "Please try again later.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleMindfulnessComplete = async () => {
-    try {
-      const { error } = await supabase
-        .from('mindfulness_completed')
-        .insert({
-          curio_id: curioId,
-          child_id: childId,
-        });
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error submitting mindfulness completion:', error);
-      toast({
-        title: "Could not submit your mindfulness completion",
-        description: "Please try again later.",
-        variant: "destructive",
-      });
-    }
-  };
-
   const handleRabbitHoleClick = async (question: string) => {
     if (!childId) return;
     
     try {
-      toast.loading("Creating new exploration...", {
+      toast({
+        title: "Creating new exploration...",
         id: "create-curio",
-        duration: 3000
       });
       
       // Create a new curio based on the rabbit hole question
@@ -280,8 +144,9 @@ const CurioPage: React.FC = () => {
       if (error) throw error;
       
       if (newCurio) {
-        toast.success("New exploration created!", {
-          id: "create-curio"
+        toast({
+          title: "New exploration created!",
+          id: "create-curio",
         });
         
         // Navigate to the new curio
