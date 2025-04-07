@@ -133,7 +133,6 @@ const CurioContent: React.FC<CurioContentProps> = ({
                       onCreativeUpload={() => onCreativeUpload(block.id)}
                       userId={profileId}
                       childProfileId={profileId}
-                      replies={blockReplies[block.id] || []}
                       isFirstBlock={index === 0}
                     />
                   </motion.div>
