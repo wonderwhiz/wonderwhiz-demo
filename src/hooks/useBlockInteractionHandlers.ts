@@ -3,12 +3,14 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-interface Reply {
+interface BlockReply {
   id: string;
   block_id: string;
   content: string;
   from_user: boolean;
-  timestamp: string;
+  created_at: string;
+  user_id?: string | null;
+  specialist_id?: string;
 }
 
 interface ContentBlock {
@@ -35,7 +37,7 @@ export const useBlockInteractionHandlers = (
   setChildProfile?: React.Dispatch<React.SetStateAction<ChildProfile | null>>,
   contentBlocks: ContentBlock[] = []
 ) => {
-  const [blockReplies, setBlockReplies] = useState<Record<string, Reply[]>>({});
+  const [blockReplies, setBlockReplies] = useState<Record<string, BlockReply[]>>({});
 
   const handleBlockReply = async (blockId: string, message: string) => {
     if (!message.trim() || !childProfile) return;
@@ -61,7 +63,7 @@ export const useBlockInteractionHandlers = (
       
       setBlockReplies(prev => ({
         ...prev,
-        [blockId]: [...(prev[blockId] || []), replyData]
+        [blockId]: [...(prev[blockId] || []), replyData as BlockReply]
       }));
       
       const aiResponse = await supabase.functions.invoke('handle-block-chat', {
@@ -93,7 +95,7 @@ export const useBlockInteractionHandlers = (
       
       setBlockReplies(prev => ({
         ...prev,
-        [blockId]: [...(prev[blockId] || []), aiReplyData]
+        [blockId]: [...(prev[blockId] || []), aiReplyData as BlockReply]
       }));
     } catch (error) {
       console.error('Error handling reply:', error);

@@ -3,17 +3,18 @@ import React from 'react';
 import BlockReply from '../BlockReply';
 import { motion, AnimatePresence } from 'framer-motion';
 
-interface Reply {
+interface BlockReply {
   id: string;
   block_id: string;
   content: string;
   from_user: boolean;
-  timestamp: string;
+  created_at: string;
+  user_id?: string | null;
   specialist_id?: string;
 }
 
 interface BlockRepliesProps {
-  replies: Reply[];
+  replies: BlockReply[];
   specialistId: string;
 }
 
@@ -49,7 +50,7 @@ const BlockReplies: React.FC<BlockRepliesProps> = ({ replies, specialistId }) =>
                 content={reply.content} 
                 fromUser={reply.from_user} 
                 specialistId={reply.specialist_id || specialistId} 
-                timestamp={reply.timestamp} 
+                timestamp={reply.created_at} 
               />
             </motion.div>
           ))}
