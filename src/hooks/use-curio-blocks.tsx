@@ -99,8 +99,14 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
           
         if (error) throw error;
         
-        if (data && data.generation_error) {
-          setGenerationError(data.generation_error);
+        // Handle the data safely to avoid type errors
+        if (data) {
+          // Check if generation_error exists in the returned data
+          if ('generation_error' in data) {
+            setGenerationError(data.generation_error);
+          } else {
+            setGenerationError(null);
+          }
         } else {
           setGenerationError(null);
         }
