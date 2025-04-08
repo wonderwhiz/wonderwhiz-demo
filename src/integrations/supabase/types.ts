@@ -273,6 +273,7 @@ export type Database = {
         Row: {
           child_id: string
           created_at: string
+          generation_error: string | null
           id: string
           last_updated_at: string
           query: string
@@ -281,6 +282,7 @@ export type Database = {
         Insert: {
           child_id: string
           created_at?: string
+          generation_error?: string | null
           id?: string
           last_updated_at?: string
           query: string
@@ -289,6 +291,7 @@ export type Database = {
         Update: {
           child_id?: string
           created_at?: string
+          generation_error?: string | null
           id?: string
           last_updated_at?: string
           query?: string
