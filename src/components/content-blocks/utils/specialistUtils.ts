@@ -1,76 +1,106 @@
 
-export const getSpecialistStyle = (specialistId: string) => {
+// Specialist profiles for the app
+export const getSpecialistName = (specialistId: string): string => {
   switch (specialistId) {
     case 'nova':
-      return {
-        gradient: 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500',
-        introPhrase: 'Did you know...',
-        tone: 'soft wonder'
-      };
+      return 'Nova, Space Expert';
     case 'spark':
-      return {
-        gradient: 'bg-gradient-to-r from-yellow-400 via-yellow-300 to-amber-300',
-        introPhrase: 'Let\'s find out!',
-        tone: 'energetic'
-      };
+      return 'Spark, Creative Genius';
     case 'prism':
-      return {
-        gradient: 'bg-gradient-to-r from-pink-300 via-purple-300 to-indigo-400',
-        introPhrase: 'Imagine this...',
-        tone: 'dreamy'
-      };
-    case 'lotus':
-      return {
-        gradient: 'bg-gradient-to-r from-pink-200 via-pink-300 to-purple-300',
-        introPhrase: 'Take a breath...',
-        tone: 'gentle mindfulness'
-      };
+      return 'Prism, Science Whiz';
     case 'pixel':
-      return {
-        gradient: 'bg-gradient-to-r from-blue-300 via-blue-400 to-teal-400',
-        introPhrase: 'According to the latest research...',
-        tone: 'snappy & newsy'
-      };
+      return 'Pixel, Tech Guru';
     case 'atlas':
-      return {
-        gradient: 'bg-gradient-to-r from-amber-500 via-orange-400 to-amber-400',
-        introPhrase: 'Here\'s a mission for you...',
-        tone: 'exploratory'
-      };
+      return 'Atlas, History Buff';
+    case 'lotus':
+      return 'Lotus, Nature Guide';
     default:
-      return {
-        gradient: 'bg-gradient-to-r from-gray-400 to-gray-300',
-        introPhrase: 'Let\'s explore...',
-        tone: 'friendly'
-      };
+      return 'WonderWhiz Specialist';
   }
 };
 
-export const getBlockTitle = (block: any) => {
-  // Safely access content properties
-  const content = block?.content || {};
-  
-  switch (block?.type) {
-    case 'fact':
-    case 'funFact':
-      return content.fact ? `${content.fact.split('.')[0]}.` : 'Interesting fact';
-    case 'quiz':
-      return content.question || 'Quiz question';
-    case 'flashcard':
-      return content.front || 'Flashcard';
-    case 'creative':
-      return content.prompt ? `${content.prompt.split('.')[0]}.` : 'Creative prompt';
-    case 'task':
-      return content.task ? `${content.task.split('.')[0]}.` : 'Task';
-    case 'riddle':
-      return content.riddle ? `${content.riddle.split('?')[0]}?` : 'Riddle';
-    case 'news':
-      return content.headline || 'News headline';
-    case 'activity':
-      return content.activity ? `${content.activity.split('.')[0]}.` : 'Activity';
-    case 'mindfulness':
-      return content.exercise ? `${content.exercise.split('.')[0]}.` : 'Mindfulness exercise';
+export const getSpecialistEmoji = (specialistId: string): string => {
+  switch (specialistId) {
+    case 'nova':
+      return '🚀';
+    case 'spark':
+      return '✨';
+    case 'prism':
+      return '🔬';
+    case 'pixel':
+      return '💻';
+    case 'atlas':
+      return '🗺️';
+    case 'lotus':
+      return '🌿';
     default:
-      return 'Content block';
+      return '🧠';
+  }
+};
+
+export const getBlockTitle = (block: any): string => {
+  switch (block.type) {
+    case 'fact':
+      return 'Amazing Fact';
+    case 'quiz':
+      return 'Brain Teaser';
+    case 'flashcard':
+      return 'Knowledge Card';
+    case 'creative':
+      return 'Creative Challenge';
+    case 'task':
+      return 'Learning Adventure';
+    case 'riddle':
+      return 'Mind Puzzle';
+    case 'news':
+      return 'Discovery News';
+    case 'activity':
+      return 'Hands-On Activity';
+    case 'mindfulness':
+      return 'Mindful Moment';
+    case 'funFact':
+      return 'Fun Trivia';
+    default:
+      return 'Wonder Discovery';
+  }
+};
+
+export const getSpecialistStyle = (specialistId: string): { gradient: string, accent: string } => {
+  switch (specialistId) {
+    case 'nova':
+      return {
+        gradient: 'bg-gradient-to-br from-blue-600/10 to-indigo-700/10',
+        accent: 'border-l-blue-500'
+      };
+    case 'spark':
+      return {
+        gradient: 'bg-gradient-to-br from-pink-600/10 to-rose-700/10',
+        accent: 'border-l-pink-500'
+      };
+    case 'prism':
+      return {
+        gradient: 'bg-gradient-to-br from-amber-500/10 to-yellow-600/10',
+        accent: 'border-l-amber-400'
+      };
+    case 'pixel':
+      return {
+        gradient: 'bg-gradient-to-br from-cyan-500/10 to-blue-600/10',
+        accent: 'border-l-cyan-400'
+      };
+    case 'atlas':
+      return {
+        gradient: 'bg-gradient-to-br from-emerald-500/10 to-teal-600/10',
+        accent: 'border-l-emerald-400'
+      };
+    case 'lotus':
+      return {
+        gradient: 'bg-gradient-to-br from-purple-500/10 to-violet-600/10',
+        accent: 'border-l-purple-400'
+      };
+    default:
+      return {
+        gradient: 'bg-gradient-to-br from-gray-600/10 to-slate-700/10',
+        accent: 'border-l-gray-400'
+      };
   }
 };

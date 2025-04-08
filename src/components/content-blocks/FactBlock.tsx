@@ -1,15 +1,16 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronUp, Lightbulb, Star, CornerRightDown } from 'lucide-react';
+import { getBlockTypeColor, getHoverAnimation } from '@/components/BlockStyleUtils';
+import { ArrowRight, MessageCircle, BrainCircuit } from 'lucide-react';
 
 interface FactBlockProps {
   content: {
     fact: string;
     rabbitHoles?: string[];
   };
-  onRabbitHoleClick: (question: string) => void;  // This accepts a string parameter
+  onRabbitHoleClick?: (question: string) => void;
   expanded?: boolean;
   setExpanded?: (expanded: boolean) => void;
   textSize?: string;
@@ -17,172 +18,102 @@ interface FactBlockProps {
 
 const FactBlock: React.FC<FactBlockProps> = ({ 
   content, 
-  onRabbitHoleClick, 
+  onRabbitHoleClick,
   expanded = false,
   setExpanded = () => {},
-  textSize = 'text-sm sm:text-base'
+  textSize = 'text-base'
 }) => {
-  // Add a safety check to make sure content.fact exists
-  if (!content || typeof content.fact === 'undefined') {
-    console.error('FactBlock received invalid content:', content);
-    return (
-      <div className="flex items-start space-x-2 mb-2">
-        <div className="flex-shrink-0 mt-1">
-          <Lightbulb className="h-5 w-5 text-wonderwhiz-gold" />
-        </div>
-        <div className="flex-1">
-          <p className={`text-white/90 ${textSize}`}>
-            Loading interesting facts...
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const [selectedRabbitHole, setSelectedRabbitHole] = useState<string | null>(null);
+  const [animateInsight, setAnimateInsight] = useState<boolean>(false);
   
-  const factIsTooLong = content.fact.length > 120;
+  // Handle edge cases where content might not be properly structured
+  const fact = content?.fact || "Interesting fact coming soon...";
+  const rabbitHoles = content?.rabbitHoles || [];
+  const hasRabbitHoles = Array.isArray(rabbitHoles) && rabbitHoles.length > 0;
   
-  // Add safety check for rabbitHoles to ensure it exists before accessing its length
-  const hasRabbitHoles = content.rabbitHoles && content.rabbitHoles.length > 0;
+  const handleRabbitHoleClick = (question: string) => {
+    setSelectedRabbitHole(question);
+    setTimeout(() => {
+      if (onRabbitHoleClick) {
+        onRabbitHoleClick(question);
+      }
+    }, 400);
+  };
   
-  // State to track which rabbit hole is being hovered
-  const [hoveredRabbitHole, setHoveredRabbitHole] = useState<number | null>(null);
+  const toggleExpandFact = () => {
+    setExpanded(!expanded);
+    if (!expanded) {
+      setAnimateInsight(true);
+      setTimeout(() => setAnimateInsight(false), 1500);
+    }
+  };
   
-  // For the mini sparkle animation effect
-  const [showSparkle, setShowSparkle] = useState(false);
-  
-  useEffect(() => {
-    // Show sparkle effect on mount
-    const timer = setTimeout(() => {
-      setShowSparkle(true);
-      
-      // Hide it after some time
-      setTimeout(() => {
-        setShowSparkle(false);
-      }, 2000);
-    }, 500);
-    
-    return () => clearTimeout(timer);
-  }, []);
+  const factVariants = {
+    collapsed: { height: "auto" },
+    expanded: { height: "auto" }
+  };
 
   return (
-    <div>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
+    <div className={`relative overflow-hidden ${getHoverAnimation('fact')}`}>
+      <motion.div 
+        className={`p-3 sm:p-4 rounded-lg ${getBlockTypeColor('fact')}`}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
       >
-        <div className="flex items-start space-x-2 mb-2 relative">
-          <div className="flex-shrink-0 mt-1">
-            <div className="relative">
-              <Lightbulb className="h-5 w-5 text-wonderwhiz-gold" />
-              <AnimatePresence>
-                {showSparkle && (
-                  <motion.div
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0, opacity: 0 }}
-                    className="absolute -top-1 -right-1"
-                  >
-                    <Star className="h-3 w-3 text-wonderwhiz-vibrant-yellow" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-          <div className="flex-1">
-            {factIsTooLong && !expanded ? (
-              <>
-                <motion.p
-                  className={`text-white/90 ${textSize}`}
-                  initial={{ filter: "blur(0px)" }}
-                  animate={{ filter: "blur(0px)" }}
-                  transition={{ duration: 0.5 }}
-                >
-                  {content.fact.substring(0, 120)}...
-                </motion.p>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setExpanded(true)}
-                  className="mt-1 text-wonderwhiz-purple hover:text-wonderwhiz-purple/80 px-2 py-0.5 h-auto text-xs flex items-center"
-                >
-                  Read more <ChevronDown className="ml-1 h-3 w-3" />
-                </Button>
-              </>
-            ) : (
-              <>
-                <motion.p
-                  className={`text-white/90 ${textSize}`}
-                  initial={{ filter: "blur(0px)" }}
-                  animate={{ filter: "blur(0px)" }}
-                  transition={{ duration: 0.5 }}
-                >
-                  {content.fact}
-                </motion.p>
-                {factIsTooLong && expanded && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setExpanded(false)}
-                    className="mt-1 text-wonderwhiz-purple hover:text-wonderwhiz-purple/80 px-2 py-0.5 h-auto text-xs flex items-center"
-                  >
-                    Show less <ChevronUp className="ml-1 h-3 w-3" />
-                  </Button>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-      </motion.div>
-
-      {hasRabbitHoles && (
         <motion.div 
-          className="mt-4 sm:mt-4 relative"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.5 }}
+          variants={factVariants}
+          initial="collapsed"
+          animate={expanded ? "expanded" : "collapsed"}
         >
-          <div className="flex items-center mb-2">
-            <CornerRightDown className="h-3 w-3 text-wonderwhiz-vibrant-yellow mr-1.5" />
-            <p className="text-white/80 text-xs sm:text-sm">Explore more about this</p>
-          </div>
-          
-          <div className="flex flex-wrap gap-2">
-            {content.rabbitHoles.map((question: string, idx: number) => (
+          <div className="flex items-start">
+            <div className="mr-3 mt-1 flex-shrink-0">
               <motion.div
-                key={idx}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onHoverStart={() => setHoveredRabbitHole(idx)}
-                onHoverEnd={() => setHoveredRabbitHole(null)}
-                className="relative"
+                initial={{ scale: 1 }}
+                animate={{ 
+                  scale: animateInsight ? [1, 1.2, 1] : 1,
+                  rotate: animateInsight ? [0, 10, -10, 0] : 0
+                }}
+                transition={{ duration: 0.6 }}
+                className="h-6 w-6 bg-indigo-500/20 rounded-full flex items-center justify-center"
               >
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="bg-white/10 border-white/20 text-white hover:bg-wonderwhiz-vibrant-yellow/20 hover:border-wonderwhiz-vibrant-yellow/40 hover:text-white text-xs sm:text-sm py-1.5 px-3 h-auto rounded-full transition-all"
-                  onClick={() => onRabbitHoleClick(question)}
-                >
-                  {question}
-                </Button>
-                
-                <AnimatePresence>
-                  {hoveredRabbitHole === idx && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.8 }}
-                      className="absolute -top-1 -right-1"
-                    >
-                      <div className="h-3 w-3 rounded-full bg-wonderwhiz-vibrant-yellow animate-pulse" />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                <BrainCircuit className="w-3.5 h-3.5 text-indigo-400" />
               </motion.div>
-            ))}
+            </div>
+            <p className={`${textSize} text-white`}>
+              {fact}
+            </p>
           </div>
         </motion.div>
-      )}
+        
+        {hasRabbitHoles && (
+          <div className="mt-4">
+            <p className="text-white/60 text-xs mb-2 flex items-center">
+              <MessageCircle className="h-3 w-3 mr-1.5" />
+              Curious about...
+            </p>
+            
+            <div className="flex flex-wrap gap-2">
+              {rabbitHoles.map((question, index) => (
+                <motion.button
+                  key={`rabbit-hole-${index}`}
+                  onClick={() => handleRabbitHoleClick(question)}
+                  className={`text-xs px-2.5 py-1.5 rounded-full flex items-center 
+                    ${selectedRabbitHole === question
+                      ? 'bg-indigo-500 text-white'
+                      : 'bg-indigo-500/20 text-indigo-200 hover:bg-indigo-500/30'
+                    } transition-colors duration-200`}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <span>{question}</span>
+                  <ArrowRight className="ml-1.5 h-3 w-3" />
+                </motion.button>
+              ))}
+            </div>
+          </div>
+        )}
+      </motion.div>
     </div>
   );
 };

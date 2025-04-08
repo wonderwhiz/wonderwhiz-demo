@@ -1,12 +1,12 @@
-
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ContentBlock from '@/components/ContentBlock';
 import { ContentBlock as ContentBlockType } from '@/types/curio';
-import { AlertCircle, Lightbulb, RefreshCw, Sparkles } from 'lucide-react';
+import { AlertCircle, Lightbulb, RefreshCw, Sparkles, Brain } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import CurioBlockListLoadMore from './CurioBlockListLoadMore';
+import confetti from 'canvas-confetti';
 
 interface CurioBlockListProps {
   blocks: ContentBlockType[];
@@ -54,6 +54,21 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
   onRefresh
 }) => {
   const isMobile = useIsMobile();
+
+  useEffect(() => {
+    // Show initial confetti when blocks load for the first time
+    if (blocks.length > 0 && isFirstLoad) {
+      setTimeout(() => {
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#8b5cf6', '#10b981', '#3b82f6', '#ec4899', '#f59e0b'],
+          disableForReducedMotion: true
+        });
+      }, 800);
+    }
+  }, [blocks.length, isFirstLoad]);
 
   // Safety check for blocks array
   const safeBlocks = Array.isArray(blocks) ? blocks : [];
@@ -178,6 +193,13 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
     show: { opacity: 1, y: 0 }
   };
 
+  const organizeBlocksByType = (blocks: ContentBlockType[]) => {
+    // For now we're keeping the original order but this could be enhanced later
+    return blocks;
+  };
+  
+  const organizedBlocks = organizeBlocksByType(safeBlocks);
+
   return (
     <motion.div 
       className="space-y-4 sm:space-y-5 px-2 sm:px-0"
@@ -185,7 +207,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
       initial={animateBlocks ? "hidden" : false}
       animate={animateBlocks ? "show" : false}
     >
-      {safeBlocks.map((block, index) => (
+      {organizedBlocks.map((block, index) => (
         <motion.div
           key={block.id}
           className="relative group"
@@ -207,6 +229,21 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
                 transition={{ duration: 0.5 }}
               >
                 <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-wonderwhiz-vibrant-yellow animate-sparkle" />
+              </motion.div>
+            </AnimatePresence>
+          )}
+          
+          {/* Add a brain decoration to quiz blocks */}
+          {!isMobile && block.type === 'quiz' && (
+            <AnimatePresence>
+              <motion.div
+                className="absolute -right-6 sm:-right-8 top-1/3 transform -translate-y-1/2 hidden md:block"
+                initial={{ opacity: 0, scale: 0 }}
+                whileInView={{ opacity: 0.6, scale: 1 }}
+                exit={{ opacity: 0, scale: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                <Brain className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400 animate-pulse" />
               </motion.div>
             </AnimatePresence>
           )}

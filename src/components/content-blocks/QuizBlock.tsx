@@ -1,131 +1,161 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
-import { CheckCircle, Star } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { getBlockTypeColor, getHoverAnimation } from '@/components/BlockStyleUtils';
+import { Check, X, HelpCircle, Award, Brain } from 'lucide-react';
+import confetti from 'canvas-confetti';
 
 interface QuizBlockProps {
   content: {
     question: string;
     options: string[];
-    correctIndex: number;
+    correctAnswer: number;
+    explanation: string;
   };
   onQuizCorrect?: () => void;
 }
 
 const QuizBlock: React.FC<QuizBlockProps> = ({ content, onQuizCorrect }) => {
-  const [selectedQuizOption, setSelectedQuizOption] = useState<number | null>(null);
-  const [quizSubmitted, setQuizSubmitted] = useState(false);
-  const [showConfetti, setShowConfetti] = useState(false);
-
-  const handleQuizOptionSelect = (idx: number) => {
-    if (quizSubmitted) return;
+  const [selectedOption, setSelectedOption] = useState<number | null>(null);
+  const [showExplanation, setShowExplanation] = useState(false);
+  const [animateBrain, setAnimateBrain] = useState(false);
+  
+  const { question, options, correctAnswer, explanation } = content;
+  
+  const handleSelectOption = (index: number) => {
+    if (selectedOption !== null) return; // Prevent changing answer after submission
     
-    setSelectedQuizOption(idx);
-    setQuizSubmitted(true);
+    setSelectedOption(index);
     
-    const isCorrect = idx === content.correctIndex;
-    if (isCorrect) {
-      setShowConfetti(true);
-      if (onQuizCorrect) {
-        onQuizCorrect();
-      }
-    }
-  };
-
-  return (
-    <div>
-      <div className="space-y-3 sm:space-y-4">
-        {content.options.map((option: string, idx: number) => (
-          <motion.div 
-            key={idx}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 * idx, duration: 0.4 }}
-            whileHover={{ scale: quizSubmitted ? 1 : 1.02 }}
-          >
-            <button
-              onClick={() => handleQuizOptionSelect(idx)}
-              disabled={quizSubmitted}
-              className={`group w-full p-3 sm:p-4 rounded-lg text-left transition-all ${
-                quizSubmitted
-                  ? idx === content.correctIndex
-                    ? 'bg-gradient-to-r from-green-500/20 to-green-400/20 border border-green-500'
-                    : idx === selectedQuizOption
-                      ? 'bg-gradient-to-r from-red-500/20 to-red-400/20 border border-red-500'
-                      : 'bg-white/5 border border-white/10'
-                  : 'bg-gradient-to-r from-white/5 to-white/10 border border-white/10 hover:bg-white/15'
-              }`}
-            >
-              <div className="flex items-center">
-                <motion.span 
-                  className={`h-7 w-7 sm:h-8 sm:w-8 rounded-full flex items-center justify-center mr-3 text-sm sm:text-base font-medium border flex-shrink-0 ${
-                    quizSubmitted && idx === content.correctIndex
-                      ? 'bg-green-500 border-green-600 text-white'
-                      : quizSubmitted && idx === selectedQuizOption && idx !== content.correctIndex
-                        ? 'bg-red-500 border-red-600 text-white'
-                        : 'border-white/20 group-hover:border-white/40 text-white'
-                  }`}
-                  initial={{ scale: 0.9 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                >
-                  {String.fromCharCode(65 + idx)}
-                </motion.span>
-                <span className="text-sm sm:text-base text-white">{option}</span>
-              </div>
-            </button>
-          </motion.div>
-        ))}
-      </div>
+    if (index === correctAnswer) {
+      setAnimateBrain(true);
       
-      {quizSubmitted && (
-        <motion.div 
-          className={`mt-3 sm:mt-4 p-3 rounded-lg ${
-            selectedQuizOption === content.correctIndex 
-              ? 'bg-green-500/10' 
-              : 'bg-red-500/10'
-          }`}
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          transition={{ duration: 0.3 }}
-        >
-          {selectedQuizOption === content.correctIndex ? (
-            <div className="flex items-center">
-              <CheckCircle className="h-5 w-5 text-green-400 mr-2" />
-              <div>
-                <p className="text-green-400 text-sm font-medium">Correct!</p>
-                <div className="flex items-center text-white/80 text-xs mt-1">
-                  <Star className="h-4 w-4 fill-wonderwhiz-gold text-wonderwhiz-gold mr-1.5" /> 
-                  <span>You earned 5 sparks!</span>
-                  {showConfetti && (
-                    <motion.span 
-                      className="ml-2"
-                      initial={{ opacity: 0, scale: 0, rotate: -45 }}
-                      animate={{ 
-                        opacity: [0, 1, 1, 0], 
-                        scale: [0, 1.5, 1.2, 0], 
-                        rotate: [-45, 0, 15, 30] 
-                      }}
-                      transition={{ duration: 1.5, times: [0, 0.2, 0.8, 1] }}
+      setTimeout(() => {
+        // Trigger confetti effect when answer is correct
+        confetti({
+          particleCount: 80,
+          spread: 50,
+          origin: { y: 0.6 },
+          colors: ['#10b981', '#059669', '#34d399']
+        });
+        
+        if (onQuizCorrect) {
+          onQuizCorrect();
+        }
+      }, 300);
+    }
+    
+    setTimeout(() => {
+      setShowExplanation(true);
+    }, 500);
+  };
+  
+  return (
+    <motion.div 
+      className={`relative overflow-hidden ${getHoverAnimation('quiz')}`}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <div className={`p-3 sm:p-4 rounded-lg ${getBlockTypeColor('quiz')}`}>
+        <div className="flex mb-3 items-start">
+          <div className="mr-3 mt-1 flex-shrink-0">
+            <motion.div
+              animate={{ 
+                scale: animateBrain ? [1, 1.3, 1] : 1,
+                rotate: animateBrain ? [0, 10, -10, 0] : 0
+              }}
+              transition={{ duration: 0.8 }}
+              className="h-6 w-6 bg-emerald-500/20 rounded-full flex items-center justify-center"
+            >
+              <Brain className="w-3.5 h-3.5 text-emerald-400" />
+            </motion.div>
+          </div>
+          <p className="text-white font-medium">{question}</p>
+        </div>
+        
+        <div className="space-y-2 mb-3">
+          {options.map((option, index) => (
+            <motion.button
+              key={`option-${index}`}
+              onClick={() => handleSelectOption(index)}
+              className={`w-full text-left p-2.5 sm:p-3 rounded-lg flex items-center transition-colors duration-300
+                ${selectedOption === null
+                  ? 'bg-white/10 hover:bg-white/15 text-white'
+                  : selectedOption === index
+                    ? index === correctAnswer
+                      ? 'bg-emerald-500/20 text-emerald-200 border border-emerald-500/40'
+                      : 'bg-red-500/20 text-red-200 border border-red-500/40'
+                    : index === correctAnswer && showExplanation
+                      ? 'bg-emerald-500/20 text-emerald-200 border border-emerald-500/40'
+                      : 'bg-white/5 text-white/60'
+                }
+              `}
+              disabled={selectedOption !== null}
+              whileHover={selectedOption === null ? { scale: 1.02 } : {}}
+              whileTap={selectedOption === null ? { scale: 0.98 } : {}}
+            >
+              <span className="mr-3 flex-shrink-0 h-6 w-6 rounded-full flex items-center justify-center bg-white/10">
+                {selectedOption !== null && (
+                  <>
+                    {selectedOption === index ? (
+                      index === correctAnswer ? (
+                        <Check className="h-4 w-4 text-emerald-400" />
+                      ) : (
+                        <X className="h-4 w-4 text-red-400" />
+                      )
+                    ) : index === correctAnswer && showExplanation ? (
+                      <Check className="h-4 w-4 text-emerald-400" />
+                    ) : (
+                      <span className="text-xs text-white/70">{String.fromCharCode(65 + index)}</span>
+                    )}
+                  </>
+                )}
+                
+                {selectedOption === null && (
+                  <span className="text-xs text-white/70">{String.fromCharCode(65 + index)}</span>
+                )}
+              </span>
+              <span className="text-sm sm:text-base">{option}</span>
+            </motion.button>
+          ))}
+        </div>
+        
+        <AnimatePresence>
+          {showExplanation && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              className="mt-3 pt-3 border-t border-white/10"
+            >
+              <div className="flex items-start">
+                <div className="flex-shrink-0 mr-2">
+                  <HelpCircle className="h-4 w-4 text-white/70" />
+                </div>
+                <div>
+                  <p className="text-sm text-white/90">{explanation}</p>
+                  
+                  {selectedOption === correctAnswer && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3 }}
+                      className="mt-3 flex items-center"
                     >
-                      ✨
-                    </motion.span>
+                      <Award className="h-4 w-4 text-wonderwhiz-gold mr-2" />
+                      <span className="text-wonderwhiz-gold text-sm">+5 sparks earned for answering correctly!</span>
+                    </motion.div>
                   )}
                 </div>
               </div>
-            </div>
-          ) : (
-            <div>
-              <p className="text-red-400 text-sm">Not quite!</p>
-              <p className="text-white/80 text-xs mt-1">
-                The correct answer is: <span className="font-medium text-green-400">{content.options[content.correctIndex]}</span>
-              </p>
-            </div>
+            </motion.div>
           )}
-        </motion.div>
-      )}
-    </div>
+        </AnimatePresence>
+      </div>
+    </motion.div>
   );
 };
 

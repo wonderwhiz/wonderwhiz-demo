@@ -37,6 +37,34 @@ export const getTextColor = (): string => {
   return 'text-white/95';  // Bright text for better readability
 };
 
+// Added new utility to get color for block content based on type
+export const getBlockTypeColor = (blockType: string): string => {
+  switch (blockType) {
+    case 'fact':
+      return 'bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border-l-2 border-indigo-500/70';
+    case 'quiz':
+      return 'bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border-l-2 border-emerald-500/70';
+    case 'flashcard':
+      return 'bg-gradient-to-r from-blue-500/10 to-sky-500/10 border-l-2 border-blue-500/70';
+    case 'creative':
+      return 'bg-gradient-to-r from-rose-500/10 to-pink-500/10 border-l-2 border-rose-500/70';
+    case 'task':
+      return 'bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border-l-2 border-amber-500/70';
+    case 'riddle':
+      return 'bg-gradient-to-r from-violet-500/10 to-purple-500/10 border-l-2 border-violet-500/70';
+    case 'news':
+      return 'bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border-l-2 border-blue-500/70';
+    case 'activity':
+      return 'bg-gradient-to-r from-orange-500/10 to-amber-500/10 border-l-2 border-orange-500/70';
+    case 'mindfulness':
+      return 'bg-gradient-to-r from-teal-500/10 to-cyan-500/10 border-l-2 border-teal-500/70';
+    case 'funFact':
+      return 'bg-gradient-to-r from-fuchsia-500/10 to-pink-500/10 border-l-2 border-fuchsia-500/70';
+    default:
+      return 'bg-gradient-to-r from-gray-500/10 to-slate-500/10 border-l-2 border-gray-500/70';
+  }
+};
+
 export const getTextSize = (type: string): string => {
   switch (type) {
     case 'fact':
@@ -82,4 +110,24 @@ export const getCardHoverEffect = (): string => {
 
 export const getAnimatedGradient = (): string => {
   return 'bg-gradient-to-r from-wonderwhiz-bright-pink via-wonderwhiz-vibrant-yellow to-wonderwhiz-cyan bg-[length:200%_auto] animate-shimmer';
+};
+
+// Add more utility functions for better animations and visual effects
+export const getHoverAnimation = (blockType: string): string => {
+  switch (blockType) {
+    case 'fact':
+      return 'hover:shadow-[0_0_15px_rgba(139,92,246,0.3)] hover:border-indigo-400/70 transition-all duration-300';
+    case 'quiz':
+      return 'hover:shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:border-emerald-400/70 transition-all duration-300';
+    case 'flashcard':
+      return 'hover:shadow-[0_0_15px_rgba(59,130,246,0.3)] hover:border-blue-400/70 transition-all duration-300';
+    case 'creative':
+      return 'hover:shadow-[0_0_15px_rgba(244,63,94,0.3)] hover:border-rose-400/70 transition-all duration-300';
+    case 'task':
+      return 'hover:shadow-[0_0_15px_rgba(245,158,11,0.3)] hover:border-amber-400/70 transition-all duration-300';
+    case 'news':
+      return 'hover:shadow-[0_0_15px_rgba(37,99,235,0.3)] hover:border-blue-400/70 transition-all duration-300';
+    default:
+      return 'hover:shadow-[0_0_15px_rgba(139,92,246,0.3)] hover:border-violet-400/70 transition-all duration-300';
+  }
 };
