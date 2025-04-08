@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
@@ -13,7 +12,6 @@ import AnimatedCurioCard from './AnimatedCurioCard';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 
-// Map topics to appropriate types based on content
 const getTopicType = (topic: string): 'science' | 'nature' | 'space' | 'history' | 'animals' | 'general' => {
   const topicLower = topic.toLowerCase();
   
@@ -37,7 +35,6 @@ const getTopicType = (topic: string): 'science' | 'nature' | 'space' | 'history'
   }
 };
 
-// Get age-appropriate greeting based on child's profile
 const getAgeAppropriateGreeting = (age?: number) => {
   if (!age) return "Hi there! What would you like to learn today?";
   
@@ -52,12 +49,9 @@ const getAgeAppropriateGreeting = (age?: number) => {
   }
 };
 
-// Generate smart suggestions based on child's interests and past curios
 const generateSmartSuggestions = (interests: string[], pastCurios: any[], age?: number) => {
-  // Filter out topics child has already explored
   const pastTopics = pastCurios.map(curio => curio.title.toLowerCase());
   
-  // Generate suggestions based on interests, age and what hasn't been explored yet
   const baseIdeas = [
     { title: "How do rockets fly to space?", type: "space", minAge: 6 },
     { title: "Why do leaves change color?", type: "nature", minAge: 5 },
@@ -71,10 +65,8 @@ const generateSmartSuggestions = (interests: string[], pastCurios: any[], age?: 
     { title: "How do bees make honey?", type: "animals", minAge: 6 }
   ];
   
-  // Filter ideas based on age appropriateness
   const ageAppropriate = baseIdeas.filter(idea => !age || idea.minAge <= age);
   
-  // Prioritize suggestions based on interests
   const prioritized = ageAppropriate.sort((a, b) => {
     const aMatchesInterest = interests.some(interest => 
       a.title.toLowerCase().includes(interest.toLowerCase()));
@@ -86,7 +78,6 @@ const generateSmartSuggestions = (interests: string[], pastCurios: any[], age?: 
     return 0;
   });
   
-  // Filter out topics that have already been explored
   return prioritized
     .filter(idea => !pastTopics.some(topic => 
       topic.includes(idea.title.toLowerCase()) || 
@@ -121,7 +112,6 @@ const SmartDashboard: React.FC<SmartDashboardProps> = ({
   const [smartSuggestions, setSmartSuggestions] = useState<string[]>([]);
   const [showLearningStreaks, setShowLearningStreaks] = useState(true);
   
-  // Generate smart suggestions based on child's profile
   useEffect(() => {
     if (childProfile?.interests && Array.isArray(childProfile.interests)) {
       const suggestions = generateSmartSuggestions(
@@ -133,7 +123,6 @@ const SmartDashboard: React.FC<SmartDashboardProps> = ({
     }
   }, [childProfile, pastCurios]);
   
-  // Filter suggestions based on selected category
   const getFilteredSuggestions = () => {
     if (!selectedCategory || selectedCategory === 'all') {
       return curioSuggestions.length > 0 ? curioSuggestions : smartSuggestions;
@@ -145,7 +134,6 @@ const SmartDashboard: React.FC<SmartDashboardProps> = ({
     );
   };
   
-  // Calculate knowledge areas and strengths based on past curios
   const calculateKnowledgeAreas = () => {
     if (!pastCurios || pastCurios.length === 0) {
       return {
@@ -172,7 +160,6 @@ const SmartDashboard: React.FC<SmartDashboardProps> = ({
   
   const { areas, strengths } = calculateKnowledgeAreas();
   
-  // Get personalized message based on user's profile and history
   const getPersonalizedMessage = () => {
     if (!childProfile) return "";
     
@@ -208,9 +195,7 @@ const SmartDashboard: React.FC<SmartDashboardProps> = ({
       .slice(0, 3);
   };
   
-  // Calculate learning streak data - days in a row with activity
   const getStreakData = () => {
-    // Placeholder data - would be calculated from actual usage in a production app
     const last7Days = Array.from({ length: 7 }, (_, i) => {
       const date = new Date();
       date.setDate(date.getDate() - i);
@@ -234,7 +219,6 @@ const SmartDashboard: React.FC<SmartDashboardProps> = ({
   
   return (
     <div className="px-0 max-w-5xl mx-auto space-y-6">
-      {/* Intelligent dashboard tabs */}
       <Tabs defaultValue="explore" value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="mb-4 grid grid-cols-3 bg-white/10">
           <TabsTrigger value="explore" className="data-[state=active]:bg-white/20">
@@ -331,7 +315,6 @@ const SmartDashboard: React.FC<SmartDashboardProps> = ({
             </motion.p>
           </div>
           
-          {/* Smart content recommendations */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             {getFilteredSuggestions().map((suggestion, index) => (
               <AnimatedCurioCard
@@ -344,7 +327,6 @@ const SmartDashboard: React.FC<SmartDashboardProps> = ({
             ))}
           </div>
           
-          {/* Personalized content area */}
           {pastCurios.length > 0 && (
             <motion.div 
               className="mt-6"
@@ -637,7 +619,6 @@ const SmartDashboard: React.FC<SmartDashboardProps> = ({
                   </h4>
                   
                   <div className="space-y-3">
-                    {/* Personalized recommendations based on learning history */}
                     {strengths.length > 0 && (
                       <div className="bg-white/10 rounded-lg p-3">
                         <h5 className="text-sm text-white/90 font-medium mb-2">
@@ -669,7 +650,6 @@ const SmartDashboard: React.FC<SmartDashboardProps> = ({
                       </div>
                     )}
                     
-                    {/* New areas to explore */}
                     {areas.length > 0 && (
                       <div className="bg-white/10 rounded-lg p-3">
                         <h5 className="text-sm text-white/90 font-medium mb-2">
