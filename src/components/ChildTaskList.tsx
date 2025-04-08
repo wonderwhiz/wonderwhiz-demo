@@ -29,10 +29,9 @@ interface ChildTask {
 interface ChildTaskListProps {
   childId: string;
   onTaskCompleted?: () => void;
-  maxTasks?: number; // Add the maxTasks prop
 }
 
-const ChildTaskList = ({ childId, onTaskCompleted, maxTasks }: ChildTaskListProps) => {
+const ChildTaskList = ({ childId, onTaskCompleted }: ChildTaskListProps) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -58,8 +57,7 @@ const ChildTaskList = ({ childId, onTaskCompleted, maxTasks }: ChildTaskListProp
           sparks_reward: item.tasks?.sparks_reward || 0
         }));
         
-        // Apply maxTasks limit if provided
-        setTasks(maxTasks ? formattedTasks.slice(0, maxTasks) : formattedTasks);
+        setTasks(formattedTasks);
       }
     } catch (error) {
       console.error('Error fetching tasks:', error);
