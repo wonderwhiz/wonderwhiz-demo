@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -22,13 +23,14 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const [generationStartTime, setGenerationStartTime] = useState<number | null>(null);
+  const [generationError, setGenerationError] = useState<string | null>(null);
   
   const generatedBlocksRef = useRef<any>(null);
   const blockLoadingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const generationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const blockGenerationInProgress = useRef<boolean>(false);
-  // Add the missing ref that was causing errors
   const searchResponseRef = useRef<any>(null);
+  const retryCountRef = useRef<number>(0);
 
   const convertToContentBlocks = (dbBlocks: any[]): ContentBlock[] => {
     return dbBlocks.map(block => {
@@ -122,6 +124,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
         console.log('No existing blocks found, generating new ones');
         setIsGeneratingContent(true);
         setGenerationStartTime(Date.now());
+        setGenerationError(null);
         
         setBlocks([
           {
@@ -145,7 +148,8 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
         generationTimeoutRef.current = setTimeout(() => {
           if (isGeneratingContent) {
             setIsGeneratingContent(false);
-            toast("Content generation taking longer than expected. Please try refreshing the page if content doesn't appear soon.");
+            setGenerationError("Content generation taking longer than expected. Please try refreshing the page if content doesn't appear soon.");
+            toast.error("Content generation taking longer than expected. Please try refreshing the page.");
           }
         }, 20000);
         
@@ -153,7 +157,8 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
       }
     } catch (error) {
       console.error('Error fetching initial blocks:', error);
-      toast("Could not load content blocks");
+      setGenerationError("Could not load content blocks. Please try refreshing the page.");
+      toast.error("Could not load content blocks");
     } finally {
       setIsLoading(false);
     }
@@ -184,7 +189,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
         }
       } catch (error) {
         console.error('Error fetching curio:', error);
-        toast("Could not load curio data");
+        toast.error("Could not load curio data");
       } finally {
         setIsLoadingBasicInfo(false);
       }
@@ -213,9 +218,11 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
     if (!query || !profileId || blockGenerationInProgress.current) return;
     
     blockGenerationInProgress.current = true;
+    retryCountRef.current = 0;
     
     try {
       console.log('Generating new blocks from Groq API');
+      setGenerationError(null);
       
       const { data: profileData, error: profileError } = await supabase
         .from('child_profiles')
@@ -228,24 +235,42 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
       const initialApiStartTime = Date.now();
       console.log(`Initial API call started at ${new Date().toISOString()}`);
       
-      const { data: initialData, error: initialError } = await supabase.functions.invoke('generate-curiosity-blocks', {
-        body: {
-          query,
-          childProfile: {
-            age: profileData?.age || 8,
-            interests: profileData?.interests || ['science', 'art', 'space'],
-            language: profileData?.language || 'English'
-          },
-          blockCount: 2,
-          quickGeneration: true
+      const tryGenerateBlocks = async (retryAttempt = 0) => {
+        try {
+          const { data: initialData, error: initialError } = await supabase.functions.invoke('generate-curiosity-blocks', {
+            body: {
+              query,
+              childProfile: {
+                age: profileData?.age || 8,
+                interests: profileData?.interests || ['science', 'art', 'space'],
+                language: profileData?.language || 'English'
+              },
+              blockCount: 2,
+              quickGeneration: true
+            }
+          });
+          
+          if (initialError) {
+            throw new Error(initialError.message || 'Error generating initial content blocks');
+          }
+          
+          return initialData || [];
+        } catch (err) {
+          console.error(`Error in block generation attempt ${retryAttempt}:`, err);
+          
+          if (retryAttempt < 2) {
+            console.log(`Retrying block generation, attempt ${retryAttempt + 1}...`);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            return tryGenerateBlocks(retryAttempt + 1);
+          }
+          
+          throw err;
         }
-      });
+      };
       
-      if (initialError) {
-        throw new Error(initialError.message || 'Error generating initial content blocks');
-      }
+      // Try to generate blocks with retry logic
+      const initialBlocks = await tryGenerateBlocks();
       
-      const initialBlocks = initialData || [];
       console.log(`Generated initial ${initialBlocks.length} blocks in ${(Date.now() - initialApiStartTime) / 1000} seconds`);
       
       if (initialBlocks.length > 0) {
@@ -257,54 +282,80 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
         setBlocks(convertToContentBlocks(initialBlocksWithCurioId));
         setTotalBlocksLoaded(initialBlocksWithCurioId.length);
         
-        for (const block of initialBlocksWithCurioId) {
+        // Save blocks to database
+        const savePromises = initialBlocksWithCurioId.map(async (block: any) => {
           try {
-            await supabase.from('content_blocks').insert({
-              ...block,
-              curio_id: curioId
-            });
+            await supabase
+              .from('content_blocks')
+              .insert({
+                ...block,
+                curio_id: curioId
+              });
           } catch (insertError) {
             console.error('Error saving block to database:', insertError);
           }
-        }
+        });
+        
+        await Promise.all(savePromises);
       }
       
+      // Generate remaining blocks
       setTimeout(async () => {
         try {
           const remainingApiStartTime = Date.now();
           console.log(`Remaining blocks API call started at ${new Date().toISOString()}`);
           
-          const { data: remainingData, error: remainingError } = await supabase.functions.invoke('generate-curiosity-blocks', {
-            body: {
-              query,
-              childProfile: {
-                age: profileData?.age || 8,
-                interests: profileData?.interests || ['science', 'art', 'space'],
-                language: profileData?.language || 'English'
-              },
-              blockCount: 8,
-              skipInitial: 2,
-              quickGeneration: false
+          const tryGenerateRemainingBlocks = async (retryAttempt = 0) => {
+            try {
+              const { data: remainingData, error: remainingError } = await supabase.functions.invoke('generate-curiosity-blocks', {
+                body: {
+                  query,
+                  childProfile: {
+                    age: profileData?.age || 8,
+                    interests: profileData?.interests || ['science', 'art', 'space'],
+                    language: profileData?.language || 'English'
+                  },
+                  blockCount: 8,
+                  skipInitial: 2,
+                  quickGeneration: false
+                }
+              });
+              
+              if (remainingError) {
+                throw new Error(remainingError.message || 'Error generating remaining content blocks');
+              }
+              
+              return remainingData || [];
+            } catch (err) {
+              console.error(`Error in remaining block generation attempt ${retryAttempt}:`, err);
+              
+              if (retryAttempt < 2) {
+                console.log(`Retrying remaining block generation, attempt ${retryAttempt + 1}...`);
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                return tryGenerateRemainingBlocks(retryAttempt + 1);
+              }
+              
+              throw err;
             }
-          });
+          };
           
-          if (remainingError) {
-            console.error('Error generating remaining blocks:', remainingError);
-            return;
-          }
+          // Try to generate remaining blocks with retry logic
+          const remainingBlocks = await tryGenerateRemainingBlocks();
           
-          const remainingBlocks = remainingData || [];
           console.log(`Generated remaining ${remainingBlocks.length} blocks in ${(Date.now() - remainingApiStartTime) / 1000} seconds`);
           
           generatedBlocksRef.current = remainingBlocks;
           
           if (remainingBlocks.length > 0) {
             setHasMoreBlocks(true);
-            
             loadRemainingBlocksProgressively(curioId, remainingBlocks);
+          } else {
+            setIsGeneratingContent(false);
           }
         } catch (error) {
           console.error('Error generating remaining blocks:', error);
+          setIsGeneratingContent(false);
+          setGenerationError("Could not generate all content blocks. Please try refreshing the page.");
         }
       }, 100);
       
@@ -314,7 +365,6 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
       }
       
       setIsFirstLoad(false);
-      setIsGeneratingContent(false);
       
       if (generationTimeoutRef.current) {
         clearTimeout(generationTimeoutRef.current);
@@ -322,8 +372,8 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
       }
     } catch (error) {
       console.error('Error generating content blocks:', error);
-      toast(error instanceof Error ? error.message : "Could not generate content blocks");
-      setIsGeneratingContent(false);
+      setGenerationError("Could not generate content blocks. Please try refreshing the page.");
+      toast.error(error instanceof Error ? error.message : "Could not generate content blocks");
       
       setBlocks([{
         id: `error-${Date.now()}`,
@@ -335,24 +385,37 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
         bookmarked: false,
         created_at: new Date().toISOString()
       } as ContentBlock]);
+      
+      setIsGeneratingContent(false);
     } finally {
       blockGenerationInProgress.current = false;
     }
   };
 
   const loadRemainingBlocksProgressively = (curioId: string, generatedBlocks: any[]) => {
-    if (generatedBlocks.length === 0) return;
+    if (!generatedBlocks || generatedBlocks.length === 0) {
+      setIsGeneratingContent(false);
+      return;
+    }
     
     let currentIndex = 0;
     
     const loadNextBlock = async () => {
       if (currentIndex >= generatedBlocks.length) {
         blockLoadingTimerRef.current = null;
+        setIsGeneratingContent(false);
         return;
       }
       
       try {
         const nextBlock = generatedBlocks[currentIndex];
+        
+        if (!nextBlock || !nextBlock.type || !nextBlock.specialist_id) {
+          console.error(`Invalid block data at index ${currentIndex}`, nextBlock);
+          currentIndex++;
+          blockLoadingTimerRef.current = setTimeout(loadNextBlock, 300);
+          return;
+        }
         
         setBlocks(prevBlocks => [...prevBlocks, {
           ...nextBlock,
@@ -384,7 +447,8 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
         blockLoadingTimerRef.current = setTimeout(loadNextBlock, nextDelay);
       } catch (error) {
         console.error('Error during progressive block loading:', error);
-        blockLoadingTimerRef.current = null;
+        currentIndex++;
+        blockLoadingTimerRef.current = setTimeout(loadNextBlock, 300);
       }
     };
     
@@ -591,6 +655,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
     handleSearch,
     clearSearch,
     isFirstLoad,
-    addBlock
+    addBlock,
+    generationError
   };
 };

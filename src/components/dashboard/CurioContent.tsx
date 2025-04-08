@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import ContentBlock from '@/components/ContentBlock';
 import CurioLoading from '@/components/CurioLoading';
 import CurioLoadMore from '@/components/CurioLoadMore';
-import { Sparkles } from 'lucide-react';
+import { AlertCircle, RefreshCw, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface ContentBlock {
   id: string;
@@ -48,6 +49,8 @@ interface CurioContentProps {
   onQuizCorrect: (blockId: string) => void;
   onNewsRead: (blockId: string) => void;
   onCreativeUpload: (blockId: string) => void;
+  onRefresh?: () => void;
+  generationError?: string | null;
 }
 
 const CurioContent: React.FC<CurioContentProps> = ({
@@ -67,7 +70,9 @@ const CurioContent: React.FC<CurioContentProps> = ({
   onRabbitHoleFollow,
   onQuizCorrect,
   onNewsRead,
-  onCreativeUpload
+  onCreativeUpload,
+  onRefresh,
+  generationError
 }) => {
   // Use memoization to avoid unnecessary re-renders
   const visibleBlocks = useMemo(() => {
@@ -97,6 +102,31 @@ const CurioContent: React.FC<CurioContentProps> = ({
             >
               {currentCurio.title}
             </motion.h1>
+
+            {/* Error state */}
+            {generationError && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="mb-6 p-4 rounded-lg bg-red-500/20 border border-red-500/40"
+              >
+                <div className="flex flex-col sm:flex-row items-center gap-3 text-white">
+                  <AlertCircle className="w-6 h-6 flex-shrink-0" />
+                  <p className="text-center sm:text-left flex-grow">{generationError}</p>
+                  {onRefresh && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={onRefresh}
+                      className="border-white/20 hover:bg-white/10 flex items-center"
+                    >
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      <span>Try Again</span>
+                    </Button>
+                  )}
+                </div>
+              </motion.div>
+            )}
 
             {/* Curio content blocks */}
             <div className="space-y-6 sm:space-y-8">
@@ -140,7 +170,7 @@ const CurioContent: React.FC<CurioContentProps> = ({
               </AnimatePresence>
 
               {/* Show "still generating" message */}
-              {visibleBlocks.length > 0 && isGenerating && (
+              {visibleBlocks.length > 0 && isGenerating && !generationError && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}

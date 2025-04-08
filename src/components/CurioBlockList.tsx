@@ -3,8 +3,9 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ContentBlock from '@/components/ContentBlock';
 import { ContentBlock as ContentBlockType } from '@/types/curio';
-import { Lightbulb, Sparkles } from 'lucide-react';
+import { AlertCircle, Lightbulb, RefreshCw, Sparkles } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Button } from '@/components/ui/button';
 
 interface CurioBlockListProps {
   blocks: ContentBlockType[];
@@ -25,6 +26,8 @@ interface CurioBlockListProps {
   handleActivityComplete: () => void;
   handleMindfulnessComplete: () => void;
   handleRabbitHoleClick: (question: string) => void;
+  generationError?: string | null;
+  onRefresh?: () => void;
 }
 
 const CurioBlockList: React.FC<CurioBlockListProps> = ({
@@ -45,12 +48,41 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
   handleTaskComplete,
   handleActivityComplete,
   handleMindfulnessComplete,
-  handleRabbitHoleClick
+  handleRabbitHoleClick,
+  generationError,
+  onRefresh
 }) => {
   const isMobile = useIsMobile();
 
   // Safety check for blocks array
   const safeBlocks = Array.isArray(blocks) ? blocks : [];
+  
+  // Display error if there is one
+  if (generationError) {
+    return (
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="mb-6 p-4 rounded-lg bg-red-500/20 border border-red-500/40"
+      >
+        <div className="flex flex-col sm:flex-row items-center gap-3 text-white">
+          <AlertCircle className="w-6 h-6 flex-shrink-0" />
+          <p className="text-center sm:text-left flex-grow">{generationError}</p>
+          {onRefresh && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={onRefresh}
+              className="border-white/20 hover:bg-white/10 flex items-center"
+            >
+              <RefreshCw className="mr-2 h-4 w-4" />
+              <span>Try Again</span>
+            </Button>
+          )}
+        </div>
+      </motion.div>
+    );
+  }
   
   if (safeBlocks.length === 0 && !searchQuery) {
     return (

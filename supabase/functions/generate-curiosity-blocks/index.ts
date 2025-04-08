@@ -132,7 +132,7 @@ serve(async (req) => {
     }
 
     // Prepare system message and user message for the API with enhanced prompting
-    let systemMessage = `You are an AI assistant creating EXTRAORDINARILY engaging, educational content for children aged ${childProfile.age}. 
+    const systemMessage = `You are an AI assistant creating EXTRAORDINARILY engaging, educational content for children aged ${childProfile.age}. 
     Each piece of content should be scientifically accurate, richly detailed, and presented with an exciting sense of discovery and wonder.
     Your content must have a "WOW factor" that makes children's eyes widen with amazement and makes them say "I never knew that!"
     
@@ -148,7 +148,7 @@ serve(async (req) => {
     - Content must be in ${language} language with an appropriate reading level for ${childProfile.age}-year-olds
     - Always leverage child-friendly humor and a sense of playfulness`;
     
-    let userMessage = `Generate ${blockCount} diverse, EXTRAORDINARILY ENGAGING content blocks about the query: "${query}". 
+    const userMessage = `Generate ${blockCount} diverse, EXTRAORDINARILY ENGAGING content blocks about the query: "${query}". 
     ${skipInitial > 0 ? `Skip the first ${skipInitial} most obvious blocks as they've already been generated.` : ''}
 
     Each block MUST:
@@ -179,8 +179,6 @@ serve(async (req) => {
     
     - mindfulness: Connect scientific understanding with sensory awareness and appreciation of natural phenomena. Design exercises that combine learning with mindfulness. Example: "Star Gazing Mindfulness: Find a dark area outside and lie on your back. As you observe the stars, notice how some appear to twinkle more than others. The steadier stars are planets! As you breathe deeply, imagine the vast distances these light rays traveled - millions of years - just to reach your eyes in this moment."
 
-    For "rabbit hole" questions, create genuinely fascinating follow-up questions that lead to even more mind-blowing discoveries.
-    
     Return your response as a JSON array with ${blockCount} objects, each having this structure:
     {
       "type": "one of: fact, quiz, flashcard, creative, task, riddle, funFact, activity, news, mindfulness",
@@ -194,212 +192,271 @@ serve(async (req) => {
     
     NOTE: Make every single block EXTRAORDINARILY relevant to "${query}" with truly amazing, scientifically accurate content!`;
     
+    // Create an array to collect successfully generated blocks
+    let contentBlocksArray: any[] = [];
+    
     // Implement retry logic for API calls
     let attempt = 0;
-    let contentBlocksJSON;
     
-    while (attempt <= MAX_RETRIES) {
+    while (attempt <= MAX_RETRIES && contentBlocksArray.length < blockCount) {
       try {
         attempt++;
-        console.log(`Groq API attempt ${attempt} of ${MAX_RETRIES + 1}`);
+        console.log(`API attempt ${attempt} of ${MAX_RETRIES + 1}`);
         
-        // First try using Groq API with Llama model
-        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${GROQ_API_KEY}`
-          },
-          body: JSON.stringify({
-            model: 'meta-llama/llama-4-scout-17b-16e-instruct',
-            messages: [
-              { role: 'system', content: systemMessage },
-              { role: 'user', content: userMessage }
-            ],
-            response_format: { type: "json_object" },
-            temperature: quickGeneration ? 0.9 : 0.8,
-            max_tokens: 4000
-          })
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error(`Groq API error (attempt ${attempt}):`, errorText);
+        // Try using Groq API first
+        if (GROQ_API_KEY) {
+          try {
+            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${GROQ_API_KEY}`
+              },
+              body: JSON.stringify({
+                model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+                messages: [
+                  { role: 'system', content: systemMessage },
+                  { role: 'user', content: userMessage }
+                ],
+                temperature: quickGeneration ? 0.9 : 0.8,
+                max_tokens: 4000
+              })
+            });
+            
+            if (!response.ok) {
+              const errorText = await response.text();
+              console.error(`Groq API error (attempt ${attempt}):`, errorText);
+              throw new Error(`Groq API error: ${response.status} ${errorText}`);
+            }
+            
+            const data = await response.json();
+            console.log("Groq response received");
+            
+            if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
+              throw new Error("Invalid response format from Groq API");
+            }
+            
+            const content = data.choices[0].message.content;
+            console.log("Raw Groq response:", content);
+            
+            // Try to parse the response as JSON
+            try {
+              // First, check if the content is already a valid JSON string
+              const parsedData = JSON.parse(content);
+              
+              // Check for different possible structures
+              if (Array.isArray(parsedData)) {
+                // Direct array of blocks
+                contentBlocksArray = parsedData;
+              } else if (parsedData.blocks && Array.isArray(parsedData.blocks)) {
+                // Nested under 'blocks' property
+                contentBlocksArray = parsedData.blocks;
+              } else {
+                // Look for any array property
+                const arrayProps = Object.keys(parsedData).filter(key => Array.isArray(parsedData[key]));
+                if (arrayProps.length > 0) {
+                  contentBlocksArray = parsedData[arrayProps[0]];
+                } else {
+                  // If it's a single block, wrap it in an array
+                  if (parsedData.type && parsedData.specialist_id && parsedData.content) {
+                    contentBlocksArray = [parsedData];
+                  } else {
+                    throw new Error("Could not find blocks array in response");
+                  }
+                }
+              }
+              
+              // If we successfully parsed blocks, break the retry loop
+              if (contentBlocksArray.length > 0) {
+                break;
+              }
+            } catch (parseError) {
+              console.error("Error parsing Groq response as JSON:", parseError);
+              
+              // Try extracting JSON from text response
+              try {
+                // Look for JSON-like patterns in the response
+                const jsonMatch = content.match(/\[[\s\S]*\]|\{[\s\S]*\}/);
+                if (jsonMatch) {
+                  const extractedJson = jsonMatch[0];
+                  const parsedJson = JSON.parse(extractedJson);
+                  
+                  if (Array.isArray(parsedJson)) {
+                    contentBlocksArray = parsedJson;
+                    break;
+                  } else if (parsedJson.type && parsedJson.specialist_id && parsedJson.content) {
+                    contentBlocksArray = [parsedJson];
+                    break;
+                  }
+                }
+                
+                // If we couldn't parse JSON from the response, try OpenAI next
+                throw new Error("Failed to extract valid JSON from response");
+              } catch (extractError) {
+                console.error("Error extracting JSON from text:", extractError);
+                // Continue to next attempt or OpenAI
+              }
+            }
+          } catch (groqError) {
+            console.error("Error with Groq API:", groqError);
+            // Continue to next attempt or OpenAI
+          }
+        }
+        
+        // If we still don't have content, try OpenAI
+        if (contentBlocksArray.length === 0 && OPENAI_API_KEY) {
+          console.log("Attempting OpenAI as fallback");
           
-          // If this is our last retry or there's an overloaded error, try OpenAI
-          if (attempt > MAX_RETRIES || errorText.includes("overloaded") || errorText.includes("limit")) {
-            console.log("Groq API overloaded or max retries reached, trying OpenAI fallback");
-            break;
+          const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${OPENAI_API_KEY}`
+            },
+            body: JSON.stringify({
+              model: 'gpt-4o',
+              messages: [
+                { role: 'system', content: systemMessage },
+                { role: 'user', content: userMessage }
+              ],
+              temperature: quickGeneration ? 0.9 : 0.7,
+              max_tokens: 4000
+            })
+          });
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`OpenAI API error:`, errorText);
+            throw new Error(`OpenAI API error: ${response.status} ${errorText}`);
           }
           
-          // If not the last retry, wait before trying again
-          if (attempt <= MAX_RETRIES) {
-            const delay = Math.pow(2, attempt - 1) * 500; // Exponential backoff
-            console.log(`Waiting ${delay}ms before retry...`);
-            await new Promise(resolve => setTimeout(resolve, delay));
-            continue;
+          const data = await response.json();
+          console.log("OpenAI response received");
+          
+          if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
+            throw new Error("Invalid response format from OpenAI API");
           }
           
-          throw new Error(`Groq API error: ${response.status} ${errorText}`);
-        }
-
-        const data = await response.json();
-        console.log("Groq response received");
-        
-        if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
-          throw new Error("Invalid response format from Groq API");
-        }
-        
-        // Extract the JSON content from Groq's response
-        const content = data.choices[0].message.content;
-        
-        try {
-          // Parse the JSON response
-          const parsedData = JSON.parse(content);
+          const content = data.choices[0].message.content;
+          console.log("Raw OpenAI response:", content);
           
-          // Check if we have a blocks array directly or nested under a property
-          if (Array.isArray(parsedData)) {
-            contentBlocksJSON = parsedData;
-          } else if (parsedData.blocks && Array.isArray(parsedData.blocks)) {
-            contentBlocksJSON = parsedData.blocks;
-          } else {
-            // Look for any array property that might contain our blocks
-            const arrayProps = Object.keys(parsedData).filter(key => Array.isArray(parsedData[key]));
-            if (arrayProps.length > 0) {
-              contentBlocksJSON = parsedData[arrayProps[0]];
+          try {
+            // Try to parse the JSON response
+            const parsedData = JSON.parse(content);
+            
+            if (Array.isArray(parsedData)) {
+              contentBlocksArray = parsedData;
+            } else if (parsedData.blocks && Array.isArray(parsedData.blocks)) {
+              contentBlocksArray = parsedData.blocks;
             } else {
-              throw new Error("Could not find blocks array in response");
+              // Look for any array property
+              const arrayProps = Object.keys(parsedData).filter(key => Array.isArray(parsedData[key]));
+              if (arrayProps.length > 0) {
+                contentBlocksArray = parsedData[arrayProps[0]];
+              } else if (parsedData.type && parsedData.specialist_id && parsedData.content) {
+                // If it's a single block, wrap it in an array
+                contentBlocksArray = [parsedData];
+              } else {
+                throw new Error("Could not find blocks array in OpenAI response");
+              }
+            }
+          } catch (parseError) {
+            console.error("Error parsing OpenAI response:", parseError);
+            
+            // Try extracting JSON from text
+            try {
+              const jsonMatch = content.match(/\[[\s\S]*\]|\{[\s\S]*\}/);
+              if (jsonMatch) {
+                const extractedJson = jsonMatch[0];
+                const parsedJson = JSON.parse(extractedJson);
+                
+                if (Array.isArray(parsedJson)) {
+                  contentBlocksArray = parsedJson;
+                } else if (parsedJson.type && parsedJson.specialist_id && parsedJson.content) {
+                  contentBlocksArray = [parsedJson];
+                }
+              } else {
+                throw new Error("Could not extract JSON from OpenAI response");
+              }
+            } catch (extractError) {
+              console.error("Error extracting JSON from OpenAI text:", extractError);
+              // We'll use fallback content if we reach here
             }
           }
-          
-          // We got valid content, break the retry loop
-          break;
-          
-        } catch (parseError) {
-          console.error("Error parsing Groq's response:", parseError);
-          console.log("Raw response:", content);
-          
-          // If this is our last retry, try OpenAI
-          if (attempt > MAX_RETRIES) {
-            console.log("Max retries reached with parsing errors from Groq, trying OpenAI");
-            break;
-          }
-          
-          // Otherwise, prepare to retry
-          const delay = Math.pow(2, attempt - 1) * 500; // Exponential backoff
-          console.log(`Waiting ${delay}ms before retry due to parse error...`);
-          await new Promise(resolve => setTimeout(resolve, delay));
         }
-      } catch (error) {
-        console.error(`Error in Groq API request (attempt ${attempt}):`, error);
         
-        // If this is our last retry, try OpenAI
+        // If we have content by now, break the retry loop
+        if (contentBlocksArray.length > 0) {
+          break;
+        }
+        
+        // If this is our last retry and we still don't have content, we'll use fallback
         if (attempt > MAX_RETRIES) {
-          console.log("Max retries reached with request errors from Groq, trying OpenAI");
+          console.log("All API attempts failed, using fallback content");
           break;
         }
         
         // Otherwise, prepare to retry
         const delay = Math.pow(2, attempt - 1) * 500; // Exponential backoff
-        console.log(`Waiting ${delay}ms before retry due to request error...`);
+        console.log(`Waiting ${delay}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      } catch (error) {
+        console.error(`Error in API request (attempt ${attempt}):`, error);
+        
+        // If this is our last retry, we'll use fallback content
+        if (attempt > MAX_RETRIES) {
+          console.log("Max retries reached, using fallback content");
+          break;
+        }
+        
+        // Otherwise, prepare to retry
+        const delay = Math.pow(2, attempt - 1) * 500; // Exponential backoff
+        console.log(`Waiting ${delay}ms before retry...`);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
     
-    // If Groq failed after all retries, try OpenAI as fallback
-    if (!contentBlocksJSON) {
-      try {
-        console.log("Attempting OpenAI fallback after Groq failed");
-        
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${OPENAI_API_KEY}`
-          },
-          body: JSON.stringify({
-            model: 'gpt-4o',
-            messages: [
-              { role: 'system', content: systemMessage },
-              { role: 'user', content: userMessage }
-            ],
-            response_format: { type: "json_object" },
-            temperature: quickGeneration ? 0.9 : 0.7
-          })
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error(`OpenAI API error:`, errorText);
-          throw new Error(`OpenAI API error: ${response.status} ${errorText}`);
-        }
-
-        const data = await response.json();
-        console.log("OpenAI response received as fallback");
-        
-        if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
-          throw new Error("Invalid response format from OpenAI API");
-        }
-        
-        // Extract the JSON content from OpenAI's response
-        const content = data.choices[0].message.content;
-        
-        try {
-          // Parse the JSON response
-          const parsedData = JSON.parse(content);
-          
-          // Check if we have a blocks array directly or nested under a property
-          if (Array.isArray(parsedData)) {
-            contentBlocksJSON = parsedData;
-          } else if (parsedData.blocks && Array.isArray(parsedData.blocks)) {
-            contentBlocksJSON = parsedData.blocks;
-          } else {
-            // Look for any array property that might contain our blocks
-            const arrayProps = Object.keys(parsedData).filter(key => Array.isArray(parsedData[key]));
-            if (arrayProps.length > 0) {
-              contentBlocksJSON = parsedData[arrayProps[0]];
-            } else {
-              throw new Error("Could not find blocks array in OpenAI response");
-            }
-          }
-        } catch (parseError) {
-          console.error("Error parsing OpenAI's response:", parseError);
-          console.log("Raw response:", content);
-          contentBlocksJSON = generateFallbackContent(query, blockCount);
-        }
-      } catch (openaiError) {
-        console.error('Error in OpenAI fallback:', openaiError);
-        contentBlocksJSON = generateFallbackContent(query, blockCount);
-      }
+    // If we couldn't get valid content after all attempts, use fallback
+    if (contentBlocksArray.length === 0) {
+      console.log("No valid content generated, using fallback");
+      contentBlocksArray = generateFallbackContent(query, blockCount);
     }
     
-    // If still no valid content after all attempts, use fallback
-    if (!contentBlocksJSON) {
-      console.log("All API attempts failed, using fallback content");
-      contentBlocksJSON = generateFallbackContent(query, blockCount);
+    // If the content is an object with a single block, convert it to an array
+    if (!Array.isArray(contentBlocksArray) && contentBlocksArray.type && contentBlocksArray.content) {
+      contentBlocksArray = [contentBlocksArray];
     }
     
-    // Calculate response time in seconds
-    const responseTime = (Date.now() - startTime) / 1000;
-    console.log(`Generation completed in ${responseTime.toFixed(2)} seconds`);
+    // Ensure we have enough blocks
+    if (contentBlocksArray.length < blockCount) {
+      console.log(`Only got ${contentBlocksArray.length} blocks, adding fallback blocks to reach ${blockCount}`);
+      const missingBlocks = blockCount - contentBlocksArray.length;
+      const fallbackBlocks = generateFallbackContent(query, missingBlocks);
+      contentBlocksArray = [...contentBlocksArray, ...fallbackBlocks];
+    }
     
-    // Assign unique IDs to each block
-    const contentBlocks = contentBlocksJSON.map((block: any) => ({
+    // Limit to the requested blockCount
+    contentBlocksArray = contentBlocksArray.slice(0, blockCount);
+    
+    // Assign unique IDs and defaults to each block
+    const contentBlocks = contentBlocksArray.map((block: any) => ({
       ...block,
       id: crypto.randomUUID(),
       liked: false,
       bookmarked: false
     }));
-
-    console.log(`Successfully processed ${contentBlocks.length} content blocks`);
-
+    
+    // Calculate response time
+    const responseTime = (Date.now() - startTime) / 1000;
+    console.log(`Successfully processed ${contentBlocks.length} blocks in ${responseTime.toFixed(2)} seconds`);
+    
     return new Response(JSON.stringify(contentBlocks), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   } catch (error) {
     console.error('Error generating curiosity blocks:', error);
     
-    // Generate basic fallback content even in case of catastrophic errors
+    // Generate basic fallback content even in case of errors
     const fallbackBlocks = generateFallbackContent("knowledge and curiosity", 2).map((block: any) => ({
       ...block,
       id: crypto.randomUUID(),

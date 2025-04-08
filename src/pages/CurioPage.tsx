@@ -23,8 +23,9 @@ import CurioBlockListSearchLoading from '@/components/CurioBlockListSearchLoadin
 import CurioBlockListSearchNoMore from '@/components/CurioBlockListSearchNoMore';
 import CurioBlockListWelcome from '@/components/CurioBlockListWelcome';
 import { useBlockInteractions } from '@/hooks/useBlockInteractions';
-import { Search, ArrowLeft, Sparkles } from 'lucide-react';
+import { Search, ArrowLeft, Sparkles, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useCurioData } from '@/hooks/useCurioData';
 
 const CurioPage: React.FC = () => {
   const { childId, curioId } = useParams<{ childId: string, curioId: string }>();
@@ -33,7 +34,7 @@ const CurioPage: React.FC = () => {
   const { user } = useUser();
   const { childProfile, isLoading: isLoadingProfile, error: profileError } = useChildProfile(childId);
   const { searchQuery, setSearchQuery, handleSearch } = useSearch();
-  const { blocks, isLoading: isLoadingBlocks, error: blocksError, hasMore, loadMore, isFirstLoad } = useCurioBlocks(childId, curioId, searchQuery);
+  const { blocks, isLoading: isLoadingBlocks, error: blocksError, hasMore, loadMore, isFirstLoad, generationError } = useCurioBlocks(childId, curioId, searchQuery);
   const { loadingMore, loadTriggerRef } = useInfiniteScroll(loadMore, hasMore);
   const { 
     handleReply,
@@ -48,6 +49,7 @@ const CurioPage: React.FC = () => {
 
   const [animateBlocks, setAnimateBlocks] = useState(true);
   const [curioTitle, setCurioTitle] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     if (user && !childId) {
@@ -186,6 +188,11 @@ const CurioPage: React.FC = () => {
     navigate(`/dashboard/${childId}`);
   };
 
+  const handleRefresh = () => {
+    setRefreshing(true);
+    window.location.reload();
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Header with title */}
@@ -215,9 +222,22 @@ const CurioPage: React.FC = () => {
               )}
             </div>
             
-            <div className="flex items-center bg-white/10 rounded-full px-3 py-1.5 text-xs text-wonderwhiz-gold">
-              <Sparkles className="w-3 h-3 mr-1" />
-              <span>Use the search to find specific content</span>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center bg-white/10 rounded-full px-3 py-1.5 text-xs text-wonderwhiz-gold">
+                <Sparkles className="w-3 h-3 mr-1" />
+                <span>Use the search to find specific content</span>
+              </div>
+              
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="text-white/70 hover:text-white hover:bg-white/10"
+                title="Refresh content"
+              >
+                <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+              </Button>
             </div>
           </div>
           
@@ -276,7 +296,7 @@ const CurioPage: React.FC = () => {
             <CurioBlockListEmpty />
           )}
 
-          {blocks.length > 0 && (
+          {blocks.length > 0 || generationError ? (
             <CurioBlockList
               blocks={blocks}
               animateBlocks={animateBlocks}
@@ -296,8 +316,10 @@ const CurioPage: React.FC = () => {
               handleActivityComplete={handleActivityComplete}
               handleMindfulnessComplete={handleMindfulnessComplete}
               handleRabbitHoleClick={handleRabbitHoleClick}
+              generationError={generationError}
+              onRefresh={handleRefresh}
             />
-          )}
+          ) : null}
 
           {/* Load More */}
           {blocks.length > 0 && searchQuery && !hasMore && blocks.length > 0 && (
