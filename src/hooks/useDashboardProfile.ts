@@ -11,6 +11,7 @@ interface ChildProfile {
   interests: string[];
   age: number;
   sparks_balance: number;
+  streak_days: number; // Added streak_days to the interface
 }
 
 interface Curio {
