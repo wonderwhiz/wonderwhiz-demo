@@ -10,6 +10,7 @@ import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import WonderfulDashboard from '@/components/dashboard/WonderfulDashboard';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
+import { SidebarProvider } from '@/components/ui/sidebar';
 
 const Dashboard = () => {
   const { profileId } = useParams<{ profileId: string }>();
@@ -163,38 +164,40 @@ const Dashboard = () => {
   }
 
   return (
-    <motion.div 
-      className="min-h-screen bg-wonderwhiz-gradient relative overflow-hidden"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-    >
-      <Helmet>
-        <title>WonderWhiz - Your Learning Adventure!</title>
-        <meta name="description" content="Explore amazing topics and learn fun facts with WonderWhiz!" />
-      </Helmet>
+    <SidebarProvider>
+      <motion.div 
+        className="min-h-screen bg-wonderwhiz-gradient relative overflow-hidden w-full"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Helmet>
+          <title>WonderWhiz - Your Learning Adventure!</title>
+          <meta name="description" content="Explore amazing topics and learn fun facts with WonderWhiz!" />
+        </Helmet>
 
-      {/* Background particles */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {particles}
-      </div>
-      
-      <DashboardHeader 
-        childName={childProfile?.name || 'Explorer'} 
-        profileId={profileId} 
-      />
-      
-      <div className="container mx-auto px-4">
-        <WonderfulDashboard 
-          childProfile={childProfile}
-          pastCurios={pastCurios}
-          curioSuggestions={curioSuggestions}
-          isLoadingSuggestions={isLoadingSuggestions}
-          handleRefreshSuggestions={handleRefreshSuggestions}
-          profileId={profileId}
+        {/* Background particles */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {particles}
+        </div>
+        
+        <DashboardHeader 
+          childName={childProfile?.name || 'Explorer'} 
+          profileId={profileId} 
         />
-      </div>
-    </motion.div>
+        
+        <div className="container mx-auto px-4">
+          <WonderfulDashboard 
+            childProfile={childProfile}
+            pastCurios={pastCurios}
+            curioSuggestions={curioSuggestions}
+            isLoadingSuggestions={isLoadingSuggestions}
+            handleRefreshSuggestions={handleRefreshSuggestions}
+            profileId={profileId}
+          />
+        </div>
+      </motion.div>
+    </SidebarProvider>
   );
 };
 
