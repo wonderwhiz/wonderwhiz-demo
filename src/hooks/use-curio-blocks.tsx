@@ -86,7 +86,6 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
   // Fetch generation error from curios table
   useEffect(() => {
     // This is where you'd catch any errors coming from content generation
-    // and set the generationError state
     const fetchGenerationStatus = async () => {
       if (!curioId) return;
       
@@ -97,7 +96,10 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
           .eq('id', curioId)
           .single();
           
-        if (error) throw error;
+        if (error) {
+          console.error("Error fetching generation status:", error);
+          return;
+        }
         
         // Handle the data safely to avoid type errors
         if (data) {

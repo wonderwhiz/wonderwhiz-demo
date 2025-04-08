@@ -6,6 +6,7 @@ import { ContentBlock as ContentBlockType } from '@/types/curio';
 import { AlertCircle, Lightbulb, RefreshCw, Sparkles } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
+import CurioBlockListLoadMore from './CurioBlockListLoadMore';
 
 interface CurioBlockListProps {
   blocks: ContentBlockType[];
@@ -138,7 +139,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
         >
           <div className="absolute inset-0 bg-gradient-to-r from-wonderwhiz-cyan to-wonderwhiz-blue-accent rounded-full opacity-20 blur-xl"></div>
           <div className="relative flex items-center justify-center w-full h-full">
-            <Lightbulb className="h-10 w-10 sm:h-16 sm:w-16 text-wonderwhiz-cyan" />
+            <Lightbulb className="h-10 w-10 sm:h-16 sm:h-16 text-wonderwhiz-cyan" />
           </div>
         </motion.div>
         <motion.h3 
@@ -231,34 +232,10 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
       ))}
 
       {hasMoreBlocks && (
-        <div ref={loadTriggerRef} className="h-16 sm:h-20 w-full flex items-center justify-center">
-          {loadingMoreBlocks && (
-            <motion.div 
-              className="flex flex-col items-center"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
-            >
-              <div className="flex items-center justify-center mb-2">
-                {[0, 1, 2].map((i) => (
-                  <motion.div
-                    key={i}
-                    className="w-2 h-2 sm:w-3 sm:h-3 bg-wonderwhiz-bright-pink rounded-full mr-1" 
-                    initial={{ y: 0, scale: 1 }}
-                    animate={{ y: [-6, 0], scale: [1.2, 1] }}
-                    transition={{
-                      duration: 0.6,
-                      repeat: Infinity,
-                      repeatType: "reverse",
-                      delay: i * 0.2,
-                    }}
-                  />
-                ))}
-              </div>
-              <p className="text-xs sm:text-sm text-white/70 font-inter">Discovering more wonders...</p>
-            </motion.div>
-          )}
-        </div>
+        <CurioBlockListLoadMore 
+          loadTriggerRef={loadTriggerRef} 
+          loadingMore={loadingMoreBlocks} 
+        />
       )}
     </motion.div>
   );

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useParams } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
@@ -7,15 +7,15 @@ import { useSparksSystem } from '@/hooks/useSparksSystem';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import FloatingElements from '@/components/FloatingElements';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
-import SearchBar from '@/components/dashboard/SearchBar';
 import DashboardSidebar from '@/components/dashboard/DashboardSidebar';
-import WelcomeSection from '@/components/dashboard/WelcomeSection';
 import CurioContent from '@/components/dashboard/CurioContent';
 import DiscoverySection from '@/components/dashboard/DiscoverySection';
 import { useDashboardProfile } from '@/hooks/useDashboardProfile';
 import { useCurioCreation } from '@/hooks/useCurioCreation';
 import { useCurioData } from '@/hooks/useCurioData';
 import { useBlockInteractionHandlers } from '@/hooks/useBlockInteractionHandlers';
+import EnhancedPersonalizedDashboard from '@/components/dashboard/EnhancedPersonalizedDashboard';
+import EnhancedSearchBar from '@/components/dashboard/EnhancedSearchBar';
 
 interface Curio {
   id: string;
