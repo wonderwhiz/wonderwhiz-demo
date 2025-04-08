@@ -10,11 +10,15 @@ const CurioBlockListError = () => {
   const navigate = useNavigate();
   
   const handleRetry = () => {
-    // Reload the current page or navigate back to dashboard
+    // Reload the current page if we're in a curio view
     if (window.location.pathname.includes('/curio/')) {
       window.location.reload();
     } else if (profileId) {
+      // Navigate back to dashboard with profileId
       navigate(`/dashboard/${profileId}`);
+    } else {
+      // Fallback to navigate to profiles if no profileId
+      navigate('/profiles');
     }
   };
   

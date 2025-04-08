@@ -13,6 +13,9 @@ const CurioBlockListSearchEmpty = () => {
     // Navigate back to the dashboard if we have a profileId
     if (profileId) {
       navigate(`/dashboard/${profileId}`);
+    } else {
+      // Fallback to navigate to profiles if no profileId
+      navigate('/profiles');
     }
   };
   

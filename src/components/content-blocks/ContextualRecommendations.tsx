@@ -43,15 +43,29 @@ const ContextualRecommendations: React.FC<ContextualRecommendationsProps> = ({
           .select('id')
           .single();
           
-        if (error) throw error;
+        if (error) {
+          console.error('Error creating curio from recommendation:', error);
+          toast.error("Could not create new exploration", {
+            id: "create-curio"
+          });
+          // Fallback to just setting the query
+          onRecommendationClick(recommendation);
+          return;
+        }
         
-        if (newCurio) {
+        if (newCurio && newCurio.id) {
           toast.success("New exploration created!", {
             id: "create-curio"
           });
           
           // Navigate to the new curio
           navigate(`/curio/${profileId}/${newCurio.id}`);
+        } else {
+          console.error('No curio ID returned after creation');
+          toast.error("Could not create new exploration", {
+            id: "create-curio"
+          });
+          onRecommendationClick(recommendation);
         }
       } catch (error) {
         console.error('Error creating curio from recommendation:', error);
