@@ -1,8 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
-import { ChevronDown, ChevronUp, Lightbulb } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronDown, ChevronUp, Lightbulb, Star, CornerRightDown } from 'lucide-react';
 
 interface FactBlockProps {
   content: {
@@ -43,6 +43,26 @@ const FactBlock: React.FC<FactBlockProps> = ({
   
   // Add safety check for rabbitHoles to ensure it exists before accessing its length
   const hasRabbitHoles = content.rabbitHoles && content.rabbitHoles.length > 0;
+  
+  // State to track which rabbit hole is being hovered
+  const [hoveredRabbitHole, setHoveredRabbitHole] = useState<number | null>(null);
+  
+  // For the mini sparkle animation effect
+  const [showSparkle, setShowSparkle] = useState(false);
+  
+  useEffect(() => {
+    // Show sparkle effect on mount
+    const timer = setTimeout(() => {
+      setShowSparkle(true);
+      
+      // Hide it after some time
+      setTimeout(() => {
+        setShowSparkle(false);
+      }, 2000);
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <div>
@@ -51,16 +71,35 @@ const FactBlock: React.FC<FactBlockProps> = ({
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="flex items-start space-x-2 mb-2">
+        <div className="flex items-start space-x-2 mb-2 relative">
           <div className="flex-shrink-0 mt-1">
-            <Lightbulb className="h-5 w-5 text-wonderwhiz-gold" />
+            <div className="relative">
+              <Lightbulb className="h-5 w-5 text-wonderwhiz-gold" />
+              <AnimatePresence>
+                {showSparkle && (
+                  <motion.div
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0, opacity: 0 }}
+                    className="absolute -top-1 -right-1"
+                  >
+                    <Star className="h-3 w-3 text-wonderwhiz-vibrant-yellow" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
           <div className="flex-1">
             {factIsTooLong && !expanded ? (
               <>
-                <p className={`text-white/90 ${textSize}`}>
+                <motion.p
+                  className={`text-white/90 ${textSize}`}
+                  initial={{ filter: "blur(0px)" }}
+                  animate={{ filter: "blur(0px)" }}
+                  transition={{ duration: 0.5 }}
+                >
                   {content.fact.substring(0, 120)}...
-                </p>
+                </motion.p>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -72,7 +111,14 @@ const FactBlock: React.FC<FactBlockProps> = ({
               </>
             ) : (
               <>
-                <p className={`text-white/90 ${textSize}`}>{content.fact}</p>
+                <motion.p
+                  className={`text-white/90 ${textSize}`}
+                  initial={{ filter: "blur(0px)" }}
+                  animate={{ filter: "blur(0px)" }}
+                  transition={{ duration: 0.5 }}
+                >
+                  {content.fact}
+                </motion.p>
                 {factIsTooLong && expanded && (
                   <Button
                     variant="ghost"
@@ -91,27 +137,47 @@ const FactBlock: React.FC<FactBlockProps> = ({
 
       {hasRabbitHoles && (
         <motion.div 
-          className="mt-3 sm:mt-4"
+          className="mt-4 sm:mt-4 relative"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.5 }}
         >
-          <p className="text-white/80 text-xs sm:text-sm mb-2">🐇 Want to explore more?</p>
+          <div className="flex items-center mb-2">
+            <CornerRightDown className="h-3 w-3 text-wonderwhiz-vibrant-yellow mr-1.5" />
+            <p className="text-white/80 text-xs sm:text-sm">Explore more about this</p>
+          </div>
+          
           <div className="flex flex-wrap gap-2">
             {content.rabbitHoles.map((question: string, idx: number) => (
               <motion.div
                 key={idx}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                onHoverStart={() => setHoveredRabbitHole(idx)}
+                onHoverEnd={() => setHoveredRabbitHole(null)}
+                className="relative"
               >
                 <Button 
                   variant="outline" 
                   size="sm"
-                  className="bg-white/10 border-white/20 text-white hover:bg-white/20 text-xs sm:text-sm py-1.5 px-3 h-auto rounded-full"
+                  className="bg-white/10 border-white/20 text-white hover:bg-wonderwhiz-vibrant-yellow/20 hover:border-wonderwhiz-vibrant-yellow/40 hover:text-white text-xs sm:text-sm py-1.5 px-3 h-auto rounded-full transition-all"
                   onClick={() => onRabbitHoleClick(question)}
                 >
                   {question}
                 </Button>
+                
+                <AnimatePresence>
+                  {hoveredRabbitHole === idx && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      className="absolute -top-1 -right-1"
+                    >
+                      <div className="h-3 w-3 rounded-full bg-wonderwhiz-vibrant-yellow animate-pulse" />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             ))}
           </div>

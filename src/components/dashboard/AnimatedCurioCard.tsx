@@ -1,112 +1,113 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Lightbulb, Star, BookOpen, Rocket, Brain, Globe } from 'lucide-react';
+import { 
+  Rocket, 
+  Microscope, 
+  Leaf, 
+  BookOpen, 
+  Cat, 
+  Sparkles
+} from 'lucide-react';
+
+type CardType = 'science' | 'nature' | 'space' | 'history' | 'animals' | 'general';
 
 interface AnimatedCurioCardProps {
   title: string;
   onClick: () => void;
   index: number;
-  type?: 'science' | 'nature' | 'space' | 'history' | 'animals' | 'general';
+  type: CardType;
 }
 
 const AnimatedCurioCard: React.FC<AnimatedCurioCardProps> = ({
   title,
   onClick,
   index,
-  type = 'general'
+  type
 }) => {
-  // Different background gradients based on topic type
-  const gradients = {
-    science: 'from-blue-500/70 to-cyan-400/70',
-    nature: 'from-green-500/70 to-emerald-400/70',
-    space: 'from-indigo-500/70 to-purple-400/70',
-    history: 'from-amber-500/70 to-yellow-400/70',
-    animals: 'from-orange-500/70 to-red-400/70',
-    general: 'from-wonderwhiz-bright-pink/70 to-wonderwhiz-vibrant-yellow/70'
+  // Get the right icon based on card type
+  const getIcon = () => {
+    switch (type) {
+      case 'science':
+        return <Microscope className="h-5 w-5 text-white" />;
+      case 'nature':
+        return <Leaf className="h-5 w-5 text-white" />;
+      case 'space':
+        return <Rocket className="h-5 w-5 text-white" />;
+      case 'history':
+        return <BookOpen className="h-5 w-5 text-white" />;
+      case 'animals':
+        return <Cat className="h-5 w-5 text-white" />;
+      default:
+        return <Sparkles className="h-5 w-5 text-white" />;
+    }
   };
-  
-  // Different icons based on topic type
-  const icons = {
-    science: <Brain className="h-6 w-6 text-white" />,
-    nature: <Globe className="h-6 w-6 text-white" />,
-    space: <Rocket className="h-6 w-6 text-white" />,
-    history: <BookOpen className="h-6 w-6 text-white" />,
-    animals: <Lightbulb className="h-6 w-6 text-white" />,
-    general: <Star className="h-6 w-6 text-white" />
+
+  // Get background gradient based on card type
+  const getGradient = () => {
+    switch (type) {
+      case 'science':
+        return 'from-blue-600 to-indigo-700';
+      case 'nature':
+        return 'from-green-500 to-teal-600';
+      case 'space':
+        return 'from-purple-600 to-indigo-800';
+      case 'history':
+        return 'from-amber-600 to-red-700';
+      case 'animals':
+        return 'from-orange-500 to-pink-600';
+      default:
+        return 'from-wonderwhiz-bright-pink to-wonderwhiz-vibrant-yellow';
+    }
   };
 
   return (
     <motion.div
-      className={`cursor-pointer overflow-hidden rounded-xl bg-gradient-to-br ${gradients[type]} border border-white/30 shadow-lg group relative`}
       initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: index * 0.1 }}
-      whileHover={{ scale: 1.05, y: -5 }}
-      whileTap={{ scale: 0.95 }}
+      animate={{ 
+        opacity: 1, 
+        y: 0,
+        transition: { 
+          delay: index * 0.1,
+          duration: 0.5,
+          ease: [0.23, 1, 0.32, 1]
+        }
+      }}
+      whileHover={{ 
+        scale: 1.03,
+        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)'
+      }}
+      whileTap={{ scale: 0.98 }}
+      className={`bg-gradient-to-br ${getGradient()} rounded-xl overflow-hidden cursor-pointer relative`}
       onClick={onClick}
     >
-      {/* Floating particles */}
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-        {[...Array(5)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-2 h-2 bg-white rounded-full"
-            initial={{ x: '50%', y: '50%', opacity: 0 }}
-            animate={{ 
-              x: `${Math.random() * 100}%`, 
-              y: `${Math.random() * 100}%`,
-              opacity: [0, 0.8, 0]
-            }}
-            transition={{ 
-              duration: 2,
-              delay: i * 0.2,
-              repeat: Infinity,
-              repeatType: "loop"
-            }}
-          />
-        ))}
-      </div>
+      <div className="absolute top-0 left-0 w-full h-full bg-black opacity-10" />
+      <div className="absolute top-0 left-0 w-full h-full bg-white/5 background-grid" />
       
-      <div className="p-4 relative">
-        <div className="flex gap-3 items-center">
-          <motion.div 
-            className="bg-white/20 p-2 rounded-full"
-            animate={{ scale: [1, 1.1, 1] }}
-            transition={{ 
-              duration: 2,
-              repeat: Infinity,
-              repeatType: "reverse",
-              delay: index * 0.2
-            }}
-          >
-            {icons[type]}
-          </motion.div>
-          
-          <h3 className="text-white font-medium text-sm sm:text-base relative overflow-hidden">
-            {title}
-            <motion.div 
-              className="absolute bottom-0 left-0 h-0.5 bg-white"
-              initial={{ width: 0 }}
-              whileHover={{ width: '100%' }}
-              transition={{ duration: 0.3 }}
-            />
-          </h3>
+      <div className="p-4 flex items-start">
+        <div className="bg-white/20 rounded-full p-2 mr-3 flex-shrink-0">
+          {getIcon()}
+        </div>
+        
+        <div className="flex-1">
+          <h3 className="text-white font-medium leading-tight">{title}</h3>
         </div>
       </div>
       
-      {/* Animated gradient border on hover */}
+      <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20" />
+      
       <motion.div 
-        className="absolute inset-0 opacity-0 group-hover:opacity-100 pointer-events-none"
+        className="absolute bottom-0 left-0 h-1 bg-white"
+        initial={{ width: 0 }}
+        whileHover={{ width: '100%' }}
         transition={{ duration: 0.3 }}
+      />
+      
+      <motion.div
+        className="absolute top-1 right-1 bg-white/20 rounded-full p-1"
+        whileHover={{ scale: 1.2, backgroundColor: 'rgba(255,255,255,0.3)' }}
       >
-        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-white/0 via-white/80 to-white/0">
-          <motion.div 
-            className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/80 to-white/0"
-            animate={{ x: ['-100%', '100%'] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-          />
-        </div>
+        <Sparkles className="h-3 w-3 text-white" />
       </motion.div>
     </motion.div>
   );
