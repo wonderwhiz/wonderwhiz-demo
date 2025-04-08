@@ -29,8 +29,13 @@ const CurioLoadMore: React.FC<CurioLoadMoreProps> = ({ loadingMoreBlocks, loadTr
           </motion.div>
           <motion.p 
             className="text-white/70 text-sm mt-2"
-            animate={{ opacity: [0.6, 1, 0.6] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
+            initial={{ opacity: 0.6 }}
+            animate={{ opacity: 1 }}
+            transition={{ 
+              duration: 0.75,
+              repeat: Infinity,
+              repeatType: "reverse"
+            }}
           >
             Loading more wonders...
           </motion.p>
@@ -42,8 +47,13 @@ const CurioLoadMore: React.FC<CurioLoadMoreProps> = ({ loadingMoreBlocks, loadTr
           whileTap={{ scale: 0.95 }}
         >
           <motion.div
-            animate={{ y: [0, 3, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
+            initial={{ y: 0 }}
+            animate={{ y: 3 }}
+            transition={{ 
+              duration: 0.75, 
+              repeat: Infinity,
+              repeatType: "reverse"
+            }}
           >
             <ChevronDown className="h-6 w-6 text-wonderwhiz-gold" />
           </motion.div>

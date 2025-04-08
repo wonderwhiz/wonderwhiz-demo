@@ -23,14 +23,18 @@ const CurioBlockListLoadMore = ({ loadTriggerRef, loadingMore }: CurioBlockListL
               <motion.div
                 key={i}
                 className="w-2 h-2 sm:w-3 sm:h-3 bg-wonderwhiz-bright-pink rounded-full mr-1" 
-                animate={{
-                  y: [0, -6, 0],
-                  scale: [1, 1.2, 1]
+                animate={{ 
+                  y: [-6, 0],
+                  scale: [1.2, 1]
+                }}
+                initial={{ 
+                  y: 0,
+                  scale: 1 
                 }}
                 transition={{
-                  duration: 1.2,
+                  duration: 0.6,
                   repeat: Infinity,
-                  repeatType: "loop",
+                  repeatType: "reverse",
                   delay: i * 0.2,
                 }}
               />

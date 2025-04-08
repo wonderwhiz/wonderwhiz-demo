@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { ContentBlock } from '@/types/curio';
@@ -9,7 +10,7 @@ interface UseCurioBlocksResult {
   hasMore: boolean;
   loadMore: () => Promise<void>;
   isFirstLoad: boolean;
-  generationError: string | null; // Added this property
+  generationError: string | null;
 }
 
 export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery = ''): UseCurioBlocksResult => {
@@ -19,7 +20,7 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
   const [hasMore, setHasMore] = useState(true);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const [page, setPage] = useState(0);
-  const [generationError, setGenerationError] = useState<string | null>(null); // Added this state
+  const [generationError, setGenerationError] = useState<string | null>(null);
 
   const fetchBlocks = useCallback(async () => {
     if (!curioId) return;
@@ -50,7 +51,19 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
       }
 
       if (data) {
-        setBlocks(prevBlocks => [...prevBlocks, ...data]);
+        // Make sure we're properly typing our ContentBlock before setting state
+        const typedBlocks = data.map(block => ({
+          id: block.id,
+          curio_id: block.curio_id,
+          type: block.type,
+          specialist_id: block.specialist_id,
+          content: block.content,
+          liked: block.liked || false,
+          bookmarked: block.bookmarked || false,
+          created_at: block.created_at
+        })) as ContentBlock[];
+        
+        setBlocks(prevBlocks => [...prevBlocks, ...typedBlocks]);
         setHasMore(data.length === 10);
         setIsFirstLoad(false);
       }
@@ -70,7 +83,7 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
     }
   }, [curioId, searchQuery, fetchBlocks]);
 
-  // Make sure to catch errors from content generation and set the generationError state
+  // Fetch generation error from curios table
   useEffect(() => {
     // This is where you'd catch any errors coming from content generation
     // and set the generationError state
@@ -112,6 +125,6 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
     hasMore,
     loadMore,
     isFirstLoad,
-    generationError, // Return the generationError in the result
+    generationError,
   };
 };
