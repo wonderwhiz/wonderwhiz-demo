@@ -123,14 +123,12 @@ const LearningPathProgress: React.FC<LearningPathProgressProps> = ({
         <motion.div 
           className="absolute top-1/2 transform -translate-y-1/2 -ml-4"
           initial={{ left: '0%' }}
-          animate={{ 
-            left: `${Math.min((streakDays / 30) * 100, 100)}%`,
-          }}
+          animate={{ left: `${Math.min((streakDays / 30) * 100, 100)}%` }}
           transition={{ duration: 1, type: "spring" }}
         >
           <motion.div
-            animate={{ y: [0, -5, 0] }}
-            transition={{ repeat: Infinity, duration: 2 }}
+            animate={{ y: [-5, 5] }}
+            transition={{ repeat: Infinity, repeatType: "reverse", duration: 1 }}
           >
             <Rocket className="h-8 w-8 text-wonderwhiz-bright-pink transform rotate-90" />
           </motion.div>

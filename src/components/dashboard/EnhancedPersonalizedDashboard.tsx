@@ -226,7 +226,8 @@ const EnhancedPersonalizedDashboard: React.FC<EnhancedPersonalizedDashboardProps
                 transition={{
                   duration: 3 + Math.random() * 2,
                   repeat: Infinity,
-                  delay: i * 0.3
+                  repeatType: "reverse",
+                  ease: "easeInOut" // Use easeInOut instead of spring here
                 }}
               />
             ))}

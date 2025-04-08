@@ -57,6 +57,22 @@ const AnimatedMascot: React.FC<AnimatedMascotProps> = ({
     if (onInteract) onInteract();
   };
 
+  // Get animation variants for each expression
+  const getExpressionAnimation = () => {
+    switch (expression) {
+      case 'neutral':
+        return { scale: [1, 1.02], rotate: [0, 1] };
+      case 'happy':
+        return { scale: [1, 1.1], rotate: [0, 5] };
+      case 'excited':
+        return { scale: [1, 1.2], rotate: [0, 10] };
+      case 'thinking':
+        return { scale: [1, 0.95] };
+      default:
+        return { scale: [1, 1.02], rotate: [0, 1] };
+    }
+  };
+
   return (
     <div className="relative">
       {/* Speech bubble */}
@@ -83,12 +99,7 @@ const AnimatedMascot: React.FC<AnimatedMascotProps> = ({
       >
         <motion.div 
           className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-wonderwhiz-bright-pink to-wonderwhiz-vibrant-yellow rounded-full flex items-center justify-center relative overflow-hidden"
-          animate={
-            expression === 'neutral' ? { scale: [1, 1.02, 1], rotate: [0, 1, 0] } :
-            expression === 'happy' ? { scale: [1, 1.1, 1], rotate: [0, 5, 0] } :
-            expression === 'excited' ? { scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] } :
-            { scale: [1, 0.95, 1] }
-          }
+          animate={getExpressionAnimation()}
           transition={{ 
             repeat: Infinity, 
             repeatType: "reverse", 
