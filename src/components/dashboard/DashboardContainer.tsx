@@ -5,7 +5,6 @@ import { useParams } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { useSparksSystem } from '@/hooks/useSparksSystem';
 import { SidebarProvider } from '@/components/ui/sidebar';
-import FloatingElements from '@/components/FloatingElements';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardSidebar from '@/components/dashboard/DashboardSidebar';
 import CurioContent from '@/components/dashboard/CurioContent';
@@ -14,8 +13,9 @@ import { useDashboardProfile } from '@/hooks/useDashboardProfile';
 import { useCurioCreation } from '@/hooks/useCurioCreation';
 import { useCurioData } from '@/hooks/useCurioData';
 import { useBlockInteractionHandlers } from '@/hooks/useBlockInteractionHandlers';
-import EnhancedPersonalizedDashboard from '@/components/dashboard/EnhancedPersonalizedDashboard';
-import EnhancedSearchBar from '@/components/dashboard/EnhancedSearchBar';
+import SearchBar from '@/components/dashboard/SearchBar';
+import WelcomeSection from '@/components/dashboard/WelcomeSection';
+import SmartDashboard from '@/components/dashboard/SmartDashboard';
 
 interface Curio {
   id: string;
@@ -69,7 +69,8 @@ const DashboardContainer = () => {
     handleToggleBookmark,
     handleSearch,
     clearSearch,
-    isFirstLoad
+    isFirstLoad,
+    generationError
   } = useCurioData(currentCurio?.id, profileId);
 
   // Block interaction handlers
@@ -85,6 +86,20 @@ const DashboardContainer = () => {
   const handleLoadCurio = (curio: Curio) => {
     setCurrentCurio(curio);
   };
+
+  // Collect past queries to use for search suggestions
+  const [recentQueries, setRecentQueries] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (pastCurios && pastCurios.length > 0) {
+      const queries = pastCurios
+        .slice(0, 5)
+        .map(curio => curio.query)
+        .filter(Boolean);
+      
+      setRecentQueries(queries);
+    }
+  }, [pastCurios]);
 
   if (isLoading) {
     return (
@@ -116,12 +131,12 @@ const DashboardContainer = () => {
           <div className="flex-1 overflow-y-auto py-4 px-3 sm:px-4 md:px-6">
             <div className="max-w-6xl mx-auto space-y-6">
               <div className="relative">
-                <FloatingElements type="stars" density="low" className="absolute inset-0 pointer-events-none opacity-50" />
                 <SearchBar 
                   query={query} 
                   setQuery={setQuery} 
                   handleSubmitQuery={handleSubmitQuery}
                   isGenerating={isGenerating || isGeneratingContent} 
+                  recentQueries={recentQueries}
                 />
               </div>
               
@@ -155,6 +170,7 @@ const DashboardContainer = () => {
                     onQuizCorrect={handleQuizCorrect}
                     onNewsRead={handleNewsRead}
                     onCreativeUpload={handleCreativeUpload}
+                    generationError={generationError}
                   />
                 )}
               </Card>
@@ -170,57 +186,6 @@ const DashboardContainer = () => {
           </div>
         </main>
       </div>
-      
-      <style>
-        {`
-        .flip-card {
-          background-color: transparent;
-          perspective: 1000px;
-          height: 120px;
-          cursor: pointer;
-        }
-        
-        .flip-card-inner {
-          position: relative;
-          width: 100%;
-          height: 100%;
-          transition: transform 0.6s;
-          transform-style: preserve-3d;
-        }
-        
-        .flip-card:hover .flip-card-inner, .flip-card:focus .flip-card-inner {
-          transform: rotateY(180deg);
-        }
-        
-        .flip-card-front, .flip-card-back {
-          position: absolute;
-          width: 100%;
-          height: 100%;
-          -webkit-backface-visibility: hidden;
-          backface-visibility: hidden;
-        }
-        
-        .flip-card-back {
-          transform: rotateY(180deg);
-        }
-        
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-          20%, 40%, 60%, 80% { transform: translateX(5px); }
-        }
-        
-        .animate-shake {
-          animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
-        }
-        
-        @media (max-width: 640px) {
-          .flip-card {
-            height: 100px;
-          }
-        }
-        `}
-      </style>
     </SidebarProvider>
   );
 };
