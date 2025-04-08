@@ -62,7 +62,7 @@ const CurioSuggestion: React.FC<CurioSuggestionProps> = ({
             id: "create-curio"
           });
           
-          // Navigate to the new curio
+          // FIX: Navigate to the curio page with the correct path
           navigate(`/curio/${profileId}/${newCurio.id}`);
         } else {
           console.error('No curio ID returned after creation');

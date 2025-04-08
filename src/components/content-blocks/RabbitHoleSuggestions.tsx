@@ -80,39 +80,11 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
             category: 'history'
           },
           {
-            title: `Beach conservation challenges in the 21st century`,
-            description: `Understand the environmental threats facing beaches worldwide and conservation efforts`,
-            icon: 'brain',
-            difficulty: 'advanced',
-            category: 'nature'
-          },
-          {
             title: `Cultural influences on Goa's unique identity`,
             description: `Explore how Portuguese heritage blends with Indian culture in Goa's food, music, and architecture`,
             icon: 'sparkles',
             difficulty: 'medium',
             category: 'creativity'
-          },
-          {
-            title: `The science of tides and waves`,
-            description: `Understand the physics and astronomy behind ocean movements that shape beaches`,
-            icon: 'book',
-            difficulty: 'medium',
-            category: 'science'
-          },
-          {
-            title: `Sustainable tourism: How to enjoy beaches responsibly`,
-            description: `Learn practical ways to minimize your environmental impact while traveling`,
-            icon: 'rocket',
-            difficulty: 'easy',
-            category: 'technology'
-          },
-          {
-            title: `Coastal ecosystems: The connection between beaches, mangroves and coral reefs`,
-            description: `Discover how these diverse ecosystems work together to maintain coastal health`,
-            icon: 'compass',
-            difficulty: 'advanced',
-            category: 'nature'
           }
         ];
         
@@ -142,39 +114,11 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
             category: 'nature'
           },
           {
-            title: `Dinosaurs in popular culture and movies`,
-            description: `How have dinosaurs been portrayed in films and entertainment?`,
-            icon: 'sparkles',
-            difficulty: 'easy',
-            category: 'creativity'
-          },
-          {
-            title: `The biggest and smallest dinosaurs that ever lived`,
-            description: `Compare the incredible size range of different dinosaur species`,
-            icon: 'book',
-            difficulty: 'easy',
-            category: 'science'
-          },
-          {
-            title: `New dinosaur discoveries in the 21st century`,
-            description: `Recent finds that have changed our understanding of dinosaurs`,
-            icon: 'brain',
-            difficulty: 'advanced',
-            category: 'science'
-          },
-          {
             title: `What did dinosaurs eat?`,
             description: `Exploring herbivore, carnivore, and omnivore dinosaurs`,
             icon: 'leaf',
             difficulty: 'easy',
             category: 'nature'
-          },
-          {
-            title: `How did dinosaurs care for their young?`,
-            description: `Discover parenting behaviors of different dinosaur species`,
-            icon: 'history',
-            difficulty: 'medium',
-            category: 'history'
           }
         ];
         
@@ -204,39 +148,11 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
             category: 'science'
           },
           {
-            title: `Hands-on experiments with ${mainTopic}`,
-            description: `Active learning opportunities through practical, engaging activities`,
-            icon: 'sparkles',
-            difficulty: 'medium',
-            category: 'creativity'
-          },
-          {
-            title: `Future developments in ${mainTopic}`,
-            description: `Explore emerging trends and potential breakthroughs in this exciting field`,
-            icon: 'rocket',
-            difficulty: 'advanced',
-            category: 'technology'
-          },
-          {
             title: `${mainTopic} in the natural world`,
             description: `Examine how this concept manifests and influences plants, animals, and ecosystems`,
             icon: 'leaf',
             difficulty: 'medium',
             category: 'nature'
-          },
-          {
-            title: `The history and evolution of ${mainTopic}`,
-            description: `Trace how our understanding has developed through different historical periods`,
-            icon: 'history',
-            difficulty: 'medium',
-            category: 'history'
-          },
-          {
-            title: `${mainTopic} and technology: Innovations and applications`,
-            description: `Discover how technology enhances our understanding and practical applications`,
-            icon: 'brain',
-            difficulty: 'advanced',
-            category: 'technology'
           }
         ];
         

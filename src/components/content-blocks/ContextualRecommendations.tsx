@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Lightbulb, Sparkles, BookOpen, Compass } from 'lucide-react';
@@ -19,8 +20,8 @@ const ContextualRecommendations: React.FC<ContextualRecommendationsProps> = ({
 }) => {
   const navigate = useNavigate();
 
-  // Safety check
-  const safeRecommendations = Array.isArray(recommendations) ? recommendations : [];
+  // Safety check and limiting to 3-4 suggestions
+  const safeRecommendations = Array.isArray(recommendations) ? recommendations.slice(0, 4) : [];
   
   if (safeRecommendations.length === 0) return null;
   
@@ -91,7 +92,7 @@ const ContextualRecommendations: React.FC<ContextualRecommendationsProps> = ({
             console.error('Error awarding sparks:', err);
           }
           
-          // Navigate to the new curio
+          // FIX: Navigate to the correct curio path
           navigate(`/curio/${profileId}/${newCurio.id}`);
         } else {
           console.error('No curio ID returned after creation');
@@ -179,6 +180,32 @@ const ContextualRecommendations: React.FC<ContextualRecommendationsProps> = ({
       </div>
     </div>
   );
+};
+
+// Define these helper functions here, which were referenced above
+const getRecommendationBg = (index: number) => {
+  const options = [
+    'bg-gradient-to-r from-purple-500/10 to-indigo-500/10 hover:from-purple-500/20 hover:to-indigo-500/20',
+    'bg-gradient-to-r from-pink-500/10 to-rose-500/10 hover:from-pink-500/20 hover:to-rose-500/20',
+    'bg-gradient-to-r from-amber-500/10 to-orange-500/10 hover:from-amber-500/20 hover:to-orange-500/20',
+    'bg-gradient-to-r from-emerald-500/10 to-teal-500/10 hover:from-emerald-500/20 hover:to-teal-500/20',
+    'bg-gradient-to-r from-blue-500/10 to-cyan-500/10 hover:from-blue-500/20 hover:to-cyan-500/20'
+  ];
+  return options[index % options.length];
+};
+
+// Get recommendation icon based on the recommendation text
+const getRecommendationIcon = (recommendation: string, index: number) => {
+  // Check if recommendation text contains certain keywords
+  if (recommendation.toLowerCase().includes('why') || recommendation.toLowerCase().includes('how')) {
+    return <Compass className="w-3 h-3 mr-1.5 text-cyan-300" />;
+  } else if (recommendation.toLowerCase().includes('discover') || recommendation.toLowerCase().includes('explore')) {
+    return <BookOpen className="w-3 h-3 mr-1.5 text-amber-300" />;
+  } else if (recommendation.toLowerCase().includes('fact') || recommendation.toLowerCase().includes('learn')) {
+    return <Lightbulb className="w-3 h-3 mr-1.5 text-emerald-300" />;
+  } else {
+    return <Sparkles className="w-3 h-3 mr-1.5 text-wonderwhiz-gold" />;
+  }
 };
 
 export default ContextualRecommendations;
