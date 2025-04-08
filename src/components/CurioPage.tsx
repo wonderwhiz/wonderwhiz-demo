@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,10 +22,11 @@ import CurioBlockListSearchLoading from '@/components/CurioBlockListSearchLoadin
 import CurioBlockListSearchNoMore from '@/components/CurioBlockListSearchNoMore';
 import CurioBlockListWelcome from '@/components/CurioBlockListWelcome';
 import { useBlockInteractions } from '@/hooks/useBlockInteractions';
-import { Search, ArrowLeft, Sparkles, RefreshCw, Braces, MessageCircle, Brain } from 'lucide-react';
+import { Search, ArrowLeft, Sparkles, RefreshCw, Braces, MessageCircle, Brain, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCurioData } from '@/hooks/useCurioData';
 import confetti from 'canvas-confetti';
+import RabbitHoleSuggestions from '@/components/content-blocks/RabbitHoleSuggestions';
 
 const CurioPage: React.FC = () => {
   const { childId, curioId } = useParams<{ childId: string, curioId: string }>();
@@ -55,6 +55,9 @@ const CurioPage: React.FC = () => {
   const [difficulty, setDifficulty] = useState('medium');
   const [blockCount, setBlockCount] = useState(0);
   const [learningSummary, setLearningSummary] = useState('');
+  const [specialistIds, setSpecialistIds] = useState<string[]>([]);
+  const [showRabbitHoleSuggestions, setShowRabbitHoleSuggestions] = useState(false);
+  const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
 
   useEffect(() => {
     if (user && !childId) {
@@ -79,7 +82,6 @@ const CurioPage: React.FC = () => {
 
   useEffect(() => {
     if (blocks.length > 0 && isFirstLoad) {
-      // Show initial confetti for a better first-time experience
       setTimeout(() => {
         confetti({
           particleCount: 70,
@@ -101,11 +103,13 @@ const CurioPage: React.FC = () => {
   }, [blocks]);
 
   useEffect(() => {
-    // Update analytics data based on blocks
     if (blocks.length > 0) {
+      const specialists = blocks.map(block => block.specialist_id);
+      const uniqueSpecialists = Array.from(new Set(specialists));
+      setSpecialistIds(uniqueSpecialists);
+      
       setBlockCount(blocks.length);
       
-      // Determine difficulty based on content
       const hasQuiz = blocks.some(block => block.type === 'quiz');
       const hasCreative = blocks.some(block => block.type === 'creative');
       const hasMindfulness = blocks.some(block => block.type === 'mindfulness');
@@ -118,7 +122,6 @@ const CurioPage: React.FC = () => {
         setDifficulty('beginner');
       }
       
-      // Set learning summary
       const topics = new Set(blocks.map(block => block.specialist_id));
       const topicList = Array.from(topics).map(topic => {
         switch(topic) {
@@ -137,6 +140,24 @@ const CurioPage: React.FC = () => {
       }
     }
   }, [blocks]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      
+      if (scrollPosition + windowHeight > documentHeight * 0.75) {
+        setHasScrolledToBottom(true);
+        if (blocks.length > 0 && !hasScrolledToBottom) {
+          setShowRabbitHoleSuggestions(true);
+        }
+      }
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [blocks.length, hasScrolledToBottom]);
 
   if (profileError) {
     return (
@@ -228,7 +249,6 @@ const CurioPage: React.FC = () => {
           console.error('Error awarding sparks:', err);
         }
         
-        // Trigger confetti celebration
         confetti({
           particleCount: 100,
           spread: 70,
@@ -467,6 +487,15 @@ const CurioPage: React.FC = () => {
 
           {hasMore && blocks.length > 0 && (
             <CurioBlockListLoadMore loadTriggerRef={loadTriggerRef} loadingMore={loadingMore} />
+          )}
+
+          {showRabbitHoleSuggestions && blocks.length > 0 && !searchQuery && !hasMore && (
+            <RabbitHoleSuggestions
+              curioTitle={curioTitle || ''}
+              profileId={childId}
+              onSuggestionClick={handleRabbitHoleClick}
+              specialistIds={specialistIds}
+            />
           )}
         </div>
       </div>
