@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
@@ -48,12 +47,13 @@ interface ContentBlockProps {
   isFirstBlock?: boolean;
 }
 
-interface Reply {
+interface BlockReply {
   id: string;
   block_id: string;
   content: string;
   from_user: boolean;
-  timestamp: string;
+  created_at: string;
+  user_id?: string | null;
   specialist_id?: string;
 }
 
@@ -63,6 +63,7 @@ interface DbReply {
   content: string;
   from_user: boolean;
   created_at: string;
+  user_id?: string | null;
   specialist_id?: string;
 }
 
@@ -85,7 +86,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   isFirstBlock = false
 }) => {
   const [showReplyForm, setShowReplyForm] = useState(false);
-  const [replies, setReplies] = useState<Reply[]>([]);
+  const [replies, setReplies] = useState<BlockReply[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [contextualImage, setContextualImage] = useState<string | null>(null);
@@ -137,12 +138,13 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
           if (error) throw error;
           
           if (data && data.length > 0) {
-            const mappedReplies: Reply[] = data.map((reply: DbReply) => ({
+            const mappedReplies: BlockReply[] = data.map((reply: DbReply) => ({
               id: reply.id,
               block_id: reply.block_id,
               content: reply.content,
               from_user: reply.from_user,
-              timestamp: reply.created_at,
+              created_at: reply.created_at,
+              user_id: reply.user_id,
               specialist_id: reply.specialist_id
             }));
             setReplies(mappedReplies);
@@ -242,7 +244,8 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       block_id: block.id,
       content: replyText,
       from_user: true,
-      timestamp: tempTimestamp
+      created_at: tempTimestamp,
+      user_id: userId
     }]);
     
     try {
@@ -373,12 +376,13 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       }
       
       if (data) {
-        const mappedReplies: Reply[] = data.map((reply: DbReply) => ({
+        const mappedReplies: BlockReply[] = data.map((reply: DbReply) => ({
           id: reply.id,
           block_id: reply.block_id,
           content: reply.content,
           from_user: reply.from_user,
-          timestamp: reply.created_at,
+          created_at: reply.created_at,
+          user_id: reply.user_id,
           specialist_id: reply.specialist_id
         }));
         setReplies(mappedReplies);
