@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import ContentBlock from '@/components/ContentBlock';
 import CurioLoading from '@/components/CurioLoading';
 import CurioLoadMore from '@/components/CurioLoadMore';
+import RabbitHoleSuggestions from '@/components/content-blocks/RabbitHoleSuggestions';
 import { AlertCircle, RefreshCw, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -79,6 +80,15 @@ const CurioContent: React.FC<CurioContentProps> = ({
     if (!contentBlocks) return [];
     return contentBlocks.slice(0, visibleBlocksCount);
   }, [contentBlocks, visibleBlocksCount]);
+
+  // Extract subject topics from the blocks to use for rabbit hole suggestions
+  const specialistIds = useMemo(() => {
+    const specialists = contentBlocks?.map(block => block.specialist_id) || [];
+    return [...new Set(specialists)];
+  }, [contentBlocks]);
+
+  // Determine if user has scrolled to the end
+  const hasReachedEnd = !isGenerating && !hasMoreBlocks && visibleBlocks.length > 0;
 
   if (!currentCurio) {
     return null;
@@ -194,8 +204,23 @@ const CurioContent: React.FC<CurioContentProps> = ({
                 />
               )}
               
+              {/* Show rabbit hole suggestions when user reaches the end */}
+              {hasReachedEnd && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
+                  <RabbitHoleSuggestions
+                    curioTitle={currentCurio.title}
+                    profileId={profileId}
+                    onSuggestionClick={onRabbitHoleFollow}
+                    specialistIds={specialistIds}
+                  />
+                </motion.div>
+              )}
+              
               {/* End of curio indicator */}
-              {!isGenerating && !hasMoreBlocks && visibleBlocks.length > 0 && (
+              {hasReachedEnd && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}

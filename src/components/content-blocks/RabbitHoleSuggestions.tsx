@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Lightbulb, Sparkles, Map, Compass, BookOpen, Brain, Rocket, Leaf, History } from 'lucide-react';
@@ -33,20 +32,16 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
   const [loading, setLoading] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>('all');
   
-  // Generate suggestions based on curio title and specialists involved
   useEffect(() => {
     if (!curioTitle) return;
     
     setLoading(true);
     
-    // Generate contextually relevant suggestions based on the curio title
     const generateSuggestions = () => {
-      // Extract key topics from title
       const topics = curioTitle.toLowerCase().split(' ')
         .filter(word => word.length > 3)
         .filter(word => !['what', 'when', 'where', 'why', 'how', 'does', 'and', 'the', 'for', 'with'].includes(word));
       
-      // Map specialists to subject areas
       const subjectAreas = specialistIds.map(id => {
         switch(id) {
           case 'nova': return 'space exploration';
@@ -59,11 +54,71 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
         }
       });
       
-      // Create contextually relevant suggestions based on detected topic
       const mainTopic = topics[0] || 'this topic';
       
-      // If the topic is about dinosaurs, create dinosaur-specific suggestions
-      if (mainTopic.includes('dinosaur')) {
+      if (mainTopic.includes('beach') || mainTopic.includes('goa') || curioTitle.toLowerCase().includes('beach') || curioTitle.toLowerCase().includes('goa')) {
+        const newSuggestions: Suggestion[] = [
+          {
+            title: `Marine biodiversity in Goan beaches`,
+            description: `Explore the fascinating underwater life and ecosystems around North Goa's beaches`,
+            icon: 'leaf',
+            difficulty: 'medium',
+            category: 'nature'
+          },
+          {
+            title: `How are beaches formed? The geology behind coastal landscapes`,
+            description: `Discover the fascinating geological processes that create and shape beaches over time`,
+            icon: 'map',
+            difficulty: 'easy',
+            category: 'science'
+          },
+          {
+            title: `History of tourism in Goa: From hippie haven to global hotspot`,
+            description: `Learn how Goa transformed from a Portuguese colony to India's premiere beach destination`,
+            icon: 'history',
+            difficulty: 'medium',
+            category: 'history'
+          },
+          {
+            title: `Beach conservation challenges in the 21st century`,
+            description: `Understand the environmental threats facing beaches worldwide and conservation efforts`,
+            icon: 'brain',
+            difficulty: 'advanced',
+            category: 'nature'
+          },
+          {
+            title: `Cultural influences on Goa's unique identity`,
+            description: `Explore how Portuguese heritage blends with Indian culture in Goa's food, music, and architecture`,
+            icon: 'sparkles',
+            difficulty: 'medium',
+            category: 'creativity'
+          },
+          {
+            title: `The science of tides and waves`,
+            description: `Understand the physics and astronomy behind ocean movements that shape beaches`,
+            icon: 'book',
+            difficulty: 'medium',
+            category: 'science'
+          },
+          {
+            title: `Sustainable tourism: How to enjoy beaches responsibly`,
+            description: `Learn practical ways to minimize your environmental impact while traveling`,
+            icon: 'rocket',
+            difficulty: 'easy',
+            category: 'technology'
+          },
+          {
+            title: `Coastal ecosystems: The connection between beaches, mangroves and coral reefs`,
+            description: `Discover how these diverse ecosystems work together to maintain coastal health`,
+            icon: 'compass',
+            difficulty: 'advanced',
+            category: 'nature'
+          }
+        ];
+        
+        setSuggestions(newSuggestions);
+      } 
+      else if (mainTopic.includes('dinosaur')) {
         const newSuggestions: Suggestion[] = [
           {
             title: `How did dinosaurs become extinct?`,
@@ -125,62 +180,60 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
         
         setSuggestions(newSuggestions);
       } 
-      // Add more topic-specific suggestions for other common topics
       else {
-        // Generic suggestions for any topic
         const newSuggestions: Suggestion[] = [
           {
             title: `The secrets of ${mainTopic}`,
-            description: `Uncover deeper mysteries and fascinating details`,
+            description: `Uncover deeper mysteries and fascinating details through scientific inquiry`,
             icon: 'lightbulb',
             difficulty: 'easy',
             category: 'science'
           },
           {
             title: `Why is ${mainTopic} important to understand?`,
-            description: `Discover the real-world significance and impact`,
+            description: `Discover the real-world significance and impact on our daily lives`,
             icon: 'compass',
             difficulty: 'medium',
             category: 'history'
           },
           {
             title: `How ${mainTopic} connects to ${subjectAreas[0] || 'other subjects'}`,
-            description: `Explore fascinating connections across different fields`,
+            description: `Explore fascinating interdisciplinary connections across different fields of knowledge`,
             icon: 'map',
             difficulty: 'advanced',
             category: 'science'
           },
           {
-            title: `Fun experiments with ${mainTopic}`,
-            description: `Hands-on activities to deepen your understanding`,
+            title: `Hands-on experiments with ${mainTopic}`,
+            description: `Active learning opportunities through practical, engaging activities`,
             icon: 'sparkles',
             difficulty: 'medium',
             category: 'creativity'
           },
           {
-            title: `Future of ${mainTopic} and new discoveries`,
-            description: `What exciting developments might happen next?`,
+            title: `Future developments in ${mainTopic}`,
+            description: `Explore emerging trends and potential breakthroughs in this exciting field`,
             icon: 'rocket',
             difficulty: 'advanced',
             category: 'technology'
           },
           {
             title: `${mainTopic} in the natural world`,
-            description: `How does this relate to plants, animals, and ecosystems?`,
+            description: `Examine how this concept manifests and influences plants, animals, and ecosystems`,
             icon: 'leaf',
             difficulty: 'medium',
             category: 'nature'
           },
           {
-            title: `The history of ${mainTopic} through time`,
-            description: `How has our understanding evolved over centuries?`,
+            title: `The history and evolution of ${mainTopic}`,
+            description: `Trace how our understanding has developed through different historical periods`,
             icon: 'history',
             difficulty: 'medium',
             category: 'history'
           },
           {
-            title: `${mainTopic} and technology advancements`,
-            description: `How has technology changed our understanding?`,
+            title: `${mainTopic} and technology: Innovations and applications`,
+            description: `Discover how technology enhances our understanding and practical applications`,
             icon: 'brain',
             difficulty: 'advanced',
             category: 'technology'
@@ -204,7 +257,6 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
           duration: 3000
         });
         
-        // Create a new curio based on the suggestion
         const { data: newCurio, error } = await supabase
           .from('curios')
           .insert({
@@ -220,13 +272,11 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
           toast.error("Could not create new exploration", {
             id: "create-curio"
           });
-          // Fallback to just setting the query
           onSuggestionClick(suggestion.title);
           return;
         }
         
         if (newCurio && newCurio.id) {
-          // Celebrate discovery with confetti
           confetti({
             particleCount: 80,
             spread: 70,
@@ -240,7 +290,6 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
           });
           
           try {
-            // Award sparks for curiosity
             await supabase.functions.invoke('increment-sparks-balance', {
               body: JSON.stringify({
                 profileId: profileId,
@@ -263,7 +312,6 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
             console.error('Error awarding sparks:', err);
           }
           
-          // Navigate to the new curio
           navigate(`/curio/${profileId}/${newCurio.id}`);
         } else {
           console.error('No curio ID returned after creation');
@@ -277,11 +325,9 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
         toast.error("Could not create new exploration", {
           id: "create-curio"
         });
-        // Fallback to just setting the query
         onSuggestionClick(suggestion.title);
       }
     } else {
-      // Without profileId, just call the original handler
       onSuggestionClick(suggestion.title);
     }
   };
@@ -337,7 +383,7 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
           transition={{ duration: 0.5 }}
           className="text-xl sm:text-2xl font-bold text-white font-nunito bg-clip-text text-transparent bg-gradient-to-r from-wonderwhiz-vibrant-yellow to-wonderwhiz-bright-pink"
         >
-          Rabbit Holes to Explore
+          Dive Deeper: Learning Pathways
         </motion.h3>
         <motion.p 
           initial={{ opacity: 0, y: 20 }}
@@ -345,10 +391,9 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
           transition={{ duration: 0.5, delay: 0.1 }}
           className="text-white/70 text-sm mt-2"
         >
-          Follow your curiosity and discover more fascinating wonders
+          Follow your curiosity and build your knowledge through related topics
         </motion.p>
         
-        {/* Category filter buttons */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -375,7 +420,9 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         <AnimatePresence initial={false} mode="popLayout">
-          {filteredSuggestions.map((suggestion, index) => (
+          {suggestions
+            .filter(s => activeCategory === 'all' || s.category === activeCategory)
+            .map((suggestion, index) => (
             <motion.div
               key={`suggestion-${suggestion.title}`}
               initial={{ opacity: 0, y: 20 }}
@@ -394,9 +441,20 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
                    style={{ background: `radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 70%)` }} />
                    
               <div className="flex items-start gap-3">
-                <div className={`flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br ${getDifficultyColor(suggestion.difficulty)} 
-                                 flex items-center justify-center text-white shadow-sm`}>
-                  {getIconComponent(suggestion.icon)}
+                <div className={`flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br ${
+                  suggestion.difficulty === 'easy' ? 'from-emerald-400 to-green-500' :
+                  suggestion.difficulty === 'medium' ? 'from-blue-400 to-indigo-500' :
+                  'from-purple-400 to-pink-500'
+                } flex items-center justify-center text-white shadow-sm`}>
+                  {suggestion.icon === 'lightbulb' ? <Lightbulb className="w-5 h-5" /> :
+                   suggestion.icon === 'sparkles' ? <Sparkles className="w-5 h-5" /> :
+                   suggestion.icon === 'map' ? <Map className="w-5 h-5" /> :
+                   suggestion.icon === 'compass' ? <Compass className="w-5 h-5" /> :
+                   suggestion.icon === 'book' ? <BookOpen className="w-5 h-5" /> :
+                   suggestion.icon === 'brain' ? <Brain className="w-5 h-5" /> :
+                   suggestion.icon === 'rocket' ? <Rocket className="w-5 h-5" /> :
+                   suggestion.icon === 'leaf' ? <Leaf className="w-5 h-5" /> :
+                   <History className="w-5 h-5" />}
                 </div>
                 
                 <div className="flex-1">
@@ -410,7 +468,14 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
                     </span>
                     
                     {suggestion.category && (
-                      <span className={`ml-auto py-0.5 px-2 rounded-full text-[10px] uppercase font-medium ${getCategoryColor(suggestion.category)}`}>
+                      <span className={`ml-auto py-0.5 px-2 rounded-full text-[10px] uppercase font-medium ${
+                        suggestion.category === 'science' ? 'bg-blue-500/30 text-blue-200' :
+                        suggestion.category === 'creativity' ? 'bg-pink-500/30 text-pink-200' :
+                        suggestion.category === 'history' ? 'bg-amber-500/30 text-amber-200' :
+                        suggestion.category === 'nature' ? 'bg-emerald-500/30 text-emerald-200' :
+                        suggestion.category === 'technology' ? 'bg-purple-500/30 text-purple-200' :
+                        'bg-indigo-500/30 text-indigo-200'
+                      }`}>
                         {suggestion.category}
                       </span>
                     )}
