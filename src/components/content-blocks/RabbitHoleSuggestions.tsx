@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Lightbulb, Sparkles, Map, Compass, BookOpen } from 'lucide-react';
+import { ArrowRight, Lightbulb, Sparkles, Map, Compass, BookOpen, Brain, Rocket, Leaf, History } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -10,8 +10,9 @@ import confetti from 'canvas-confetti';
 interface Suggestion {
   title: string;
   description: string;
-  icon: 'lightbulb' | 'sparkles' | 'map' | 'compass' | 'book';
+  icon: 'lightbulb' | 'sparkles' | 'map' | 'compass' | 'book' | 'brain' | 'rocket' | 'leaf' | 'history';
   difficulty?: 'easy' | 'medium' | 'advanced';
+  category?: 'science' | 'creativity' | 'history' | 'nature' | 'technology' | 'space';
 }
 
 interface RabbitHoleSuggestionsProps {
@@ -30,6 +31,7 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
   const navigate = useNavigate();
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<string>('all');
   
   // Generate suggestions based on curio title and specialists involved
   useEffect(() => {
@@ -57,41 +59,137 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
         }
       });
       
-      // Create contextually relevant suggestions
-      const newSuggestions: Suggestion[] = [
-        {
-          title: `The secrets of ${topics[0] || 'this topic'}`,
-          description: `Uncover deeper mysteries and fascinating details`,
-          icon: 'lightbulb',
-          difficulty: 'easy'
-        },
-        {
-          title: `Why is ${topics[0] || 'this'} important to understand?`,
-          description: `Discover the real-world significance and impact`,
-          icon: 'compass',
-          difficulty: 'medium'
-        },
-        {
-          title: `How ${topics[0] || 'this topic'} connects to ${subjectAreas[0] || 'other subjects'}`,
-          description: `Explore fascinating connections across different fields`,
-          icon: 'map',
-          difficulty: 'advanced'
-        },
-        {
-          title: `Fun experiments with ${topics[0] || 'this concept'}`,
-          description: `Hands-on activities to deepen your understanding`,
-          icon: 'sparkles',
-          difficulty: 'medium'
-        },
-        {
-          title: `Future of ${topics[0] || 'this field'} and new discoveries`,
-          description: `What exciting developments might happen next?`,
-          icon: 'book',
-          difficulty: 'advanced'
-        }
-      ];
+      // Create contextually relevant suggestions based on detected topic
+      const mainTopic = topics[0] || 'this topic';
       
-      setSuggestions(newSuggestions);
+      // If the topic is about dinosaurs, create dinosaur-specific suggestions
+      if (mainTopic.includes('dinosaur')) {
+        const newSuggestions: Suggestion[] = [
+          {
+            title: `How did dinosaurs become extinct?`,
+            description: `Explore the theories about the dinosaur extinction event`,
+            icon: 'rocket',
+            difficulty: 'medium',
+            category: 'science'
+          },
+          {
+            title: `Dinosaur fossils and how paleontologists study them`,
+            description: `Discover how scientists learn about dinosaurs from ancient remains`,
+            icon: 'map',
+            difficulty: 'easy',
+            category: 'science'
+          },
+          {
+            title: `The evolution of birds from dinosaurs`,
+            description: `Learn about the fascinating connection between modern birds and dinosaurs`,
+            icon: 'leaf',
+            difficulty: 'medium',
+            category: 'nature'
+          },
+          {
+            title: `Dinosaurs in popular culture and movies`,
+            description: `How have dinosaurs been portrayed in films and entertainment?`,
+            icon: 'sparkles',
+            difficulty: 'easy',
+            category: 'creativity'
+          },
+          {
+            title: `The biggest and smallest dinosaurs that ever lived`,
+            description: `Compare the incredible size range of different dinosaur species`,
+            icon: 'book',
+            difficulty: 'easy',
+            category: 'science'
+          },
+          {
+            title: `New dinosaur discoveries in the 21st century`,
+            description: `Recent finds that have changed our understanding of dinosaurs`,
+            icon: 'brain',
+            difficulty: 'advanced',
+            category: 'science'
+          },
+          {
+            title: `What did dinosaurs eat?`,
+            description: `Exploring herbivore, carnivore, and omnivore dinosaurs`,
+            icon: 'leaf',
+            difficulty: 'easy',
+            category: 'nature'
+          },
+          {
+            title: `How did dinosaurs care for their young?`,
+            description: `Discover parenting behaviors of different dinosaur species`,
+            icon: 'history',
+            difficulty: 'medium',
+            category: 'history'
+          }
+        ];
+        
+        setSuggestions(newSuggestions);
+      } 
+      // Add more topic-specific suggestions for other common topics
+      else {
+        // Generic suggestions for any topic
+        const newSuggestions: Suggestion[] = [
+          {
+            title: `The secrets of ${mainTopic}`,
+            description: `Uncover deeper mysteries and fascinating details`,
+            icon: 'lightbulb',
+            difficulty: 'easy',
+            category: 'science'
+          },
+          {
+            title: `Why is ${mainTopic} important to understand?`,
+            description: `Discover the real-world significance and impact`,
+            icon: 'compass',
+            difficulty: 'medium',
+            category: 'history'
+          },
+          {
+            title: `How ${mainTopic} connects to ${subjectAreas[0] || 'other subjects'}`,
+            description: `Explore fascinating connections across different fields`,
+            icon: 'map',
+            difficulty: 'advanced',
+            category: 'science'
+          },
+          {
+            title: `Fun experiments with ${mainTopic}`,
+            description: `Hands-on activities to deepen your understanding`,
+            icon: 'sparkles',
+            difficulty: 'medium',
+            category: 'creativity'
+          },
+          {
+            title: `Future of ${mainTopic} and new discoveries`,
+            description: `What exciting developments might happen next?`,
+            icon: 'rocket',
+            difficulty: 'advanced',
+            category: 'technology'
+          },
+          {
+            title: `${mainTopic} in the natural world`,
+            description: `How does this relate to plants, animals, and ecosystems?`,
+            icon: 'leaf',
+            difficulty: 'medium',
+            category: 'nature'
+          },
+          {
+            title: `The history of ${mainTopic} through time`,
+            description: `How has our understanding evolved over centuries?`,
+            icon: 'history',
+            difficulty: 'medium',
+            category: 'history'
+          },
+          {
+            title: `${mainTopic} and technology advancements`,
+            description: `How has technology changed our understanding?`,
+            icon: 'brain',
+            difficulty: 'advanced',
+            category: 'technology'
+          }
+        ];
+        
+        setSuggestions(newSuggestions);
+      }
+      
       setLoading(false);
     };
     
@@ -195,6 +293,10 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
       case 'map': return <Map className="w-5 h-5" />;
       case 'compass': return <Compass className="w-5 h-5" />;
       case 'book': return <BookOpen className="w-5 h-5" />;
+      case 'brain': return <Brain className="w-5 h-5" />;
+      case 'rocket': return <Rocket className="w-5 h-5" />;
+      case 'leaf': return <Leaf className="w-5 h-5" />;
+      case 'history': return <History className="w-5 h-5" />;
       default: return <Lightbulb className="w-5 h-5" />;
     }
   };
@@ -208,26 +310,79 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
     }
   };
   
+  const getCategoryColor = (category?: string) => {
+    switch(category) {
+      case 'science': return 'bg-blue-500/30 text-blue-200';
+      case 'creativity': return 'bg-pink-500/30 text-pink-200';
+      case 'history': return 'bg-amber-500/30 text-amber-200';
+      case 'nature': return 'bg-emerald-500/30 text-emerald-200';
+      case 'technology': return 'bg-purple-500/30 text-purple-200';
+      case 'space': return 'bg-indigo-500/30 text-indigo-200';
+      default: return 'bg-gray-500/30 text-gray-200';
+    }
+  };
+  
+  const filteredSuggestions = activeCategory === 'all' 
+    ? suggestions 
+    : suggestions.filter(s => s.category === activeCategory);
+  
   if (suggestions.length === 0 && !loading) return null;
   
   return (
-    <div className="mt-8 mb-4">
-      <div className="mb-4 text-center">
-        <h3 className="text-lg sm:text-xl font-bold text-white font-nunito">Rabbit Holes to Explore</h3>
-        <p className="text-white/70 text-sm mt-1">
+    <div className="mt-10 mb-4">
+      <div className="mb-6 text-center">
+        <motion.h3 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-xl sm:text-2xl font-bold text-white font-nunito bg-clip-text text-transparent bg-gradient-to-r from-wonderwhiz-vibrant-yellow to-wonderwhiz-bright-pink"
+        >
+          Rabbit Holes to Explore
+        </motion.h3>
+        <motion.p 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="text-white/70 text-sm mt-2"
+        >
           Follow your curiosity and discover more fascinating wonders
-        </p>
+        </motion.p>
+        
+        {/* Category filter buttons */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="flex flex-wrap justify-center gap-2 mt-4"
+        >
+          <button 
+            onClick={() => setActiveCategory('all')}
+            className={`px-3 py-1 text-xs rounded-full transition-colors ${activeCategory === 'all' ? 'bg-white/20 text-white' : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white/80'}`}
+          >
+            All Topics
+          </button>
+          {Array.from(new Set(suggestions.map(s => s.category))).map(category => (
+            <button 
+              key={category}
+              onClick={() => setActiveCategory(category || 'all')}
+              className={`px-3 py-1 text-xs rounded-full capitalize transition-colors ${activeCategory === category ? 'bg-white/20 text-white' : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white/80'}`}
+            >
+              {category}
+            </button>
+          ))}
+        </motion.div>
       </div>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        <AnimatePresence>
-          {suggestions.map((suggestion, index) => (
+        <AnimatePresence initial={false} mode="popLayout">
+          {filteredSuggestions.map((suggestion, index) => (
             <motion.div
-              key={`suggestion-${index}`}
+              key={`suggestion-${suggestion.title}`}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ delay: index * 0.1, duration: 0.4 }}
+              exit={{ opacity: 0, y: -20, scale: 0.9 }}
+              transition={{ delay: index * 0.05, duration: 0.4 }}
+              layout
               whileHover={{ scale: 1.03, y: -5 }}
               whileTap={{ scale: 0.98 }}
               className={`relative overflow-hidden cursor-pointer bg-gradient-to-br bg-opacity-10 
@@ -248,15 +403,15 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
                   <h4 className="text-white font-medium mb-1 pr-5 line-clamp-2">{suggestion.title}</h4>
                   <p className="text-white/60 text-xs line-clamp-2">{suggestion.description}</p>
                   
-                  <div className="flex items-center mt-2 text-xs text-white/40">
-                    <span className="flex items-center">
+                  <div className="flex items-center mt-3 text-xs">
+                    <span className="flex items-center text-white/40">
                       <ArrowRight className="w-3 h-3 mr-1" />
                       <span>Explore this wonder</span>
                     </span>
                     
-                    {suggestion.difficulty && (
-                      <span className="ml-auto capitalize">
-                        {suggestion.difficulty}
+                    {suggestion.category && (
+                      <span className={`ml-auto py-0.5 px-2 rounded-full text-[10px] uppercase font-medium ${getCategoryColor(suggestion.category)}`}>
+                        {suggestion.category}
                       </span>
                     )}
                   </div>

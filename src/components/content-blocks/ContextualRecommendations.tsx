@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Lightbulb, Sparkles } from 'lucide-react';
+import { ArrowRight, Lightbulb, Sparkles, BookOpen, Compass } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -14,7 +13,7 @@ interface ContextualRecommendationsProps {
 }
 
 const ContextualRecommendations: React.FC<ContextualRecommendationsProps> = ({
-  recommendations = [], // Provide default empty array
+  recommendations = [],
   onRecommendationClick,
   profileId
 }) => {
@@ -115,7 +114,7 @@ const ContextualRecommendations: React.FC<ContextualRecommendationsProps> = ({
     }
   };
   
-  // Define different background colors for visual variety
+  // Define different background colors for visual variety and engagement
   const getRecommendationBg = (index: number) => {
     const options = [
       'bg-gradient-to-r from-purple-500/10 to-indigo-500/10 hover:from-purple-500/20 hover:to-indigo-500/20',
@@ -127,13 +126,27 @@ const ContextualRecommendations: React.FC<ContextualRecommendationsProps> = ({
     return options[index % options.length];
   };
   
+  // Get recommendation icon based on the recommendation text
+  const getRecommendationIcon = (recommendation: string, index: number) => {
+    // Check if recommendation text contains certain keywords
+    if (recommendation.toLowerCase().includes('why') || recommendation.toLowerCase().includes('how')) {
+      return <Compass className="w-3 h-3 mr-1.5 text-cyan-300" />;
+    } else if (recommendation.toLowerCase().includes('discover') || recommendation.toLowerCase().includes('explore')) {
+      return <BookOpen className="w-3 h-3 mr-1.5 text-amber-300" />;
+    } else if (recommendation.toLowerCase().includes('fact') || recommendation.toLowerCase().includes('learn')) {
+      return <Lightbulb className="w-3 h-3 mr-1.5 text-emerald-300" />;
+    } else {
+      return <Sparkles className="w-3 h-3 mr-1.5 text-wonderwhiz-gold" />;
+    }
+  };
+  
   return (
-    <div className="mt-4 pt-4 border-t border-white/10">
-      <h4 className="text-sm font-medium text-white/80 mb-2 flex items-center">
+    <div className="mt-6 pt-4 border-t border-white/10">
+      <h4 className="text-sm font-medium text-white/80 mb-3 flex items-center">
         <Sparkles className="w-3 h-3 mr-1.5 text-wonderwhiz-gold" />
-        <span>Related wonders</span>
+        <span>Related wonders to explore</span>
       </h4>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2.5">
         <AnimatePresence>
           {safeRecommendations.map((recommendation, index) => (
             <motion.button
@@ -142,20 +155,21 @@ const ContextualRecommendations: React.FC<ContextualRecommendationsProps> = ({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9 }}
               transition={{ delay: index * 0.1, duration: 0.3 }}
-              whileHover={{ scale: 1.05, y: -1 }}
+              whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
               className={`text-xs ${getRecommendationBg(index)} text-white/80 
                         hover:text-white transition-all duration-300 px-3 py-1.5 rounded-full 
-                        flex items-center group border border-white/5 hover:border-white/20`}
+                        flex items-center group border border-white/5 hover:border-white/20 backdrop-blur-sm`}
               onClick={() => handleRecommendationClick(recommendation)}
             >
+              {getRecommendationIcon(recommendation, index)}
               <span className="line-clamp-1">{recommendation}</span>
               <motion.div
                 initial={{ opacity: 0, x: -5 }}
                 animate={{ opacity: 0 }}
                 whileHover={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.2 }}
-                className="ml-1"
+                className="ml-1.5"
               >
                 <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
               </motion.div>
