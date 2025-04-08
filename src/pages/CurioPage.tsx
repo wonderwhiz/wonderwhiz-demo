@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -58,7 +57,6 @@ const CurioPage: React.FC = () => {
   }, [user, childId, navigate]);
 
   useEffect(() => {
-    // Fetch curio title
     if (curioId) {
       supabase
         .from('curios')
@@ -99,7 +97,6 @@ const CurioPage: React.FC = () => {
 
   const handleToggleLike = async (blockId: string) => {
     try {
-      // Using edge function for handling likes instead of direct table access
       await supabase.functions.invoke('handle-interaction', {
         body: { 
           type: 'like',
@@ -115,7 +112,6 @@ const CurioPage: React.FC = () => {
 
   const handleToggleBookmark = async (blockId: string) => {
     try {
-      // Using edge function for handling bookmarks instead of direct table access
       await supabase.functions.invoke('handle-interaction', {
         body: { 
           type: 'bookmark',
@@ -135,7 +131,6 @@ const CurioPage: React.FC = () => {
     try {
       toast.loading("Creating new exploration...");
       
-      // Create a new curio based on the rabbit hole question
       const { data: newCurio, error } = await supabase
         .from('curios')
         .insert({
@@ -151,7 +146,6 @@ const CurioPage: React.FC = () => {
       if (newCurio) {
         toast.success("New exploration created!");
         
-        // Add a spark reward for following curiosity
         try {
           await supabase.functions.invoke('increment-sparks-balance', {
             body: JSON.stringify({
@@ -175,7 +169,6 @@ const CurioPage: React.FC = () => {
           console.error('Error awarding sparks:', err);
         }
         
-        // Navigate to the new curio
         navigate(`/curio/${childId}/${newCurio.id}`);
       }
     } catch (error) {
@@ -195,7 +188,6 @@ const CurioPage: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header with title */}
       <motion.div 
         className="py-4 sm:py-6 px-4 sm:px-6 bg-wonderwhiz-deep-purple/60 border-b border-white/5"
         initial={{ opacity: 0, y: -20 }}
@@ -241,7 +233,6 @@ const CurioPage: React.FC = () => {
             </div>
           </div>
           
-          {/* Search Bar */}
           <div className="mt-4">
             <form onSubmit={handleSearch} className="flex items-center gap-2">
               <div className="relative flex-grow">
@@ -262,15 +253,12 @@ const CurioPage: React.FC = () => {
         </div>
       </motion.div>
 
-      {/* Content Area */}
       <div className="flex-grow overflow-y-auto relative">
         <div className="max-w-3xl mx-auto py-6 sm:py-8 px-2 sm:px-0">
-          {/* Welcome Message */}
           {isFirstLoad && !searchQuery && !isLoadingBlocks && blocks.length === 0 && (
             <CurioBlockListWelcome childProfile={childProfile} />
           )}
 
-          {/* Search Results */}
           {searchQuery && isLoadingBlocks && (
             <CurioBlockListSearchLoading />
           )}
@@ -283,7 +271,6 @@ const CurioPage: React.FC = () => {
             <CurioBlockListSearchEmpty />
           )}
 
-          {/* Content Blocks */}
           {!searchQuery && isLoadingBlocks && (
             <CurioBlockListLoading />
           )}
@@ -321,7 +308,6 @@ const CurioPage: React.FC = () => {
             />
           ) : null}
 
-          {/* Load More */}
           {blocks.length > 0 && searchQuery && !hasMore && blocks.length > 0 && (
             <CurioBlockListSearchNoMore />
           )}
