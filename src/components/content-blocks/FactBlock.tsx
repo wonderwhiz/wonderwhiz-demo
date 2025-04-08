@@ -22,7 +22,27 @@ const FactBlock: React.FC<FactBlockProps> = ({
   setExpanded = () => {},
   textSize = 'text-sm sm:text-base'
 }) => {
+  // Add a safety check to make sure content.fact exists
+  if (!content || typeof content.fact === 'undefined') {
+    console.error('FactBlock received invalid content:', content);
+    return (
+      <div className="flex items-start space-x-2 mb-2">
+        <div className="flex-shrink-0 mt-1">
+          <Lightbulb className="h-5 w-5 text-wonderwhiz-gold" />
+        </div>
+        <div className="flex-1">
+          <p className={`text-white/90 ${textSize}`}>
+            Loading interesting facts...
+          </p>
+        </div>
+      </div>
+    );
+  }
+  
   const factIsTooLong = content.fact.length > 120;
+  
+  // Add safety check for rabbitHoles to ensure it exists before accessing its length
+  const hasRabbitHoles = content.rabbitHoles && content.rabbitHoles.length > 0;
 
   return (
     <div>
@@ -69,7 +89,7 @@ const FactBlock: React.FC<FactBlockProps> = ({
         </div>
       </motion.div>
 
-      {content.rabbitHoles && content.rabbitHoles.length > 0 && (
+      {hasRabbitHoles && (
         <motion.div 
           className="mt-3 sm:mt-4"
           initial={{ opacity: 0, y: 10 }}
