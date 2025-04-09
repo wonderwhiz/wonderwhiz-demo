@@ -104,3 +104,67 @@ export const getSpecialistStyle = (specialistId: string): { gradient: string, ac
       };
   }
 };
+
+// Determine which specialists are relevant for specific topics
+export const getRelevantSpecialists = (topic: string): string[] => {
+  const topicLower = topic.toLowerCase();
+  
+  // Topic-specific specialist assignments
+  if (topicLower.includes('afghanistan') || topicLower.includes('dangerous place')) {
+    return ['atlas', 'prism', 'pixel', 'lotus']; // History, science, tech, and mindfulness experts
+  }
+  
+  if (topicLower.includes('space') || topicLower.includes('jupiter') || topicLower.includes('planet')) {
+    return ['nova', 'prism', 'pixel']; // Space, science, and tech experts
+  }
+  
+  if (topicLower.includes('animal') || topicLower.includes('wildlife') || topicLower.includes('nature')) {
+    return ['lotus', 'prism', 'atlas']; // Nature, science, and history experts
+  }
+  
+  if (topicLower.includes('robot') || topicLower.includes('tech') || topicLower.includes('computer')) {
+    return ['pixel', 'spark', 'prism']; // Tech, creative, and science experts
+  }
+  
+  if (topicLower.includes('art') || topicLower.includes('music') || topicLower.includes('creat')) {
+    return ['spark', 'atlas', 'lotus']; // Creative, history, and mindfulness experts
+  }
+  
+  if (topicLower.includes('history') || topicLower.includes('war') || topicLower.includes('ancient')) {
+    return ['atlas', 'lotus', 'nova']; // History, mindfulness, and space experts
+  }
+  
+  // If no specific topic is detected, return all specialists
+  return ['nova', 'spark', 'prism', 'pixel', 'atlas', 'lotus'];
+};
+
+// Generate topic-specific content suggestions
+export const getTopicSuggestions = (topic: string): string[] => {
+  const topicLower = topic.toLowerCase();
+  
+  if (topicLower.includes('afghanistan') || topicLower.includes('dangerous place')) {
+    return [
+      "How has Afghanistan's geography contributed to its challenges?",
+      "What cultural treasures exist in Afghanistan despite the dangers?",
+      "How are technological innovations helping make Afghanistan safer?",
+      "What historical factors have shaped Afghanistan's current situation?"
+    ];
+  }
+  
+  if (topicLower.includes('space') || topicLower.includes('jupiter') || topicLower.includes('planet')) {
+    return [
+      "What makes Jupiter's atmosphere so colorful and dynamic?",
+      "How do Jupiter's moons differ from Earth's moon?",
+      "Could humans ever visit or live near Jupiter?",
+      "What have space probes taught us about Jupiter?"
+    ];
+  }
+  
+  // Generic suggestions for any topic
+  return [
+    `What's the most surprising fact about ${topic}?`,
+    `How might ${topic} change in the next 10 years?`,
+    `What's the connection between ${topic} and everyday life?`,
+    `What scientific discoveries relate to ${topic}?`
+  ];
+};

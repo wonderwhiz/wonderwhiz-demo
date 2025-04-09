@@ -55,6 +55,28 @@ const BlockHeader: React.FC<BlockHeaderProps> = ({
 
   // Get specialist tagline based on current topic or type
   const getSpecialistTagline = () => {
+    const isAfghanistanRelated = blockTitle.toLowerCase().includes('afghanistan') || 
+                                (blockType === 'quiz' && blockTitle.includes('Brain Teaser'));
+    
+    if (isAfghanistanRelated) {
+      switch (specialistId) {
+        case 'nova':
+          return "Exploring how space tech monitors conflict zones";
+        case 'spark':
+          return "Creating awareness through art and storytelling";
+        case 'prism':
+          return "Analyzing the science behind regional dangers";
+        case 'pixel':
+          return "Using technology to navigate high-risk areas";
+        case 'atlas':
+          return "Revealing the historical context of conflicts";
+        case 'lotus':
+          return "Finding mindfulness amidst challenging environments";
+        default:
+          return specialistName;
+      }
+    }
+    
     if (blockTitle.toLowerCase().includes('jupiter') || blockTitle.toLowerCase().includes('space')) {
       switch (specialistId) {
         case 'nova':
@@ -74,20 +96,20 @@ const BlockHeader: React.FC<BlockHeaderProps> = ({
       }
     }
     
-    // Default taglines if not Jupiter/space related
+    // Default taglines if not topic-specific
     switch (specialistId) {
       case 'nova':
-        return "Space Expert";
+        return "Every discovery expands our cosmic perspective!";
       case 'spark':
-        return "Creative Genius";
+        return "Let's spark your imagination with creative explorations!";
       case 'prism':
-        return "Science Whiz";
+        return "Let me take you on a scientific journey of discovery!";
       case 'pixel':
-        return "Tech Guru";
+        return "Technology connects us to worlds of wonder!";
       case 'atlas':
-        return "History Buff";
+        return "Let me take you on a journey through time!";
       case 'lotus':
-        return "Nature Guide";
+        return "With mindful curiosity, we can discover amazing connections!";
       default:
         return specialistName;
     }
