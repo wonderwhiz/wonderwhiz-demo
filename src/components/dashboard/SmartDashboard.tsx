@@ -1,10 +1,13 @@
+
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { RefreshCw, Sparkles, BookOpen, Rocket } from 'lucide-react';
+import { RefreshCw, Sparkles, BookOpen, Rocket, Brain, Star } from 'lucide-react';
 import CurioSuggestion from '@/components/CurioSuggestion';
 import { useChildLearningHistory } from '@/hooks/useChildLearningHistory';
+import MemoryJourney from './MemoryJourney';
+import TopicExplorer from './TopicExplorer';
 
 interface SmartDashboardProps {
   childId: string;
@@ -78,7 +81,7 @@ const SmartDashboard: React.FC<SmartDashboardProps> = ({
           'Why does the moon change shape?'
         ],
         'animals': [
-          "What's the fastest animal?",
+          'What is the fastest animal?',
           'How do animals communicate?',
           'Why do some animals hibernate?',
           'How do birds know where to fly?'
@@ -129,11 +132,25 @@ const SmartDashboard: React.FC<SmartDashboardProps> = ({
   
   return (
     <div className="space-y-6 mt-6">
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="p-4 rounded-xl bg-gradient-to-r from-wonderwhiz-purple/30 to-wonderwhiz-bright-pink/20 mb-6"
+      >
+        <h2 className="text-xl md:text-2xl font-bold text-white text-center mb-1">
+          {childProfile?.name ? `Hey ${childProfile.name}!` : 'Hey explorer!'}
+        </h2>
+        <p className="text-white/80 text-center text-sm md:text-base">
+          What would you like to discover today?
+        </p>
+      </motion.div>
+
       <div>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <h3 className="text-xl font-semibold text-white">
-              {showMemorySuggestions ? "Remember These?" : "Explore Something Wonderful"}
+            <h3 className="text-xl font-semibold text-white flex items-center">
+              <Star className="h-5 w-5 mr-2 text-wonderwhiz-gold" />
+              {showMemorySuggestions ? "Remember These?" : "Wonder Sparks"}
             </h3>
             {pastCurios.length > 5 && (
               <Button 
@@ -165,6 +182,7 @@ const SmartDashboard: React.FC<SmartDashboardProps> = ({
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {(showMemorySuggestions ? getMemorySuggestions() : displayedSuggestions)
+            .slice(0, 6) // Only show 6 suggestions to simplify UI for children
             .map((suggestion, index) => (
               <CurioSuggestion 
                 key={`${suggestion}-${index}`} 
@@ -179,61 +197,11 @@ const SmartDashboard: React.FC<SmartDashboardProps> = ({
       </div>
       
       {pastCurios.length > 7 && !isLoadingHistory && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          <Card className="border-white/10 bg-white/5 overflow-hidden">
-            <CardContent className="p-4">
-              <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
-                <BookOpen className="h-5 w-5 mr-2 text-wonderwhiz-gold" />
-                Your Learning Journey
-              </h3>
-              
-              <div className="space-y-4">
-                {recentlyViewedTopics.length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-medium text-white/70 mb-2">Recently Explored</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {recentlyViewedTopics.map((topic, index) => (
-                        <Button
-                          key={index}
-                          variant="outline"
-                          size="sm"
-                          className="bg-white/10 border-white/10 hover:bg-white/20 text-white"
-                          onClick={() => onCurioSuggestionClick(`Tell me more about ${topic}`)}
-                        >
-                          {topic}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-                {strongestTopics.length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-medium text-white/70 mb-2">Topics You Love</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {strongestTopics.map((item, index) => (
-                        <Button
-                          key={index}
-                          variant="outline"
-                          size="sm"
-                          className="bg-wonderwhiz-pink/20 border-wonderwhiz-pink/20 hover:bg-wonderwhiz-pink/30 text-white"
-                          onClick={() => onCurioSuggestionClick(`Tell me something amazing about ${item.topic}`)}
-                        >
-                          <Sparkles className="h-3.5 w-3.5 mr-1.5 text-wonderwhiz-gold" />
-                          {item.topic}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+        <TopicExplorer 
+          recentlyViewedTopics={recentlyViewedTopics}
+          strongestTopics={strongestTopics}
+          onTopicClick={onCurioSuggestionClick}
+        />
       )}
     </div>
   );

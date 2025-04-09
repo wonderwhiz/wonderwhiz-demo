@@ -5,9 +5,8 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import { toast } from 'sonner';
+import confetti from 'canvas-confetti';
 
-// Following the recommendations of our expert panel, especially Alison Folino (children's content leader),
-// Dr. Qing Hua (pediatric neurology), and Chris Bennett (edtech innovation)
 const Dashboard = () => {
   // Add analytics for measuring engagement with optimized welcome experience
   useEffect(() => {
@@ -22,18 +21,18 @@ const Dashboard = () => {
     console.log(`Dashboard loaded during ${timeOfDay} - optimizing content for this time`);
     
     // Show welcome toast based on time of day with child-friendly messaging
-    // Messaging crafted with June Sobel's storytelling expertise
+    // Messaging crafted with child development expertise
     const welcomeMessages = [
-      '✨ Ready to discover something amazing today?',
-      '🔎 What wonder are you curious about?',
-      '🧠 Your brain is ready for new adventures!',
-      '🚀 Where will your curiosity take you today?',
-      '💫 What magical things will you learn?'
+      '✨ What amazing thing will you discover today?',
+      '🔎 Ready for a wonder adventure?',
+      '🧠 Time to grow your super brain!',
+      '🚀 Let\'s blast off into learning fun!',
+      '💫 Unlock new magical powers today!'
     ];
     const randomMessage = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
     
-    // Short delay to improve perceived performance - UX research recommendation
-    const toastDelayMilliseconds = 1500;
+    // Short delay to improve perceived performance
+    const toastDelayMilliseconds = 1000;
     
     // Only show welcome toast on first visit of the session
     const hasShownWelcomeToast = sessionStorage.getItem('hasShownWelcomeToast');
@@ -43,11 +42,22 @@ const Dashboard = () => {
           position: 'top-center',
           duration: 4000,
         });
+        
+        // Add gentle confetti for a delightful welcome
+        setTimeout(() => {
+          confetti({
+            particleCount: 50,
+            spread: 60,
+            origin: { y: 0.3 },
+            colors: ['#8b5cf6', '#10b981', '#3b82f6', '#ec4899', '#f59e0b'],
+            disableForReducedMotion: true
+          });
+        }, 300);
+        
         sessionStorage.setItem('hasShownWelcomeToast', 'true');
       }, toastDelayMilliseconds);
     }
     
-    // Clean up event listeners when component unmounts
     return () => {
       console.log('Dashboard unloaded');
     };
@@ -62,8 +72,8 @@ const Dashboard = () => {
       className="min-h-screen bg-wonderwhiz-gradient overflow-hidden"
     >
       <Helmet>
-        <title>WonderWhiz - Explore Your Curiosity</title>
-        <meta name="description" content="Discover amazing facts, fun activities, and learning adventures! Ask questions and explore topics that spark your curiosity." />
+        <title>WonderWhiz - Your Learning Adventure</title>
+        <meta name="description" content="Discover amazing facts, fun activities, and cool adventures! What will you learn today?" />
       </Helmet>
       
       <SidebarProvider>

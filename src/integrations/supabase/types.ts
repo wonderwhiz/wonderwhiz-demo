@@ -86,12 +86,14 @@ export type Database = {
         Row: {
           age: number | null
           avatar_url: string | null
+          content_difficulty_preference: number | null
           created_at: string
           grade: string | null
           id: string
           interests: string[] | null
           language: string | null
           last_active: string | null
+          learning_preferences: Json | null
           name: string
           parent_user_id: string
           pin: string
@@ -102,12 +104,14 @@ export type Database = {
         Insert: {
           age?: number | null
           avatar_url?: string | null
+          content_difficulty_preference?: number | null
           created_at?: string
           grade?: string | null
           id?: string
           interests?: string[] | null
           language?: string | null
           last_active?: string | null
+          learning_preferences?: Json | null
           name: string
           parent_user_id: string
           pin: string
@@ -118,12 +122,14 @@ export type Database = {
         Update: {
           age?: number | null
           avatar_url?: string | null
+          content_difficulty_preference?: number | null
           created_at?: string
           grade?: string | null
           id?: string
           interests?: string[] | null
           language?: string | null
           last_active?: string | null
+          learning_preferences?: Json | null
           name?: string
           parent_user_id?: string
           pin?: string
@@ -275,8 +281,10 @@ export type Database = {
           created_at: string
           generation_error: string | null
           id: string
+          last_revisited: string | null
           last_updated_at: string
           query: string
+          revisit_count: number | null
           title: string
         }
         Insert: {
@@ -284,8 +292,10 @@ export type Database = {
           created_at?: string
           generation_error?: string | null
           id?: string
+          last_revisited?: string | null
           last_updated_at?: string
           query: string
+          revisit_count?: number | null
           title: string
         }
         Update: {
@@ -293,13 +303,122 @@ export type Database = {
           created_at?: string
           generation_error?: string | null
           id?: string
+          last_revisited?: string | null
           last_updated_at?: string
           query?: string
+          revisit_count?: number | null
           title?: string
         }
         Relationships: [
           {
             foreignKeyName: "curios_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "child_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      learning_history: {
+        Row: {
+          child_id: string
+          comprehension_level: string | null
+          content_block_ids: string[] | null
+          created_at: string | null
+          curio_id: string | null
+          engagement_level: number | null
+          id: string
+          interaction_date: string
+          last_memory_refresh: string | null
+          last_revisited: string | null
+          memory_decay_rate: number | null
+          memory_strength: number | null
+          revisit_count: number | null
+          subtopics: string[] | null
+          topic: string
+          updated_at: string | null
+        }
+        Insert: {
+          child_id: string
+          comprehension_level?: string | null
+          content_block_ids?: string[] | null
+          created_at?: string | null
+          curio_id?: string | null
+          engagement_level?: number | null
+          id?: string
+          interaction_date?: string
+          last_memory_refresh?: string | null
+          last_revisited?: string | null
+          memory_decay_rate?: number | null
+          memory_strength?: number | null
+          revisit_count?: number | null
+          subtopics?: string[] | null
+          topic: string
+          updated_at?: string | null
+        }
+        Update: {
+          child_id?: string
+          comprehension_level?: string | null
+          content_block_ids?: string[] | null
+          created_at?: string | null
+          curio_id?: string | null
+          engagement_level?: number | null
+          id?: string
+          interaction_date?: string
+          last_memory_refresh?: string | null
+          last_revisited?: string | null
+          memory_decay_rate?: number | null
+          memory_strength?: number | null
+          revisit_count?: number | null
+          subtopics?: string[] | null
+          topic?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learning_history_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "child_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learning_history_curio_id_fkey"
+            columns: ["curio_id"]
+            isOneToOne: false
+            referencedRelation: "curios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      memory_factors: {
+        Row: {
+          child_id: string
+          created_at: string | null
+          factor_name: string
+          factor_weight: number
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          child_id: string
+          created_at?: string | null
+          factor_name: string
+          factor_weight?: number
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          child_id?: string
+          created_at?: string | null
+          factor_name?: string
+          factor_weight?: number
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memory_factors_child_id_fkey"
             columns: ["child_id"]
             isOneToOne: false
             referencedRelation: "child_profiles"
@@ -412,11 +531,61 @@ export type Database = {
         }
         Relationships: []
       }
+      topic_connections: {
+        Row: {
+          child_id: string
+          connection_type: string | null
+          created_at: string | null
+          from_topic: string
+          id: string
+          strength: number | null
+          to_topic: string
+          updated_at: string | null
+        }
+        Insert: {
+          child_id: string
+          connection_type?: string | null
+          created_at?: string | null
+          from_topic: string
+          id?: string
+          strength?: number | null
+          to_topic: string
+          updated_at?: string | null
+        }
+        Update: {
+          child_id?: string
+          connection_type?: string | null
+          created_at?: string | null
+          from_topic?: string
+          id?: string
+          strength?: number | null
+          to_topic?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "topic_connections_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "child_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      calculate_memory_strength: {
+        Args: {
+          last_interaction: string
+          revisit_count: number
+          engagement_level: number
+          decay_rate?: number
+        }
+        Returns: number
+      }
       complete_child_task: {
         Args: { task_id: string }
         Returns: undefined
@@ -428,6 +597,10 @@ export type Database = {
       increment_sparks_balance: {
         Args: { child_id: string; amount: number }
         Returns: undefined
+      }
+      refresh_memory_strengths: {
+        Args: { child_id_param: string }
+        Returns: number
       }
     }
     Enums: {

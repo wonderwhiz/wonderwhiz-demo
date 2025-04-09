@@ -17,13 +17,11 @@ serve(async (req) => {
   }
 
   try {
-    // Create a Supabase client
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") || "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
     );
 
-    // Get request body
     const { childId } = await req.json();
 
     if (!childId) {
@@ -34,6 +32,17 @@ serve(async (req) => {
           status: 400,
         }
       );
+    }
+
+    // Get child profile to check age/preferences for personalization
+    const { data: childProfile, error: profileError } = await supabaseAdmin
+      .from("child_profiles")
+      .select("*")
+      .eq("id", childId)
+      .single();
+      
+    if (profileError) {
+      console.error("Error fetching child profile:", profileError);
     }
 
     // Get all curios for this child
@@ -67,16 +76,19 @@ serve(async (req) => {
       throw blockError;
     }
 
-    // Process data and extract topics
-    const processedData = processCuriosAndBlocks(curioData, blockData || []);
+    // Process data with age-appropriate difficulty
+    const childAge = childProfile?.age || 8;
+    
+    // Adjust processing based on age
+    const processedData = processCuriosAndBlocks(curioData, blockData || [], childAge);
     
     // Generate learning history entries
     const historyEntries = generateLearningHistory(processedData, childId);
     
-    // Generate topic connections
-    const topicConnections = generateTopicConnections(processedData, childId);
+    // Generate topic connections with age-appropriate difficulty
+    const topicConnections = generateTopicConnections(processedData, childId, childAge);
     
-    // Save learning history to database
+    // Save learning history to database 
     if (historyEntries.length > 0) {
       // First, delete existing entries for these curios to avoid duplicates
       await supabaseAdmin
@@ -125,6 +137,18 @@ serve(async (req) => {
       }
     }
 
+    // Calculate and update memory strengths for this child
+    try {
+      const { data: refreshResult } = await supabaseAdmin.rpc(
+        "refresh_memory_strengths",
+        { child_id_param: childId }
+      );
+      
+      console.log("Updated memory strengths for items:", refreshResult);
+    } catch (refreshError) {
+      console.error("Error refreshing memory strengths:", refreshError);
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -152,16 +176,19 @@ serve(async (req) => {
 });
 
 // Process curios and their blocks to extract topics
-function processCuriosAndBlocks(curios, blocks) {
+function processCuriosAndBlocks(curios, blocks, childAge) {
+  // Adjust difficulty based on child age
+  const ageAppropriateExtraction = childAge <= 8 ? 'simple' : childAge <= 12 ? 'moderate' : 'advanced';
+  
   return curios.map(curio => {
     const curioBlocks = blocks.filter(block => block.curio_id === curio.id);
     
-    // Extract topics from blocks (simple version - in a real implementation this would use NLP)
+    // Extract topics from blocks
     const extractedTopics = new Set();
     const extractedSubtopics = new Set();
     
     curioBlocks.forEach(block => {
-      // Extract text from content based on block type
+      // Extract text from content
       let text = "";
       
       if (block.type === "fact" && block.content.fact) {
@@ -172,22 +199,43 @@ function processCuriosAndBlocks(curios, blocks) {
         text = JSON.stringify(block.content);
       }
       
-      // Simple keyword extraction (very basic - would use NLP in production)
-      const words = text.split(/\W+/).filter(word => 
-        word.length > 4 && !isCommonWord(word.toLowerCase())
-      );
+      // Adjust keyword extraction based on age
+      let minTopicLength = 4;
+      let minSubtopicLength = 3;
       
-      // Add significant words as topics
-      words.forEach(word => {
-        if (word.length > 6) {
-          extractedTopics.add(word.toLowerCase());
-        } else if (word.length > 4) {
-          extractedSubtopics.add(word.toLowerCase());
-        }
-      });
+      if (ageAppropriateExtraction === 'simple') {
+        // For younger children (6-8), use simpler, more concrete topics
+        minTopicLength = 3;
+        
+        // Simple extraction for young children - focus on concrete nouns
+        const simpleWords = text.split(/\W+/).filter(word => 
+          word.length >= minTopicLength && !isCommonWord(word.toLowerCase())
+        );
+        
+        simpleWords.forEach(word => {
+          if (word.length >= 5) {
+            extractedTopics.add(word.toLowerCase());
+          } else if (word.length >= minSubtopicLength) {
+            extractedSubtopics.add(word.toLowerCase());
+          }
+        });
+      } else {
+        // More nuanced extraction for older children
+        const words = text.split(/\W+/).filter(word => 
+          word.length > minTopicLength && !isCommonWord(word.toLowerCase())
+        );
+        
+        words.forEach(word => {
+          if (word.length > 6) {
+            extractedTopics.add(word.toLowerCase());
+          } else if (word.length > minSubtopicLength) {
+            extractedSubtopics.add(word.toLowerCase());
+          }
+        });
+      }
     });
     
-    // Calculate engagement (based on liked blocks)
+    // Calculate engagement
     const likedBlocks = curioBlocks.filter(block => block.liked);
     const engagementLevel = curioBlocks.length > 0 
       ? (likedBlocks.length / curioBlocks.length) * 10 
@@ -223,10 +271,17 @@ function generateLearningHistory(processedData, childId) {
 }
 
 // Generate topic connections between related curios
-function generateTopicConnections(processedData, childId) {
+function generateTopicConnections(processedData, childId, childAge) {
   const connections = [];
   
-  // Look for connections based on various factors
+  // Adjust connection complexity based on age
+  const maxConnections = childAge <= 8 ? 10 : childAge <= 10 ? 15 : 25;
+  
+  // For younger children, focus more on temporal connections (things learned around same time)
+  // For older children, focus more on semantic connections (related concepts)
+  const useSemanticFocus = childAge >= 9;
+  
+  // Look for connections
   for (let i = 0; i < processedData.length - 1; i++) {
     for (let j = i + 1; j < processedData.length; j++) {
       const itemA = processedData[i];
@@ -241,11 +296,11 @@ function generateTopicConnections(processedData, childId) {
       const daysDiff = Math.abs((dateA.getTime() - dateB.getTime()) / (1000 * 3600 * 24));
       
       if (daysDiff < 1) {
-        strength += 3;
+        strength += useSemanticFocus ? 2 : 3;
       } else if (daysDiff < 7) {
-        strength += 2;
+        strength += useSemanticFocus ? 1 : 2;
       } else if (daysDiff < 30) {
-        strength += 1;
+        strength += useSemanticFocus ? 0 : 1;
       }
       
       // Topic similarity (common extracted topics)
@@ -254,7 +309,7 @@ function generateTopicConnections(processedData, childId) {
       );
       
       if (commonTopics.length > 0) {
-        strength += commonTopics.length;
+        strength += useSemanticFocus ? commonTopics.length * 2 : commonTopics.length;
         connectionType = "semantic";
       }
       
@@ -269,6 +324,11 @@ function generateTopicConnections(processedData, childId) {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         });
+      }
+      
+      // Don't exceed max connections limit based on age
+      if (connections.length >= maxConnections) {
+        return connections;
       }
     }
   }
