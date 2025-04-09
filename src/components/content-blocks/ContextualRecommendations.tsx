@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Lightbulb, Sparkles, BookOpen, Compass } from 'lucide-react';
+import { ArrowRight, Lightbulb, Sparkles, BookOpen, Compass, Brain, Star, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -20,17 +20,19 @@ const ContextualRecommendations: React.FC<ContextualRecommendationsProps> = ({
 }) => {
   const navigate = useNavigate();
 
-  // Safety check and limiting to 3-4 suggestions
+  // Safety check and limiting to 4 suggestions
   const safeRecommendations = Array.isArray(recommendations) ? recommendations.slice(0, 4) : [];
   
   if (safeRecommendations.length === 0) return null;
   
-  // Filter and transform recommendations to be more engaging
+  // Filter and transform recommendations to be more engaging for kids
   const transformedRecommendations = safeRecommendations.map(rec => {
-    // Make questions more direct and personal
+    // Make questions more direct, personal and exciting
     let improved = rec.replace(/What is/i, "Discover");
     improved = improved.replace(/How does/i, "Explore how");
     improved = improved.replace(/Why do/i, "Uncover why");
+    improved = improved.replace(/Can/i, "Find out if");
+    improved = improved.replace(/Do/i, "See if");
     
     // Add excitement where appropriate
     if (!improved.includes("!") && !improved.includes("?")) {
@@ -72,10 +74,10 @@ const ContextualRecommendations: React.FC<ContextualRecommendationsProps> = ({
         if (newCurio && newCurio.id) {
           // Celebrate with confetti
           confetti({
-            particleCount: 60,
-            spread: 70,
+            particleCount: 80,
+            spread: 80,
             origin: { y: 0.6 },
-            colors: ['#8b5cf6', '#ec4899', '#3b82f6'],
+            colors: ['#8b5cf6', '#ec4899', '#3b82f6', '#10b981', '#f59e0b'],
             disableForReducedMotion: true
           });
           
@@ -88,17 +90,17 @@ const ContextualRecommendations: React.FC<ContextualRecommendationsProps> = ({
             await supabase.functions.invoke('increment-sparks-balance', {
               body: JSON.stringify({
                 profileId: profileId,
-                amount: 2
+                amount: 3
               })
             });
             
             await supabase.from('sparks_transactions').insert({
               child_id: profileId,
-              amount: 2,
-              reason: 'Following curiosity'
+              amount: 3,
+              reason: 'Following your curiosity path'
             });
             
-            toast.success('You earned 2 sparks for exploring!', {
+            toast.success('You earned 3 sparks for exploring!', {
               icon: '✨',
               position: 'bottom-right',
               duration: 3000
@@ -145,12 +147,20 @@ const ContextualRecommendations: React.FC<ContextualRecommendationsProps> = ({
   // Get recommendation icon based on the recommendation text
   const getRecommendationIcon = (recommendation: string, index: number) => {
     // Check if recommendation text contains certain keywords
-    if (recommendation.toLowerCase().includes('why') || recommendation.toLowerCase().includes('how')) {
+    const lowerRec = recommendation.toLowerCase();
+    
+    if (lowerRec.includes('why') || lowerRec.includes('how')) {
       return <Compass className="w-3 h-3 mr-1.5 text-cyan-300" />;
-    } else if (recommendation.toLowerCase().includes('discover') || recommendation.toLowerCase().includes('explore')) {
+    } else if (lowerRec.includes('discover') || lowerRec.includes('explore')) {
       return <BookOpen className="w-3 h-3 mr-1.5 text-amber-300" />;
-    } else if (recommendation.toLowerCase().includes('fact') || recommendation.toLowerCase().includes('learn')) {
+    } else if (lowerRec.includes('fact') || lowerRec.includes('learn')) {
       return <Lightbulb className="w-3 h-3 mr-1.5 text-emerald-300" />;
+    } else if (lowerRec.includes('space') || lowerRec.includes('planet')) {
+      return <Star className="w-3 h-3 mr-1.5 text-blue-300" />;
+    } else if (lowerRec.includes('animal') || lowerRec.includes('dinosaur')) {
+      return <Zap className="w-3 h-3 mr-1.5 text-yellow-300" />;
+    } else if (lowerRec.includes('brain') || lowerRec.includes('think')) {
+      return <Brain className="w-3 h-3 mr-1.5 text-pink-300" />;
     } else {
       return <Sparkles className="w-3 h-3 mr-1.5 text-wonderwhiz-gold" />;
     }

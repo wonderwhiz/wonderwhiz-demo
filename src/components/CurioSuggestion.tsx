@@ -61,10 +61,10 @@ const CurioSuggestion: React.FC<CurioSuggestionProps> = ({
         if (newCurio && newCurio.id) {
           // Celebration with confetti
           confetti({
-            particleCount: 100,
-            spread: 70,
+            particleCount: 150,
+            spread: 80,
             origin: { y: 0.6 },
-            colors: ['#FF5733', '#33FF57', '#3357FF', '#F3FF33'],
+            colors: ['#FF5733', '#33FF57', '#3357FF', '#F3FF33', '#FF33F3'],
             disableForReducedMotion: true
           });
           
@@ -77,17 +77,17 @@ const CurioSuggestion: React.FC<CurioSuggestionProps> = ({
             await supabase.functions.invoke('increment-sparks-balance', {
               body: JSON.stringify({
                 profileId: profileId,
-                amount: 2
+                amount: 3
               })
             });
             
             await supabase.from('sparks_transactions').insert({
               child_id: profileId,
-              amount: 2,
-              reason: 'Starting a new adventure'
+              amount: 3,
+              reason: 'Starting a new adventure with curiosity'
             });
             
-            toast.success('You earned 2 sparks for exploring!', {
+            toast.success('You earned 3 sparks for exploring!', {
               icon: '✨',
               position: 'bottom-right',
               duration: 3000
@@ -123,7 +123,8 @@ const CurioSuggestion: React.FC<CurioSuggestionProps> = ({
   const getKeyword = () => {
     const words = suggestion.toLowerCase().split(' ');
     const keyTopics = ['space', 'animals', 'dinosaurs', 'oceans', 'planets', 'stars', 'robots', 
-                      'science', 'history', 'magic', 'body', 'brain', 'earth', 'technology'];
+                      'science', 'history', 'magic', 'body', 'brain', 'earth', 'technology', 
+                      'bugs', 'weather', 'music', 'art', 'sports', 'food', 'friends'];
     
     for (const topic of keyTopics) {
       if (suggestion.toLowerCase().includes(topic)) {
@@ -139,19 +140,59 @@ const CurioSuggestion: React.FC<CurioSuggestionProps> = ({
   
   // Get engaging prefix based on suggestion content
   const getPrefix = () => {
-    if (suggestion.toLowerCase().includes('how') || suggestion.toLowerCase().includes('why')) {
+    if (suggestion.toLowerCase().includes('how')) {
+      return "Uncover";
+    } else if (suggestion.toLowerCase().includes('why')) {
       return "Discover";
     } else if (suggestion.toLowerCase().includes('what')) {
       return "Explore";
+    } else if (suggestion.toLowerCase().includes('can')) {
+      return "Find Out";
+    } else if (suggestion.toLowerCase().includes('do')) {
+      return "Investigate";
     } else if (hasKeyword) {
-      return "Adventure into";
+      const options = ["Adventure into", "Journey through", "Leap into", "Dive into", "Zoom into"];
+      return options[Math.floor(Math.random() * options.length)];
     }
     return "Wonder about";
   };
   
+  // Get fun emoji for the topic
+  const getEmoji = () => {
+    if (!keyword) return "✨";
+    
+    const emojiMap: Record<string, string> = {
+      'space': '🚀',
+      'animals': '🦁',
+      'dinosaurs': '🦖',
+      'oceans': '🌊',
+      'planets': '🪐',
+      'stars': '⭐',
+      'robots': '🤖',
+      'science': '🔬',
+      'history': '📜',
+      'magic': '🪄',
+      'body': '💪',
+      'brain': '🧠',
+      'earth': '🌍',
+      'technology': '💻',
+      'bugs': '🐛',
+      'weather': '☀️',
+      'music': '🎵',
+      'art': '🎨',
+      'sports': '⚽',
+      'food': '🍕',
+      'friends': '👫'
+    };
+    
+    return emojiMap[keyword] || "✨";
+  };
+  
   const prefix = getPrefix();
+  const emoji = getEmoji();
+  
   const displayText = hasKeyword 
-    ? `${prefix} ${keyword}!` 
+    ? `${prefix} ${keyword}! ${emoji}` 
     : suggestion.length > 30 ? suggestion.substring(0, 27) + '...' : suggestion;
   
   return (
