@@ -1,8 +1,8 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppleButton } from '@/components/ui/apple-button';
-import { Search, Sparkles, Compass, Book, Star, Clock, Plus, ArrowRight, CheckCircle } from 'lucide-react';
+import { Search, Sparkles, Compass, Book, Star, Clock, Plus, ArrowRight, CheckCircle, Lightbulb, BadgeCheck } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import KnowledgeGlobe from './KnowledgeGlobe';
 import WonderPathItem from './WonderPathItem';
 import ChildTaskList from '@/components/ChildTaskList';
+import { Command, CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 
 interface AppleDashboardProps {
   childId: string;
@@ -34,7 +35,7 @@ const AppleDashboard: React.FC<AppleDashboardProps> = ({
   const [searchValue, setSearchValue] = useState('');
   const [showGlobe, setShowGlobe] = useState(false);
   const [wonderPathExpanded, setWonderPathExpanded] = useState(false);
-  const [showTasks, setShowTasks] = useState(false);
+  const [showCommandK, setShowCommandK] = useState(false);
   
   // Create suggested topics from past curios and predefined options
   const suggestedTopics = React.useMemo(() => {
@@ -100,15 +101,16 @@ const AppleDashboard: React.FC<AppleDashboardProps> = ({
     setShowGlobe(prev => !prev);
   };
 
-  const handleTasksToggle = () => {
-    setShowTasks(prev => !prev);
-  };
-  
   const handleTaskCompleted = () => {
     toast.success("Task completed!", {
-      description: "You've earned sparks for your achievement!"
+      description: "You've earned sparks for your achievement!",
+      icon: <BadgeCheck className="h-5 w-5 text-green-400" />
     });
   };
+  
+  const popularTopics = [
+    "dinosaurs", "space", "animals", "robots", "planets"
+  ];
   
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -142,7 +144,7 @@ const AppleDashboard: React.FC<AppleDashboardProps> = ({
     >
       {/* Header */}
       <motion.div 
-        className="mb-8 flex items-center justify-between"
+        className="mb-6 flex items-center justify-between"
         variants={itemVariants}
       >
         <div className="flex items-center gap-3">
@@ -174,15 +176,7 @@ const AppleDashboard: React.FC<AppleDashboardProps> = ({
           </div>
         </div>
         
-        <div className="flex space-x-2">
-          <AppleButton 
-            variant="secondary" 
-            size="sm"
-            onClick={handleTasksToggle}
-          >
-            {showTasks ? 'Hide' : 'Show'} Tasks
-          </AppleButton>
-          
+        <div className="flex gap-2">
           <AppleButton 
             variant="secondary" 
             size="sm"
@@ -195,7 +189,7 @@ const AppleDashboard: React.FC<AppleDashboardProps> = ({
       
       {/* Main search - the central focus */}
       <motion.div 
-        className="mb-8"
+        className="mb-6"
         variants={itemVariants}
       >
         <form onSubmit={handleSearch} className="relative">
@@ -203,40 +197,78 @@ const AppleDashboard: React.FC<AppleDashboardProps> = ({
             ref={searchInputRef}
             type="text"
             placeholder="What are you curious about today?"
-            className="pr-12 pl-5 py-7 text-base sm:text-lg rounded-full bg-white shadow-xl border-0 text-black placeholder:text-gray-500 focus:ring-2 focus:ring-blue-500"
+            className="pr-12 pl-5 py-7 text-base sm:text-lg rounded-full bg-white shadow-xl border-0 text-black placeholder:text-gray-500 focus:ring-2 focus:ring-indigo-500"
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
+            onClick={() => setShowCommandK(true)}
           />
           <button 
             type="submit" 
-            className="absolute right-3 top-1/2 -translate-y-1/2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-2 rounded-full hover:opacity-90 transition-opacity"
+            className="absolute right-3 top-1/2 -translate-y-1/2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-2 rounded-full hover:opacity-90 transition-opacity"
           >
             <Search className="h-5 w-5" />
           </button>
         </form>
+        
+        {/* Popular topics */}
+        <div className="flex flex-wrap items-center justify-center mt-3 gap-2">
+          {popularTopics.map((topic) => (
+            <motion.button
+              key={topic}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.98 }}
+              className="bg-white/10 hover:bg-white/15 text-white text-xs font-medium py-1 px-3 rounded-full border border-white/10 transition-colors"
+              onClick={() => onCurioSuggestionClick(topic)}
+            >
+              #{topic}
+            </motion.button>
+          ))}
+        </div>
+        
+        <p className="text-white/60 text-xs text-center mt-2">
+          The more you ask, the more sparks you'll earn!
+        </p>
       </motion.div>
       
-      {/* Tasks Section (when activated) */}
-      <AnimatePresence>
-        {showTasks && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-            className="mb-8 overflow-hidden bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-5"
-          >
-            <div className="flex items-center mb-4">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center mr-3">
-                <CheckCircle className="h-4 w-4 text-white" />
-              </div>
-              <h2 className="text-lg font-medium text-white">My Tasks</h2>
-            </div>
-            
-            <ChildTaskList childId={childId} onTaskCompleted={handleTaskCompleted} />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Command K Dialog */}
+      <CommandDialog open={showCommandK} onOpenChange={setShowCommandK}>
+        <Command className="rounded-lg border-none">
+          <CommandInput placeholder="What would you like to learn about today?" />
+          <CommandList>
+            <CommandEmpty>No results found.</CommandEmpty>
+            <CommandGroup heading="Popular Topics">
+              {popularTopics.map((topic) => (
+                <CommandItem
+                  key={topic}
+                  onSelect={() => {
+                    onCurioSuggestionClick(topic);
+                    setShowCommandK(false);
+                  }}
+                >
+                  <span className="mr-2">#</span>
+                  {topic}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+            {pastCurios.length > 0 && (
+              <CommandGroup heading="Previous Wonders">
+                {pastCurios.slice(0, 3).map((curio) => (
+                  <CommandItem
+                    key={curio.id}
+                    onSelect={() => {
+                      onCurioSuggestionClick(curio.title || curio.query);
+                      setShowCommandK(false);
+                    }}
+                  >
+                    <Clock className="mr-2 h-4 w-4" />
+                    {curio.title || curio.query}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+          </CommandList>
+        </Command>
+      </CommandDialog>
       
       {/* Knowledge Globe (when activated) */}
       <AnimatePresence>
@@ -246,21 +278,35 @@ const AppleDashboard: React.FC<AppleDashboardProps> = ({
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-            className="mb-8 overflow-hidden"
+            className="mb-6 overflow-hidden"
           >
             <KnowledgeGlobe pastCurios={pastCurios} childProfile={childProfile} />
           </motion.div>
         )}
       </AnimatePresence>
       
-      {/* Main content area - dramatically simplified */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      {/* Active tasks - always visible and prominent */}
+      <motion.div
+        variants={itemVariants}
+        className="mb-6 bg-gradient-to-r from-green-500/20 to-emerald-600/20 backdrop-blur-sm rounded-xl border border-white/10 p-4"
+      >
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center mr-3">
+              <CheckCircle className="h-4 w-4 text-white" />
+            </div>
+            <h2 className="text-lg font-medium text-white">My Tasks</h2>
+          </div>
+        </div>
+        
+        <ChildTaskList childId={childId} onTaskCompleted={handleTaskCompleted} />
+      </motion.div>
+      
+      {/* Main content area - simplified grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         {/* Left column: Wonder Journeys */}
-        <motion.div 
-          className="md:col-span-2"
-          variants={itemVariants}
-        >
-          <div className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-5 mb-6">
+        <motion.div variants={itemVariants} className="space-y-6">
+          <div className="bg-gradient-to-br from-blue-500/20 to-indigo-600/20 backdrop-blur-sm rounded-xl border border-white/10 p-4">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center mr-3">
@@ -280,27 +326,27 @@ const AppleDashboard: React.FC<AppleDashboardProps> = ({
               </AppleButton>
             </div>
             
-            <div className="grid grid-cols-1 gap-4">
+            <div className="space-y-3">
               {curioSuggestions.slice(0, 3).map((suggestion, index) => (
                 <motion.button
                   key={index}
-                  className="w-full text-left p-4 rounded-xl bg-gradient-to-r from-blue-500/20 to-indigo-600/20 backdrop-blur-md border border-white/10 hover:border-white/20 transition-all group"
+                  className="w-full text-left p-4 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10 hover:border-white/20 transition-all group"
                   onClick={() => handleSuggestionClick(suggestion)}
                   whileHover={{ scale: 1.02, y: -2 }}
                   whileTap={{ scale: 0.98 }}
                   variants={itemVariants}
                 >
                   <h3 className="text-white font-medium group-hover:text-white/90 line-clamp-2">{suggestion}</h3>
-                  <div className="flex items-center mt-2">
-                    <span className="text-white/60 text-sm">Explore</span>
-                    <ArrowRight className="ml-1 h-3.5 w-3.5 text-white/60 group-hover:translate-x-1 transition-transform" />
+                  <div className="flex items-center mt-2 text-xs text-white/60">
+                    <span>Explore</span>
+                    <ArrowRight className="ml-1 h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </motion.button>
               ))}
             </div>
           </div>
           
-          <div className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-5">
+          <div className="bg-gradient-to-br from-amber-500/20 to-orange-600/20 backdrop-blur-sm rounded-xl border border-white/10 p-4">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 flex items-center justify-center mr-3">
@@ -308,19 +354,9 @@ const AppleDashboard: React.FC<AppleDashboardProps> = ({
                 </div>
                 <h2 className="text-lg font-medium text-white">Your Wonder Path</h2>
               </div>
-              
-              <AppleButton
-                variant="icon"
-                size="icon"
-                onClick={() => setWonderPathExpanded(!wonderPathExpanded)}
-                className="flex items-center justify-center"
-                aria-label={wonderPathExpanded ? "Show less" : "Show more"}
-              >
-                <span className="text-white text-xs">{wonderPathExpanded ? "-" : "+"}</span>
-              </AppleButton>
             </div>
             
-            <div className="space-y-4">
+            <div className="space-y-3">
               {suggestedTopics.slice(0, wonderPathExpanded ? undefined : 3).map((topic, index) => (
                 <WonderPathItem
                   key={topic.id}
@@ -329,18 +365,24 @@ const AppleDashboard: React.FC<AppleDashboardProps> = ({
                   onClick={() => handleCurioClick(topic.title)}
                 />
               ))}
+              
+              {suggestedTopics.length > 3 && (
+                <button 
+                  className="w-full text-center text-white/70 text-sm hover:text-white transition-colors py-2"
+                  onClick={() => setWonderPathExpanded(!wonderPathExpanded)}
+                >
+                  {wonderPathExpanded ? 'Show less' : 'Show more'}
+                </button>
+              )}
             </div>
           </div>
         </motion.div>
         
         {/* Right column: Today's Challenges and Time Capsule */}
-        <motion.div 
-          variants={itemVariants}
-          className="space-y-6"
-        >
-          <div className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-5">
+        <motion.div variants={itemVariants} className="space-y-6">
+          <div className="bg-gradient-to-br from-pink-500/20 to-rose-600/20 backdrop-blur-sm rounded-xl border border-white/10 p-4">
             <div className="flex items-center mb-4">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 flex items-center justify-center mr-3">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-pink-500 to-rose-600 flex items-center justify-center mr-3">
                 <Star className="h-4 w-4 text-white" />
               </div>
               <h2 className="text-lg font-medium text-white">Today's Challenges</h2>
@@ -351,12 +393,12 @@ const AppleDashboard: React.FC<AppleDashboardProps> = ({
                 <motion.div
                   key={challenge.id}
                   className={cn(
-                    "p-3 rounded-xl border transition-all relative overflow-hidden",
+                    "p-3 rounded-lg transition-all relative overflow-hidden",
                     challenge.completed 
-                      ? "bg-green-500/10 border-green-500/30"
-                      : "bg-white/5 border-white/10 hover:border-white/20"
+                      ? "bg-green-500/20 border border-green-500/30"
+                      : "bg-white/5 border border-white/10 hover:border-white/20"
                   )}
-                  whileHover={{ scale: 1.02 }}
+                  whileHover={{ scale: challenge.completed ? 1 : 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   variants={itemVariants}
                   onClick={() => {
@@ -395,7 +437,7 @@ const AppleDashboard: React.FC<AppleDashboardProps> = ({
             </div>
           </div>
           
-          <div className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-5">
+          <div className="bg-gradient-to-br from-emerald-500/20 to-teal-600/20 backdrop-blur-sm rounded-xl border border-white/10 p-4">
             <div className="flex items-center mb-4">
               <div className="w-8 h-8 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 flex items-center justify-center mr-3">
                 <Clock className="h-4 w-4 text-white" />
@@ -407,13 +449,13 @@ const AppleDashboard: React.FC<AppleDashboardProps> = ({
               {pastCurios.slice(0, 3).map((curio, index) => (
                 <motion.div
                   key={curio.id || index}
-                  className="p-3 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 transition-all"
+                  className="p-3 rounded-lg bg-white/5 border border-white/10 hover:border-white/20 transition-all"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   variants={itemVariants}
                   onClick={() => handleCurioClick(curio.title || curio.query || '')}
                 >
-                  <p className="text-white font-medium text-sm line-clamp-1">{curio.title || 'Untitled Wonder'}</p>
+                  <p className="text-white font-medium text-sm line-clamp-2">{curio.title || 'Untitled Wonder'}</p>
                   <div className="flex items-center mt-1">
                     <Clock className="h-3 w-3 text-white/60 mr-1" />
                     <span className="text-white/60 text-xs">
@@ -433,18 +475,18 @@ const AppleDashboard: React.FC<AppleDashboardProps> = ({
         </motion.div>
       </div>
       
-      {/* Bottom "Ask anything" button - simplified but still accessible */}
+      {/* Bottom "Ask anything" button */}
       <motion.div 
         className="flex justify-center"
         variants={itemVariants}
       >
         <AppleButton 
-          variant="secondary"
+          variant="default"
           size="lg"
           onClick={focusSearchInput}
-          className="group"
+          className="group bg-gradient-to-r from-indigo-600/80 to-purple-600/80 backdrop-blur-sm border border-white/20"
         >
-          <Sparkles className="mr-2 h-4 w-4 text-blue-400 group-hover:text-blue-300 transition-colors" />
+          <Lightbulb className="mr-2 h-4 w-4 text-amber-300 group-hover:text-amber-200 transition-colors" />
           <span>Ask me anything</span>
         </AppleButton>
       </motion.div>

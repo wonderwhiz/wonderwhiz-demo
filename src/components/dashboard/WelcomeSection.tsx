@@ -1,9 +1,6 @@
 
-import React, { useState, useRef } from 'react';
-import { motion } from 'framer-motion';
+import React from 'react';
 import AppleDashboard from './AppleDashboard';
-import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
 
 interface WelcomeSectionProps {
   curioSuggestions: string[];
@@ -24,20 +21,6 @@ const WelcomeSection: React.FC<WelcomeSectionProps> = ({
   pastCurios,
   childId
 }) => {
-  const searchInputRef = useRef<HTMLInputElement>(null);
-
-  const focusSearchInput = () => {
-    if (searchInputRef.current) {
-      searchInputRef.current.focus();
-    } else {
-      // Fallback - attempt to find a text input if the ref isn't working
-      const inputElement = document.querySelector('input[type="text"]') as HTMLInputElement;
-      if (inputElement) {
-        inputElement.focus();
-      }
-    }
-  };
-  
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-950 to-purple-950 pb-16">
       {/* Main dashboard content */}

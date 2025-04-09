@@ -16,7 +16,7 @@ const WonderPathItem: React.FC<WonderPathItemProps> = ({
 }) => {
   return (
     <motion.button
-      className="w-full flex items-center text-left p-3 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 hover:border-white/20 transition-all group"
+      className="w-full flex items-center text-left p-3 rounded-lg backdrop-blur-sm border border-white/10 hover:border-white/20 transition-all group"
       onClick={onClick}
       whileHover={{ scale: 1.02, y: -2 }}
       whileTap={{ scale: 0.98 }}
@@ -28,8 +28,11 @@ const WonderPathItem: React.FC<WonderPathItemProps> = ({
         stiffness: 100,
         damping: 15
       }}
+      style={{
+        background: `linear-gradient(to right, rgba(251, 146, 60, 0.1), rgba(251, 113, 133, 0.1))`,
+      }}
     >
-      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-amber-400/60 to-orange-500/60 flex items-center justify-center mr-3 flex-shrink-0">
+      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-amber-400/80 to-orange-500/80 flex items-center justify-center mr-3 flex-shrink-0">
         <span className="text-white text-sm">{index + 1}</span>
       </div>
       
