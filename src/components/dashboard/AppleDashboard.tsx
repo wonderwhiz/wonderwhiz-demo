@@ -2,13 +2,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppleButton } from '@/components/ui/apple-button';
-import { Search, Sparkles, Compass, Book, Star, Clock, Plus, ArrowRight } from 'lucide-react';
+import { Search, Sparkles, Compass, Book, Star, Clock, Plus, ArrowRight, CheckCircle } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import KnowledgeGlobe from './KnowledgeGlobe';
 import WonderPathItem from './WonderPathItem';
+import ChildTaskList from '@/components/ChildTaskList';
 
 interface AppleDashboardProps {
   childId: string;
@@ -33,6 +34,7 @@ const AppleDashboard: React.FC<AppleDashboardProps> = ({
   const [searchValue, setSearchValue] = useState('');
   const [showGlobe, setShowGlobe] = useState(false);
   const [wonderPathExpanded, setWonderPathExpanded] = useState(false);
+  const [showTasks, setShowTasks] = useState(false);
   
   // Create suggested topics from past curios and predefined options
   const suggestedTopics = React.useMemo(() => {
@@ -96,6 +98,16 @@ const AppleDashboard: React.FC<AppleDashboardProps> = ({
 
   const handleGlobeToggle = () => {
     setShowGlobe(prev => !prev);
+  };
+
+  const handleTasksToggle = () => {
+    setShowTasks(prev => !prev);
+  };
+  
+  const handleTaskCompleted = () => {
+    toast.success("Task completed!", {
+      description: "You've earned sparks for your achievement!"
+    });
   };
   
   const containerVariants = {
@@ -162,13 +174,23 @@ const AppleDashboard: React.FC<AppleDashboardProps> = ({
           </div>
         </div>
         
-        <AppleButton 
-          variant="secondary" 
-          size="sm"
-          onClick={handleGlobeToggle}
-        >
-          {showGlobe ? 'Hide' : 'Show'} Knowledge Globe
-        </AppleButton>
+        <div className="flex space-x-2">
+          <AppleButton 
+            variant="secondary" 
+            size="sm"
+            onClick={handleTasksToggle}
+          >
+            {showTasks ? 'Hide' : 'Show'} Tasks
+          </AppleButton>
+          
+          <AppleButton 
+            variant="secondary" 
+            size="sm"
+            onClick={handleGlobeToggle}
+          >
+            {showGlobe ? 'Hide' : 'Show'} Knowledge Globe
+          </AppleButton>
+        </div>
       </motion.div>
       
       {/* Main search - the central focus */}
@@ -193,6 +215,28 @@ const AppleDashboard: React.FC<AppleDashboardProps> = ({
           </button>
         </form>
       </motion.div>
+      
+      {/* Tasks Section (when activated) */}
+      <AnimatePresence>
+        {showTasks && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+            className="mb-8 overflow-hidden bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-5"
+          >
+            <div className="flex items-center mb-4">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center mr-3">
+                <CheckCircle className="h-4 w-4 text-white" />
+              </div>
+              <h2 className="text-lg font-medium text-white">My Tasks</h2>
+            </div>
+            
+            <ChildTaskList childId={childId} onTaskCompleted={handleTaskCompleted} />
+          </motion.div>
+        )}
+      </AnimatePresence>
       
       {/* Knowledge Globe (when activated) */}
       <AnimatePresence>
@@ -289,7 +333,7 @@ const AppleDashboard: React.FC<AppleDashboardProps> = ({
           </div>
         </motion.div>
         
-        {/* Right column: Today's Challenges */}
+        {/* Right column: Today's Challenges and Time Capsule */}
         <motion.div 
           variants={itemVariants}
           className="space-y-6"
