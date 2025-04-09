@@ -1,6 +1,6 @@
 
 import React from 'react';
-import AppleDashboard from './AppleDashboard';
+import UnifiedDashboard from './UnifiedDashboard';
 
 interface WelcomeSectionProps {
   curioSuggestions: string[];
@@ -10,6 +10,10 @@ interface WelcomeSectionProps {
   childProfile: any;
   pastCurios: any[];
   childId: string;
+  query: string;
+  setQuery: (query: string) => void;
+  handleSubmitQuery: () => void;
+  isGenerating: boolean;
 }
 
 const WelcomeSection: React.FC<WelcomeSectionProps> = ({
@@ -19,12 +23,15 @@ const WelcomeSection: React.FC<WelcomeSectionProps> = ({
   handleCurioSuggestionClick,
   childProfile,
   pastCurios,
-  childId
+  childId,
+  query,
+  setQuery,
+  handleSubmitQuery,
+  isGenerating
 }) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-950 to-purple-950 pb-16">
-      {/* Main dashboard content */}
-      <AppleDashboard
+      <UnifiedDashboard
         childId={childId}
         childProfile={childProfile}
         curioSuggestions={curioSuggestions}
@@ -32,6 +39,10 @@ const WelcomeSection: React.FC<WelcomeSectionProps> = ({
         onCurioSuggestionClick={handleCurioSuggestionClick}
         handleRefreshSuggestions={handleRefreshSuggestions}
         pastCurios={pastCurios}
+        query={query}
+        setQuery={setQuery}
+        handleSubmitQuery={handleSubmitQuery}
+        isGenerating={isGenerating}
       />
     </div>
   );

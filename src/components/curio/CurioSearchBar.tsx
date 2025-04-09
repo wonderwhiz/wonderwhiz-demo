@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getTopicSuggestions, extractTopicFromQuestion } from '@/components/content-blocks/utils/specialistUtils';
+import { cn } from '@/lib/utils';
 
 interface CurioSearchBarProps {
   searchQuery: string;
@@ -108,12 +109,22 @@ const CurioSearchBar: React.FC<CurioSearchBarProps> = ({
   return (
     <div className="relative">
       <form onSubmit={handleSearch} className="flex items-center gap-2">
-        <div className={`relative flex-grow group ${isFocused ? 'ring-2 ring-white/20 rounded-full' : ''}`}>
-          <Search className={`absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 ${isFocused ? 'text-white' : 'text-white/40'} group-hover:text-white/60 transition-colors`} />
+        <div className={cn(
+          "relative flex-grow group",
+          isFocused ? "ring-2 ring-white/20 rounded-full" : "",
+        )}>
+          <Search className={cn(
+            "absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4",
+            isFocused ? "text-white" : "text-white/40",
+            "group-hover:text-white/60 transition-colors"
+          )} />
           <Input
             type="text"
             placeholder="What would you like to explore next?"
-            className={`pl-9 rounded-full bg-white/10 border-white/20 text-white placeholder:text-white/40 font-inter transition-all duration-300 focus:bg-white/15 focus:border-white/30 focus:ring-white/20`}
+            className={cn(
+              "pl-9 rounded-full bg-white/10 border-white/20 text-white placeholder:text-white/40 font-inter",
+              "transition-all duration-300 focus:bg-white/15 focus:border-white/30 focus:ring-white/20"
+            )}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={handleFocus}
@@ -140,7 +151,10 @@ const CurioSearchBar: React.FC<CurioSearchBarProps> = ({
         >
           <Button 
             type="submit" 
-            className="bg-gradient-to-r from-wonderwhiz-vibrant-yellow to-wonderwhiz-bright-pink text-wonderwhiz-deep-purple font-medium rounded-full px-5"
+            className={cn(
+              "bg-gradient-to-r from-wonderwhiz-vibrant-yellow to-wonderwhiz-bright-pink",
+              "text-wonderwhiz-deep-purple font-medium rounded-full px-5"
+            )}
           >
             <span className="mr-1">Explore</span>
             <ArrowRight className="h-4 w-4" />
