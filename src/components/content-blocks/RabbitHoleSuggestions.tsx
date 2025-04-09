@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Lightbulb, Sparkles, Map, Compass, BookOpen, Brain, Rocket, Leaf, History } from 'lucide-react';
@@ -39,7 +38,8 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
     setLoading(true);
     
     const generateSuggestions = () => {
-      // Extract topic keywords from the title
+      const mainTopic = curioTitle.split(' ').slice(0, 3).join(' ').replace(/\?$/, '');
+      
       const topics = curioTitle.toLowerCase().split(' ');
       const isAboutJupiter = topics.includes('jupiter') || topics.includes('jupiter?');
       const isAboutLife = topics.includes('life');
@@ -47,7 +47,6 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
       
       let newSuggestions: Suggestion[] = [];
       
-      // Jupiter/space specific suggestions
       if (isAboutJupiter) {
         newSuggestions = [
           {
@@ -80,7 +79,6 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
           }
         ];
       } 
-      // Life in space suggestions
       else if (isAboutLife && isAboutSpace) {
         newSuggestions = [
           {
@@ -113,7 +111,6 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
           }
         ];
       }
-      // General space suggestions
       else if (isAboutSpace) {
         newSuggestions = [
           {
@@ -146,9 +143,20 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
           }
         ];
       }
-      // Default suggestions for general topics
       else {
-        const newSuggestions: Suggestion[] = [
+        const subjectAreas = specialistIds.map(id => {
+          switch(id) {
+            case 'nova': return 'space';
+            case 'spark': return 'creativity';
+            case 'prism': return 'science';
+            case 'pixel': return 'technology';
+            case 'atlas': return 'history';
+            case 'lotus': return 'nature';
+            default: return 'general knowledge';
+          }
+        });
+        
+        newSuggestions = [
           {
             title: `The secrets of ${mainTopic}`,
             description: `Uncover deeper mysteries and fascinating details through scientific inquiry`,
@@ -178,8 +186,6 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
             category: 'nature'
           }
         ];
-        
-        setSuggestions(newSuggestions);
       }
       
       setSuggestions(newSuggestions);
