@@ -4,6 +4,7 @@ import DashboardContainer from '@/components/dashboard/DashboardContainer';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
+import { toast } from 'sonner';
 
 const Dashboard = () => {
   // Add analytics for measuring engagement
@@ -18,6 +19,22 @@ const Dashboard = () => {
     if (hour >= 17) timeOfDay = 'evening';
     console.log(`Dashboard loaded during ${timeOfDay} - optimizing content for this time`);
     
+    // Show welcome toast based on time of day
+    const welcomeMessages = [
+      'Ready to explore something amazing?',
+      'What will you discover today?',
+      'Your brain is ready for an adventure!',
+      'Curiosity leads to awesome discoveries!'
+    ];
+    const randomMessage = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
+    
+    setTimeout(() => {
+      toast(randomMessage, {
+        position: 'top-center',
+        duration: 4000,
+      });
+    }, 1500);
+    
     // Clean up event listeners when component unmounts
     return () => {
       console.log('Dashboard unloaded');
@@ -30,6 +47,7 @@ const Dashboard = () => {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.4 }}
+      className="min-h-screen bg-wonderwhiz-gradient overflow-hidden"
     >
       <Helmet>
         <title>WonderWhiz - Explore & Learn</title>

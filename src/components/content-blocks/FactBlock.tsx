@@ -3,12 +3,13 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getBlockTypeColor, getHoverAnimation } from '@/components/BlockStyleUtils';
-import { ArrowRight, MessageCircle, BrainCircuit, Sparkles, ArrowDown } from 'lucide-react';
+import { ArrowRight, MessageCircle, BrainCircuit, Sparkles, ArrowDown, LightbulbIcon } from 'lucide-react';
 
 interface FactBlockProps {
   content: {
     fact: string;
     rabbitHoles?: string[];
+    thoughtQuestion?: string; // New field for thought-provoking questions
   };
   onRabbitHoleClick?: (question: string) => void;
   expanded?: boolean;
@@ -32,6 +33,9 @@ const FactBlock: React.FC<FactBlockProps> = ({
   const rabbitHoles = content?.rabbitHoles || [];
   const hasRabbitHoles = Array.isArray(rabbitHoles) && rabbitHoles.length > 0;
   
+  // Get the thought question from content or generate one
+  const thoughtQuestion = content?.thoughtQuestion || getThoughtProvokingQuestion(fact);
+  
   const handleRabbitHoleClick = (question: string) => {
     setSelectedRabbitHole(question);
     setTimeout(() => {
@@ -46,11 +50,18 @@ const FactBlock: React.FC<FactBlockProps> = ({
     if (!expanded) {
       setAnimateInsight(true);
       setTimeout(() => setAnimateInsight(false), 1500);
+      
+      // After a delay, show the thought question
+      setTimeout(() => {
+        setShowThoughtQuestion(true);
+      }, 800);
+    } else {
+      setShowThoughtQuestion(false);
     }
   };
   
   // Extract a thought-provoking question from the fact content
-  const getThoughtProvokingQuestion = (factText: string) => {
+  function getThoughtProvokingQuestion(factText: string) {
     // Simple heuristic - check if the fact already ends with a question
     if (factText.trim().endsWith('?')) {
       return null; // Fact already ends with a question
@@ -74,16 +85,14 @@ const FactBlock: React.FC<FactBlockProps> = ({
     
     // Default question if no specific topics detected
     return "What does this make you wonder about our incredible world?";
-  };
-  
-  const thoughtQuestion = getThoughtProvokingQuestion(fact);
+  }
   
   // Show thought question after a delay when the block is expanded
   React.useEffect(() => {
     if (expanded && thoughtQuestion) {
       const timer = setTimeout(() => {
         setShowThoughtQuestion(true);
-      }, 2000);
+      }, 1000);
       
       return () => clearTimeout(timer);
     } else {
@@ -120,7 +129,7 @@ const FactBlock: React.FC<FactBlockProps> = ({
                 transition={{ duration: 0.6 }}
                 className="h-6 w-6 bg-indigo-500/20 rounded-full flex items-center justify-center"
               >
-                <BrainCircuit className="w-3.5 h-3.5 text-indigo-400" />
+                <LightbulbIcon className="w-3.5 h-3.5 text-wonderwhiz-gold" />
               </motion.div>
             </div>
             <div className="flex-grow">
@@ -137,9 +146,9 @@ const FactBlock: React.FC<FactBlockProps> = ({
                     exit={{ opacity: 0, y: -10 }}
                     className="mt-3 border-t border-white/10 pt-3"
                   >
-                    <p className="text-white/80 text-sm flex items-start">
+                    <p className="text-white/90 text-sm flex items-start">
                       <Sparkles className="w-4 h-4 mr-2 mt-0.5 text-wonderwhiz-gold" />
-                      <span>{thoughtQuestion}</span>
+                      <span className="italic">{thoughtQuestion}</span>
                     </p>
                   </motion.div>
                 )}
@@ -149,7 +158,7 @@ const FactBlock: React.FC<FactBlockProps> = ({
               {!expanded && thoughtQuestion && (
                 <motion.button
                   onClick={toggleExpandFact}
-                  className="mt-2 text-white/60 hover:text-white/80 text-xs flex items-center group"
+                  className="mt-2 text-white/70 hover:text-white/90 text-xs flex items-center group"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >

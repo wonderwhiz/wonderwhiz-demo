@@ -1,8 +1,9 @@
+
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ContentBlock from '@/components/ContentBlock';
 import { ContentBlock as ContentBlockType } from '@/types/curio';
-import { AlertCircle, Lightbulb, RefreshCw, Sparkles, Brain } from 'lucide-react';
+import { AlertCircle, Lightbulb, RefreshCw, Sparkles, Brain, BookOpen } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import CurioBlockListLoadMore from './CurioBlockListLoadMore';
@@ -32,12 +33,12 @@ interface CurioBlockListProps {
 }
 
 const CurioBlockList: React.FC<CurioBlockListProps> = ({
-  blocks = [], // Provide default empty array
+  blocks = [], 
   animateBlocks,
   hasMoreBlocks,
   loadingMoreBlocks,
   loadTriggerRef,
-  searchQuery = '', // Provide default empty string
+  searchQuery = '', 
   profileId,
   isFirstLoad,
   handleToggleLike,
@@ -125,7 +126,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          Generating content...
+          Creating your learning journey...
         </motion.h3>
         <motion.p 
           className="text-white/70 max-w-md mx-auto font-inter text-sm sm:text-base"
@@ -133,7 +134,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
         >
-          Your personalized discovery journey is being created. Hold tight for some amazing wonders!
+          Your personalized discovery is being crafted just for you. Get ready to expand your knowledge!
         </motion.p>
       </div>
     );
@@ -177,6 +178,39 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
     );
   }
 
+  // Block organization by type for better cognitive flow
+  const organizeBlocksByType = (blocks: ContentBlockType[]) => {
+    // Group blocks by types for better learning flow
+    const typeOrder = ['fact', 'quiz', 'activity', 'creative', 'mindfulness'];
+    
+    // Sort blocks to ensure we have a good mix but maintain some coherent order
+    const sortedBlocks = [...blocks];
+    
+    // Ensure essential block types appear first (fact should be the first one)
+    const firstFactIndex = sortedBlocks.findIndex(block => block.type === 'fact');
+    if (firstFactIndex > 0) {
+      const firstFact = sortedBlocks[firstFactIndex];
+      sortedBlocks.splice(firstFactIndex, 1);
+      sortedBlocks.unshift(firstFact);
+    }
+    
+    // Make sure we don't have too many of the same block types in a row
+    for (let i = 1; i < sortedBlocks.length - 1; i++) {
+      if (sortedBlocks[i].type === sortedBlocks[i-1].type && 
+          i+1 < sortedBlocks.length && 
+          sortedBlocks[i].type !== sortedBlocks[i+1].type) {
+        // Swap to avoid 3 in a row
+        const temp = sortedBlocks[i];
+        sortedBlocks[i] = sortedBlocks[i+1];
+        sortedBlocks[i+1] = temp;
+      }
+    }
+    
+    return sortedBlocks;
+  };
+  
+  const organizedBlocks = organizeBlocksByType(safeBlocks);
+
   const container = {
     hidden: { opacity: 0 },
     show: {
@@ -193,12 +227,16 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
     show: { opacity: 1, y: 0 }
   };
 
-  const organizeBlocksByType = (blocks: ContentBlockType[]) => {
-    // For now we're keeping the original order but this could be enhanced later
-    return blocks;
+  // Get appropriate icon for block type
+  const getBlockIcon = (type: string) => {
+    switch(type) {
+      case 'fact': return <Lightbulb className="w-4 h-4 text-wonderwhiz-vibrant-yellow" />;
+      case 'quiz': return <Brain className="w-4 h-4 text-emerald-400" />;
+      case 'activity': 
+      case 'creative': return <Sparkles className="w-4 h-4 text-wonderwhiz-bright-pink" />;
+      default: return <BookOpen className="w-4 h-4 text-wonderwhiz-gold" />;
+    }
   };
-  
-  const organizedBlocks = organizeBlocksByType(safeBlocks);
 
   return (
     <motion.div 
@@ -218,7 +256,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
             stiffness: 100
           }}
         >
-          {/* Decorative elements that appear on hover - only on larger screens */}
+          {/* Decorative elements that appear on hover */}
           {!isMobile && (index === 0 || index % 3 === 0) && (
             <AnimatePresence>
               <motion.div
@@ -228,22 +266,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
                 exit={{ opacity: 0, scale: 0 }}
                 transition={{ duration: 0.5 }}
               >
-                <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-wonderwhiz-vibrant-yellow animate-sparkle" />
-              </motion.div>
-            </AnimatePresence>
-          )}
-          
-          {/* Add a brain decoration to quiz blocks */}
-          {!isMobile && block.type === 'quiz' && (
-            <AnimatePresence>
-              <motion.div
-                className="absolute -right-6 sm:-right-8 top-1/3 transform -translate-y-1/2 hidden md:block"
-                initial={{ opacity: 0, scale: 0 }}
-                whileInView={{ opacity: 0.6, scale: 1 }}
-                exit={{ opacity: 0, scale: 0 }}
-                transition={{ duration: 0.5 }}
-              >
-                <Brain className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400 animate-pulse" />
+                {getBlockIcon(block.type)}
               </motion.div>
             </AnimatePresence>
           )}
