@@ -1,8 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SmartDashboard from './SmartDashboard';
-import { Sparkles, Star, LucideIcon, Lightbulb, MapPin } from 'lucide-react';
+import { Sparkles, Star, Lightbulb, MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import AnimatedMascot from './AnimatedMascot';
 import { Button } from '@/components/ui/button';
@@ -27,6 +27,7 @@ const WelcomeSection: React.FC<WelcomeSectionProps> = ({
   childId
 }) => {
   const [showGlobe, setShowGlobe] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Get greeting based on time of day and child profile
   const getGreeting = () => {
@@ -49,6 +50,19 @@ const WelcomeSection: React.FC<WelcomeSectionProps> = ({
     ];
     
     return messages[Math.floor(Math.random() * messages.length)];
+  };
+
+  const focusSearchInput = () => {
+    // Find the input field using a ref that will be passed to the search component
+    if (searchInputRef.current) {
+      searchInputRef.current.focus();
+    } else {
+      // Fallback - attempt to find a text input if the ref isn't working
+      const inputElement = document.querySelector('input[type="text"]') as HTMLInputElement;
+      if (inputElement) {
+        inputElement.focus();
+      }
+    }
   };
 
   // Animation variants
@@ -237,7 +251,7 @@ const WelcomeSection: React.FC<WelcomeSectionProps> = ({
             <Button
               variant="outline"
               className="bg-white/5 hover:bg-white/10 text-white/80 border-white/10 rounded-full flex items-center gap-2 group"
-              onClick={() => document.querySelector('input[type="text"]')?.focus()}
+              onClick={focusSearchInput}
             >
               <Lightbulb className="h-4 w-4 text-wonderwhiz-gold group-hover:animate-pulse-gentle" />
               <span>Ask me anything!</span>

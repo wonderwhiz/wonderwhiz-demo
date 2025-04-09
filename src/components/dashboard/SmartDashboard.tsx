@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -44,6 +44,7 @@ const SmartDashboard = ({
   // Add state for managing sparks and streak
   const [sparks] = useState(childProfile?.sparks_balance || 0);
   const [streak] = useState(childProfile?.streak_days || 0);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Mock function for topic clicks - will be replaced with actual navigation
   const handleTopicClick = (topicQuery: string) => {
@@ -56,6 +57,19 @@ const SmartDashboard = ({
   const handleCurioClick = (curio: any) => {
     if (curio && curio.query && onCurioSuggestionClick) {
       onCurioSuggestionClick(curio.query);
+    }
+  };
+
+  const focusSearchInput = () => {
+    // Find the input field using a ref that will be passed to the search component
+    if (searchInputRef.current) {
+      searchInputRef.current.focus();
+    } else {
+      // Fallback - attempt to find a text input if the ref isn't working
+      const inputElement = document.querySelector('input[type="text"]') as HTMLInputElement;
+      if (inputElement) {
+        inputElement.focus();
+      }
     }
   };
 
@@ -193,7 +207,7 @@ const SmartDashboard = ({
           variant="ghost"
           size="lg"
           className="bg-gradient-to-r from-wonderwhiz-vibrant-yellow/20 to-wonderwhiz-bright-pink/20 hover:from-wonderwhiz-vibrant-yellow/30 hover:to-wonderwhiz-bright-pink/30 text-white border border-white/10 backdrop-blur-sm rounded-full py-6 px-8 shadow-lg group"
-          onClick={() => document.querySelector('input[type="text"]')?.focus()}
+          onClick={focusSearchInput}
         >
           <Lightbulb className="h-5 w-5 mr-3 text-wonderwhiz-vibrant-yellow group-hover:animate-pulse-gentle" />
           <span className="text-lg">What are you curious about?</span>
