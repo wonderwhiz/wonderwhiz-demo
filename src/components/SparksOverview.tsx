@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sparkles, ChevronDown, ChevronUp, Award, Flame, Zap } from 'lucide-react';
+import { Sparkles, ChevronDown, ChevronUp, Award, Flame, Zap, Brain } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SparksBalance from './SparksBalance';
 import SparksHistory from './SparksHistory';
@@ -39,7 +39,7 @@ const SparksOverview: React.FC<SparksOverviewProps> = ({
   const nextMilestone = getNextMilestoneLabel();
 
   return (
-    <Card className={`bg-white/5 border-white/10 ${className}`}>
+    <Card className={`bg-white/5 border-white/10 shadow-glow-sm ${className}`}>
       <CardHeader className="pb-2">
         <CardTitle className="text-white flex items-center">
           <Sparkles className="mr-2 h-5 w-5 text-wonderwhiz-gold" />
@@ -59,7 +59,7 @@ const SparksOverview: React.FC<SparksOverviewProps> = ({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
-              className="text-white/50 text-xs"
+              className="text-white/60 text-xs font-medium"
             >
               {nextMilestone}
             </motion.div>
@@ -75,12 +75,12 @@ const SparksOverview: React.FC<SparksOverviewProps> = ({
           <div className="bg-white/10 rounded-lg p-3">
             <div className="flex items-center justify-between mb-1.5">
               <span className="flex items-center text-white font-medium">
-                <Zap className="h-4 w-4 mr-1.5 text-wonderwhiz-bright-pink" />
+                <Brain className="h-4 w-4 mr-1.5 text-wonderwhiz-bright-pink" />
                 Learning Progress
               </span>
               <span className="text-white/60 text-sm">{Math.min(100, sparksBalance/5)}%</span>
             </div>
-            <div className="h-2 bg-white/10 rounded-full">
+            <div className="h-2 bg-white/10 rounded-full overflow-hidden">
               <motion.div 
                 className="h-full bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-gold rounded-full"
                 initial={{ width: 0 }}
@@ -92,10 +92,10 @@ const SparksOverview: React.FC<SparksOverviewProps> = ({
           
           <button 
             onClick={() => toggleSection('streak')} 
-            className="w-full flex justify-between items-center p-3 bg-white/10 rounded-lg text-left hover:bg-white/15 transition-colors"
+            className="w-full flex justify-between items-center p-3 bg-white/10 rounded-lg text-left hover:bg-white/15 transition-colors group"
           >
             <span className="text-white font-medium flex items-center">
-              <Flame className="h-4 w-4 mr-2 text-wonderwhiz-gold" />
+              <Flame className="h-4 w-4 mr-2 text-wonderwhiz-gold group-hover:scale-110 transition-transform" />
               Learning Streak
             </span>
             {activeSection === 'streak' ? 
@@ -119,10 +119,10 @@ const SparksOverview: React.FC<SparksOverviewProps> = ({
           
           <button 
             onClick={() => toggleSection('milestones')} 
-            className="w-full flex justify-between items-center p-3 bg-white/10 rounded-lg text-left hover:bg-white/15 transition-colors"
+            className="w-full flex justify-between items-center p-3 bg-white/10 rounded-lg text-left hover:bg-white/15 transition-colors group"
           >
             <span className="text-white font-medium flex items-center">
-              <Award className="h-4 w-4 mr-2 text-wonderwhiz-vibrant-yellow" />
+              <Award className="h-4 w-4 mr-2 text-wonderwhiz-vibrant-yellow group-hover:scale-110 transition-transform" />
               Achievements
             </span>
             {activeSection === 'milestones' ? 
@@ -146,10 +146,10 @@ const SparksOverview: React.FC<SparksOverviewProps> = ({
           
           <button 
             onClick={() => toggleSection('history')} 
-            className="w-full flex justify-between items-center p-3 bg-white/10 rounded-lg text-left hover:bg-white/15 transition-colors"
+            className="w-full flex justify-between items-center p-3 bg-white/10 rounded-lg text-left hover:bg-white/15 transition-colors group"
           >
             <span className="text-white font-medium flex items-center">
-              <Sparkles className="h-4 w-4 mr-2 text-wonderwhiz-cyan" />
+              <Sparkles className="h-4 w-4 mr-2 text-wonderwhiz-cyan group-hover:scale-110 transition-transform" />
               Recent Rewards
             </span>
             {activeSection === 'history' ? 

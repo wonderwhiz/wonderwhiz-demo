@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ContentBlock from '@/components/ContentBlock';
 import { ContentBlock as ContentBlockType } from '@/types/curio';
-import { AlertCircle, Lightbulb, RefreshCw, Sparkles, Brain, BookOpen } from 'lucide-react';
+import { AlertCircle, Lightbulb, RefreshCw, Sparkles, Brain, BookOpen, Flame, Zap } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import CurioBlockListLoadMore from './CurioBlockListLoadMore';
@@ -180,30 +180,47 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
 
   // Block organization by type for better cognitive flow
   const organizeBlocksByType = (blocks: ContentBlockType[]) => {
-    // Group blocks by types for better learning flow
-    const typeOrder = ['fact', 'quiz', 'activity', 'creative', 'mindfulness'];
+    // Implementing a clear narrative arc as recommended
+    // Start with hook (fact), then build complexity gradually
+    const blockTypes = ['fact', 'funFact', 'quiz', 'activity', 'creative', 'mindfulness', 'task'];
     
-    // Sort blocks to ensure we have a good mix but maintain some coherent order
-    const sortedBlocks = [...blocks];
-    
-    // Ensure essential block types appear first (fact should be the first one)
-    const firstFactIndex = sortedBlocks.findIndex(block => block.type === 'fact');
+    // First, ensure the first block is a fact/funFact that directly answers the question
+    const firstFactIndex = blocks.findIndex(block => block.type === 'fact' || block.type === 'funFact');
     if (firstFactIndex > 0) {
-      const firstFact = sortedBlocks[firstFactIndex];
-      sortedBlocks.splice(firstFactIndex, 1);
-      sortedBlocks.unshift(firstFact);
+      const firstFact = blocks[firstFactIndex];
+      blocks.splice(firstFactIndex, 1);
+      blocks.unshift(firstFact);
     }
     
-    // Make sure we don't have too many of the same block types in a row
+    // Then ensure we have a clear narrative arc - fact → quiz → interactive → creative → reflective
+    const sortedBlocks = [...blocks];
+    
+    // Ensure balance - limited to 6-7 high quality blocks with "wow factor"
+    // Don't show too many of the same block types in a row for better engagement
     for (let i = 1; i < sortedBlocks.length - 1; i++) {
-      if (sortedBlocks[i].type === sortedBlocks[i-1].type && 
-          i+1 < sortedBlocks.length && 
-          sortedBlocks[i].type !== sortedBlocks[i+1].type) {
-        // Swap to avoid 3 in a row
-        const temp = sortedBlocks[i];
-        sortedBlocks[i] = sortedBlocks[i+1];
-        sortedBlocks[i+1] = temp;
+      if (i > 0 && sortedBlocks[i].type === sortedBlocks[i-1].type) {
+        // Find the next block of a different type
+        for (let j = i+1; j < sortedBlocks.length; j++) {
+          if (sortedBlocks[j].type !== sortedBlocks[i].type) {
+            // Swap to avoid similar blocks in sequence
+            const temp = sortedBlocks[i];
+            sortedBlocks[i] = sortedBlocks[j];
+            sortedBlocks[j] = temp;
+            break;
+          }
+        }
       }
+    }
+    
+    // Ensure reflective/mindfulness block appears near the end for cognitive processing
+    const mindfulnessIndex = sortedBlocks.findIndex(block => block.type === 'mindfulness');
+    if (mindfulnessIndex > -1 && mindfulnessIndex < sortedBlocks.length - 3) {
+      const mindfulnessBlock = sortedBlocks[mindfulnessIndex];
+      sortedBlocks.splice(mindfulnessIndex, 1);
+      
+      // Place near the end but not the very last
+      const insertPosition = Math.max(sortedBlocks.length - 2, 2);
+      sortedBlocks.splice(insertPosition, 0, mindfulnessBlock);
     }
     
     return sortedBlocks;
@@ -227,14 +244,30 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
     show: { opacity: 1, y: 0 }
   };
 
-  // Get appropriate icon for block type
+  // Get appropriate icon for block type with better visual cues
   const getBlockIcon = (type: string) => {
     switch(type) {
-      case 'fact': return <Lightbulb className="w-4 h-4 text-wonderwhiz-vibrant-yellow" />;
+      case 'fact': 
+      case 'funFact': return <Lightbulb className="w-4 h-4 text-wonderwhiz-vibrant-yellow" />;
       case 'quiz': return <Brain className="w-4 h-4 text-emerald-400" />;
-      case 'activity': 
+      case 'activity': return <Zap className="w-4 h-4 text-wonderwhiz-cyan" />;
       case 'creative': return <Sparkles className="w-4 h-4 text-wonderwhiz-bright-pink" />;
+      case 'mindfulness': return <Flame className="w-4 h-4 text-wonderwhiz-gold" />;
       default: return <BookOpen className="w-4 h-4 text-wonderwhiz-gold" />;
+    }
+  };
+
+  // Add meta-learning badge to help children understand their learning path
+  const getBlockTypeName = (type: string) => {
+    switch(type) {
+      case 'fact': 
+      case 'funFact': return "Amazing Discovery";
+      case 'quiz': return "Brain Challenge";
+      case 'activity': return "Hands-on Learning";
+      case 'creative': return "Creative Thinking";
+      case 'mindfulness': return "Mindful Reflection";
+      case 'task': return "Learning Task";
+      default: return "Knowledge Block";
     }
   };
 
@@ -256,17 +289,20 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
             stiffness: 100
           }}
         >
-          {/* Decorative elements that appear on hover */}
-          {!isMobile && (index === 0 || index % 3 === 0) && (
+          {/* Learning type indicator for meta-learning */}
+          {!isMobile && (
             <AnimatePresence>
               <motion.div
-                className="absolute -left-6 sm:-left-8 top-1/2 transform -translate-y-1/2 hidden md:block"
-                initial={{ opacity: 0, scale: 0 }}
-                whileInView={{ opacity: 0.6, scale: 1 }}
-                exit={{ opacity: 0, scale: 0 }}
-                transition={{ duration: 0.5 }}
+                className="absolute -left-6 sm:-left-10 top-1/2 transform -translate-y-1/2 hidden md:flex flex-col items-center"
+                initial={{ opacity: 0, x: -10 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                transition={{ duration: 0.3 }}
               >
                 {getBlockIcon(block.type)}
+                <span className="text-white/50 text-[10px] mt-1 writing-mode-vertical whitespace-nowrap transform -rotate-90 origin-center translate-y-6">
+                  {getBlockTypeName(block.type)}
+                </span>
               </motion.div>
             </AnimatePresence>
           )}

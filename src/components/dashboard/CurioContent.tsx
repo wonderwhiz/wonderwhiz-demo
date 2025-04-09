@@ -5,7 +5,7 @@ import ContentBlock from '@/components/ContentBlock';
 import CurioLoading from '@/components/CurioLoading';
 import CurioLoadMore from '@/components/CurioLoadMore';
 import RabbitHoleSuggestions from '@/components/content-blocks/RabbitHoleSuggestions';
-import { AlertCircle, RefreshCw, Sparkles, Brain, BookOpen } from 'lucide-react';
+import { AlertCircle, RefreshCw, Sparkles, Brain, BookOpen, Lightbulb } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface ContentBlock {
@@ -356,6 +356,27 @@ const CurioContent: React.FC<CurioContentProps> = ({
                 </div>
               )}
 
+              {/* Empty state with intelligence-driven suggestions */}
+              {visibleBlocks.length === 0 && !isGenerating && !generationError && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-center py-10"
+                >
+                  <div className="relative mx-auto w-20 h-20 mb-4">
+                    <div className="absolute inset-0 bg-wonderwhiz-bright-pink/20 rounded-full blur-xl animate-pulse"></div>
+                    <div className="relative flex items-center justify-center h-full">
+                      <Lightbulb className="h-12 w-12 text-wonderwhiz-gold" />
+                    </div>
+                  </div>
+                  
+                  <h3 className="text-xl font-bold text-white mb-2">Start Your Wonder Journey</h3>
+                  <p className="text-white/70 max-w-md mx-auto">
+                    Ask any question to begin exploring amazing facts and activities just for you!
+                  </p>
+                </motion.div>
+              )}
+
               {/* Render visible blocks */}
               <AnimatePresence initial={false}>
                 {visibleBlocks.map((block, index) => (
@@ -407,17 +428,24 @@ const CurioContent: React.FC<CurioContentProps> = ({
 
               {/* Load more button - Only show when not initially loading and there are more blocks */}
               {!isGenerating && hasMoreBlocks && visibleBlocks.length > 0 && (
-                <CurioLoadMore 
-                  loadingMoreBlocks={loadingBlocks} 
-                  loadTriggerRef={null}
-                />
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <CurioLoadMore 
+                    loadingMoreBlocks={loadingBlocks} 
+                    loadTriggerRef={null}
+                  />
+                </motion.div>
               )}
               
               {/* Show rabbit hole suggestions when user reaches the end */}
               {hasReachedEnd && (
                 <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
                 >
                   <RabbitHoleSuggestions
                     curioTitle={currentCurio.title}

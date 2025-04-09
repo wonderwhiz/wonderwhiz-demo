@@ -7,7 +7,7 @@ import { Helmet } from 'react-helmet-async';
 import { toast } from 'sonner';
 
 const Dashboard = () => {
-  // Add analytics for measuring engagement
+  // Add analytics for measuring engagement with optimized welcome experience
   useEffect(() => {
     // Track when users visit the dashboard page
     console.log('Dashboard loaded - tracking user engagement');
@@ -19,12 +19,13 @@ const Dashboard = () => {
     if (hour >= 17) timeOfDay = 'evening';
     console.log(`Dashboard loaded during ${timeOfDay} - optimizing content for this time`);
     
-    // Show welcome toast based on time of day
+    // Show welcome toast based on time of day - more engaging and fun
     const welcomeMessages = [
-      'Ready to explore something amazing?',
-      'What will you discover today?',
-      'Your brain is ready for an adventure!',
-      'Curiosity leads to awesome discoveries!'
+      '👋 Ready to discover something amazing today?',
+      '🔍 What will you wonder about today?',
+      '🧠 Your brain is ready for an adventure!',
+      '✨ What magical discovery awaits you?',
+      '🚀 Where shall your curiosity take you?'
     ];
     const randomMessage = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
     
