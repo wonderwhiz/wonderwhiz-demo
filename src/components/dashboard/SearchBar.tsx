@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import EnhancedSearchBar from './EnhancedSearchBar';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Lightbulb, Hash } from 'lucide-react';
+import { Sparkles, Lightbulb, Hash, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 
 interface SearchBarProps {
   query: string;
@@ -21,6 +22,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
 }) => {
   const [showTip, setShowTip] = useState(false);
   const [tipIndex, setTipIndex] = useState(0);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   
   const tips = [
     "Try asking 'Why is the sky blue?' for a fun explanation!",
@@ -58,6 +60,13 @@ const SearchBar: React.FC<SearchBarProps> = ({
     return ["dinosaurs", "space", "animals", "robots", "planets"];
   };
 
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (query.trim()) {
+      handleSubmitQuery();
+    }
+  };
+
   return (
     <div className="relative">
       {/* Trending topics */}
@@ -76,14 +85,53 @@ const SearchBar: React.FC<SearchBarProps> = ({
         ))}
       </div>
       
-      <EnhancedSearchBar
-        query={query}
-        setQuery={setQuery}
-        handleSubmitQuery={handleSubmitQuery}
-        isGenerating={isGenerating}
-        recentQueries={recentQueries}
-        trendingTopics={getTrendingTopics()}
-      />
+      {/* Search input */}
+      <form onSubmit={handleFormSubmit}>
+        <div 
+          className={cn(
+            "relative bg-white/10 backdrop-blur-md border border-white/20 rounded-full transition-all duration-300 overflow-hidden",
+            isSearchFocused ? "ring-2 ring-indigo-500/50 border-indigo-500/50" : "hover:bg-white/15"
+          )}
+        >
+          <Input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="What are you curious about today?"
+            disabled={isGenerating}
+            className="pr-12 pl-5 py-7 text-base sm:text-lg rounded-full bg-transparent border-0 text-white placeholder:text-white/60 focus-visible:ring-0 focus-visible:ring-offset-0"
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setIsSearchFocused(false)}
+          />
+          <motion.button
+            type="submit"
+            disabled={isGenerating || !query.trim()}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-2 rounded-full hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Search className="h-5 w-5" />
+          </motion.button>
+        </div>
+      </form>
+      
+      {/* Recent queries */}
+      {recentQueries.length > 0 && !query && (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {recentQueries.slice(0, 3).map((recentQuery, index) => (
+            <motion.button
+              key={`recent-${index}`}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setQuery(recentQuery)}
+              className="flex items-center text-xs px-3 py-1 rounded-full bg-white/10 text-white/70 hover:bg-white/15 transition-colors"
+            >
+              <Lightbulb className="h-3 w-3 mr-1" />
+              {recentQuery.length > 25 ? recentQuery.substring(0, 22) + '...' : recentQuery}
+            </motion.button>
+          ))}
+        </div>
+      )}
       
       <AnimatePresence>
         {showTip && !query && !isGenerating && (
