@@ -5,18 +5,20 @@ import { Card, CardContent } from '@/components/ui/card';
 import { BookOpen, Star, Award } from 'lucide-react';
 
 interface MemoryJourneyProps {
-  pastCurios: any[];
-  onCurioClick: (curio: any) => void;
+  childId?: string;
+  pastCurios?: any[];
+  onCurioClick?: (curio: any) => void;
 }
 
 const MemoryJourney: React.FC<MemoryJourneyProps> = ({
-  pastCurios,
-  onCurioClick
+  childId,
+  pastCurios = [],
+  onCurioClick = () => {}
 }) => {
   // Get recent achievements
-  const recentAchievements = pastCurios
+  const recentAchievements = (pastCurios || [])
     .slice(0, 10)
-    .filter(curio => curio.title && curio.title.length < 30) // Keep titles short
+    .filter(curio => curio?.title && curio.title.length < 30) // Keep titles short
     .map(curio => ({
       id: curio.id,
       title: curio.title,
@@ -48,7 +50,33 @@ const MemoryJourney: React.FC<MemoryJourneyProps> = ({
   }
   
   if (recentAchievements.length === 0) {
-    return null;
+    // Provide a welcome message when no achievements yet
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.3 }}
+      >
+        <Card className="border-white/10 bg-gradient-to-br from-wonderwhiz-gold/20 to-wonderwhiz-bright-pink/10 overflow-hidden border-none rounded-xl">
+          <CardContent className="p-4">
+            <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
+              <Award className="h-5 w-5 mr-2 text-wonderwhiz-gold" />
+              Knowledge Badges
+            </h3>
+            
+            <div className="flex items-center justify-center py-6 px-4 text-center">
+              <div>
+                <div className="w-14 h-14 rounded-full bg-wonderwhiz-purple/20 mx-auto flex items-center justify-center text-2xl">
+                  ✨
+                </div>
+                <p className="mt-3 text-white font-medium">Your badges will appear here!</p>
+                <p className="text-white/60 text-sm mt-1">Explore topics to earn knowledge badges</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+    );
   }
   
   return (

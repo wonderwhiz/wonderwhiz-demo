@@ -6,16 +6,37 @@ import { Card, CardContent } from '@/components/ui/card';
 import { BookOpen, Sparkles, Brain } from 'lucide-react';
 
 interface TopicExplorerProps {
-  recentlyViewedTopics: string[];
-  strongestTopics: {topic: string, level: number}[];
-  onTopicClick: (topic: string) => void;
+  childId?: string;
+  pastCurios?: any[];
+  recentlyViewedTopics?: string[];
+  strongestTopics?: {topic: string, level: number}[];
+  onTopicClick?: (topic: string) => void;
 }
 
 const TopicExplorer: React.FC<TopicExplorerProps> = ({
-  recentlyViewedTopics,
-  strongestTopics,
-  onTopicClick
+  childId,
+  pastCurios = [],
+  recentlyViewedTopics = [],
+  strongestTopics = [],
+  onTopicClick = () => {}
 }) => {
+  // Extract topics from past curios if recentlyViewedTopics wasn't provided
+  const displayTopics = recentlyViewedTopics.length > 0 
+    ? recentlyViewedTopics 
+    : pastCurios
+      ?.slice(0, 5)
+      ?.map(curio => curio?.title || '')
+      ?.filter(Boolean) || [];
+  
+  // Create default strongestTopics if none provided
+  const displayStrongestTopics = strongestTopics.length > 0 
+    ? strongestTopics 
+    : [
+        { topic: 'Space', level: 3 },
+        { topic: 'Animals', level: 2 },
+        { topic: 'Science', level: 1 }
+      ];
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -31,11 +52,11 @@ const TopicExplorer: React.FC<TopicExplorerProps> = ({
           </h3>
           
           <div className="space-y-4">
-            {recentlyViewedTopics.length > 0 && (
+            {displayTopics.length > 0 && (
               <div>
                 <h4 className="text-sm font-medium text-white/70 mb-2">Recently Learned</h4>
                 <div className="flex flex-wrap gap-2">
-                  {recentlyViewedTopics.slice(0, 3).map((topic, index) => (
+                  {displayTopics.slice(0, 3).map((topic, index) => (
                     <Button
                       key={index}
                       variant="outline"
@@ -50,11 +71,11 @@ const TopicExplorer: React.FC<TopicExplorerProps> = ({
               </div>
             )}
             
-            {strongestTopics.length > 0 && (
+            {displayStrongestTopics.length > 0 && (
               <div>
                 <h4 className="text-sm font-medium text-white/70 mb-2">Your Super Powers</h4>
                 <div className="flex flex-wrap gap-2">
-                  {strongestTopics.slice(0, 3).map((item, index) => (
+                  {displayStrongestTopics.slice(0, 3).map((item, index) => (
                     <Button
                       key={index}
                       variant="outline"

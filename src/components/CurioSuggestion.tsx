@@ -7,12 +7,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 
+type CardType = 'space' | 'animals' | 'science' | 'history' | 'technology' | 'general';
+
 interface CurioSuggestionProps {
   suggestion: string;
   onClick: (suggestion: string) => void;
-  index: number;
+  index?: number;
   directGenerate?: boolean;
   profileId?: string;
+  type?: CardType;
+  loading?: boolean;
 }
 
 const COLOR_VARIANTS = [
@@ -22,9 +26,11 @@ const COLOR_VARIANTS = [
 const CurioSuggestion: React.FC<CurioSuggestionProps> = ({ 
   suggestion, 
   onClick,
-  index,
+  index = 0,
   directGenerate = true,
-  profileId
+  profileId,
+  type = 'general',
+  loading = false
 }) => {
   const colorVariant = COLOR_VARIANTS[index % COLOR_VARIANTS.length];
   const navigate = useNavigate();
@@ -211,8 +217,14 @@ const CurioSuggestion: React.FC<CurioSuggestionProps> = ({
       >
         <button
           onClick={handleClick}
-          className="w-full h-full p-4 bg-white/10 text-white text-left rounded-2xl border-white/20 hover:bg-white/20 transition-colors font-nunito"
+          className={`w-full h-full p-4 bg-white/10 text-white text-left rounded-2xl border-white/20 hover:bg-white/20 transition-colors font-nunito ${loading ? 'opacity-70' : ''}`}
+          disabled={loading}
         >
+          {loading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-2xl">
+              <div className="animate-spin h-5 w-5 border-2 border-white/60 border-t-transparent rounded-full"></div>
+            </div>
+          )}
           <span className="block font-bold line-clamp-2">{displayText}</span>
           <span className="block mt-1 text-xs text-white/70 line-clamp-1">
             {suggestion}

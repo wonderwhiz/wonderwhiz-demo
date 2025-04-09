@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -17,7 +18,7 @@ const getCardTypeForSuggestion = (suggestion: string): CardType => {
   if (suggestion.includes('animal')) return 'animals';
   if (suggestion.includes('science')) return 'science';
   if (suggestion.includes('history')) return 'history';
-   if (suggestion.includes('technology')) return 'technology';
+  if (suggestion.includes('technology')) return 'technology';
   return 'general';
 };
 
@@ -39,7 +40,7 @@ const SmartDashboard = ({
   onCurioSuggestionClick,
   handleRefreshSuggestions,
   pastCurios
-}) => {
+}: SmartDashboardProps) => {
   // Add state for managing sparks and streak
   const [sparks, setSparks] = useState(childProfile?.sparks_balance || 0);
   const [streak, setStreak] = useState(childProfile?.streak_days || 0);
@@ -49,6 +50,18 @@ const SmartDashboard = ({
     setSparks(childProfile?.sparks_balance || 0);
     setStreak(childProfile?.streak_days || 0);
   }, [childProfile]);
+
+  // Mock function for topic clicks - will be replaced with actual navigation
+  const handleTopicClick = (topicQuery: string) => {
+    onCurioSuggestionClick(topicQuery);
+  };
+
+  // Mock function for curio clicks - will be replaced with actual navigation
+  const handleCurioClick = (curio: any) => {
+    if (curio && curio.query) {
+      onCurioSuggestionClick(curio.query);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -61,6 +74,8 @@ const SmartDashboard = ({
             onClick={() => onCurioSuggestionClick(suggestion)}
             type={getCardTypeForSuggestion(suggestion)}
             loading={isLoadingSuggestions}
+            index={index}
+            profileId={childId}
           />
         ))}
       </div>
@@ -70,7 +85,11 @@ const SmartDashboard = ({
         {/* Column 1: Brain Power */}
         <Card className="bg-white/5 border-white/10 overflow-hidden">
           <CardContent className="p-0">
-            <TopicExplorer childId={childId} pastCurios={pastCurios} />
+            <TopicExplorer 
+              childId={childId} 
+              pastCurios={pastCurios}
+              onTopicClick={handleTopicClick}
+            />
           </CardContent>
         </Card>
 
@@ -88,7 +107,11 @@ const SmartDashboard = ({
 
           <Card className="bg-white/5 border-white/10 overflow-hidden">
             <CardContent className="p-0">
-              <MemoryJourney childId={childId} />
+              <MemoryJourney 
+                childId={childId} 
+                pastCurios={pastCurios}
+                onCurioClick={handleCurioClick}
+              />
             </CardContent>
           </Card>
         </div>
