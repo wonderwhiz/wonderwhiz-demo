@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppleButton } from '@/components/ui/apple-button';
@@ -139,23 +138,12 @@ const AppleDashboard: React.FC<AppleDashboardProps> = ({
     }
   };
 
-  // Helper function to render a fallback avatar if image fails to load
   const renderProfileAvatar = () => {
     const name = childProfile?.name || 'Explorer';
     const initial = name.charAt(0).toUpperCase();
     
     return (
       <Avatar className="h-14 w-14 border-2 border-white/20">
-        {childProfile?.avatar_url ? (
-          <img 
-            src={childProfile.avatar_url} 
-            alt={name}
-            className="object-cover"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-            }}
-          />
-        ) : null}
         <div className="bg-gradient-to-br from-amber-400 to-pink-500 w-full h-full flex items-center justify-center text-2xl font-medium text-white">
           {initial}
         </div>
