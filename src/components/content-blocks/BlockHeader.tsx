@@ -53,6 +53,46 @@ const BlockHeader: React.FC<BlockHeaderProps> = ({
     }
   };
 
+  // Get specialist tagline based on current topic or type
+  const getSpecialistTagline = () => {
+    if (blockTitle.toLowerCase().includes('jupiter') || blockTitle.toLowerCase().includes('space')) {
+      switch (specialistId) {
+        case 'nova':
+          return "Your cosmic guide to Jupiter's mysteries";
+        case 'spark':
+          return "Igniting creative curiosity about space";
+        case 'prism':
+          return "Revealing the science of gas giants";
+        case 'pixel':
+          return "Exploring space through technology";
+        case 'atlas':
+          return "Mapping Jupiter's historical discovery";
+        case 'lotus':
+          return "Connecting Earth's life to space";
+        default:
+          return specialistName;
+      }
+    }
+    
+    // Default taglines if not Jupiter/space related
+    switch (specialistId) {
+      case 'nova':
+        return "Space Expert";
+      case 'spark':
+        return "Creative Genius";
+      case 'prism':
+        return "Science Whiz";
+      case 'pixel':
+        return "Tech Guru";
+      case 'atlas':
+        return "History Buff";
+      case 'lotus':
+        return "Nature Guide";
+      default:
+        return specialistName;
+    }
+  };
+
   return (
     <div className="mb-3 flex items-center">
       <motion.div 
@@ -65,7 +105,7 @@ const BlockHeader: React.FC<BlockHeaderProps> = ({
       
       <div>
         <h3 className="text-white text-sm font-medium leading-tight">{blockTitle}</h3>
-        <p className="text-white/60 text-xs">{specialistName}</p>
+        <p className="text-white/60 text-xs">{getSpecialistTagline()}</p>
       </div>
     </div>
   );

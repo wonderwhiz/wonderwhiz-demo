@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Lightbulb, Sparkles, Map, Compass, BookOpen, Brain, Rocket, Leaf, History } from 'lucide-react';
@@ -38,92 +39,114 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
     setLoading(true);
     
     const generateSuggestions = () => {
-      const topics = curioTitle.toLowerCase().split(' ')
-        .filter(word => word.length > 3)
-        .filter(word => !['what', 'when', 'where', 'why', 'how', 'does', 'and', 'the', 'for', 'with'].includes(word));
+      // Extract topic keywords from the title
+      const topics = curioTitle.toLowerCase().split(' ');
+      const isAboutJupiter = topics.includes('jupiter') || topics.includes('jupiter?');
+      const isAboutLife = topics.includes('life');
+      const isAboutSpace = topics.includes('space') || topics.includes('planet') || isAboutJupiter;
       
-      const subjectAreas = specialistIds.map(id => {
-        switch(id) {
-          case 'nova': return 'space exploration';
-          case 'spark': return 'creative thinking';
-          case 'prism': return 'scientific inquiry';
-          case 'pixel': return 'technology concepts';
-          case 'atlas': return 'historical events';
-          case 'lotus': return 'natural world';
-          default: return 'interesting topics';
-        }
-      });
+      let newSuggestions: Suggestion[] = [];
       
-      const mainTopic = topics[0] || 'this topic';
-      
-      if (mainTopic.includes('beach') || mainTopic.includes('goa') || curioTitle.toLowerCase().includes('beach') || curioTitle.toLowerCase().includes('goa')) {
-        const newSuggestions: Suggestion[] = [
+      // Jupiter/space specific suggestions
+      if (isAboutJupiter) {
+        newSuggestions = [
           {
-            title: `Marine biodiversity in Goan beaches`,
-            description: `Explore the fascinating underwater life and ecosystems around North Goa's beaches`,
+            title: `Jupiter's Great Red Spot: The largest storm in our solar system`,
+            description: `Discover this enormous storm that has been raging for at least 400 years and is larger than Earth itself`,
+            icon: 'compass',
+            difficulty: 'easy',
+            category: 'space'
+          },
+          {
+            title: `Jupiter's moons: Europa, Ganymede, and the search for alien oceans`,
+            description: `Explore the fascinating ice moons of Jupiter that might harbor oceans - and possibly life!`,
+            icon: 'rocket',
+            difficulty: 'medium',
+            category: 'space'
+          },
+          {
+            title: `Why is Jupiter so important for Earth's protection?`,
+            description: `Learn how Jupiter's massive gravitational pull acts like a cosmic shield for Earth`,
+            icon: 'leaf',
+            difficulty: 'medium',
+            category: 'science'
+          },
+          {
+            title: `The history of Jupiter exploration: From Galileo to NASA's missions`,
+            description: `Journey through time to see how our understanding of Jupiter has evolved through space missions`,
+            icon: 'history',
+            difficulty: 'medium',
+            category: 'history'
+          }
+        ];
+      } 
+      // Life in space suggestions
+      else if (isAboutLife && isAboutSpace) {
+        newSuggestions = [
+          {
+            title: `What makes a planet habitable? The Goldilocks Zone explained`,
+            description: `Discover why some planets can support life while others can't through the concept of habitable zones`,
+            icon: 'sparkles',
+            difficulty: 'medium',
+            category: 'science'
+          },
+          {
+            title: `Extremophiles: Life that survives in impossible conditions`,
+            description: `Meet the incredible organisms on Earth that thrive in environments similar to other planets`,
             icon: 'leaf',
             difficulty: 'medium',
             category: 'nature'
           },
           {
-            title: `How are beaches formed? The geology behind coastal landscapes`,
-            description: `Discover the fascinating geological processes that create and shape beaches over time`,
+            title: `How do scientists search for life on other planets?`,
+            description: `Learn about the technology and methods used to detect potential life beyond Earth`,
+            icon: 'brain',
+            difficulty: 'advanced',
+            category: 'technology'
+          },
+          {
+            title: `Mars vs. Europa: Where might we find alien life first?`,
+            description: `Compare the potential for discovering life on Mars and Jupiter's moon Europa`,
+            icon: 'rocket',
+            difficulty: 'medium',
+            category: 'space'
+          }
+        ];
+      }
+      // General space suggestions
+      else if (isAboutSpace) {
+        newSuggestions = [
+          {
+            title: `Our solar system's gas giants: Jupiter, Saturn, Neptune and Uranus`,
+            description: `Explore the differences and similarities between the enormous gas planets`,
             icon: 'map',
             difficulty: 'easy',
+            category: 'space'
+          },
+          {
+            title: `How do planets form? The birth of solar systems`,
+            description: `Discover the fascinating science behind how dust and gas become planets`,
+            icon: 'brain',
+            difficulty: 'medium',
             category: 'science'
           },
           {
-            title: `History of tourism in Goa: From hippie haven to global hotspot`,
-            description: `Learn how Goa transformed from a Portuguese colony to India's premiere beach destination`,
+            title: `Space exploration timeline: Humanity's greatest journey`,
+            description: `Travel through history to witness our most significant achievements in space`,
             icon: 'history',
             difficulty: 'medium',
             category: 'history'
           },
           {
-            title: `Cultural influences on Goa's unique identity`,
-            description: `Explore how Portuguese heritage blends with Indian culture in Goa's food, music, and architecture`,
-            icon: 'sparkles',
-            difficulty: 'medium',
-            category: 'creativity'
-          }
-        ];
-        
-        setSuggestions(newSuggestions);
-      } 
-      else if (mainTopic.includes('dinosaur')) {
-        const newSuggestions: Suggestion[] = [
-          {
-            title: `How did dinosaurs become extinct?`,
-            description: `Explore the theories about the dinosaur extinction event`,
+            title: `Could humans live on another planet someday?`,
+            description: `Examine the challenges and possibilities of humans becoming an interplanetary species`,
             icon: 'rocket',
-            difficulty: 'medium',
-            category: 'science'
-          },
-          {
-            title: `Dinosaur fossils and how paleontologists study them`,
-            description: `Discover how scientists learn about dinosaurs from ancient remains`,
-            icon: 'map',
-            difficulty: 'easy',
-            category: 'science'
-          },
-          {
-            title: `The evolution of birds from dinosaurs`,
-            description: `Learn about the fascinating connection between modern birds and dinosaurs`,
-            icon: 'leaf',
-            difficulty: 'medium',
-            category: 'nature'
-          },
-          {
-            title: `What did dinosaurs eat?`,
-            description: `Exploring herbivore, carnivore, and omnivore dinosaurs`,
-            icon: 'leaf',
-            difficulty: 'easy',
-            category: 'nature'
+            difficulty: 'advanced',
+            category: 'technology'
           }
         ];
-        
-        setSuggestions(newSuggestions);
-      } 
+      }
+      // Default suggestions for general topics
       else {
         const newSuggestions: Suggestion[] = [
           {
@@ -159,6 +182,7 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
         setSuggestions(newSuggestions);
       }
       
+      setSuggestions(newSuggestions);
       setLoading(false);
     };
     
@@ -299,7 +323,7 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
           transition={{ duration: 0.5 }}
           className="text-xl sm:text-2xl font-bold text-white font-nunito bg-clip-text text-transparent bg-gradient-to-r from-wonderwhiz-vibrant-yellow to-wonderwhiz-bright-pink"
         >
-          Dive Deeper: Learning Pathways
+          Continue Your Space Exploration
         </motion.h3>
         <motion.p 
           initial={{ opacity: 0, y: 20 }}
@@ -307,7 +331,7 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
           transition={{ duration: 0.5, delay: 0.1 }}
           className="text-white/70 text-sm mt-2"
         >
-          Follow your curiosity and build your knowledge through related topics
+          Discover more amazing facts about Jupiter and life in our solar system
         </motion.p>
         
         <motion.div 
@@ -362,15 +386,7 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
                   suggestion.difficulty === 'medium' ? 'from-blue-400 to-indigo-500' :
                   'from-purple-400 to-pink-500'
                 } flex items-center justify-center text-white shadow-sm`}>
-                  {suggestion.icon === 'lightbulb' ? <Lightbulb className="w-5 h-5" /> :
-                   suggestion.icon === 'sparkles' ? <Sparkles className="w-5 h-5" /> :
-                   suggestion.icon === 'map' ? <Map className="w-5 h-5" /> :
-                   suggestion.icon === 'compass' ? <Compass className="w-5 h-5" /> :
-                   suggestion.icon === 'book' ? <BookOpen className="w-5 h-5" /> :
-                   suggestion.icon === 'brain' ? <Brain className="w-5 h-5" /> :
-                   suggestion.icon === 'rocket' ? <Rocket className="w-5 h-5" /> :
-                   suggestion.icon === 'leaf' ? <Leaf className="w-5 h-5" /> :
-                   <History className="w-5 h-5" />}
+                  {getIconComponent(suggestion.icon)}
                 </div>
                 
                 <div className="flex-1">
