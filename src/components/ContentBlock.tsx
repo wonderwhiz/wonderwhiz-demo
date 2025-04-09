@@ -23,10 +23,14 @@ import BlockHeader from './content-blocks/BlockHeader';
 import BlockInteractions from './content-blocks/BlockInteractions';
 import BlockReplies from './content-blocks/BlockReplies';
 import ContextualImage from './content-blocks/ContextualImage';
+import WonderPrompt from './content-blocks/WonderPrompt';
+import NarrativeGuide from './content-blocks/NarrativeGuide';
+import ConnectionsPanel from './content-blocks/ConnectionsPanel';
 
 // Utils
 import { getSpecialistStyle, getBlockTitle } from './content-blocks/utils/specialistUtils';
 import { getContextualImage, checkImageCache } from './content-blocks/utils/imageUtils';
+import { getSequencePosition, shouldShowWonderPrompt } from './content-blocks/utils/narrativeUtils';
 
 interface ContentBlockProps {
   block: any;
@@ -45,6 +49,10 @@ interface ContentBlockProps {
   userId?: string;
   childProfileId?: string;
   isFirstBlock?: boolean;
+  totalBlocks?: number;
+  sequencePosition?: number;
+  previousBlock?: any;
+  nextBlock?: any;
 }
 
 interface BlockReply {
@@ -83,7 +91,11 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   colorVariant = 0,
   userId,
   childProfileId,
-  isFirstBlock = false
+  isFirstBlock = false,
+  totalBlocks = 1,
+  sequencePosition = 0,
+  previousBlock,
+  nextBlock
 }) => {
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replies, setReplies] = useState<BlockReply[]>([]);
@@ -101,14 +113,22 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   
   const specialistStyle = getSpecialistStyle(block.specialist_id);
   const blockTitle = getBlockTitle(block);
-
+  
+  const narrativePosition = getSequencePosition(sequencePosition, totalBlocks);
+  
+  const showWonderPromptHere = shouldShowWonderPrompt(
+    block.type, 
+    narrativePosition, 
+    block.specialist_id, 
+    sequencePosition
+  );
+  
   useEffect(() => {
     const loadCachedImage = async () => {
       if (!isFirstBlock || contextualImage || imageRequestInProgress) {
         return;
       }
       
-      // Try to get image from cache first
       const cachedImage = checkImageCache(block.id);
       if (cachedImage) {
         console.log(`[${block.id}] Found cached image, using it immediately`);
@@ -116,7 +136,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         return;
       } 
       
-      // Generate a new image if needed
       console.log(`[${block.id}] No cached image found, proceeding silently`);
       tryGenerateImage();
     };
@@ -125,7 +144,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       loadCachedImage();
     }
 
-    // Fetch existing replies when the block loads
     const fetchReplies = async () => {
       if (block.id && !block.id.startsWith('generating-') && !block.id.startsWith('error-')) {
         try {
@@ -170,7 +188,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     const reqId = imageRequestId;
     console.log(`[${reqId}][${block.id}] Starting image generation`);
     
-    // Set a timeout to show loading state for a bit
     const timerId = setTimeout(() => {
       console.log(`[${reqId}][${block.id}] Image generation taking longer than expected`);
       setImageTimerId(null);
@@ -178,27 +195,22 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     
     setImageTimerId(timerId);
     
-    // Call the image generation function
     const result = await getContextualImage(block, isFirstBlock, reqId, imageRetryCountRef);
     
-    // Clear any loading timer
     if (imageTimerId) {
       clearTimeout(imageTimerId);
       setImageTimerId(null);
     }
     
-    // Update state based on result
     setContextualImage(result.contextualImage);
     setImageError(result.imageError);
     setImageLoading(result.imageLoading);
     setImageRequestInProgress(result.imageRequestInProgress);
     setImageDescription(result.imageDescription || "A magical adventure awaits!");
     
-    // If there was an error, increment retry count but continue silently
     if (result.imageError) {
       imageRetryCountRef.current += 1;
       
-      // Don't retry automatically - we'll silently fail with a friendly message
       setImageLoading(false);
       setImageRequestInProgress(false);
     }
@@ -209,7 +221,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     setImageError("Image failed to load");
     setContextualImage(null);
     
-    // Don't retry automatically - we'll silently fail with a friendly message
     setImageLoading(false);
     setImageRequestInProgress(false);
   };
@@ -252,7 +263,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       setIsLoading(true);
       console.log('Ensuring block exists in database:', block.id);
 
-      // Skip the ensure-block-exists call for temporary blocks
       if (!block.id.startsWith('generating-') && !block.id.startsWith('error-')) {
         try {
           const {
@@ -275,17 +285,14 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
           
           if (ensureBlockError) {
             console.error('Error ensuring block exists:', ensureBlockError);
-            // Continue with the reply even if block ensure fails
           } else {
             console.log('Block ensured in database:', ensureBlockData);
           }
         } catch (ensureError) {
           console.error('Exception ensuring block exists:', ensureError);
-          // Continue with the reply even if block ensure fails
         }
       }
 
-      // Directly add the reply to supabase without the extra ensure-block step
       try {
         const {
           data: replyData,
@@ -305,7 +312,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         
         console.log('Reply added successfully:', replyData);
         
-        // Now get the specialist reply
         await handleSpecialistReply(block.id, replyText);
         
         onReply(block.id, replyText);
@@ -316,7 +322,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     } catch (error) {
       console.error('Error handling reply:', error);
 
-      // Remove the temporary reply if there was an error
       setReplies(prev => prev.filter(r => r.id !== tempId));
       
       toast.error("There was an error sending your message. Please try again.");
@@ -404,7 +409,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   const handleCreativeUploadSuccess = (feedback: string) => {
     setUploadFeedback(feedback);
     
-    // Display toast with sparks earned
     toast.success(
       <div className="flex flex-col">
         <span className="font-medium">Uploaded successfully!</span> 
@@ -418,7 +422,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       }
     );
     
-    // Call the parent handler
     if (onCreativeUpload) {
       onCreativeUpload();
     }
@@ -428,27 +431,61 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     switch (block.type) {
       case 'fact':
       case 'funFact':
-        return <FactBlock content={block.content} onRabbitHoleClick={handleRabbitHoleClick} expanded={expanded} setExpanded={setExpanded} textSize={getTextSize(block.type)} />;
+        return <FactBlock 
+          content={block.content} 
+          onRabbitHoleClick={handleRabbitHoleClick} 
+          expanded={expanded} 
+          setExpanded={setExpanded} 
+          textSize={getTextSize(block.type)}
+          narrativePosition={narrativePosition}
+        />;
       case 'quiz':
-        return <QuizBlock content={block.content} onQuizCorrect={onQuizCorrect} />;
+        return <QuizBlock 
+          content={block.content} 
+          onQuizCorrect={onQuizCorrect}
+          narrativePosition={narrativePosition}
+        />;
       case 'flashcard':
-        return <FlashcardBlock content={block.content} />;
+        return <FlashcardBlock 
+          content={block.content}
+          narrativePosition={narrativePosition}
+        />;
       case 'creative':
         return <CreativeBlock 
           content={block.content} 
           onCreativeUpload={() => handleCreativeUploadSuccess(uploadFeedback || "Your artwork is amazing! I love the colors and creativity you've shown. You're a wonderful artist!")} 
           uploadFeedback={uploadFeedback}
+          narrativePosition={narrativePosition}
         />;
       case 'task':
-        return <TaskBlock content={block.content} onTaskComplete={onTaskComplete || (() => {})} />;
+        return <TaskBlock 
+          content={block.content} 
+          onTaskComplete={onTaskComplete || (() => {})}
+          narrativePosition={narrativePosition}
+        />;
       case 'riddle':
-        return <RiddleBlock content={block.content} />;
+        return <RiddleBlock 
+          content={block.content}
+          narrativePosition={narrativePosition}
+        />;
       case 'news':
-        return <NewsBlock content={block.content} onNewsRead={onNewsRead || (() => {})} />;
+        return <NewsBlock 
+          content={block.content} 
+          onNewsRead={onNewsRead || (() => {})}
+          narrativePosition={narrativePosition}
+        />;
       case 'activity':
-        return <ActivityBlock content={block.content} onActivityComplete={onActivityComplete || (() => {})} />;
+        return <ActivityBlock 
+          content={block.content} 
+          onActivityComplete={onActivityComplete || (() => {})}
+          narrativePosition={narrativePosition}
+        />;
       case 'mindfulness':
-        return <MindfulnessBlock content={block.content} onMindfulnessComplete={onMindfulnessComplete || (() => {})} />;
+        return <MindfulnessBlock 
+          content={block.content} 
+          onMindfulnessComplete={onMindfulnessComplete || (() => {})}
+          narrativePosition={narrativePosition}
+        />;
       default:
         return <p className="text-white/70 text-sm">This content type is not supported yet.</p>;
     }
@@ -459,11 +496,34 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   }
 
   return (
-    <Card className={`overflow-hidden transition-colors duration-300 hover:shadow-md w-full ${specialistStyle.gradient} bg-opacity-10`}>
-      <div className="p-2.5 sm:p-3 md:p-4 bg-wonderwhiz-purple">
+    <Card className={`overflow-hidden transition-colors duration-300 hover:shadow-md w-full ${specialistStyle.gradient} bg-opacity-10 relative`}>
+      {sequencePosition > 0 && (
+        <div className="absolute -left-3 top-1/2 transform -translate-y-1/2 hidden md:block">
+          <div 
+            className={`h-1.5 w-8 ${
+              narrativePosition === 'beginning' ? 'bg-gradient-to-r from-wonderwhiz-vibrant-yellow to-wonderwhiz-bright-pink' : 
+              narrativePosition === 'middle' ? 'bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-cyan' :
+              'bg-gradient-to-r from-wonderwhiz-cyan to-wonderwhiz-vibrant-yellow'
+            } rounded-full opacity-80`}
+          />
+        </div>
+      )}
+      
+      <div className="p-2.5 sm:p-3 md:p-4 bg-wonderwhiz-purple relative">
+        {narrativePosition === 'beginning' && (
+          <NarrativeGuide 
+            specialistId={block.specialist_id}
+            blockType={block.type}
+            previousBlock={previousBlock}
+            nextBlock={nextBlock}
+          />
+        )}
+        
         <BlockHeader 
           specialistId={block.specialist_id} 
           blockTitle={blockTitle}
+          blockType={block.type}
+          narrativePosition={narrativePosition}
         />
         
         {isFirstBlock && (
@@ -479,6 +539,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
                 handleImageLoadError={handleImageLoadError}
                 handleRetryImage={handleRetryImage}
                 getContextualImageStyle={getContextualImageStyle}
+                narrativePosition={narrativePosition}
               />
             </AnimatePresence>
           </div>
@@ -487,6 +548,25 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         <div className="mb-4">
           {renderBlockContent()}
         </div>
+        
+        {showWonderPromptHere && (
+          <WonderPrompt 
+            specialistId={block.specialist_id}
+            blockType={block.type}
+            blockContent={block.content}
+            onRabbitHoleClick={handleRabbitHoleClick}
+            narrativePosition={narrativePosition}
+          />
+        )}
+        
+        {narrativePosition === 'end' && (
+          <ConnectionsPanel
+            blockType={block.type}
+            blockContent={block.content}
+            specialistId={block.specialist_id}
+            onRabbitHoleClick={handleRabbitHoleClick}
+          />
+        )}
         
         <BlockReplies 
           replies={replies} 
@@ -501,6 +581,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
           onToggleBookmark={onToggleBookmark}
           setShowReplyForm={setShowReplyForm}
           blockType={block.type}
+          narrativePosition={narrativePosition}
         />
         
         {showReplyForm && (

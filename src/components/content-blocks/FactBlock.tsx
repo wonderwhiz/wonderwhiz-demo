@@ -1,204 +1,247 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getBlockTypeColor, getHoverAnimation } from '@/components/BlockStyleUtils';
-import { ArrowRight, MessageCircle, BrainCircuit, Sparkles, ArrowDown, LightbulbIcon } from 'lucide-react';
+import { ArrowRight, Sparkles, LucideIcon } from 'lucide-react';
+import { shouldShowPlotTwist } from './utils/narrativeUtils';
 
 interface FactBlockProps {
   content: {
     fact: string;
-    rabbitHoles?: string[];
-    thoughtQuestion?: string; // New field for thought-provoking questions
+    extended_content?: string;
+    image_prompt?: string;
+    surprise_element?: string;
   };
-  onRabbitHoleClick?: (question: string) => void;
-  expanded?: boolean;
-  setExpanded?: (expanded: boolean) => void;
-  textSize?: string;
+  onRabbitHoleClick: (question: string) => void;
+  expanded: boolean;
+  setExpanded: (expanded: boolean) => void;
+  textSize: string;
+  narrativePosition?: 'beginning' | 'middle' | 'end';
 }
 
 const FactBlock: React.FC<FactBlockProps> = ({ 
   content, 
-  onRabbitHoleClick,
-  expanded = false,
-  setExpanded = () => {},
-  textSize = 'text-base'
+  onRabbitHoleClick, 
+  expanded, 
+  setExpanded,
+  textSize,
+  narrativePosition = 'middle'
 }) => {
-  const [selectedRabbitHole, setSelectedRabbitHole] = useState<string | null>(null);
-  const [animateInsight, setAnimateInsight] = useState<boolean>(false);
-  const [showThoughtQuestion, setShowThoughtQuestion] = useState<boolean>(false);
+  const [showWonderTrigger, setShowWonderTrigger] = useState(false);
+  const [revealedSurprise, setRevealedSurprise] = useState(false);
   
-  // Handle edge cases where content might not be properly structured
-  const fact = content?.fact || "Interesting fact coming soon...";
-  const rabbitHoles = content?.rabbitHoles || [];
-  const hasRabbitHoles = Array.isArray(rabbitHoles) && rabbitHoles.length > 0;
+  // Generate suggested rabbit hole questions based on the fact
+  const generateRabbitHoleQuestions = (): string[] => {
+    if (!content.fact) return [];
+    
+    // Extract key terms
+    const words = content.fact.split(' ');
+    const keyTerms = words.filter(word => 
+      word.length > 4 && !['about', 'that', 'there', 'these', 'those', 'would', 'could', 'should'].includes(word.toLowerCase())
+    ).slice(0, 3);
+    
+    if (keyTerms.length === 0) return [];
+    
+    // Generate questions based on key terms
+    return [
+      `What makes ${keyTerms[0]} so fascinating?`,
+      keyTerms.length > 1 ? `How does ${keyTerms[0]} affect ${keyTerms[1]}?` : `How does ${keyTerms[0]} change our world?`,
+      keyTerms.length > 2 ? `Why is ${keyTerms[2]} important to understand?` : `What more can we learn about ${keyTerms[0]}?`
+    ];
+  };
   
-  // Get the thought question from content or generate one
-  const thoughtQuestion = content?.thoughtQuestion || getThoughtProvokingQuestion(fact);
+  const rabbitHoleQuestions = generateRabbitHoleQuestions();
   
-  const handleRabbitHoleClick = (question: string) => {
-    setSelectedRabbitHole(question);
-    setTimeout(() => {
-      if (onRabbitHoleClick) {
-        onRabbitHoleClick(question);
+  // Check if we should show a plot twist
+  const hasSurpriseElement = content.surprise_element && !revealedSurprise;
+  
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { 
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
       }
-    }, 400);
-  };
-  
-  const toggleExpandFact = () => {
-    setExpanded(!expanded);
-    if (!expanded) {
-      setAnimateInsight(true);
-      setTimeout(() => setAnimateInsight(false), 1500);
-      
-      // After a delay, show the thought question
-      setTimeout(() => {
-        setShowThoughtQuestion(true);
-      }, 800);
-    } else {
-      setShowThoughtQuestion(false);
     }
   };
   
-  // Extract a thought-provoking question from the fact content
-  function getThoughtProvokingQuestion(factText: string) {
-    // Simple heuristic - check if the fact already ends with a question
-    if (factText.trim().endsWith('?')) {
-      return null; // Fact already ends with a question
-    }
-    
-    // Generate a generic thought-provoking question based on the content
-    // Check for keywords to create more relevant questions
-    const lowerFact = factText.toLowerCase();
-    
-    if (lowerFact.includes('animals') || lowerFact.includes('creature') || lowerFact.includes('species')) {
-      return "What other amazing adaptations might animals develop in the future?";
-    } else if (lowerFact.includes('space') || lowerFact.includes('planet') || lowerFact.includes('star') || lowerFact.includes('galaxy')) {
-      return "How does thinking about the vastness of space make you feel?";
-    } else if (lowerFact.includes('history') || lowerFact.includes('ancient') || lowerFact.includes('years ago')) {
-      return "How might our world be different if this part of history had turned out differently?";
-    } else if (lowerFact.includes('technology') || lowerFact.includes('invention') || lowerFact.includes('computer')) {
-      return "What inventions do you think we might create in the next 50 years?";
-    } else if (lowerFact.includes('brain') || lowerFact.includes('think') || lowerFact.includes('memory')) {
-      return "How does your brain help you understand the world in unique ways?";
-    }
-    
-    // Default question if no specific topics detected
-    return "What does this make you wonder about our incredible world?";
-  }
+  const textVariants = {
+    hidden: { opacity: 0, y: 10 },
+    visible: { opacity: 1, y: 0 }
+  };
   
-  // Show thought question after a delay when the block is expanded
-  React.useEffect(() => {
-    if (expanded && thoughtQuestion) {
-      const timer = setTimeout(() => {
-        setShowThoughtQuestion(true);
-      }, 1000);
-      
-      return () => clearTimeout(timer);
-    } else {
-      setShowThoughtQuestion(false);
-    }
-  }, [expanded, thoughtQuestion]);
+  // Render highlighted terms in fact text
+  const renderHighlightedFact = (text: string) => {
+    if (!text) return "";
+    
+    // Find key terms to highlight - simplified approach
+    const words = text.split(' ');
+    const keyWords = words.filter(word => 
+      word.length > 5 && 
+      !['about', 'there', 'these', 'those', 'would', 'could', 'should'].includes(word.toLowerCase())
+    ).slice(0, 3);
+    
+    if (keyWords.length === 0) return text;
+    
+    // Replace key words with highlighted versions
+    let highlightedText = text;
+    keyWords.forEach(word => {
+      // Only highlight whole words and preserve punctuation
+      const regex = new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+      highlightedText = highlightedText.replace(regex, match => 
+        `<span class="text-wonderwhiz-vibrant-yellow font-medium">${match}</span>`
+      );
+    });
+    
+    return highlightedText;
+  };
   
-  const factVariants = {
-    collapsed: { height: "auto" },
-    expanded: { height: "auto" }
+  // Get size class based on narrative position
+  const getTextSizeClass = () => {
+    if (narrativePosition === 'beginning') {
+      return 'text-base sm:text-lg';
+    }
+    return textSize === 'large' ? 'text-base sm:text-lg' : 'text-sm sm:text-base';
   };
 
   return (
-    <div className={`relative overflow-hidden ${getHoverAnimation('fact')}`}>
+    <motion.div 
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="relative"
+    >
       <motion.div 
-        className={`p-3 sm:p-4 rounded-lg ${getBlockTypeColor('fact')}`}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
+        variants={textVariants}
+        className={`${getTextSizeClass()} ${narrativePosition === 'beginning' ? 'font-medium' : ''}`}
       >
-        <motion.div 
-          variants={factVariants}
-          initial="collapsed"
-          animate={expanded ? "expanded" : "collapsed"}
-        >
-          <div className="flex items-start">
-            <div className="mr-3 mt-1 flex-shrink-0">
+        <p 
+          className="text-white"
+          dangerouslySetInnerHTML={{ __html: renderHighlightedFact(content.fact) }}
+        />
+      </motion.div>
+      
+      {/* Extended content (expandable) */}
+      {content.extended_content && (
+        <div className="mt-2">
+          <AnimatePresence>
+            {expanded ? (
               <motion.div
-                initial={{ scale: 1 }}
-                animate={{ 
-                  scale: animateInsight ? [1, 1.2, 1] : 1,
-                  rotate: animateInsight ? [0, 10, -10, 0] : 0
-                }}
-                transition={{ duration: 0.6 }}
-                className="h-6 w-6 bg-indigo-500/20 rounded-full flex items-center justify-center"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+                className="overflow-hidden"
               >
-                <LightbulbIcon className="w-3.5 h-3.5 text-wonderwhiz-gold" />
+                <p className="text-white text-sm sm:text-base mt-2">{content.extended_content}</p>
               </motion.div>
+            ) : (
+              <motion.button
+                onClick={() => setExpanded(true)}
+                className="text-wonderwhiz-bright-pink text-xs sm:text-sm hover:underline mt-1 flex items-center"
+                whileHover={{ x: 3 }}
+              >
+                <span>Learn more</span>
+                <ArrowRight className="ml-1 h-3 w-3" />
+              </motion.button>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
+      
+      {/* Surprise element/plot twist */}
+      {hasSurpriseElement && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.5, duration: 0.4 }}
+          className="mt-3 bg-gradient-to-r from-wonderwhiz-gold/20 to-wonderwhiz-bright-pink/20 backdrop-blur-sm rounded-lg p-3 border border-white/10 relative overflow-hidden"
+        >
+          <motion.div 
+            className="absolute top-0 left-0 w-full h-full bg-white/5"
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: 1 }}
+            transition={{ duration: 1.5, ease: "easeInOut" }}
+            style={{ transformOrigin: "left" }}
+          />
+          
+          <div className="relative">
+            <div className="flex items-center mb-2">
+              <div className="w-5 h-5 rounded-full bg-wonderwhiz-gold/30 flex items-center justify-center mr-2">
+                <Sparkles className="h-3 w-3 text-wonderwhiz-gold" />
+              </div>
+              <h5 className="text-white text-sm font-medium">Wait, there's more!</h5>
             </div>
-            <div className="flex-grow">
-              <p className={`${textSize} text-white`}>
-                {fact}
-              </p>
-              
-              {/* Thought-provoking question */}
-              <AnimatePresence>
-                {expanded && thoughtQuestion && showThoughtQuestion && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="mt-3 border-t border-white/10 pt-3"
-                  >
-                    <p className="text-white/90 text-sm flex items-start">
-                      <Sparkles className="w-4 h-4 mr-2 mt-0.5 text-wonderwhiz-gold" />
-                      <span className="italic">{thoughtQuestion}</span>
-                    </p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              
-              {/* Expand button - only show if not expanded and there's a thought question */}
-              {!expanded && thoughtQuestion && (
-                <motion.button
-                  onClick={toggleExpandFact}
-                  className="mt-2 text-white/70 hover:text-white/90 text-xs flex items-center group"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+            
+            <motion.button
+              className="text-white/90 text-sm hover:text-white"
+              onClick={() => setRevealedSurprise(true)}
+              whileHover={{ scale: 1.02 }}
+            >
+              Tap to reveal a surprising fact...
+            </motion.button>
+            
+            <AnimatePresence>
+              {revealedSurprise && (
+                <motion.p
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-white text-sm mt-2"
                 >
-                  <span>Think deeper</span>
-                  <ArrowDown className="ml-1 w-3 h-3 group-hover:animate-bounce" />
-                </motion.button>
+                  {content.surprise_element}
+                </motion.p>
               )}
-            </div>
+            </AnimatePresence>
           </div>
         </motion.div>
+      )}
+      
+      {/* "This made me wonder" prompt */}
+      <motion.div
+        variants={textVariants}
+        className="mt-4"
+      >
+        <div 
+          className="text-white/80 text-sm cursor-pointer"
+          onClick={() => setShowWonderTrigger(!showWonderTrigger)}
+        >
+          <p>What does this make you wonder about our incredible world?</p>
+        </div>
         
-        {hasRabbitHoles && (
-          <div className="mt-4">
-            <p className="text-white/60 text-xs mb-2 flex items-center">
-              <MessageCircle className="h-3 w-3 mr-1.5" />
-              Curious about...
-            </p>
-            
-            <div className="flex flex-wrap gap-2">
-              {rabbitHoles.slice(0, 3).map((question, index) => (
-                <motion.button
-                  key={`rabbit-hole-${index}`}
-                  onClick={() => handleRabbitHoleClick(question)}
-                  className={`text-xs px-2.5 py-1.5 rounded-full flex items-center 
-                    ${selectedRabbitHole === question
-                      ? 'bg-indigo-500 text-white'
-                      : 'bg-indigo-500/20 text-indigo-200 hover:bg-indigo-500/30'
-                    } transition-colors duration-200`}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <span>{question}</span>
-                  <ArrowRight className="ml-1.5 h-3 w-3" />
-                </motion.button>
-              ))}
-            </div>
-          </div>
-        )}
+        <AnimatePresence>
+          {showWonderTrigger && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mt-2 space-y-2 overflow-hidden"
+            >
+              <p className="text-white/60 text-sm">Curious about...</p>
+              
+              <ul className="space-y-2 pl-1">
+                {rabbitHoleQuestions.map((question, index) => (
+                  <motion.li
+                    key={index}
+                    initial={{ opacity: 0, x: -5 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.1 * index }}
+                  >
+                    <motion.button
+                      className="text-left text-white/80 text-sm hover:text-wonderwhiz-bright-pink group flex items-start"
+                      whileHover={{ x: 5 }}
+                      onClick={() => onRabbitHoleClick(question)}
+                    >
+                      <ArrowRight className="h-3.5 w-3.5 mr-2 mt-1 text-white/40 group-hover:text-wonderwhiz-bright-pink transition-colors" />
+                      <span>{question}</span>
+                    </motion.button>
+                  </motion.li>
+                ))}
+              </ul>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
-    </div>
+    </motion.div>
   );
 };
 

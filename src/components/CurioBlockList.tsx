@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ContentBlock from '@/components/ContentBlock';
@@ -8,6 +7,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import CurioBlockListLoadMore from './CurioBlockListLoadMore';
 import confetti from 'canvas-confetti';
+import { getNarrativeTheme } from './content-blocks/utils/narrativeUtils';
+import NarrativeProgress from './NarrativeProgress';
 
 interface CurioBlockListProps {
   blocks: ContentBlockType[];
@@ -73,6 +74,9 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
 
   // Safety check for blocks array
   const safeBlocks = Array.isArray(blocks) ? blocks : [];
+  
+  // Get the narrative theme for this content sequence
+  const narrativeTheme = getNarrativeTheme(safeBlocks);
   
   // Display error if there is one
   if (generationError) {
@@ -178,11 +182,9 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
     );
   }
 
-  // Block organization by type for better cognitive flow
-  const organizeBlocksByType = (blocks: ContentBlockType[]) => {
-    // Implementing a clear narrative arc as recommended
-    // Start with hook (fact), then build complexity gradually
-    const blockTypes = ['fact', 'funFact', 'quiz', 'activity', 'creative', 'mindfulness', 'task'];
+  // Organize blocks for narrative flow - keeping our cognitive progression
+  const organizeBlocksForNarrative = (blocks: ContentBlockType[]) => {
+    // We'll keep the existing organization but enhance it with narrative sequencing
     
     // First, ensure the first block is a fact/funFact that directly answers the question
     const firstFactIndex = blocks.findIndex(block => block.type === 'fact' || block.type === 'funFact');
@@ -192,27 +194,10 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
       blocks.unshift(firstFact);
     }
     
-    // Then ensure we have a clear narrative arc - fact → quiz → interactive → creative → reflective
+    // Ensure narrative flow: introduction → exploration → reflection
     const sortedBlocks = [...blocks];
     
-    // Ensure balance - limited to 6-7 high quality blocks with "wow factor"
-    // Don't show too many of the same block types in a row for better engagement
-    for (let i = 1; i < sortedBlocks.length - 1; i++) {
-      if (i > 0 && sortedBlocks[i].type === sortedBlocks[i-1].type) {
-        // Find the next block of a different type
-        for (let j = i+1; j < sortedBlocks.length; j++) {
-          if (sortedBlocks[j].type !== sortedBlocks[i].type) {
-            // Swap to avoid similar blocks in sequence
-            const temp = sortedBlocks[i];
-            sortedBlocks[i] = sortedBlocks[j];
-            sortedBlocks[j] = temp;
-            break;
-          }
-        }
-      }
-    }
-    
-    // Ensure reflective/mindfulness block appears near the end for cognitive processing
+    // Make sure mindfulness/reflection blocks appear near the end
     const mindfulnessIndex = sortedBlocks.findIndex(block => block.type === 'mindfulness');
     if (mindfulnessIndex > -1 && mindfulnessIndex < sortedBlocks.length - 3) {
       const mindfulnessBlock = sortedBlocks[mindfulnessIndex];
@@ -223,10 +208,33 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
       sortedBlocks.splice(insertPosition, 0, mindfulnessBlock);
     }
     
+    // Make sure creative blocks appear in the middle for application
+    const creativeIndices = sortedBlocks.reduce((indices, block, index) => {
+      if (block.type === 'creative') indices.push(index);
+      return indices;
+    }, [] as number[]);
+    
+    if (creativeIndices.length > 1) {
+      // Keep only one creative block in the first half, move others to middle
+      const firstCreative = sortedBlocks[creativeIndices[0]];
+      const otherCreatives = creativeIndices.slice(1).map(idx => sortedBlocks[idx]);
+      
+      // Remove all but first creative
+      for (let i = creativeIndices.length - 1; i > 0; i--) {
+        sortedBlocks.splice(creativeIndices[i], 1);
+      }
+      
+      // Place others in the middle
+      const middlePosition = Math.floor(sortedBlocks.length / 2);
+      otherCreatives.forEach((block, idx) => {
+        sortedBlocks.splice(middlePosition + idx, 0, block);
+      });
+    }
+    
     return sortedBlocks;
   };
   
-  const organizedBlocks = organizeBlocksByType(safeBlocks);
+  const narrativeBlocks = organizeBlocksForNarrative(safeBlocks);
 
   const container = {
     hidden: { opacity: 0 },
@@ -278,7 +286,15 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
       initial={animateBlocks ? "hidden" : false}
       animate={animateBlocks ? "show" : false}
     >
-      {organizedBlocks.map((block, index) => (
+      {/* Narrative progress indicator */}
+      {narrativeBlocks.length > 2 && (
+        <NarrativeProgress 
+          totalBlocks={narrativeBlocks.length} 
+          theme={narrativeTheme} 
+        />
+      )}
+      
+      {narrativeBlocks.map((block, index) => (
         <motion.div
           key={block.id}
           className="relative group"
@@ -323,6 +339,10 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
             colorVariant={index % 5}
             userId={profileId}
             childProfileId={profileId}
+            totalBlocks={narrativeBlocks.length}
+            sequencePosition={index}
+            previousBlock={index > 0 ? narrativeBlocks[index - 1] : undefined}
+            nextBlock={index < narrativeBlocks.length - 1 ? narrativeBlocks[index + 1] : undefined}
           />
         </motion.div>
       ))}
