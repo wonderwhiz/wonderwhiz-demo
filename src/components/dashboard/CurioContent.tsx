@@ -1,11 +1,11 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ContentBlock from '@/components/ContentBlock';
 import CurioLoading from '@/components/CurioLoading';
 import CurioLoadMore from '@/components/CurioLoadMore';
 import RabbitHoleSuggestions from '@/components/content-blocks/RabbitHoleSuggestions';
-import { AlertCircle, RefreshCw, Sparkles } from 'lucide-react';
+import { AlertCircle, RefreshCw, Sparkles, Brain, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface ContentBlock {
@@ -15,6 +15,13 @@ interface ContentBlock {
   content: any;
   liked: boolean;
   bookmarked: boolean;
+  learningContext?: {
+    sequencePosition: number;
+    totalBlocks: number;
+    cognitiveLevel: string;
+    timeOfDay: string;
+    recommendedPacing: string;
+  };
 }
 
 interface BlockReply {
@@ -75,6 +82,12 @@ const CurioContent: React.FC<CurioContentProps> = ({
   onRefresh,
   generationError
 }) => {
+  const [showLearningPath, setShowLearningPath] = useState(false);
+  const [showMentalBreak, setShowMentalBreak] = useState(false);
+  
+  // Mental break timer
+  const [breakTimeRemaining, setBreakTimeRemaining] = useState(10);
+  
   // Use memoization to avoid unnecessary re-renders
   const visibleBlocks = useMemo(() => {
     if (!contentBlocks) return [];
@@ -89,6 +102,84 @@ const CurioContent: React.FC<CurioContentProps> = ({
 
   // Determine if user has scrolled to the end
   const hasReachedEnd = !isGenerating && !hasMoreBlocks && visibleBlocks.length > 0;
+  
+  // Get the narrative arc and learning path
+  const learningPath = useMemo(() => {
+    if (!visibleBlocks || visibleBlocks.length === 0) return [];
+    
+    // Extract a simplified learning path from the blocks
+    return visibleBlocks.map((block, index) => ({
+      position: index + 1,
+      type: block.type,
+      specialist: block.specialist_id,
+      cognitiveLevel: block.learningContext?.cognitiveLevel || 
+                     (index === 0 ? "introductory" : 
+                      index === visibleBlocks.length - 1 ? "reflective" : "developmental"),
+      title: block.type === 'quiz' ? 
+             'Brain Teaser' : 
+             block.type === 'fact' || block.type === 'funFact' ? 
+             'Amazing Fact' :
+             block.type === 'creative' ? 
+             'Creative Challenge' :
+             block.type === 'mindfulness' ? 
+             'Mindful Moment' :
+             'Learning Activity'
+    }));
+  }, [visibleBlocks]);
+  
+  // Check if we need a mental break after intensive blocks
+  const needsMentalBreak = useMemo(() => {
+    if (!visibleBlocks || visibleBlocks.length < 3) return false;
+    
+    // Count how many intensive blocks (quiz, flashcard) in a row
+    let intensiveCount = 0;
+    for (let i = 0; i < visibleBlocks.length; i++) {
+      const blockType = visibleBlocks[i].type;
+      if (blockType === 'quiz' || blockType === 'flashcard') {
+        intensiveCount++;
+      } else {
+        intensiveCount = 0;
+      }
+      
+      // If we have 2 or more intensive blocks in a row and haven't shown a break yet
+      if (intensiveCount >= 2 && !showMentalBreak) {
+        return true;
+      }
+    }
+    
+    return false;
+  }, [visibleBlocks, showMentalBreak]);
+  
+  // Handle showing mental break
+  const handleShowMentalBreak = () => {
+    setShowMentalBreak(true);
+    
+    // Start countdown timer
+    const timer = setInterval(() => {
+      setBreakTimeRemaining(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setTimeout(() => {
+            setShowMentalBreak(false);
+            setBreakTimeRemaining(10);
+          }, 1000);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+  
+  // Show mental break if needed
+  React.useEffect(() => {
+    if (needsMentalBreak && !showMentalBreak) {
+      const timeout = setTimeout(() => {
+        handleShowMentalBreak();
+      }, 1000);
+      
+      return () => clearTimeout(timeout);
+    }
+  }, [needsMentalBreak, showMentalBreak]);
 
   if (!currentCurio) {
     return null;
@@ -104,14 +195,132 @@ const CurioContent: React.FC<CurioContentProps> = ({
           exit={{ opacity: 0 }}
         >
           <div className="max-w-4xl mx-auto">
-            <motion.h1
-              className="text-2xl sm:text-3xl md:text-4xl font-bold mb-6 text-center text-white font-nunito"
+            <motion.div
+              className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6"
               initial={{ y: -20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.4 }}
             >
-              {currentCurio.title}
-            </motion.h1>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center sm:text-left text-white font-nunito">
+                {currentCurio.title}
+              </h1>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowLearningPath(!showLearningPath)}
+                className="bg-white/10 hover:bg-white/20 text-white"
+              >
+                <BookOpen className="w-4 h-4 mr-2" />
+                {showLearningPath ? "Hide Learning Path" : "Show Learning Path"}
+              </Button>
+            </motion.div>
+            
+            {/* Learning Path Visualization */}
+            <AnimatePresence>
+              {showLearningPath && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mb-6 overflow-hidden"
+                >
+                  <div className="bg-white/5 backdrop-blur-sm rounded-lg p-4 border border-white/10">
+                    <h3 className="text-white text-lg font-medium mb-3 flex items-center">
+                      <Brain className="w-5 h-5 mr-2 text-wonderwhiz-gold" />
+                      Your Learning Journey
+                    </h3>
+                    
+                    <div className="relative">
+                      {/* Path line */}
+                      <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gradient-to-b from-wonderwhiz-bright-pink via-wonderwhiz-vibrant-yellow to-wonderwhiz-cyan" />
+                      
+                      {/* Learning steps */}
+                      <div className="space-y-3 pl-12 relative">
+                        {learningPath.map((step, index) => (
+                          <motion.div
+                            key={index}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.1 }}
+                            className="relative"
+                          >
+                            {/* Step marker */}
+                            <div className="absolute left-[-24px] w-8 h-8 rounded-full bg-white/10 flex items-center justify-center border-2 border-white/30">
+                              <span className="text-white text-xs font-bold">{step.position}</span>
+                            </div>
+                            
+                            {/* Step content */}
+                            <div className="flex items-center">
+                              <div 
+                                className={`px-3 py-1 rounded-full text-xs ${
+                                  step.cognitiveLevel === "introductory" ? "bg-emerald-500/20 text-emerald-200" :
+                                  step.cognitiveLevel === "reflective" ? "bg-purple-500/20 text-purple-200" :
+                                  "bg-blue-500/20 text-blue-200"
+                                }`}
+                              >
+                                {step.cognitiveLevel === "introductory" ? "Foundation" :
+                                 step.cognitiveLevel === "reflective" ? "Reflection" :
+                                 "Exploration"}
+                              </div>
+                              <span className="ml-2 text-white/90 text-sm">{step.title}</span>
+                              <span className="ml-auto text-white/60 text-xs">
+                                {step.specialist === "nova" ? "Discovery Expert" :
+                                 step.specialist === "spark" ? "Science Whiz" :
+                                 step.specialist === "prism" ? "Creative Genius" :
+                                 step.specialist === "pixel" ? "Tech Guru" :
+                                 step.specialist === "atlas" ? "History Buff" :
+                                 "Wellbeing Guide"}
+                              </span>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Mental Break Overlay */}
+            <AnimatePresence>
+              {showMentalBreak && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+                >
+                  <div className="bg-gradient-to-br from-wonderwhiz-deep-purple to-indigo-900 p-6 rounded-xl max-w-md text-center shadow-xl border border-white/20">
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", damping: 10 }}
+                      className="w-16 h-16 bg-wonderwhiz-gold/20 rounded-full flex items-center justify-center mx-auto mb-4"
+                    >
+                      <Sparkles className="w-8 h-8 text-wonderwhiz-gold" />
+                    </motion.div>
+                    
+                    <h3 className="text-xl font-bold text-white mb-2">Quick Brain Break!</h3>
+                    <p className="text-white/80 mb-4">
+                      Take a moment to relax your mind. Close your eyes, take a deep breath, and let your thoughts settle.
+                    </p>
+                    
+                    <div className="w-full bg-white/10 h-2 rounded-full mb-2">
+                      <motion.div
+                        initial={{ width: "100%" }}
+                        animate={{ width: `${(breakTimeRemaining / 10) * 100}%` }}
+                        className="bg-wonderwhiz-gold h-full rounded-full"
+                      />
+                    </div>
+                    
+                    <p className="text-white/60 text-sm">
+                      {breakTimeRemaining} seconds remaining
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Error state */}
             {generationError && (

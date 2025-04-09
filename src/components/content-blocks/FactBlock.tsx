@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getBlockTypeColor, getHoverAnimation } from '@/components/BlockStyleUtils';
-import { ArrowRight, MessageCircle, BrainCircuit } from 'lucide-react';
+import { ArrowRight, MessageCircle, BrainCircuit, Sparkles, ArrowDown } from 'lucide-react';
 
 interface FactBlockProps {
   content: {
@@ -25,6 +25,7 @@ const FactBlock: React.FC<FactBlockProps> = ({
 }) => {
   const [selectedRabbitHole, setSelectedRabbitHole] = useState<string | null>(null);
   const [animateInsight, setAnimateInsight] = useState<boolean>(false);
+  const [showThoughtQuestion, setShowThoughtQuestion] = useState<boolean>(false);
   
   // Handle edge cases where content might not be properly structured
   const fact = content?.fact || "Interesting fact coming soon...";
@@ -47,6 +48,48 @@ const FactBlock: React.FC<FactBlockProps> = ({
       setTimeout(() => setAnimateInsight(false), 1500);
     }
   };
+  
+  // Extract a thought-provoking question from the fact content
+  const getThoughtProvokingQuestion = (factText: string) => {
+    // Simple heuristic - check if the fact already ends with a question
+    if (factText.trim().endsWith('?')) {
+      return null; // Fact already ends with a question
+    }
+    
+    // Generate a generic thought-provoking question based on the content
+    // Check for keywords to create more relevant questions
+    const lowerFact = factText.toLowerCase();
+    
+    if (lowerFact.includes('animals') || lowerFact.includes('creature') || lowerFact.includes('species')) {
+      return "What other amazing adaptations might animals develop in the future?";
+    } else if (lowerFact.includes('space') || lowerFact.includes('planet') || lowerFact.includes('star') || lowerFact.includes('galaxy')) {
+      return "How does thinking about the vastness of space make you feel?";
+    } else if (lowerFact.includes('history') || lowerFact.includes('ancient') || lowerFact.includes('years ago')) {
+      return "How might our world be different if this part of history had turned out differently?";
+    } else if (lowerFact.includes('technology') || lowerFact.includes('invention') || lowerFact.includes('computer')) {
+      return "What inventions do you think we might create in the next 50 years?";
+    } else if (lowerFact.includes('brain') || lowerFact.includes('think') || lowerFact.includes('memory')) {
+      return "How does your brain help you understand the world in unique ways?";
+    }
+    
+    // Default question if no specific topics detected
+    return "What does this make you wonder about our incredible world?";
+  };
+  
+  const thoughtQuestion = getThoughtProvokingQuestion(fact);
+  
+  // Show thought question after a delay when the block is expanded
+  React.useEffect(() => {
+    if (expanded && thoughtQuestion) {
+      const timer = setTimeout(() => {
+        setShowThoughtQuestion(true);
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    } else {
+      setShowThoughtQuestion(false);
+    }
+  }, [expanded, thoughtQuestion]);
   
   const factVariants = {
     collapsed: { height: "auto" },
@@ -80,9 +123,41 @@ const FactBlock: React.FC<FactBlockProps> = ({
                 <BrainCircuit className="w-3.5 h-3.5 text-indigo-400" />
               </motion.div>
             </div>
-            <p className={`${textSize} text-white`}>
-              {fact}
-            </p>
+            <div className="flex-grow">
+              <p className={`${textSize} text-white`}>
+                {fact}
+              </p>
+              
+              {/* Thought-provoking question */}
+              <AnimatePresence>
+                {expanded && thoughtQuestion && showThoughtQuestion && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="mt-3 border-t border-white/10 pt-3"
+                  >
+                    <p className="text-white/80 text-sm flex items-start">
+                      <Sparkles className="w-4 h-4 mr-2 mt-0.5 text-wonderwhiz-gold" />
+                      <span>{thoughtQuestion}</span>
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              
+              {/* Expand button - only show if not expanded and there's a thought question */}
+              {!expanded && thoughtQuestion && (
+                <motion.button
+                  onClick={toggleExpandFact}
+                  className="mt-2 text-white/60 hover:text-white/80 text-xs flex items-center group"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <span>Think deeper</span>
+                  <ArrowDown className="ml-1 w-3 h-3 group-hover:animate-bounce" />
+                </motion.button>
+              )}
+            </div>
           </div>
         </motion.div>
         
@@ -94,7 +169,7 @@ const FactBlock: React.FC<FactBlockProps> = ({
             </p>
             
             <div className="flex flex-wrap gap-2">
-              {rabbitHoles.map((question, index) => (
+              {rabbitHoles.slice(0, 3).map((question, index) => (
                 <motion.button
                   key={`rabbit-hole-${index}`}
                   onClick={() => handleRabbitHoleClick(question)}

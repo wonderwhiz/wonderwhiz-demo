@@ -187,6 +187,83 @@ serve(async (req) => {
     
     const ageGuidelines = getAgeAppropriateGuidelines(childAge);
 
+    // Get time of day for cognitive optimization
+    const getTimeOfDay = () => {
+      const hour = new Date().getHours();
+      if (hour < 9) return "early morning";
+      if (hour < 12) return "morning";
+      if (hour < 14) return "midday";
+      if (hour < 17) return "afternoon";
+      if (hour < 20) return "evening";
+      return "night";
+    };
+    
+    const timeOfDay = getTimeOfDay();
+    
+    // Time-appropriate content adjustment
+    const getTimeBasedGuidelines = (timeOfDay: string) => {
+      switch (timeOfDay) {
+        case "early morning":
+          return {
+            pacing: "gentle",
+            complexity: "moderate",
+            activityLevel: "calm",
+            colorScheme: "soft blues and greens",
+            mentalEffort: "build gradually"
+          };
+        case "morning":
+          return {
+            pacing: "energetic",
+            complexity: "higher",
+            activityLevel: "active",
+            colorScheme: "bright, stimulating colors",
+            mentalEffort: "challenging content appropriate"
+          };
+        case "midday":
+          return {
+            pacing: "moderate",
+            complexity: "varied",
+            activityLevel: "balanced",
+            colorScheme: "neutral with bright accents",
+            mentalEffort: "mix of challenging and relaxing"
+          };
+        case "afternoon":
+          return {
+            pacing: "steady",
+            complexity: "moderate to high",
+            activityLevel: "focused",
+            colorScheme: "warm, engaging colors",
+            mentalEffort: "sustained focus appropriate"
+          };
+        case "evening":
+          return {
+            pacing: "winding down",
+            complexity: "moderate to low",
+            activityLevel: "calming",
+            colorScheme: "warm, soothing colors",
+            mentalEffort: "synthesis and reflection"
+          };
+        case "night":
+          return {
+            pacing: "relaxed",
+            complexity: "lower",
+            activityLevel: "minimal",
+            colorScheme: "calming purples and blues",
+            mentalEffort: "gentle, mindful activities"
+          };
+        default:
+          return {
+            pacing: "balanced",
+            complexity: "moderate",
+            activityLevel: "adaptive",
+            colorScheme: "balanced mix",
+            mentalEffort: "varied"
+          };
+      }
+    };
+    
+    const timeGuidelines = getTimeBasedGuidelines(timeOfDay);
+
     // Prepare system message and user message for the API with enhanced prompting
     const systemMessage = `You are an AI assistant creating EXTRAORDINARILY engaging, educational content for children aged ${childProfile.age}. 
     Each piece of content should be scientifically accurate, richly detailed, and presented with an exciting sense of discovery and wonder.
@@ -208,10 +285,26 @@ serve(async (req) => {
     - Use analogies and metaphors to explain complex ideas
     - Invoke wonder by highlighting the most surprising and counter-intuitive aspects of the topic
     - Content must be in ${language} language with an appropriate reading level for ${childProfile.age}-year-olds
-    - Always leverage child-friendly humor and a sense of playfulness`;
+    - Always leverage child-friendly humor and a sense of playfulness
     
-    const userMessage = `Generate ${blockCount} diverse, EXTRAORDINARILY ENGAGING content blocks about the query: "${query}". 
+    COGNITIVE OPTIMIZATION:
+    - Adjust content pacing to: ${timeGuidelines.pacing} (based on current time of day: ${timeOfDay})
+    - Set complexity level to: ${timeGuidelines.complexity}
+    - Suggest activity level that is: ${timeGuidelines.activityLevel}
+    - Recommend visual content with: ${timeGuidelines.colorScheme}
+    - Design mental effort that: ${timeGuidelines.mentalEffort}`;
+    
+    // Base number of blocks to generate - we'll create a more focused experience
+    // with fewer, higher-quality blocks as recommended
+    const optimalBlockCount = Math.min(blockCount, 7);
+    
+    const userMessage = `Generate ${optimalBlockCount} diverse, EXTRAORDINARILY ENGAGING content blocks about the query: "${query}". 
     ${skipInitial > 0 ? `Skip the first ${skipInitial} most obvious blocks as they've already been generated.` : ''}
+
+    CREATE A COHERENT NARRATIVE ARC:
+    1. START with a direct, clear answer to "${query}" in the FIRST block - make this a fact or funFact
+    2. BUILD concepts with increasing complexity through the middle blocks
+    3. END with a reflective or creative block that encourages application of learning
 
     Each block MUST:
     1. Be HYPER-RELEVANT to "${query}" with laser-focused content that directly addresses the topic
@@ -220,8 +313,19 @@ serve(async (req) => {
     4. Connect with these interests: ${childProfile.interests ? childProfile.interests.join(', ') : 'general learning topics'}
     5. Have interactive elements that make children feel personally involved in the discovery
     6. Be written with a dynamic, enthusiastic tone but avoid being cartoonishly over-excited
-    7. LIMIT "rabbit hole" suggestions to a MAXIMUM of 3-4 per block, focusing on QUALITY over quantity
+    7. LIMIT "rabbit hole" suggestions to a MAXIMUM of 3 highly curated, related questions that build on demonstrated curiosity
+    8. END each content block with a thought-provoking question that encourages critical thinking
 
+    LEARNING PSYCHOLOGY:
+    - Include subtle spaced repetition by weaving previously mentioned concepts throughout the blocks
+    - Use consistent specialist characters with distinct teaching styles:
+      * nova: exploration/discovery approach - asks open-ended questions
+      * spark: scientific method approach - encourages hypothesis testing
+      * prism: creative thinking approach - draws unexpected connections
+      * pixel: technological/engineering approach - focuses on how things work
+      * atlas: historical/contextual approach - puts knowledge in broader context
+      * lotus: holistic/reflective approach - encourages mindfulness and application
+    
     SPECIFIC REQUIREMENTS FOR EACH BLOCK TYPE:
     
     - fact/funFact: Must include a counter-intuitive or surprising SPECIFIC fact (with numbers, examples, and vivid details) that defies expectations. End with an intriguing question that makes children wonder. Example: "Stars don't actually twinkle! The apparent twinkling happens because their light passes through Earth's atmosphere, where air of different temperatures bends the light in different directions. It's like looking at a penny at the bottom of a swimming pool - the water makes it seem to move even though it's perfectly still! Did you know that some stars appear to change colors as they twinkle? That's because different wavelengths of light bend differently in our atmosphere!"
@@ -242,7 +346,12 @@ serve(async (req) => {
     
     - mindfulness: Connect scientific understanding with sensory awareness and appreciation of natural phenomena. Design exercises that combine learning with mindfulness. Example: "Star Gazing Mindfulness: Find a dark area outside and lie on your back. As you observe the stars, notice how some appear to twinkle more than others. The steadier stars are planets! As you breathe deeply, imagine the vast distances these light rays traveled - millions of years - just to reach your eyes in this moment."
 
-    Return your response as a JSON array with ${blockCount} objects, each having this structure:
+    COGNITIVE DEVELOPMENT:
+    - Include a brief mental break (like a 10-second mindfulness moment) after intensive learning blocks
+    - Add 1-2 reflection prompts that help consolidate learning
+    - End with a block that connects new knowledge to the child's existing understanding
+
+    Return your response as a JSON array with ${optimalBlockCount} objects, each having this structure:
     {
       "type": "one of: fact, quiz, flashcard, creative, task, riddle, funFact, activity, news, mindfulness",
       "specialist_id": "one of: nova, spark, prism, pixel, atlas, lotus",
@@ -261,7 +370,7 @@ serve(async (req) => {
     // Implement retry logic for API calls
     let attempt = 0;
     
-    while (attempt <= MAX_RETRIES && contentBlocksArray.length < blockCount) {
+    while (attempt <= MAX_RETRIES && contentBlocksArray.length < optimalBlockCount) {
       try {
         attempt++;
         console.log(`API attempt ${attempt} of ${MAX_RETRIES + 1}`);
@@ -482,7 +591,7 @@ serve(async (req) => {
     // If we couldn't get valid content after all attempts, use fallback
     if (contentBlocksArray.length === 0) {
       console.log("No valid content generated, using fallback");
-      contentBlocksArray = generateFallbackContent(query, blockCount);
+      contentBlocksArray = generateFallbackContent(query, optimalBlockCount);
     }
     
     // If the content is an object with a single block, convert it to an array
@@ -491,27 +600,38 @@ serve(async (req) => {
     }
     
     // Post-process all blocks to ensure they follow best practices:
-    contentBlocksArray = contentBlocksArray.map(block => {
+    contentBlocksArray = contentBlocksArray.map((block, index) => {
       // Process fact blocks to limit rabbit holes
       if (block.type === 'fact' || block.type === 'funFact') {
-        if (block.content && block.content.rabbitHoles && block.content.rabbitHoles.length > 4) {
-          block.content.rabbitHoles = block.content.rabbitHoles.slice(0, 4);
+        if (block.content && block.content.rabbitHoles && block.content.rabbitHoles.length > 3) {
+          block.content.rabbitHoles = block.content.rabbitHoles.slice(0, 3);
         }
       }
+      
+      // Add learning context for better educational value
+      block.learningContext = {
+        sequencePosition: index + 1,
+        totalBlocks: contentBlocksArray.length,
+        cognitiveLevel: index === 0 ? "introductory" : 
+                       index === contentBlocksArray.length - 1 ? "reflective" : 
+                       "developmental",
+        timeOfDay: timeOfDay,
+        recommendedPacing: timeGuidelines.pacing
+      };
       
       return block;
     });
     
     // Ensure we have enough blocks
-    if (contentBlocksArray.length < blockCount) {
-      console.log(`Only got ${contentBlocksArray.length} blocks, adding fallback blocks to reach ${blockCount}`);
-      const missingBlocks = blockCount - contentBlocksArray.length;
+    if (contentBlocksArray.length < optimalBlockCount) {
+      console.log(`Only got ${contentBlocksArray.length} blocks, adding fallback blocks to reach ${optimalBlockCount}`);
+      const missingBlocks = optimalBlockCount - contentBlocksArray.length;
       const fallbackBlocks = generateFallbackContent(query, missingBlocks);
       contentBlocksArray = [...contentBlocksArray, ...fallbackBlocks];
     }
     
     // Limit to the requested blockCount
-    contentBlocksArray = contentBlocksArray.slice(0, blockCount);
+    contentBlocksArray = contentBlocksArray.slice(0, optimalBlockCount);
     
     // Assign unique IDs and defaults to each block
     const contentBlocks = contentBlocksArray.map((block: any) => ({
