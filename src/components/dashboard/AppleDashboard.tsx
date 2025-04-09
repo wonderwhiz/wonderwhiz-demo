@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppleButton } from '@/components/ui/apple-button';
@@ -38,7 +37,6 @@ const AppleDashboard: React.FC<AppleDashboardProps> = ({
   const [wonderPathExpanded, setWonderPathExpanded] = useState(false);
   const [showCommandK, setShowCommandK] = useState(false);
   
-  // Create suggested topics from past curios and predefined options
   const suggestedTopics = React.useMemo(() => {
     const fromPastCurios = pastCurios
       .slice(0, 3)
@@ -147,7 +145,6 @@ const AppleDashboard: React.FC<AppleDashboardProps> = ({
       initial="hidden"
       animate="visible"
     >
-      {/* Header */}
       <motion.div 
         className="mb-6 flex items-center justify-between"
         variants={itemVariants}
@@ -155,7 +152,18 @@ const AppleDashboard: React.FC<AppleDashboardProps> = ({
         <div className="flex items-center gap-3">
           <Avatar className="h-14 w-14 border-2 border-white/20">
             {childProfile?.avatar_url ? (
-              <img src={childProfile.avatar_url} alt={childProfile?.name || 'Profile'} />
+              <img 
+                src={childProfile.avatar_url} 
+                alt={childProfile?.name || 'Profile'} 
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.parentElement!.innerHTML = `
+                    <div class="bg-gradient-to-br from-amber-400 to-pink-500 w-full h-full flex items-center justify-center text-2xl font-medium text-white">
+                      ${(childProfile?.name?.charAt(0) || 'W').toUpperCase()}
+                    </div>
+                  `;
+                }}
+              />
             ) : (
               <div className="bg-gradient-to-br from-amber-400 to-pink-500 w-full h-full flex items-center justify-center text-2xl font-medium text-white">
                 {(childProfile?.name?.charAt(0) || 'W').toUpperCase()}
@@ -200,7 +208,6 @@ const AppleDashboard: React.FC<AppleDashboardProps> = ({
         </div>
       </motion.div>
       
-      {/* Main search - the central focus */}
       <motion.div 
         className="mb-6"
         variants={itemVariants}
@@ -224,7 +231,6 @@ const AppleDashboard: React.FC<AppleDashboardProps> = ({
         </form>
       </motion.div>
       
-      {/* Command K Dialog */}
       <CommandDialog open={showCommandK} onOpenChange={setShowCommandK}>
         <Command className="rounded-lg border-none">
           <CommandInput placeholder="What would you like to learn about today?" />
@@ -264,7 +270,6 @@ const AppleDashboard: React.FC<AppleDashboardProps> = ({
         </Command>
       </CommandDialog>
       
-      {/* Knowledge Globe (when activated) */}
       <AnimatePresence>
         {showGlobe && (
           <motion.div
@@ -279,7 +284,6 @@ const AppleDashboard: React.FC<AppleDashboardProps> = ({
         )}
       </AnimatePresence>
       
-      {/* Active tasks - prominent and always visible */}
       <AnimatePresence>
         {showTasks && (
           <motion.div
@@ -304,9 +308,7 @@ const AppleDashboard: React.FC<AppleDashboardProps> = ({
         )}
       </AnimatePresence>
       
-      {/* Main content area - simplified grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        {/* Left column: Wonder Journeys */}
         <motion.div variants={itemVariants} className="space-y-6">
           <div className="bg-gradient-to-br from-blue-500/20 to-indigo-600/20 backdrop-blur-sm rounded-xl border border-white/10 p-4">
             <div className="flex items-center justify-between mb-4">
@@ -380,7 +382,6 @@ const AppleDashboard: React.FC<AppleDashboardProps> = ({
           </div>
         </motion.div>
         
-        {/* Right column: Today's Challenges and Time Capsule */}
         <motion.div variants={itemVariants} className="space-y-6">
           <div className="bg-gradient-to-br from-pink-500/20 to-rose-600/20 backdrop-blur-sm rounded-xl border border-white/10 p-4">
             <div className="flex items-center mb-4">
@@ -476,22 +477,6 @@ const AppleDashboard: React.FC<AppleDashboardProps> = ({
           </div>
         </motion.div>
       </div>
-      
-      {/* Bottom "Ask anything" button */}
-      <motion.div 
-        className="flex justify-center"
-        variants={itemVariants}
-      >
-        <AppleButton 
-          variant="primary"
-          size="lg"
-          onClick={focusSearchInput}
-          className="group bg-gradient-to-r from-indigo-600/80 to-purple-600/80 backdrop-blur-sm border border-white/20"
-        >
-          <Lightbulb className="mr-2 h-4 w-4 text-amber-300 group-hover:text-amber-200 transition-colors" />
-          <span>Ask me anything</span>
-        </AppleButton>
-      </motion.div>
     </motion.div>
   );
 };

@@ -60,27 +60,20 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
   return (
     <div className="relative">
-      <div className="mb-2 flex flex-col space-y-2">
-        <div className="flex items-center">
-          <Lightbulb className="h-4 w-4 text-wonderwhiz-vibrant-yellow mr-1.5" />
-          <span className="text-white text-sm font-medium">Ask me anything!</span>
-        </div>
-        
-        {/* Trending topics */}
-        <div className="flex flex-wrap gap-2">
-          {getTrendingTopics().map((topic, index) => (
-            <motion.button
-              key={topic}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setQuery(`Tell me about ${topic}`)}
-              className="flex items-center text-xs px-3 py-1 rounded-full bg-wonderwhiz-cyan/20 text-wonderwhiz-cyan border border-wonderwhiz-cyan/30 hover:bg-wonderwhiz-cyan/30 transition-colors"
-            >
-              <Hash className="h-3 w-3 mr-1" />
-              {topic}
-            </motion.button>
-          ))}
-        </div>
+      {/* Trending topics */}
+      <div className="flex flex-wrap gap-2 mb-3">
+        {getTrendingTopics().map((topic, index) => (
+          <motion.button
+            key={topic}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => setQuery(`Tell me about ${topic}`)}
+            className="flex items-center text-xs px-3 py-1 rounded-full bg-wonderwhiz-cyan/20 text-wonderwhiz-cyan border border-wonderwhiz-cyan/30 hover:bg-wonderwhiz-cyan/30 transition-colors"
+          >
+            <Hash className="h-3 w-3 mr-1" />
+            {topic}
+          </motion.button>
+        ))}
       </div>
       
       <EnhancedSearchBar
