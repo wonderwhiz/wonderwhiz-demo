@@ -1,17 +1,72 @@
 
 project_id = "turexhnvsvmllwitllmg"
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
 
-[functions.analyze-image]
-verify_jwt = false
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
 
-[functions.generate-contextual-image]
-verify_jwt = false
+[db.pooler]
+enabled = false
+port = 54329
+pool_mode = "transaction"
+default_pool_size = 20
+max_client_conn = 100
 
-[functions.generate-curiosity-blocks]
-verify_jwt = false
+[realtime]
+enabled = true
 
-[functions.handle-block-chat]
-verify_jwt = false
+[studio]
+enabled = true
+port = 54323
+api_url = "https://supabase.dev"
 
-[functions.increment-sparks-balance]
+[inbucket]
+enabled = true
+port = 54324
+smtp_port = 54325
+pop3_port = 54326
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[auth]
+enabled = true
+site_url = "http://localhost:54321"
+additional_redirect_urls = ["https://localhost:5173"]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+
+[auth.sms]
+enable_signup = true
+enable_confirmations = true
+
+[auth.external.google]
+enabled = false
+client_id = ""
+secret = ""
+url = "path/to/auth/v1/callback"
+
+[analytics]
+enabled = false
+port = 54327
+vector_port = 54328
+backend = "postgres"
+
+[functions]
+[functions.analyze-learning-patterns]
 verify_jwt = false

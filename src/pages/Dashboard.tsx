@@ -33,12 +33,19 @@ const Dashboard = () => {
     const randomMessage = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
     
     // Short delay to improve perceived performance - UX research recommendation
-    setTimeout(() => {
-      toast(randomMessage, {
-        position: 'top-center',
-        duration: 4000,
-      });
-    }, 1500);
+    const toastDelayMilliseconds = 1500;
+    
+    // Only show welcome toast on first visit of the session
+    const hasShownWelcomeToast = sessionStorage.getItem('hasShownWelcomeToast');
+    if (!hasShownWelcomeToast) {
+      setTimeout(() => {
+        toast(randomMessage, {
+          position: 'top-center',
+          duration: 4000,
+        });
+        sessionStorage.setItem('hasShownWelcomeToast', 'true');
+      }, toastDelayMilliseconds);
+    }
     
     // Clean up event listeners when component unmounts
     return () => {
