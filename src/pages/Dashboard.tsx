@@ -19,13 +19,13 @@ const Dashboard = () => {
     if (hour >= 17) timeOfDay = 'evening';
     console.log(`Dashboard loaded during ${timeOfDay} - optimizing content for this time`);
     
-    // Show welcome toast based on time of day - more engaging and fun
+    // Show welcome toast based on time of day with child-friendly messaging
     const welcomeMessages = [
-      '👋 Ready to discover something amazing today?',
-      '🔍 What will you wonder about today?',
-      '🧠 Your brain is ready for an adventure!',
-      '✨ What magical discovery awaits you?',
-      '🚀 Where shall your curiosity take you?'
+      '✨ Ready to discover something amazing today?',
+      '🔎 What wonder are you curious about?',
+      '🧠 Your brain is ready for new adventures!',
+      '🚀 Where will your curiosity take you today?',
+      '💫 What magical things will you learn?'
     ];
     const randomMessage = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
     
@@ -51,8 +51,8 @@ const Dashboard = () => {
       className="min-h-screen bg-wonderwhiz-gradient overflow-hidden"
     >
       <Helmet>
-        <title>WonderWhiz - Explore & Learn</title>
-        <meta name="description" content="Explore topics, ask questions, and learn in a fun, interactive way with WonderWhiz." />
+        <title>WonderWhiz - Explore Your Curiosity</title>
+        <meta name="description" content="Discover amazing facts, fun activities, and learning adventures! Ask questions and explore topics that spark your curiosity." />
       </Helmet>
       
       <SidebarProvider>
