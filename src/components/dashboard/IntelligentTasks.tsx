@@ -1,12 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle, Star, Clock, Sparkles, Brain, Award, Zap, Lightbulb } from 'lucide-react';
+import { CheckCircle, Star, Clock, Sparkles, Brain, Award, Zap, Lightbulb, BookOpen } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { useChildLearningHistory } from '@/hooks/useChildLearningHistory';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 
 interface IntelligentTasksProps {
   childId: string;
@@ -22,6 +24,47 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
   const { learningHistory, strongestTopics } = useChildLearningHistory(childId);
   
   const [dailyProgress, setDailyProgress] = useState(0);
+  const [parentTasks, setParentTasks] = useState<any[]>([]);
+  const [completedParentTasks, setCompletedParentTasks] = useState<any[]>([]);
+  const [isLoadingTasks, setIsLoadingTasks] = useState(true);
+  
+  // Fetch parent-assigned tasks
+  useEffect(() => {
+    const fetchParentAssignedTasks = async () => {
+      setIsLoadingTasks(true);
+      try {
+        // Fetch pending tasks
+        const { data: pendingTasks, error: pendingError } = await supabase
+          .from('child_tasks')
+          .select('*, tasks:task_id(title, description, sparks_reward)')
+          .eq('child_profile_id', childId)
+          .eq('status', 'pending')
+          .order('assigned_at', { ascending: false });
+          
+        if (pendingError) throw pendingError;
+        
+        // Fetch completed tasks
+        const { data: completedTasks, error: completedError } = await supabase
+          .from('child_tasks')
+          .select('*, tasks:task_id(title, description, sparks_reward)')
+          .eq('child_profile_id', childId)
+          .eq('status', 'completed')
+          .order('completed_at', { ascending: false })
+          .limit(5);
+          
+        if (completedError) throw completedError;
+        
+        setParentTasks(pendingTasks || []);
+        setCompletedParentTasks(completedTasks || []);
+      } catch (error) {
+        console.error('Error fetching parent-assigned tasks:', error);
+      } finally {
+        setIsLoadingTasks(false);
+      }
+    };
+    
+    fetchParentAssignedTasks();
+  }, [childId]);
   
   // Calculate daily progress based on completed tasks
   useEffect(() => {
@@ -102,7 +145,7 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
     return tasks;
   };
   
-  const tasks = generateTasks();
+  const systemTasks = generateTasks();
   
   // Animation variants
   const containerVariants = {
@@ -128,8 +171,36 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
     }
   };
   
-  // Handle task click
-  const handleTaskClick = (task: any) => {
+  // Handle parent task completion
+  const handleParentTaskCompletion = async (taskId: string) => {
+    try {
+      // Call the edge function to complete the task
+      const { data, error } = await supabase.functions.invoke('complete-task', {
+        body: { taskId, childId }
+      });
+      
+      if (error) throw error;
+      
+      // Update local state
+      const completedTask = parentTasks.find(task => task.id === taskId);
+      if (completedTask) {
+        setParentTasks(parentTasks.filter(task => task.id !== taskId));
+        setCompletedParentTasks([{ ...completedTask, status: 'completed', completed_at: new Date().toISOString() }, ...completedParentTasks]);
+      }
+      
+      // Show success toast
+      toast.success("Task completed!", {
+        description: `Great job! You've earned ${completedTask?.tasks?.sparks_reward || 0} sparks!`,
+      });
+      
+    } catch (error) {
+      console.error('Error completing task:', error);
+      toast.error("Failed to complete task");
+    }
+  };
+  
+  // Handle system task click
+  const handleSystemTaskClick = (task: any) => {
     // If already completed, just show a message
     if (task.completed) {
       toast.success("You've already completed this task!", {
@@ -171,7 +242,7 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
       case 'quiz':
         return <Brain className="h-5 w-5 text-indigo-400" />;
       case 'read':
-        return <Lightbulb className="h-5 w-5 text-amber-400" />;
+        return <BookOpen className="h-5 w-5 text-amber-400" />;
       case 'explore':
         return <Star className="h-5 w-5 text-pink-400" />;
       case 'create':
@@ -188,15 +259,15 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="bg-gradient-to-br from-green-900/20 to-teal-900/20 backdrop-blur-sm rounded-xl border border-white/10 p-5"
+      className="bg-gradient-to-br from-indigo-500/10 to-purple-600/10 backdrop-blur-sm rounded-xl border border-white/10 p-5"
     >
       <motion.div variants={itemVariants} className="flex items-center justify-between mb-4">
         <div className="flex items-center">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-green-500/30 to-emerald-500/30 flex items-center justify-center mr-3">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500/30 to-pink-500/30 flex items-center justify-center mr-3">
             <CheckCircle className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h3 className="text-lg font-medium text-white">Today's Journey</h3>
+            <h3 className="text-lg font-medium text-white">Your Tasks</h3>
             <div className="flex items-center mt-1">
               <Progress value={dailyProgress} className="h-1.5 w-36 bg-white/10" />
               <span className="ml-2 text-xs text-white/60">{dailyProgress}% complete</span>
@@ -210,62 +281,272 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
         </Badge>
       </motion.div>
       
-      <div className="space-y-3 mt-5">
-        {tasks.map((task) => (
-          <motion.div
-            key={task.id}
-            variants={itemVariants}
-            whileHover={{ scale: 1.02, x: 2 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => handleTaskClick(task)}
-            className={cn(
-              "p-3 rounded-lg cursor-pointer transition-all relative overflow-hidden group",
-              task.completed 
-                ? "bg-green-500/20 border border-green-500/30"
-                : "bg-white/5 border border-white/10 hover:border-white/20"
-            )}
-          >
-            <div className="flex items-start gap-3">
-              <div className={cn(
-                "w-8 h-8 rounded-full flex items-center justify-center",
-                task.completed ? "bg-green-500/50" : "bg-white/10"
-              )}>
-                {task.completed ? (
-                  <CheckCircle className="h-4 w-4 text-white" />
-                ) : (
-                  getTaskIcon(task)
-                )}
-              </div>
-              
-              <div className="flex-grow">
-                <p className={cn("font-medium text-sm", task.completed ? "text-green-300" : "text-white")}>
-                  {task.title}
-                </p>
-                <div className="flex items-center mt-1">
-                  <Clock className="h-3 w-3 text-white/60 mr-1" />
-                  <span className="text-white/60 text-xs">{task.timeEstimate}</span>
-                  
-                  <div className="ml-3 flex items-center">
-                    <Sparkles className="h-3 w-3 text-amber-300 mr-1" />
-                    <span className="text-amber-300 text-xs">+{task.reward}</span>
+      <Tabs defaultValue="all" className="mt-2">
+        <TabsList className="w-full grid grid-cols-3 bg-white/5 border border-white/10">
+          <TabsTrigger value="all" className="text-sm">All Tasks</TabsTrigger>
+          <TabsTrigger value="parent" className="text-sm">From Parents</TabsTrigger>
+          <TabsTrigger value="system" className="text-sm">Learning</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="all" className="mt-3">
+          <div className="space-y-3">
+            {/* Parent-assigned tasks first */}
+            {!isLoadingTasks && parentTasks.map((task) => (
+              <motion.div
+                key={`parent-${task.id}`}
+                variants={itemVariants}
+                whileHover={{ scale: 1.02, x: 2 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => handleParentTaskCompletion(task.id)}
+                className="p-3 rounded-lg cursor-pointer transition-all relative overflow-hidden group bg-pink-500/20 border border-pink-500/30 hover:border-pink-500/50"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center bg-pink-500/30">
+                    <Star className="h-4 w-4 text-white" />
                   </div>
                   
-                  {task.priority === 'high' && (
-                    <Badge className="ml-2 py-0 h-4 bg-pink-500/20 text-pink-300 text-[10px] border-none">
-                      Priority
-                    </Badge>
-                  )}
+                  <div className="flex-grow">
+                    <p className="font-medium text-sm text-white">
+                      {task.tasks?.title || 'Task from parent'}
+                    </p>
+                    {task.tasks?.description && (
+                      <p className="text-white/70 text-xs mt-1">{task.tasks.description}</p>
+                    )}
+                    <div className="flex items-center mt-1">
+                      <Clock className="h-3 w-3 text-white/60 mr-1" />
+                      <span className="text-white/60 text-xs">From parent</span>
+                      
+                      <div className="ml-3 flex items-center">
+                        <Sparkles className="h-3 w-3 text-amber-300 mr-1" />
+                        <span className="text-amber-300 text-xs">+{task.tasks?.sparks_reward || 5}</span>
+                      </div>
+                      
+                      <Badge className="ml-2 py-0 h-4 bg-pink-500/20 text-pink-300 text-[10px] border-none">
+                        Priority
+                      </Badge>
+                    </div>
+                  </div>
                 </div>
+              </motion.div>
+            ))}
+          
+            {/* Then system-generated tasks */}
+            {systemTasks.map((task) => (
+              <motion.div
+                key={task.id}
+                variants={itemVariants}
+                whileHover={{ scale: 1.02, x: 2 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => handleSystemTaskClick(task)}
+                className={cn(
+                  "p-3 rounded-lg cursor-pointer transition-all relative overflow-hidden group",
+                  task.completed 
+                    ? "bg-green-500/20 border border-green-500/30"
+                    : "bg-white/5 border border-white/10 hover:border-white/20"
+                )}
+              >
+                <div className="flex items-start gap-3">
+                  <div className={cn(
+                    "w-8 h-8 rounded-full flex items-center justify-center",
+                    task.completed ? "bg-green-500/50" : "bg-white/10"
+                  )}>
+                    {task.completed ? (
+                      <CheckCircle className="h-4 w-4 text-white" />
+                    ) : (
+                      getTaskIcon(task)
+                    )}
+                  </div>
+                  
+                  <div className="flex-grow">
+                    <p className={cn("font-medium text-sm", task.completed ? "text-green-300" : "text-white")}>
+                      {task.title}
+                    </p>
+                    <div className="flex items-center mt-1">
+                      <Clock className="h-3 w-3 text-white/60 mr-1" />
+                      <span className="text-white/60 text-xs">{task.timeEstimate}</span>
+                      
+                      <div className="ml-3 flex items-center">
+                        <Sparkles className="h-3 w-3 text-amber-300 mr-1" />
+                        <span className="text-amber-300 text-xs">+{task.reward}</span>
+                      </div>
+                      
+                      {task.priority === 'high' && (
+                        <Badge className="ml-2 py-0 h-4 bg-indigo-500/20 text-indigo-300 text-[10px] border-none">
+                          Priority
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Progress indicator for the task (if applicable) */}
+                {task.completed && (
+                  <div className="absolute bottom-0 left-0 h-0.5 w-full bg-green-400/30" />
+                )}
+              </motion.div>
+            ))}
+
+            {isLoadingTasks && (
+              <div className="text-center py-4 text-white/60">
+                <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-white/30 mx-auto mb-2"></div>
+                <p>Loading tasks...</p>
               </div>
-            </div>
-            
-            {/* Progress indicator for the task (if applicable) */}
-            {task.completed && (
-              <div className="absolute bottom-0 left-0 h-0.5 w-full bg-green-400/30" />
             )}
-          </motion.div>
-        ))}
-      </div>
+            
+            {!isLoadingTasks && parentTasks.length === 0 && systemTasks.length === 0 && (
+              <div className="text-center py-8 text-white/60">
+                <p>No tasks available. Check back soon!</p>
+              </div>
+            )}
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="parent" className="mt-3">
+          <div className="space-y-3">
+            {!isLoadingTasks && parentTasks.length > 0 ? (
+              parentTasks.map((task) => (
+                <motion.div
+                  key={`parent-tab-${task.id}`}
+                  variants={itemVariants}
+                  whileHover={{ scale: 1.02, x: 2 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => handleParentTaskCompletion(task.id)}
+                  className="p-3 rounded-lg cursor-pointer transition-all relative overflow-hidden group bg-pink-500/20 border border-pink-500/30 hover:border-pink-500/50"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center bg-pink-500/30">
+                      <Star className="h-4 w-4 text-white" />
+                    </div>
+                    
+                    <div className="flex-grow">
+                      <p className="font-medium text-sm text-white">
+                        {task.tasks?.title || 'Task from parent'}
+                      </p>
+                      {task.tasks?.description && (
+                        <p className="text-white/70 text-xs mt-1">{task.tasks.description}</p>
+                      )}
+                      <div className="flex items-center mt-1">
+                        <Clock className="h-3 w-3 text-white/60 mr-1" />
+                        <span className="text-white/60 text-xs">From parent</span>
+                        
+                        <div className="ml-3 flex items-center">
+                          <Sparkles className="h-3 w-3 text-amber-300 mr-1" />
+                          <span className="text-amber-300 text-xs">+{task.tasks?.sparks_reward || 5}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-white/60">
+                {isLoadingTasks ? (
+                  <div>
+                    <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-white/30 mx-auto mb-2"></div>
+                    <p>Loading tasks from your parents...</p>
+                  </div>
+                ) : (
+                  <p>No tasks from your parents yet!</p>
+                )}
+              </div>
+            )}
+            
+            {!isLoadingTasks && completedParentTasks.length > 0 && (
+              <div className="mt-6">
+                <h4 className="text-white/70 text-sm font-medium mb-3">Recently Completed</h4>
+                {completedParentTasks.map((task) => (
+                  <motion.div
+                    key={`completed-${task.id}`}
+                    variants={itemVariants}
+                    className="p-3 rounded-lg relative overflow-hidden group bg-green-500/20 border border-green-500/30 mb-2"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center bg-green-500/30">
+                        <CheckCircle className="h-4 w-4 text-white" />
+                      </div>
+                      
+                      <div className="flex-grow">
+                        <p className="font-medium text-sm text-green-300">
+                          {task.tasks?.title || 'Completed task'}
+                        </p>
+                        <div className="flex items-center mt-1">
+                          <span className="text-white/60 text-xs">
+                            Completed {new Date(task.completed_at).toLocaleDateString()}
+                          </span>
+                          
+                          <div className="ml-3 flex items-center">
+                            <Sparkles className="h-3 w-3 text-amber-300 mr-1" />
+                            <span className="text-amber-300 text-xs">+{task.tasks?.sparks_reward || 5} earned</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="system" className="mt-3">
+          <div className="space-y-3">
+            {systemTasks.length > 0 ? (
+              systemTasks.map((task) => (
+                <motion.div
+                  key={`system-tab-${task.id}`}
+                  variants={itemVariants}
+                  whileHover={{ scale: 1.02, x: 2 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => handleSystemTaskClick(task)}
+                  className={cn(
+                    "p-3 rounded-lg cursor-pointer transition-all relative overflow-hidden group",
+                    task.completed 
+                      ? "bg-green-500/20 border border-green-500/30"
+                      : "bg-white/5 border border-white/10 hover:border-white/20"
+                  )}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={cn(
+                      "w-8 h-8 rounded-full flex items-center justify-center",
+                      task.completed ? "bg-green-500/50" : "bg-white/10"
+                    )}>
+                      {task.completed ? (
+                        <CheckCircle className="h-4 w-4 text-white" />
+                      ) : (
+                        getTaskIcon(task)
+                      )}
+                    </div>
+                    
+                    <div className="flex-grow">
+                      <p className={cn("font-medium text-sm", task.completed ? "text-green-300" : "text-white")}>
+                        {task.title}
+                      </p>
+                      <div className="flex items-center mt-1">
+                        <Clock className="h-3 w-3 text-white/60 mr-1" />
+                        <span className="text-white/60 text-xs">{task.timeEstimate}</span>
+                        
+                        <div className="ml-3 flex items-center">
+                          <Sparkles className="h-3 w-3 text-amber-300 mr-1" />
+                          <span className="text-amber-300 text-xs">+{task.reward}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Progress indicator for the task (if applicable) */}
+                  {task.completed && (
+                    <div className="absolute bottom-0 left-0 h-0.5 w-full bg-green-400/30" />
+                  )}
+                </motion.div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-white/60">
+                <p>No learning tasks available right now.</p>
+              </div>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
     </motion.div>
   );
 };

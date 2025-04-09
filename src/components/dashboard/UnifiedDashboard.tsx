@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useChildLearningHistory } from '@/hooks/useChildLearningHistory';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +7,8 @@ import { Rocket, Sparkles, Star } from 'lucide-react';
 import UnifiedSearchBar from './UnifiedSearchBar';
 import KnowledgeJourney from './KnowledgeJourney';
 import IntelligentTasks from './IntelligentTasks';
+import DailyChallenge from './DailyChallenge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface UnifiedDashboardProps {
   childId: string;
@@ -119,7 +121,7 @@ const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
         </div>
       </motion.div>
       
-      {/* Unified search experience */}
+      {/* Unified search experience - The focal point */}
       <motion.div variants={sectionVariants}>
         <UnifiedSearchBar
           query={query}
@@ -132,26 +134,50 @@ const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
         />
       </motion.div>
       
-      {/* Main content area - Knowledge journey and tasks */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Knowledge journey - spans two columns on larger screens */}
-        <motion.div variants={sectionVariants} className="lg:col-span-2">
-          <KnowledgeJourney
-            childId={childId}
-            childProfile={childProfile}
-            onTopicClick={handleTopicClick}
-          />
-        </motion.div>
-        
-        {/* Intelligent tasks - one column */}
-        <motion.div variants={sectionVariants}>
-          <IntelligentTasks
-            childId={childId}
-            childProfile={childProfile}
-            onTaskAction={handleTaskAction}
-          />
-        </motion.div>
-      </div>
+      {/* Main content area - Two clear tabs: Explore and Tasks */}
+      <motion.div variants={sectionVariants}>
+        <Tabs defaultValue="explore" className="w-full">
+          <TabsList className="grid grid-cols-2 mb-6 w-full max-w-sm mx-auto bg-white/10 backdrop-blur-sm border border-white/10">
+            <TabsTrigger value="explore" className="data-[state=active]:bg-white/15">
+              Explore & Learn
+            </TabsTrigger>
+            <TabsTrigger value="tasks" className="data-[state=active]:bg-white/15">
+              Tasks & Challenges
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="explore" className="mt-0">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Knowledge journey - spans two columns on larger screens */}
+              <div className="lg:col-span-2">
+                <KnowledgeJourney
+                  childId={childId}
+                  childProfile={childProfile}
+                  onTopicClick={handleTopicClick}
+                />
+              </div>
+              
+              {/* Daily Challenges - one column */}
+              <div>
+                <DailyChallenge 
+                  childId={childId}
+                />
+              </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="tasks" className="mt-0">
+            <div className="grid grid-cols-1 gap-6">
+              {/* Parent-assigned tasks integrated right into the main experience */}
+              <IntelligentTasks
+                childId={childId}
+                childProfile={childProfile}
+                onTaskAction={handleTaskAction}
+              />
+            </div>
+          </TabsContent>
+        </Tabs>
+      </motion.div>
     </motion.div>
   );
 };

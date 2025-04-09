@@ -127,8 +127,8 @@ const UnifiedSearchBar: React.FC<UnifiedSearchBarProps> = ({
     >
       <form onSubmit={(e) => handleSubmit(e)} className="relative">
         <div className="relative z-10">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2">
-            <Search className="h-5 w-5 text-white/60" />
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/60">
+            <Search className="h-5 w-5" />
           </div>
           
           <Input
@@ -170,8 +170,8 @@ const UnifiedSearchBar: React.FC<UnifiedSearchBarProps> = ({
             disabled={!query.trim() || isGenerating}
             className={cn(
               "absolute right-3 top-1/2 -translate-y-1/2 h-10 px-4 rounded-xl flex items-center gap-1.5",
-              "bg-gradient-to-r from-wonderwhiz-vibrant-yellow to-wonderwhiz-bright-pink",
-              "text-wonderwhiz-deep-purple font-medium transition-all"
+              "bg-gradient-to-r from-indigo-500 to-purple-600",
+              "text-white font-medium transition-all"
             )}
           >
             {isGenerating ? (
@@ -220,7 +220,7 @@ const UnifiedSearchBar: React.FC<UnifiedSearchBarProps> = ({
                     handleSuggestionClick(`Tell me about ${topic}`);
                   }}
                 >
-                  <Lightbulb className="mr-2 h-4 w-4 text-wonderwhiz-pink" />
+                  <Lightbulb className="mr-2 h-4 w-4 text-pink-400" />
                   {topic}
                 </CommandItem>
               ))}
