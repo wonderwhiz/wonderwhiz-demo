@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -31,7 +30,6 @@ const SmartDashboard: React.FC<SmartDashboardProps> = ({
   const [displayedSuggestions, setDisplayedSuggestions] = useState<string[]>([]);
   const [showMemorySuggestions, setShowMemorySuggestions] = useState(false);
   
-  // Get learning history data
   const {
     recentlyViewedTopics,
     strongestTopics,
@@ -39,16 +37,12 @@ const SmartDashboard: React.FC<SmartDashboardProps> = ({
     isLoading: isLoadingHistory
   } = useChildLearningHistory(childId);
   
-  // Merge default suggestions with personalized ones based on learning history
   useEffect(() => {
-    // Start with API-provided suggestions
     let suggestions = [...curioSuggestions];
     
-    // For children with learning history, blend in personalized suggestions
     if (pastCurios.length > 5) {
       const personalizedSuggestions = getPersonalizedSuggestions();
       
-      // Interleave personalized and standard suggestions
       const blendedSuggestions: string[] = [];
       const maxLength = Math.max(suggestions.length, personalizedSuggestions.length);
       
@@ -61,10 +55,9 @@ const SmartDashboard: React.FC<SmartDashboardProps> = ({
         }
       }
       
-      suggestions = blendedSuggestions.slice(0, 8); // Limit to 8 total suggestions
+      suggestions = blendedSuggestions.slice(0, 8);
     }
     
-    // Filter by category if selected
     if (selectedCategory && selectedCategory !== 'all') {
       const categoryKeywords: Record<string, string[]> = {
         'space': ['space', 'planet', 'star', 'galaxy', 'moon', 'astronaut', 'rocket', 'orbit', 'universe'],
@@ -77,42 +70,37 @@ const SmartDashboard: React.FC<SmartDashboardProps> = ({
         keywords.some(keyword => suggestion.toLowerCase().includes(keyword))
       );
       
-      // If too few suggestions remain, add some general ones from the category
-      if (suggestions.length < 4) {
-        const generalSuggestions: Record<string, string[]> = {
-          'space': [
-            'How big is the universe?',
-            'What is a black hole?',
-            'How many planets are there?',
-            'Why does the moon change shape?'
-          ],
-          'animals': [
-            'What's the fastest animal?',
-            'How do animals communicate?',
-            'Why do some animals hibernate?',
-            'How do birds know where to fly?'
-          ],
-          'science': [
-            'How do magnets work?',
-            'What are atoms made of?',
-            'How do plants grow from seeds?',
-            'What is electricity?'
-          ]
-        };
-        
-        suggestions = [
-          ...suggestions, 
-          ...generalSuggestions[selectedCategory] || []
-        ].slice(0, 8);
-      }
+      const generalSuggestions: Record<string, string[]> = {
+        'space': [
+          'How big is the universe?',
+          'What is a black hole?',
+          'How many planets are there?',
+          'Why does the moon change shape?'
+        ],
+        'animals': [
+          "What's the fastest animal?",
+          'How do animals communicate?',
+          'Why do some animals hibernate?',
+          'How do birds know where to fly?'
+        ],
+        'science': [
+          'How do magnets work?',
+          'What are atoms made of?',
+          'How do plants grow from seeds?',
+          'What is electricity?'
+        ]
+      };
+      
+      suggestions = [
+        ...suggestions, 
+        ...generalSuggestions[selectedCategory] || []
+      ].slice(0, 8);
     }
     
     setDisplayedSuggestions(suggestions);
   }, [curioSuggestions, pastCurios.length, selectedCategory, getPersonalizedSuggestions]);
   
-  // Memory recollection feature - to suggest topics from long ago
   const getMemorySuggestions = () => {
-    // Find curios from 3+ months ago
     const now = new Date();
     const threeMonthsAgo = new Date();
     threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
@@ -141,7 +129,6 @@ const SmartDashboard: React.FC<SmartDashboardProps> = ({
   
   return (
     <div className="space-y-6 mt-6">
-      {/* Curio Suggestions Section - Enhanced with memory */}
       <div>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
@@ -191,7 +178,6 @@ const SmartDashboard: React.FC<SmartDashboardProps> = ({
         </div>
       </div>
       
-      {/* Learning Journey - Only show for children with history */}
       {pastCurios.length > 7 && !isLoadingHistory && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -206,7 +192,6 @@ const SmartDashboard: React.FC<SmartDashboardProps> = ({
               </h3>
               
               <div className="space-y-4">
-                {/* Recent topics */}
                 {recentlyViewedTopics.length > 0 && (
                   <div>
                     <h4 className="text-sm font-medium text-white/70 mb-2">Recently Explored</h4>
@@ -226,7 +211,6 @@ const SmartDashboard: React.FC<SmartDashboardProps> = ({
                   </div>
                 )}
                 
-                {/* Strongest topics */}
                 {strongestTopics.length > 0 && (
                   <div>
                     <h4 className="text-sm font-medium text-white/70 mb-2">Topics You Love</h4>
