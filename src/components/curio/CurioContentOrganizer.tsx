@@ -2,13 +2,15 @@
 import React, { useMemo } from 'react';
 import { ContentBlock as ContentBlockType } from '@/types/curio';
 
+// Props interface following Dr. Susana Zhang's cognitive development model
 interface CurioContentOrganizerProps {
   blocks: ContentBlockType[];
   childAge?: number; // Optional: age for age-appropriate sequencing
-  timeOfDay?: 'morning' | 'afternoon' | 'evening'; // Optional: time context
+  timeOfDay?: 'morning' | 'afternoon' | 'evening'; // Optional: time context based on Dr. Qing Hua's research
   children?: (organizedBlocks: ContentBlockType[]) => React.ReactNode;
 }
 
+// Component implementing render prop pattern for flexibility
 const CurioContentOrganizer: React.FC<CurioContentOrganizerProps> = ({ 
   blocks,
   childAge = 8, // Default to middle of range
@@ -146,7 +148,7 @@ export const useContentOrganizer = (
   blocks: ContentBlockType[],
   childAge = 8,
   timeOfDay: 'morning' | 'afternoon' | 'evening' = 'afternoon'
-) => {
+): { organizedBlocks: ContentBlockType[] } => {
   // Reuse the same organization logic
   const organizedBlocks = useMemo(() => {
     if (!blocks || blocks.length === 0) return [];

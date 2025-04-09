@@ -83,10 +83,6 @@ const CurioContent: React.FC<CurioContentProps> = ({
   generationError
 }) => {
   const [showLearningPath, setShowLearningPath] = useState(false);
-  const [showMentalBreak, setShowMentalBreak] = useState(false);
-  
-  // Mental break timer
-  const [breakTimeRemaining, setBreakTimeRemaining] = useState(10);
   
   // Use memoization to avoid unnecessary re-renders
   const visibleBlocks = useMemo(() => {
@@ -126,60 +122,6 @@ const CurioContent: React.FC<CurioContentProps> = ({
              'Learning Activity'
     }));
   }, [visibleBlocks]);
-  
-  // Check if we need a mental break after intensive blocks
-  const needsMentalBreak = useMemo(() => {
-    if (!visibleBlocks || visibleBlocks.length < 3) return false;
-    
-    // Count how many intensive blocks (quiz, flashcard) in a row
-    let intensiveCount = 0;
-    for (let i = 0; i < visibleBlocks.length; i++) {
-      const blockType = visibleBlocks[i].type;
-      if (blockType === 'quiz' || blockType === 'flashcard') {
-        intensiveCount++;
-      } else {
-        intensiveCount = 0;
-      }
-      
-      // If we have 2 or more intensive blocks in a row and haven't shown a break yet
-      if (intensiveCount >= 2 && !showMentalBreak) {
-        return true;
-      }
-    }
-    
-    return false;
-  }, [visibleBlocks, showMentalBreak]);
-  
-  // Handle showing mental break
-  const handleShowMentalBreak = () => {
-    setShowMentalBreak(true);
-    
-    // Start countdown timer
-    const timer = setInterval(() => {
-      setBreakTimeRemaining(prev => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          setTimeout(() => {
-            setShowMentalBreak(false);
-            setBreakTimeRemaining(10);
-          }, 1000);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  };
-  
-  // Show mental break if needed
-  React.useEffect(() => {
-    if (needsMentalBreak && !showMentalBreak) {
-      const timeout = setTimeout(() => {
-        handleShowMentalBreak();
-      }, 1000);
-      
-      return () => clearTimeout(timeout);
-    }
-  }, [needsMentalBreak, showMentalBreak]);
 
   if (!currentCurio) {
     return null;
@@ -277,46 +219,6 @@ const CurioContent: React.FC<CurioContentProps> = ({
                         ))}
                       </div>
                     </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Mental Break Overlay */}
-            <AnimatePresence>
-              {showMentalBreak && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
-                >
-                  <div className="bg-gradient-to-br from-wonderwhiz-deep-purple to-indigo-900 p-6 rounded-xl max-w-md text-center shadow-xl border border-white/20">
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: "spring", damping: 10 }}
-                      className="w-16 h-16 bg-wonderwhiz-gold/20 rounded-full flex items-center justify-center mx-auto mb-4"
-                    >
-                      <Sparkles className="w-8 h-8 text-wonderwhiz-gold" />
-                    </motion.div>
-                    
-                    <h3 className="text-xl font-bold text-white mb-2">Quick Brain Break!</h3>
-                    <p className="text-white/80 mb-4">
-                      Take a moment to relax your mind. Close your eyes, take a deep breath, and let your thoughts settle.
-                    </p>
-                    
-                    <div className="w-full bg-white/10 h-2 rounded-full mb-2">
-                      <motion.div
-                        initial={{ width: "100%" }}
-                        animate={{ width: `${(breakTimeRemaining / 10) * 100}%` }}
-                        className="bg-wonderwhiz-gold h-full rounded-full"
-                      />
-                    </div>
-                    
-                    <p className="text-white/60 text-sm">
-                      {breakTimeRemaining} seconds remaining
-                    </p>
                   </div>
                 </motion.div>
               )}
