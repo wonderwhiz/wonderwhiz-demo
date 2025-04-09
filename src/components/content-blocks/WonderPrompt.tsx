@@ -26,22 +26,72 @@ const WonderPrompt: React.FC<WonderPromptProps> = ({
     // Generate better wonder prompts using the new utility function
     const generatedPrompts = createWonderQuestions(blockContent, blockType, specialistId);
     
-    // Add narrative position context
-    const positionBasedPrompt = narrativePosition === 'beginning' 
-      ? "What else would you like to discover about this topic?" 
-      : narrativePosition === 'end'
-      ? "What new directions could this knowledge take you?"
-      : "How does this connect to what you already know?";
+    // Add narrative position context for a better storytelling arc
+    let positionBasedPrompts: string[] = [];
     
-    // Combine prompts and limit to 3
-    setWonderPrompts([...generatedPrompts, positionBasedPrompt].slice(0, 3));
+    if (narrativePosition === 'beginning') {
+      positionBasedPrompts = [
+        "What might be the first thing you'd want to know about this topic?",
+        "What makes you most curious about this right now?",
+        "How does this connect to things you already know?"
+      ];
+    } else if (narrativePosition === 'middle') {
+      positionBasedPrompts = [
+        "How does this information change what you thought before?",
+        "What's the most surprising thing you've learned so far?",
+        "What question would help deepen your understanding?"
+      ];
+    } else { // end
+      positionBasedPrompts = [
+        "What new directions could this knowledge take you?",
+        "How might you apply what you've learned in your own life?",
+        "What's still a mystery about this topic that you'd like to explore?"
+      ];
+    }
+    
+    // Combine all prompts, prioritize generated prompts, and limit to 3
+    const allPrompts = [...generatedPrompts, ...positionBasedPrompts];
+    // Remove duplicates or very similar questions
+    const uniquePrompts = allPrompts.filter((prompt, index, self) => 
+      index === self.findIndex(p => 
+        p.toLowerCase().includes(prompt.toLowerCase().substring(0, 15)) || 
+        prompt.toLowerCase().includes(p.toLowerCase().substring(0, 15))
+      )
+    );
+    
+    setWonderPrompts(uniquePrompts.slice(0, 3));
   }, [specialistId, blockType, blockContent, narrativePosition]);
+
+  // More engaging animation variants
+  const containerVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: {
+        duration: 0.6,
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, x: -10 },
+    visible: { 
+      opacity: 1, 
+      x: 0,
+      transition: {
+        type: "spring",
+        stiffness: 100
+      }
+    }
+  };
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.2 }}
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
       className="mb-4 bg-white/5 backdrop-blur-sm rounded-lg p-3 border border-white/10"
     >
       <div className="flex items-start gap-3 mb-2">
@@ -58,6 +108,7 @@ const WonderPrompt: React.FC<WonderPromptProps> = ({
             className="text-left text-white/90 text-sm hover:text-white group flex items-start"
             whileHover={{ x: 5 }}
             onClick={() => onRabbitHoleClick(prompt)}
+            variants={itemVariants}
           >
             <Lightbulb className="h-4 w-4 mr-2 mt-0.5 text-wonderwhiz-gold/70 group-hover:text-wonderwhiz-gold" />
             <span>{prompt}</span>
@@ -69,7 +120,7 @@ const WonderPrompt: React.FC<WonderPromptProps> = ({
         <Button
           variant="ghost"
           size="sm"
-          className="text-xs text-white/70 hover:text-white p-0 h-auto"
+          className="text-xs text-white/70 hover:text-white p-0 h-auto group"
           onClick={() => onRabbitHoleClick(wonderPrompts[0] || "Tell me more about this topic")}
         >
           <span>Explore more wonders</span>
