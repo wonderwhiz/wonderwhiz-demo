@@ -7,12 +7,14 @@ interface BlockHeaderProps {
   specialistId: string;
   blockTitle: string;
   blockType?: string;
+  narrativePosition?: 'beginning' | 'middle' | 'end';
 }
 
 const BlockHeader: React.FC<BlockHeaderProps> = ({ 
   specialistId, 
   blockTitle,
-  blockType = 'fact'
+  blockType = 'fact',
+  narrativePosition
 }) => {
   const specialistName = getSpecialistName(specialistId);
   const specialistEmoji = getSpecialistEmoji(specialistId);

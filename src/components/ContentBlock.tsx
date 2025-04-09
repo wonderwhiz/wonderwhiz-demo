@@ -443,48 +443,40 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         return <QuizBlock 
           content={block.content} 
           onQuizCorrect={onQuizCorrect}
-          narrativePosition={narrativePosition}
         />;
       case 'flashcard':
         return <FlashcardBlock 
           content={block.content}
-          narrativePosition={narrativePosition}
         />;
       case 'creative':
         return <CreativeBlock 
           content={block.content} 
           onCreativeUpload={() => handleCreativeUploadSuccess(uploadFeedback || "Your artwork is amazing! I love the colors and creativity you've shown. You're a wonderful artist!")} 
           uploadFeedback={uploadFeedback}
-          narrativePosition={narrativePosition}
         />;
       case 'task':
         return <TaskBlock 
           content={block.content} 
           onTaskComplete={onTaskComplete || (() => {})}
-          narrativePosition={narrativePosition}
         />;
       case 'riddle':
         return <RiddleBlock 
           content={block.content}
-          narrativePosition={narrativePosition}
         />;
       case 'news':
         return <NewsBlock 
           content={block.content} 
           onNewsRead={onNewsRead || (() => {})}
-          narrativePosition={narrativePosition}
         />;
       case 'activity':
         return <ActivityBlock 
           content={block.content} 
           onActivityComplete={onActivityComplete || (() => {})}
-          narrativePosition={narrativePosition}
         />;
       case 'mindfulness':
         return <MindfulnessBlock 
           content={block.content} 
           onMindfulnessComplete={onMindfulnessComplete || (() => {})}
-          narrativePosition={narrativePosition}
         />;
       default:
         return <p className="text-white/70 text-sm">This content type is not supported yet.</p>;
@@ -581,7 +573,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
           onToggleBookmark={onToggleBookmark}
           setShowReplyForm={setShowReplyForm}
           blockType={block.type}
-          narrativePosition={narrativePosition}
         />
         
         {showReplyForm && (

@@ -9,9 +9,10 @@ interface ActivityBlockProps {
     activity: string;
   };
   onActivityComplete?: () => void;
+  narrativePosition?: 'beginning' | 'middle' | 'end';
 }
 
-const ActivityBlock: React.FC<ActivityBlockProps> = ({ content, onActivityComplete }) => {
+const ActivityBlock: React.FC<ActivityBlockProps> = ({ content, onActivityComplete, narrativePosition }) => {
   const [completed, setCompleted] = useState(false);
   
   const handleComplete = () => {

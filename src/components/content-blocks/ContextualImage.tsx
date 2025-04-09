@@ -14,6 +14,7 @@ interface ContextualImageProps {
   handleImageLoadError: () => void;
   handleRetryImage: () => void;
   getContextualImageStyle: (blockType: string) => string;
+  narrativePosition?: 'beginning' | 'middle' | 'end';
 }
 
 const ContextualImage: React.FC<ContextualImageProps> = ({
@@ -26,6 +27,7 @@ const ContextualImage: React.FC<ContextualImageProps> = ({
   handleImageLoadError,
   handleRetryImage,
   getContextualImageStyle,
+  narrativePosition
 }) => {
   // Add safe check to make sure we don't try to split undefined values
   const getSafeImageDescription = () => {
