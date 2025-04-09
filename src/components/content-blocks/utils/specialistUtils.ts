@@ -51,6 +51,145 @@ export const getSpecialistDescription = (specialistId: string): string => {
   return specialists[specialistId as keyof typeof specialists]?.description || 'Knowledge expert';
 };
 
+// Get specialist style information for UI components
+export const getSpecialistStyle = (specialistId: string): { gradient: string, color: string, bgColor: string } => {
+  switch (specialistId) {
+    case 'nova':
+      return {
+        gradient: 'bg-gradient-to-br from-blue-500/10 to-indigo-600/10',
+        color: 'text-blue-400',
+        bgColor: 'bg-blue-500/10'
+      };
+    case 'spark':
+      return {
+        gradient: 'bg-gradient-to-br from-pink-500/10 to-rose-600/10',
+        color: 'text-pink-400',
+        bgColor: 'bg-pink-500/10'
+      };
+    case 'prism':
+      return {
+        gradient: 'bg-gradient-to-br from-amber-500/10 to-yellow-600/10',
+        color: 'text-amber-400',
+        bgColor: 'bg-amber-500/10'
+      };
+    case 'pixel':
+      return {
+        gradient: 'bg-gradient-to-br from-cyan-500/10 to-blue-600/10',
+        color: 'text-cyan-400',
+        bgColor: 'bg-cyan-500/10'
+      };
+    case 'atlas':
+      return {
+        gradient: 'bg-gradient-to-br from-emerald-500/10 to-teal-600/10',
+        color: 'text-emerald-400',
+        bgColor: 'bg-emerald-500/10'
+      };
+    case 'lotus':
+      return {
+        gradient: 'bg-gradient-to-br from-purple-500/10 to-violet-600/10',
+        color: 'text-purple-400',
+        bgColor: 'bg-purple-500/10'
+      };
+    default:
+      return {
+        gradient: 'bg-gradient-to-br from-gray-500/10 to-slate-600/10',
+        color: 'text-gray-400',
+        bgColor: 'bg-gray-500/10'
+      };
+  }
+};
+
+// Get a formatted title for a block based on its content and specialist
+export const getBlockTitle = (block: any): string => {
+  if (!block) return 'Fascinating Discovery';
+  
+  const specialist = block.specialist_id || 'prism';
+  
+  // Block type specific titles
+  switch (block.type) {
+    case 'fact':
+    case 'funFact':
+      return specialist === 'nova' ? 'Cosmic Discovery' :
+             specialist === 'spark' ? 'Creative Insight' :
+             specialist === 'prism' ? 'Amazing Fact' :
+             specialist === 'pixel' ? 'Tech Revelation' :
+             specialist === 'atlas' ? 'Historical Treasure' :
+             specialist === 'lotus' ? 'Natural Wonder' :
+             'Fascinating Discovery';
+    case 'quiz':
+      return 'Brain Teaser';
+    case 'flashcard':
+      return 'Knowledge Card';
+    case 'creative':
+      return 'Creative Challenge';
+    case 'task':
+      return 'Learning Adventure';
+    case 'riddle':
+      return 'Mind Puzzle';
+    case 'news':
+      return 'Discovery News';
+    case 'activity':
+      return 'Learning Activity';
+    case 'mindfulness':
+      return 'Mindful Moment';
+    default:
+      return 'Wonder Discovery';
+  }
+};
+
+// Generate topic-specific suggestions for further exploration
+export const getTopicSuggestions = (topic: string): string[] => {
+  if (!topic) return [
+    "What's the most surprising fact about this?",
+    "Why is this important to understand?",
+    "How does this connect to creativity?",
+    "Where can we find this in the natural world?"
+  ];
+  
+  const cleanTopic = topic.replace(/[?!.,;:]/g, '').trim();
+  
+  // Topic-specific suggestions
+  if (cleanTopic.toLowerCase().includes('afghanistan')) {
+    return [
+      `What makes ${cleanTopic} unique compared to other regions?`,
+      `How has the history of ${cleanTopic} shaped today's challenges?`,
+      `What can we learn from the culture of ${cleanTopic}?`,
+      `How does geography affect daily life in ${cleanTopic}?`
+    ];
+  }
+  
+  if (cleanTopic.toLowerCase().includes('bollywood') || 
+      cleanTopic.toLowerCase().includes('film') || 
+      cleanTopic.toLowerCase().includes('movie')) {
+    return [
+      `What's the most surprising fact about ${cleanTopic}?`,
+      `How might ${cleanTopic} change in the next 10 years?`,
+      `What's the connection between ${cleanTopic} and everyday life?`,
+      `What scientific discoveries relate to ${cleanTopic}?`
+    ];
+  }
+  
+  if (cleanTopic.toLowerCase().includes('space') || 
+      cleanTopic.toLowerCase().includes('planet') || 
+      cleanTopic.toLowerCase().includes('star') || 
+      cleanTopic.toLowerCase().includes('cosmos')) {
+    return [
+      `What's the biggest mystery about ${cleanTopic}?`,
+      `How do scientists study ${cleanTopic}?`,
+      `What would happen if ${cleanTopic} suddenly changed?`,
+      `How does ${cleanTopic} affect life on Earth?`
+    ];
+  }
+  
+  // Default suggestions that incorporate the topic
+  return [
+    `What's the most surprising fact about ${cleanTopic}?`,
+    `Why is ${cleanTopic} important to understand?`,
+    `How ${cleanTopic} connects to creativity`,
+    `${cleanTopic} in the natural world`
+  ];
+};
+
 // Get relevant specialist for a given topic
 export const getRelevantSpecialist = (topic: string): string => {
   if (!topic) return 'prism'; // Default to Prism for science if no topic

@@ -82,12 +82,11 @@ const CurioSearchBar: React.FC<CurioSearchBarProps> = ({
           <Input
             type="text"
             placeholder="What would you like to explore?"
-            className={`pl-9 rounded-full bg-white/10 border-white/20 text-white placeholder:text-white/40 font-inter transition-all duration-300 focus:bg-white/15 focus:border-white/30 focus:ring-white/20 ${!isActive ? 'opacity-80 cursor-not-allowed' : ''}`}
+            className={`pl-9 rounded-full bg-white/10 border-white/20 text-white placeholder:text-white/40 font-inter transition-all duration-300 focus:bg-white/15 focus:border-white/30 focus:ring-white/20`}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={handleFocus}
             onBlur={handleBlur}
-            disabled={!isActive}
           />
           <AnimatePresence>
             {searchQuery && (
@@ -111,7 +110,7 @@ const CurioSearchBar: React.FC<CurioSearchBarProps> = ({
           <Button 
             type="submit" 
             className="bg-gradient-to-r from-wonderwhiz-vibrant-yellow to-wonderwhiz-bright-pink text-wonderwhiz-deep-purple font-medium rounded-full px-5"
-            disabled={!isActive || !searchQuery.trim()}
+            disabled={!searchQuery.trim()}
           >
             <span className="mr-1">Explore</span>
             <ArrowRight className="h-4 w-4" />
