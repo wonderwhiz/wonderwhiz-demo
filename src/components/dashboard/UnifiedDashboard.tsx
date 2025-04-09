@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { useChildLearningHistory } from '@/hooks/useChildLearningHistory';
 import { Badge } from '@/components/ui/badge';

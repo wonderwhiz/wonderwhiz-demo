@@ -1,9 +1,13 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Brain, BookOpen, ArrowRight } from 'lucide-react';
+import { Compass, Star, ArrowRight, Sparkles, Book } from 'lucide-react';
 import { useChildLearningHistory } from '@/hooks/useChildLearningHistory';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface KnowledgeJourneyProps {
   childId: string;
@@ -16,55 +20,117 @@ const KnowledgeJourney: React.FC<KnowledgeJourneyProps> = ({
   childProfile,
   onTopicClick
 }) => {
-  const {
-    learningHistory,
-    topicConnections,
-    strongestTopics,
-    findRelatedTopics,
-    isLoading
-  } = useChildLearningHistory(childId);
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const { recentlyViewedTopics, strongestTopics, getPersonalizedSuggestions } = useChildLearningHistory(childId);
+  const [journeyNodes, setJourneyNodes] = useState<any[]>([]);
   
-  const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
-  const [relatedTopics, setRelatedTopics] = useState<string[]>([]);
-  
-  // Select the strongest topic by default
   useEffect(() => {
-    if (strongestTopics.length > 0 && !selectedTopic) {
-      const topic = strongestTopics[0].topic;
-      setSelectedTopic(topic);
-      setRelatedTopics(findRelatedTopics(topic));
+    // Generate knowledge journey nodes from learning history
+    const generateJourneyNodes = () => {
+      // Combine data sources for a rich journey visualization
+      const nodes = [];
+      
+      // Add strongest interests
+      if (strongestTopics.length > 0) {
+        strongestTopics.slice(0, 2).forEach(topic => {
+          nodes.push({
+            id: `strength-${topic.topic}`,
+            type: 'strength',
+            title: topic.topic,
+            subtitle: 'Your strength',
+            icon: <Star className="h-4 w-4 text-amber-400" />,
+            color: 'from-amber-500/20 to-orange-500/20',
+            iconBg: 'bg-gradient-to-br from-amber-500 to-orange-500'
+          });
+        });
+      }
+      
+      // Add recent topics with recency info
+      if (recentlyViewedTopics.length > 0) {
+        recentlyViewedTopics.slice(0, 3).forEach((topic, index) => {
+          nodes.push({
+            id: `recent-${topic}`,
+            type: 'recent',
+            title: topic,
+            subtitle: index === 0 ? 'Recently explored' : 'Previously explored',
+            icon: <Book className="h-4 w-4 text-blue-400" />,
+            color: 'from-blue-500/20 to-indigo-500/20',
+            iconBg: 'bg-gradient-to-br from-blue-500 to-indigo-500'
+          });
+        });
+      }
+      
+      // Add personalized suggestions as next steps
+      const suggestions = getPersonalizedSuggestions().slice(0, 2);
+      suggestions.forEach(suggestion => {
+        nodes.push({
+          id: `suggestion-${suggestion}`,
+          type: 'suggestion',
+          title: suggestion,
+          subtitle: 'Recommended for you',
+          icon: <Compass className="h-4 w-4 text-green-400" />,
+          color: 'from-green-500/20 to-emerald-500/20',
+          iconBg: 'bg-gradient-to-br from-green-500 to-emerald-500'
+        });
+      });
+      
+      // Add interests-based nodes
+      if (childProfile?.interests && childProfile.interests.length > 0) {
+        childProfile.interests.slice(0, 2).forEach(interest => {
+          nodes.push({
+            id: `interest-${interest}`,
+            type: 'interest',
+            title: interest,
+            subtitle: 'Based on your interests',
+            icon: <Sparkles className="h-4 w-4 text-purple-400" />,
+            color: 'from-purple-500/20 to-pink-500/20',
+            iconBg: 'bg-gradient-to-br from-purple-500 to-pink-500'
+          });
+        });
+      }
+      
+      setJourneyNodes(nodes);
+    };
+    
+    generateJourneyNodes();
+  }, [childProfile, recentlyViewedTopics, strongestTopics, getPersonalizedSuggestions]);
+
+  const handleNodeClick = (node: any) => {
+    // Handle clicks differently based on node type
+    switch (node.type) {
+      case 'strength':
+        onTopicClick(`Tell me more about ${node.title}`);
+        break;
+      case 'recent':
+        onTopicClick(`Continue learning about ${node.title}`);
+        break;
+      case 'suggestion':
+        onTopicClick(node.title);
+        break;
+      case 'interest':
+        onTopicClick(`Show me something fascinating about ${node.title}`);
+        break;
+      default:
+        onTopicClick(node.title);
     }
-  }, [strongestTopics, findRelatedTopics, selectedTopic]);
-  
-  // Handle topic selection
-  const handleTopicSelect = (topic: string) => {
-    setSelectedTopic(topic);
-    setRelatedTopics(findRelatedTopics(topic));
   };
-  
-  // Choose topic to explore
-  const handleExplore = (topic: string) => {
-    onTopicClick(`Tell me more about ${topic}`);
-  };
-  
-  // Calculate the number of topics explored
-  const topicsExplored = learningHistory.length;
   
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: {
+    visible: { 
       opacity: 1,
       transition: {
+        when: "beforeChildren",
         staggerChildren: 0.1
       }
     }
   };
   
   const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
+    hidden: { opacity: 0, y: 10 },
+    visible: { 
+      opacity: 1, 
       y: 0,
       transition: {
         type: "spring",
@@ -73,181 +139,92 @@ const KnowledgeJourney: React.FC<KnowledgeJourneyProps> = ({
       }
     }
   };
-  
-  const connectionVariants = {
-    hidden: { pathLength: 0, opacity: 0 },
-    visible: {
-      pathLength: 1,
-      opacity: 1,
-      transition: { 
-        delay: 0.3,
-        duration: 1.5,
-        ease: "easeInOut"
-      }
-    }
-  };
-  
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10">
-        <motion.div 
-          animate={{ rotate: 360 }}
-          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-        >
-          <Brain className="h-10 w-10 text-white/30" />
-        </motion.div>
-      </div>
-    );
-  }
-  
-  // No learning history yet
-  if (learningHistory.length === 0) {
-    return (
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible" 
-        className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-5 text-center h-64 flex flex-col items-center justify-center"
-      >
-        <BookOpen className="h-12 w-12 text-white/30 mb-4" />
-        <h3 className="text-xl font-medium text-white mb-2">Your Knowledge Journey</h3>
-        <p className="text-white/70 mb-4">Begin your exploration to see your knowledge grow here!</p>
-        <Button 
-          variant="outline"
-          onClick={() => onTopicClick('What is the most fascinating science fact?')}
-          className="bg-white/10 border-white/20 text-white hover:bg-white/20 hover:text-white"
-        >
-          Start Exploring
-        </Button>
-      </motion.div>
-    );
-  }
-  
+
   return (
-    <motion.div
+    <motion.div 
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="bg-gradient-to-br from-purple-900/30 to-indigo-900/30 backdrop-blur-sm rounded-xl border border-white/10 p-5 overflow-hidden"
+      className="bg-gradient-to-br from-indigo-500/10 to-purple-600/10 backdrop-blur-sm rounded-xl border border-white/10 p-4"
     >
       <div className="flex items-center justify-between mb-4">
-        <motion.div variants={itemVariants} className="flex items-center">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-vibrant-yellow flex items-center justify-center mr-3">
-            <Brain className="h-5 w-5 text-wonderwhiz-deep-purple" />
+        <div className="flex items-center">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-500/30 to-purple-600/30 flex items-center justify-center mr-3">
+            <Compass className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h3 className="text-lg font-medium text-white">Your Knowledge Universe</h3>
-            <p className="text-sm text-white/60">
-              {topicsExplored} topic{topicsExplored !== 1 ? 's' : ''} explored
-            </p>
+            <h3 className="text-lg font-medium text-white">Your Knowledge Journey</h3>
+            <p className="text-sm text-white/60">Discover what to explore next</p>
           </div>
-        </motion.div>
-      </div>
-      
-      <div className="relative h-[280px] w-full">
-        {/* Interactive knowledge graph visualization */}
-        <div className="absolute inset-0 overflow-hidden">
-          {/* Background effect */}
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 0.2 }}
-            transition={{ duration: 3, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-gradient-to-r from-wonderwhiz-bright-pink/20 to-wonderwhiz-vibrant-yellow/20 blur-2xl"
-          />
-          
-          {/* Selected topic node */}
-          {selectedTopic && (
-            <motion.div
-              variants={itemVariants}
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10"
-            >
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="w-24 h-24 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex flex-col items-center justify-center cursor-pointer shadow-xl shadow-purple-900/20"
-                onClick={() => handleExplore(selectedTopic)}
-              >
-                <Sparkles className="h-6 w-6 text-wonderwhiz-gold mb-1" />
-                <span className="text-white font-medium text-center px-2 text-sm leading-tight line-clamp-2">
-                  {selectedTopic}
-                </span>
-              </motion.div>
-            </motion.div>
-          )}
-          
-          {/* Related topics */}
-          {relatedTopics.map((topic, index) => {
-            // Position in a circle around the main topic
-            const angle = (index * (360 / relatedTopics.length)) * (Math.PI / 180);
-            const radius = 110;
-            const x = Math.cos(angle) * radius;
-            const y = Math.sin(angle) * radius;
-            
-            return (
-              <React.Fragment key={topic}>
-                {/* Connection line */}
-                <svg className="absolute top-1/2 left-1/2 z-0 w-full h-full pointer-events-none">
-                  <motion.line
-                    variants={connectionVariants}
-                    x1="50%"
-                    y1="50%"
-                    x2={`calc(50% + ${x}px)`}
-                    y2={`calc(50% + ${y}px)`}
-                    stroke="url(#lineGradient)"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeDasharray="4,8"
-                  />
-                  <defs>
-                    <linearGradient id="lineGradient" gradientTransform="rotate(90)">
-                      <stop offset="0%" stopColor="#FFCD4A" stopOpacity="0.3" />
-                      <stop offset="100%" stopColor="#FF5CBE" stopOpacity="0.3" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-                
-                {/* Topic node */}
-                <motion.div
-                  variants={itemVariants}
-                  style={{
-                    top: `calc(50% + ${y}px)`,
-                    left: `calc(50% + ${x}px)`,
-                    transform: 'translate(-50%, -50%)',
-                  }}
-                  className="absolute z-10"
-                >
-                  <motion.div
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    className="w-16 h-16 rounded-full bg-white/5 backdrop-blur-md border border-white/10 flex items-center justify-center cursor-pointer"
-                    onClick={() => handleTopicSelect(topic)}
-                  >
-                    <span className="text-white/90 font-medium text-xs text-center px-2 line-clamp-2">
-                      {topic}
-                    </span>
-                  </motion.div>
-                </motion.div>
-              </React.Fragment>
-            );
-          })}
         </div>
+        
+        <Badge variant="outline" className="bg-white/10 text-white/90 border-white/20">
+          {journeyNodes.length} pathways
+        </Badge>
       </div>
       
-      <div className="mt-4 flex justify-between items-center">
-        <h4 className="text-sm font-medium text-white/70">
-          {selectedTopic ? `Explore ${selectedTopic}` : 'Select a topic to explore'}
-        </h4>
+      {/* Knowledge journey visualization */}
+      <div className="space-y-3 relative">
+        {/* Connecting line for the journey */}
+        <div className="absolute left-5 top-2 bottom-2 w-0.5 bg-gradient-to-b from-indigo-500/50 via-purple-500/50 to-pink-500/50 z-0"></div>
         
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => selectedTopic && handleExplore(selectedTopic)}
-          className="text-white/70 hover:text-white group flex items-center gap-1"
-        >
-          <span>Dive deeper</span>
-          <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
-        </Button>
+        {journeyNodes.map((node, index) => (
+          <motion.div 
+            key={node.id}
+            variants={itemVariants}
+            whileHover={{ x: 3, scale: 1.01 }}
+            className={cn(
+              "relative z-10 pl-10 py-1",
+              index === 0 ? "pb-3" : "",
+              index === journeyNodes.length - 1 ? "pt-3" : ""
+            )}
+          >
+            {/* Node marker */}
+            <div className="absolute left-3.5 top-4 w-3 h-3 rounded-full bg-white z-10 transform -translate-x-1/2"></div>
+            
+            <Card 
+              className={cn(
+                "overflow-hidden border-white/10 bg-gradient-to-br", 
+                node.color,
+                "hover:border-white/20 transition-all cursor-pointer group"
+              )}
+              onClick={() => handleNodeClick(node)}
+            >
+              <CardContent className="p-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className={cn("p-2 rounded-full mr-3", node.iconBg)}>
+                      {node.icon}
+                    </div>
+                    
+                    <div>
+                      <h4 className="font-medium text-white group-hover:text-white/90">{node.title}</h4>
+                      <p className="text-xs text-white/60">{node.subtitle}</p>
+                    </div>
+                  </div>
+                  
+                  <ArrowRight className="h-4 w-4 text-white/40 group-hover:text-white/70 group-hover:translate-x-0.5 transition-all" />
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
       </div>
+      
+      {journeyNodes.length === 0 && (
+        <div className="text-center py-6 text-white/60">
+          <p>Start your learning journey by exploring topics!</p>
+        </div>
+      )}
+      
+      <Button 
+        variant="ghost" 
+        className="w-full mt-3 text-white/70 hover:text-white hover:bg-white/10"
+        onClick={() => onTopicClick("Suggest a new topic for me to learn about")}
+      >
+        <Compass className="mr-2 h-4 w-4" />
+        <span>Discover new paths</span>
+      </Button>
     </motion.div>
   );
 };

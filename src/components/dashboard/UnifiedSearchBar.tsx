@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Sparkles, Clock, ArrowRight, Lightbulb, X } from 'lucide-react';
+import { Search, Sparkles, Clock, ArrowRight, Lightbulb, X, Star, Brain } from 'lucide-react';
 import { Command, CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -56,10 +56,13 @@ const UnifiedSearchBar: React.FC<UnifiedSearchBarProps> = ({
     const timeBasedSuggestions = [];
     if (activeTimeOfDay === 'morning') {
       timeBasedSuggestions.push("What's something new I could learn today?");
+      timeBasedSuggestions.push("How do our brains work in the morning?");
     } else if (activeTimeOfDay === 'afternoon') {
       timeBasedSuggestions.push("What's the most fascinating discovery in science recently?");
+      timeBasedSuggestions.push("How do plants make their own food?");
     } else {
       timeBasedSuggestions.push("What mysteries of space are scientists still trying to solve?");
+      timeBasedSuggestions.push("Why do we see stars at night?");
     }
     
     // Add interest-based suggestions if available
@@ -80,7 +83,8 @@ const UnifiedSearchBar: React.FC<UnifiedSearchBarProps> = ({
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (query.trim() && !isGenerating) {
-      handleSubmitQuery();
+      handleSubmitQuery(e);
+      setShowCommandDialog(false);
     }
   };
 
@@ -185,35 +189,6 @@ const UnifiedSearchBar: React.FC<UnifiedSearchBarProps> = ({
             )}
           </Button>
         </div>
-        
-        {/* Intelligent search suggestions - directly below search without dialog */}
-        <AnimatePresence>
-          {isFocused && !showCommandDialog && recentQueries.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              className="absolute z-20 left-0 right-0 mt-2 p-2 bg-wonderwhiz-deep-purple/90 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg"
-            >
-              {recentQueries.slice(0, 3).map((recentQuery, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, x: -5 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  whileHover={{ x: 2 }}
-                  className="px-3 py-2 hover:bg-white/10 rounded-lg cursor-pointer transition-colors group"
-                  onClick={() => handleSuggestionClick(recentQuery)}
-                >
-                  <div className="flex items-center">
-                    <Clock className="h-3.5 w-3.5 mr-2 text-white/50 group-hover:text-wonderwhiz-gold transition-colors" />
-                    <span className="text-sm text-white/90 group-hover:text-white">{recentQuery}</span>
-                  </div>
-                </motion.div>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
       </form>
       
       {/* Enhanced search dialog */}
@@ -269,6 +244,24 @@ const UnifiedSearchBar: React.FC<UnifiedSearchBarProps> = ({
           </CommandList>
         </Command>
       </CommandDialog>
+      
+      {/* Quick suggestion chips */}
+      <div className="flex flex-wrap gap-2 justify-center mt-3">
+        {popularTopics.slice(0, 3).map((topic, index) => (
+          <motion.button
+            key={`chip-${index}`}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+            whileHover={{ scale: 1.05, y: -2 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => handleSuggestionClick(`Tell me about ${topic}`)}
+            className="px-3 py-1.5 bg-white/10 hover:bg-white/15 rounded-full text-white/80 hover:text-white text-sm transition-all duration-200"
+          >
+            {topic}
+          </motion.button>
+        ))}
+      </div>
     </motion.div>
   );
 };

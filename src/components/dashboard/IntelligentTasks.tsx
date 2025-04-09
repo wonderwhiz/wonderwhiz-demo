@@ -6,6 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useChildLearningHistory } from '@/hooks/useChildLearningHistory';
+import { cn } from '@/lib/utils';
 
 interface IntelligentTasksProps {
   childId: string;
@@ -217,19 +218,18 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
             whileHover={{ scale: 1.02, x: 2 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => handleTaskClick(task)}
-            className={`
-              p-3 rounded-lg cursor-pointer transition-all relative overflow-hidden group
-              ${task.completed 
+            className={cn(
+              "p-3 rounded-lg cursor-pointer transition-all relative overflow-hidden group",
+              task.completed 
                 ? "bg-green-500/20 border border-green-500/30"
                 : "bg-white/5 border border-white/10 hover:border-white/20"
-              }
-            `}
+            )}
           >
             <div className="flex items-start gap-3">
-              <div className={`
-                w-8 h-8 rounded-full flex items-center justify-center
-                ${task.completed ? "bg-green-500/50" : "bg-white/10"}
-              `}>
+              <div className={cn(
+                "w-8 h-8 rounded-full flex items-center justify-center",
+                task.completed ? "bg-green-500/50" : "bg-white/10"
+              )}>
                 {task.completed ? (
                   <CheckCircle className="h-4 w-4 text-white" />
                 ) : (
@@ -238,7 +238,7 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
               </div>
               
               <div className="flex-grow">
-                <p className={`font-medium text-sm ${task.completed ? "text-green-300" : "text-white"}`}>
+                <p className={cn("font-medium text-sm", task.completed ? "text-green-300" : "text-white")}>
                   {task.title}
                 </p>
                 <div className="flex items-center mt-1">
@@ -251,7 +251,7 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
                   </div>
                   
                   {task.priority === 'high' && (
-                    <Badge className="ml-2 py-0 h-4 bg-white/10 text-white/70 text-[10px]">
+                    <Badge className="ml-2 py-0 h-4 bg-pink-500/20 text-pink-300 text-[10px] border-none">
                       Priority
                     </Badge>
                   )}
