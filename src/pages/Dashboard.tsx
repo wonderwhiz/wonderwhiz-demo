@@ -13,7 +13,7 @@ const Dashboard = () => {
     // Track when users visit the dashboard page
     console.log('Dashboard loaded - tracking user engagement');
     
-    // Record time of day for cognitive optimization (Dr. Qing Hua's recommendation)
+    // Record time of day for cognitive optimization
     const hour = new Date().getHours();
     let timeOfDay = 'morning';
     if (hour >= 12 && hour < 17) timeOfDay = 'afternoon';
@@ -21,7 +21,6 @@ const Dashboard = () => {
     console.log(`Dashboard loaded during ${timeOfDay} - optimizing content for this time`);
     
     // Show welcome toast based on time of day with child-friendly messaging
-    // Messaging crafted with child development expertise
     const welcomeMessages = [
       '✨ What amazing thing will you discover today?',
       '🔎 Ready for a wonder adventure?',

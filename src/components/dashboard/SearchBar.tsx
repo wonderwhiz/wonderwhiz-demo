@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import EnhancedSearchBar from './EnhancedSearchBar';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Lightbulb, TrendingUp } from 'lucide-react';
+import { Sparkles, Lightbulb } from 'lucide-react';
 
 interface SearchBarProps {
   query: string;
@@ -63,26 +63,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
       <div className="mb-2 flex justify-between items-center">
         <div className="flex items-center">
           <Lightbulb className="h-4 w-4 text-wonderwhiz-gold mr-1.5" />
-          <span className="text-white/80 text-sm font-medium">Ask me anything!</span>
-        </div>
-        
-        <div className="flex items-center">
-          <TrendingUp className="h-3.5 w-3.5 text-white/50 mr-1.5" />
-          <span className="text-white/50 text-xs">Trending:</span>
-          <div className="flex ml-1.5 space-x-1.5">
-            {getTrendingTopics().map(topic => (
-              <button 
-                key={topic}
-                className="text-white/60 hover:text-wonderwhiz-gold text-xs transition-colors"
-                onClick={() => {
-                  setQuery(`Tell me about ${topic}`);
-                  setTimeout(() => handleSubmitQuery(), 300);
-                }}
-              >
-                #{topic}
-              </button>
-            ))}
-          </div>
+          <span className="text-white text-sm font-medium">Ask me anything!</span>
         </div>
       </div>
       
@@ -92,6 +73,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
         handleSubmitQuery={handleSubmitQuery}
         isGenerating={isGenerating}
         recentQueries={recentQueries}
+        trendingTopics={getTrendingTopics()}
       />
       
       <AnimatePresence>

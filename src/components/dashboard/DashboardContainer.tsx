@@ -7,7 +7,6 @@ import { useSparksSystem } from '@/hooks/useSparksSystem';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardSidebar from '@/components/dashboard/DashboardSidebar';
 import CurioContent from '@/components/dashboard/CurioContent';
-import DiscoverySection from '@/components/dashboard/DiscoverySection';
 import { useDashboardProfile } from '@/hooks/useDashboardProfile';
 import { useCurioCreation } from '@/hooks/useCurioCreation';
 import { useCurioData } from '@/hooks/useCurioData';
@@ -17,7 +16,6 @@ import WelcomeSection from '@/components/dashboard/WelcomeSection';
 import { motion } from 'framer-motion';
 import { Rocket, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { SidebarProvider } from '@/components/ui/sidebar';
 
 interface Curio {
   id: string;
@@ -91,7 +89,7 @@ const DashboardContainer = () => {
   useEffect(() => {
     if (pastCurios && pastCurios.length > 0) {
       const queries = pastCurios
-        .slice(0, 5)
+        .slice(0, 3)
         .map(curio => curio.query)
         .filter(Boolean);
       
@@ -161,10 +159,9 @@ const DashboardContainer = () => {
         </div>
         
         <div className="flex-1 overflow-y-auto py-3 px-3 sm:px-4 md:px-6">
-          <div className="max-w-6xl mx-auto space-y-4">
+          <div className="max-w-5xl mx-auto space-y-6">
             {/* Main search bar - more prominent */}
             <motion.div 
-              className="relative"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
@@ -179,50 +176,40 @@ const DashboardContainer = () => {
             </motion.div>
             
             {/* Main content area */}
-            <div className="flex flex-col lg:flex-row gap-4">
-              <Card className="bg-white/5 border-white/10 flex-grow relative overflow-hidden">
-                {!currentCurio ? (
-                  <WelcomeSection 
-                    curioSuggestions={curioSuggestions}
-                    isLoadingSuggestions={isLoadingSuggestions}
-                    handleRefreshSuggestions={handleRefreshSuggestions}
-                    handleCurioSuggestionClick={handleCurioSuggestionClick}
-                    childProfile={childProfile}
-                    pastCurios={pastCurios}
-                    childId={profileId || ''}
-                  />
-                ) : (
-                  <CurioContent
-                    currentCurio={currentCurio}
-                    contentBlocks={contentBlocks}
-                    blockReplies={blockReplies}
-                    isGenerating={isGeneratingContent}
-                    loadingBlocks={loadingMoreBlocks}
-                    visibleBlocksCount={totalBlocksLoaded}
-                    profileId={profileId}
-                    onLoadMore={loadMoreBlocks}
-                    hasMoreBlocks={hasMoreBlocks}
-                    onToggleLike={handleToggleLike}
-                    onToggleBookmark={handleToggleBookmark}
-                    onReply={handleBlockReply}
-                    onSetQuery={setQuery}
-                    onRabbitHoleFollow={handleFollowRabbitHole}
-                    onQuizCorrect={handleQuizCorrect}
-                    onNewsRead={handleNewsRead}
-                    onCreativeUpload={handleCreativeUpload}
-                    generationError={generationError}
-                  />
-                )}
-              </Card>
-            </div>
-            
-            {childProfile && (
-              <DiscoverySection 
-                childId={profileId || ''}
-                sparksBalance={childProfile.sparks_balance || 0}
-                onSparkEarned={handleSparkEarned}
-              />
-            )}
+            <Card className="bg-white/5 border-white/10 flex-grow relative overflow-hidden">
+              {!currentCurio ? (
+                <WelcomeSection 
+                  curioSuggestions={curioSuggestions}
+                  isLoadingSuggestions={isLoadingSuggestions}
+                  handleRefreshSuggestions={handleRefreshSuggestions}
+                  handleCurioSuggestionClick={handleCurioSuggestionClick}
+                  childProfile={childProfile}
+                  pastCurios={pastCurios}
+                  childId={profileId || ''}
+                />
+              ) : (
+                <CurioContent
+                  currentCurio={currentCurio}
+                  contentBlocks={contentBlocks}
+                  blockReplies={blockReplies}
+                  isGenerating={isGeneratingContent}
+                  loadingBlocks={loadingMoreBlocks}
+                  visibleBlocksCount={totalBlocksLoaded}
+                  profileId={profileId}
+                  onLoadMore={loadMoreBlocks}
+                  hasMoreBlocks={hasMoreBlocks}
+                  onToggleLike={handleToggleLike}
+                  onToggleBookmark={handleToggleBookmark}
+                  onReply={handleBlockReply}
+                  onSetQuery={setQuery}
+                  onRabbitHoleFollow={handleFollowRabbitHole}
+                  onQuizCorrect={handleQuizCorrect}
+                  onNewsRead={handleNewsRead}
+                  onCreativeUpload={handleCreativeUpload}
+                  generationError={generationError}
+                />
+              )}
+            </Card>
           </div>
         </div>
       </main>
