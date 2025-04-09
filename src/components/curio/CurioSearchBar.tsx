@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, X, Sparkles, ArrowRight } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -10,20 +10,29 @@ interface CurioSearchBarProps {
   setSearchQuery: (query: string) => void;
   handleSearch: (e: React.FormEvent) => void;
   suggestions?: string[];
+  isActive?: boolean;
 }
 
 const CurioSearchBar: React.FC<CurioSearchBarProps> = ({
   searchQuery,
   setSearchQuery,
   handleSearch,
-  suggestions = []
+  suggestions = [],
+  isActive = true
 }) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   
   const handleFocus = () => {
+    setIsFocused(true);
     if (suggestions.length > 0) {
       setShowSuggestions(true);
     }
+  };
+  
+  const handleBlur = () => {
+    setIsFocused(false);
+    setTimeout(() => setShowSuggestions(false), 200);
   };
   
   const handleSuggestionClick = (suggestion: string) => {
@@ -33,20 +42,52 @@ const CurioSearchBar: React.FC<CurioSearchBarProps> = ({
     const form = document.querySelector('form');
     if (form) form.dispatchEvent(new Event('submit', { cancelable: true }));
   };
+
+  // Generate dynamic suggestions based on current search query
+  const getRelatedSuggestions = () => {
+    if (searchQuery.length < 3) return suggestions;
+    
+    const query = searchQuery.toLowerCase();
+    let dynamicSuggestions = [...suggestions];
+    
+    // Add some "why" questions if query starts with specific words
+    if (query.startsWith('what') || query.startsWith('how')) {
+      dynamicSuggestions.push(`why ${query.substring(query.indexOf(' ') + 1)}`);
+    }
+    
+    // Add some "what" questions if query starts with specific words
+    if (query.startsWith('why') || query.startsWith('how')) {
+      dynamicSuggestions.push(`what is ${query.substring(query.indexOf(' ') + 1)}`);
+    }
+    
+    // Add some expansions to "what is" style questions
+    if (query.startsWith('what is')) {
+      const topic = query.substring(8);
+      if (topic.length > 2) {
+        dynamicSuggestions.push(`how does ${topic} work`);
+        dynamicSuggestions.push(`why is ${topic} important`);
+      }
+    }
+    
+    return [...new Set(dynamicSuggestions)].slice(0, 5);
+  };
+  
+  const activeSuggestions = getRelatedSuggestions();
   
   return (
     <div className="relative">
       <form onSubmit={handleSearch} className="flex items-center gap-2">
-        <div className="relative flex-grow group">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40 group-hover:text-white/60 transition-colors" />
+        <div className={`relative flex-grow group ${isFocused ? 'ring-2 ring-white/20 rounded-full' : ''}`}>
+          <Search className={`absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 ${isFocused ? 'text-white' : 'text-white/40'} group-hover:text-white/60 transition-colors`} />
           <Input
             type="text"
             placeholder="What would you like to explore?"
-            className="pl-9 rounded-full bg-white/10 border-white/20 text-white placeholder:text-white/40 font-inter transition-all duration-300 focus:bg-white/15 focus:border-white/30 focus:ring-white/20"
+            className={`pl-9 rounded-full bg-white/10 border-white/20 text-white placeholder:text-white/40 font-inter transition-all duration-300 focus:bg-white/15 focus:border-white/30 focus:ring-white/20 ${!isActive ? 'opacity-80 cursor-not-allowed' : ''}`}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={handleFocus}
-            onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+            onBlur={handleBlur}
+            disabled={!isActive}
           />
           <AnimatePresence>
             {searchQuery && (
@@ -70,6 +111,7 @@ const CurioSearchBar: React.FC<CurioSearchBarProps> = ({
           <Button 
             type="submit" 
             className="bg-gradient-to-r from-wonderwhiz-vibrant-yellow to-wonderwhiz-bright-pink text-wonderwhiz-deep-purple font-medium rounded-full px-5"
+            disabled={!isActive || !searchQuery.trim()}
           >
             <span className="mr-1">Explore</span>
             <ArrowRight className="h-4 w-4" />
@@ -79,7 +121,7 @@ const CurioSearchBar: React.FC<CurioSearchBarProps> = ({
       
       {/* Search suggestions */}
       <AnimatePresence>
-        {showSuggestions && suggestions.length > 0 && (
+        {showSuggestions && activeSuggestions.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -87,7 +129,7 @@ const CurioSearchBar: React.FC<CurioSearchBarProps> = ({
             className="absolute top-full left-0 right-0 mt-2 bg-wonderwhiz-deep-purple/90 backdrop-blur-md border border-white/10 rounded-lg shadow-lg z-10 overflow-hidden"
           >
             <div className="p-2">
-              {suggestions.map((suggestion, index) => (
+              {activeSuggestions.map((suggestion, index) => (
                 <motion.button
                   key={index}
                   className="w-full text-left px-3 py-2 rounded-md hover:bg-white/10 text-white/90 hover:text-white flex items-center group transition-colors"

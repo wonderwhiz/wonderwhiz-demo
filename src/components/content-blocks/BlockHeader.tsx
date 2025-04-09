@@ -1,20 +1,22 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { getSpecialistName, getSpecialistEmoji } from './utils/specialistUtils';
+import { getSpecialistName, getSpecialistEmoji, getRelevantSpecialist } from './utils/specialistUtils';
 
 interface BlockHeaderProps {
   specialistId: string;
   blockTitle: string;
   blockType?: string;
   narrativePosition?: 'beginning' | 'middle' | 'end';
+  topicKeywords?: string[];
 }
 
 const BlockHeader: React.FC<BlockHeaderProps> = ({ 
   specialistId, 
   blockTitle,
   blockType = 'fact',
-  narrativePosition
+  narrativePosition,
+  topicKeywords = []
 }) => {
   const specialistName = getSpecialistName(specialistId);
   const specialistEmoji = getSpecialistEmoji(specialistId);
@@ -43,6 +45,7 @@ const BlockHeader: React.FC<BlockHeaderProps> = ({
   const getBlockAnimation = () => {
     switch (blockType) {
       case 'quiz':
+      case 'riddle':
         return { scale: [1, 1.02, 1], rotate: [0, 1, 0] };
       case 'flashcard':
         return { y: [0, -2, 0] };
@@ -53,23 +56,76 @@ const BlockHeader: React.FC<BlockHeaderProps> = ({
     }
   };
 
-  // Get specialist tagline based on current topic or type
+  // Get specialist display title based on their role and expertise
+  const getSpecialistTitle = () => {
+    switch (specialistId) {
+      case 'nova':
+        return 'Space Expert';
+      case 'spark':
+        return 'Creative Genius';
+      case 'prism':
+        return 'Science Whiz';
+      case 'pixel':
+        return 'Tech Guru';
+      case 'atlas':
+        return 'History Buff';
+      case 'lotus':
+        return 'Nature Guide';
+      default:
+        return '';
+    }
+  };
+
+  // Get directly relevant tagline based on topic and specialist expertise
   const getSpecialistTagline = () => {
-    // Check if title contains certain keywords
-    const isBollywoodRelated = blockTitle.toLowerCase().includes('bollywood');
-    const isAfghanistanRelated = blockTitle.toLowerCase().includes('afghanistan');
-    const isSpaceRelated = blockTitle.toLowerCase().includes('space') || 
-                           blockTitle.toLowerCase().includes('planet') ||
-                           blockTitle.toLowerCase().includes('jupiter');
-    const isTechRelated = blockTitle.toLowerCase().includes('robot') || 
-                          blockTitle.toLowerCase().includes('tech');
-    const isAnimalRelated = blockTitle.toLowerCase().includes('animal') || 
-                           blockTitle.toLowerCase().includes('wildlife');
+    const topic = blockTitle.toLowerCase();
+    const keywords = topicKeywords.map(k => k.toLowerCase());
+    const allKeywords = [topic, ...keywords];
+
+    // Extract general topic
+    const isFoodRelated = allKeywords.some(k => 
+      k.includes('food') || k.includes('spicy') || k.includes('taste') || k.includes('flavor')
+    );
+    const isBollywoodRelated = allKeywords.some(k => 
+      k.includes('bollywood') || k.includes('movie') || k.includes('film') || k.includes('cinema')
+    );
+    const isAfghanistanRelated = allKeywords.some(k => 
+      k.includes('afghanistan') || k.includes('danger')
+    );
+    const isSpaceRelated = allKeywords.some(k => 
+      k.includes('space') || k.includes('planet') || k.includes('star') || k.includes('galaxy')
+    );
+    const isTechRelated = allKeywords.some(k => 
+      k.includes('robot') || k.includes('tech') || k.includes('computer') || k.includes('digital')
+    );
+    const isAnimalRelated = allKeywords.some(k => 
+      k.includes('animal') || k.includes('wildlife') || k.includes('creature')
+    );
     
-    // Adjust style based on block type
-    const isBrainTeaser = blockType === 'quiz';
+    // Block type context for more specific taglines
+    const isBrainTeaser = blockType === 'quiz' || blockType === 'riddle';
     const isCreative = blockType === 'creative' || blockType === 'task';
     const isFactual = blockType === 'fact' || blockType === 'funFact';
+    
+    // Food-related taglines
+    if (isFoodRelated) {
+      switch (specialistId) {
+        case 'nova':
+          return "Exploring the science of flavor perception!";
+        case 'spark':
+          return "Creating culinary inspirations!";
+        case 'prism':
+          return "Revealing the chemistry of taste sensations!";
+        case 'pixel':
+          return "Analyzing flavor with scientific precision!";
+        case 'atlas':
+          return "Uncovering the history of spices and flavors!";
+        case 'lotus':
+          return "Connecting mindfulness to our sense of taste!";
+        default:
+          return "Discovering food science!";
+      }
+    }
     
     // Bollywood-specific taglines
     if (isBollywoodRelated) {
@@ -87,7 +143,7 @@ const BlockHeader: React.FC<BlockHeaderProps> = ({
         case 'lotus':
           return "Finding cultural connections through art";
         default:
-          return specialistName;
+          return "Exploring cinema and culture";
       }
     }
     
@@ -95,19 +151,19 @@ const BlockHeader: React.FC<BlockHeaderProps> = ({
     if (isAfghanistanRelated) {
       switch (specialistId) {
         case 'nova':
-          return "Exploring how space tech monitors regions";
+          return "Exploring geographical features and challenges";
         case 'spark':
-          return "Creating awareness through art and storytelling";
+          return "Understanding cultural complexities through art";
         case 'prism':
-          return "Analyzing the science behind regional features";
+          return "Analyzing environmental and societal factors";
         case 'pixel':
-          return "Using technology to navigate challenging areas";
+          return "Using data to understand regional situations";
         case 'atlas':
-          return "Revealing the historical context of regions";
+          return "Providing historical context for today's challenges";
         case 'lotus':
-          return "Finding mindfulness amidst challenging environments";
+          return "Finding perspective on complex global issues";
         default:
-          return specialistName;
+          return "Exploring regional knowledge";
       }
     }
     
@@ -127,7 +183,7 @@ const BlockHeader: React.FC<BlockHeaderProps> = ({
         case 'lotus':
           return "Connecting Earth's life to the cosmos";
         default:
-          return specialistName;
+          return "Exploring the cosmos";
       }
     }
     
@@ -147,7 +203,7 @@ const BlockHeader: React.FC<BlockHeaderProps> = ({
         case 'lotus':
           return "Finding balance in our tech-filled world";
         default:
-          return specialistName;
+          return "Exploring technology";
       }
     }
     
@@ -167,7 +223,7 @@ const BlockHeader: React.FC<BlockHeaderProps> = ({
         case 'lotus':
           return "Learning mindfulness from nature's creatures";
         default:
-          return specialistName;
+          return "Exploring the animal kingdom";
       }
     }
     
@@ -244,7 +300,7 @@ const BlockHeader: React.FC<BlockHeaderProps> = ({
       case 'lotus':
         return "With mindful curiosity, we can discover amazing connections!";
       default:
-        return specialistName;
+        return "Let's explore together!";
     }
   };
 
@@ -259,7 +315,11 @@ const BlockHeader: React.FC<BlockHeaderProps> = ({
       </motion.div>
       
       <div>
-        <h3 className="text-white text-sm font-medium leading-tight">{blockTitle}</h3>
+        <h3 className="text-white text-sm font-medium leading-tight flex items-center">
+          {specialistName}
+          <span className="mx-1.5 text-white/40">•</span>
+          <span className="text-white/80 text-xs">{getSpecialistTitle()}</span>
+        </h3>
         <p className="text-white/60 text-xs">{getSpecialistTagline()}</p>
       </div>
     </div>
