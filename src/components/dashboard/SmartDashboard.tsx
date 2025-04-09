@@ -35,11 +35,11 @@ interface SmartDashboardProps {
 const SmartDashboard = ({
   childId,
   childProfile,
-  curioSuggestions,
-  isLoadingSuggestions,
+  curioSuggestions = [],
+  isLoadingSuggestions = false,
   onCurioSuggestionClick,
   handleRefreshSuggestions,
-  pastCurios
+  pastCurios = []
 }: SmartDashboardProps) => {
   // Add state for managing sparks and streak
   const [sparks, setSparks] = useState(childProfile?.sparks_balance || 0);
@@ -53,21 +53,26 @@ const SmartDashboard = ({
 
   // Mock function for topic clicks - will be replaced with actual navigation
   const handleTopicClick = (topicQuery: string) => {
-    onCurioSuggestionClick(topicQuery);
+    if (onCurioSuggestionClick) {
+      onCurioSuggestionClick(topicQuery);
+    }
   };
 
   // Mock function for curio clicks - will be replaced with actual navigation
   const handleCurioClick = (curio: any) => {
-    if (curio && curio.query) {
+    if (curio && curio.query && onCurioSuggestionClick) {
       onCurioSuggestionClick(curio.query);
     }
   };
+
+  // Make sure curioSuggestions is always an array
+  const safeCurioSuggestions = Array.isArray(curioSuggestions) ? curioSuggestions : [];
 
   return (
     <div className="space-y-6">
       {/* Curio suggestions row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {curioSuggestions.slice(0, 3).map((suggestion, index) => (
+        {safeCurioSuggestions.slice(0, 3).map((suggestion, index) => (
           <CurioSuggestion
             key={index}
             suggestion={suggestion}
