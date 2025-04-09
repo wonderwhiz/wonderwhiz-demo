@@ -34,6 +34,7 @@ const AppleDashboard: React.FC<AppleDashboardProps> = ({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [searchValue, setSearchValue] = useState('');
   const [showGlobe, setShowGlobe] = useState(false);
+  const [showTasks, setShowTasks] = useState(true);
   const [wonderPathExpanded, setWonderPathExpanded] = useState(false);
   const [showCommandK, setShowCommandK] = useState(false);
   
@@ -99,6 +100,10 @@ const AppleDashboard: React.FC<AppleDashboardProps> = ({
 
   const handleGlobeToggle = () => {
     setShowGlobe(prev => !prev);
+  };
+
+  const handleTasksToggle = () => {
+    setShowTasks(prev => !prev);
   };
 
   const handleTaskCompleted = () => {
@@ -182,7 +187,15 @@ const AppleDashboard: React.FC<AppleDashboardProps> = ({
             size="sm"
             onClick={handleGlobeToggle}
           >
-            {showGlobe ? 'Hide' : 'Show'} Knowledge Globe
+            {showGlobe ? 'Hide' : 'Show'} Universe
+          </AppleButton>
+          
+          <AppleButton 
+            variant="secondary" 
+            size="sm"
+            onClick={handleTasksToggle}
+          >
+            {showTasks ? 'Hide' : 'Show'} Tasks
           </AppleButton>
         </div>
       </motion.div>
@@ -209,25 +222,6 @@ const AppleDashboard: React.FC<AppleDashboardProps> = ({
             <Search className="h-5 w-5" />
           </button>
         </form>
-        
-        {/* Popular topics */}
-        <div className="flex flex-wrap items-center justify-center mt-3 gap-2">
-          {popularTopics.map((topic) => (
-            <motion.button
-              key={topic}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.98 }}
-              className="bg-white/10 hover:bg-white/15 text-white text-xs font-medium py-1 px-3 rounded-full border border-white/10 transition-colors"
-              onClick={() => onCurioSuggestionClick(topic)}
-            >
-              #{topic}
-            </motion.button>
-          ))}
-        </div>
-        
-        <p className="text-white/60 text-xs text-center mt-2">
-          The more you ask, the more sparks you'll earn!
-        </p>
       </motion.div>
       
       {/* Command K Dialog */}
@@ -285,22 +279,30 @@ const AppleDashboard: React.FC<AppleDashboardProps> = ({
         )}
       </AnimatePresence>
       
-      {/* Active tasks - always visible and prominent */}
-      <motion.div
-        variants={itemVariants}
-        className="mb-6 bg-gradient-to-r from-green-500/20 to-emerald-600/20 backdrop-blur-sm rounded-xl border border-white/10 p-4"
-      >
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center mr-3">
-              <CheckCircle className="h-4 w-4 text-white" />
+      {/* Active tasks - prominent and always visible */}
+      <AnimatePresence>
+        {showTasks && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+            variants={itemVariants}
+            className="mb-6 bg-gradient-to-r from-green-500/20 to-emerald-600/20 backdrop-blur-sm rounded-xl border border-white/10 p-4 overflow-hidden"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center mr-3">
+                  <CheckCircle className="h-4 w-4 text-white" />
+                </div>
+                <h2 className="text-lg font-medium text-white">Today's Tasks</h2>
+              </div>
             </div>
-            <h2 className="text-lg font-medium text-white">My Tasks</h2>
-          </div>
-        </div>
-        
-        <ChildTaskList childId={childId} onTaskCompleted={handleTaskCompleted} />
-      </motion.div>
+            
+            <ChildTaskList childId={childId} onTaskCompleted={handleTaskCompleted} />
+          </motion.div>
+        )}
+      </AnimatePresence>
       
       {/* Main content area - simplified grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -481,7 +483,7 @@ const AppleDashboard: React.FC<AppleDashboardProps> = ({
         variants={itemVariants}
       >
         <AppleButton 
-          variant="default"
+          variant="primary"
           size="lg"
           onClick={focusSearchInput}
           className="group bg-gradient-to-r from-indigo-600/80 to-purple-600/80 backdrop-blur-sm border border-white/20"

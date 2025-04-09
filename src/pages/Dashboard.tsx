@@ -26,7 +26,7 @@ const Dashboard = () => {
       '🔎 Ready for a wonder adventure?',
       '🧠 Time to grow your super brain!',
       '🚀 Let\'s blast off into learning fun!',
-      '💫 Unlock new magical powers today!'
+      '💫 What are you curious about today?'
     ];
     const randomMessage = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
     

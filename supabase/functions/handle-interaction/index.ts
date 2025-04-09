@@ -135,14 +135,14 @@ serve(async (req) => {
           ignoreDuplicates: false
         })
 
-        result = { success: true, message: 'Quiz completed' }
+        result = { success: true, message: 'Quiz completed', sparks_awarded: 5 }
         break
 
       case 'task':
-        // Award sparks for task completion
+        // Award sparks for task completion with improved feedback
         await supabaseClient.rpc('increment_sparks_balance', {
           child_id: childId,
-          amount: 8
+          amount: 10 // Increasing reward to encourage task completion
         })
 
         // Record task completion
@@ -155,17 +155,42 @@ serve(async (req) => {
           ignoreDuplicates: false
         })
 
-        result = { success: true, message: 'Task completed' }
+        // Update streak information
+        const { data: streakData } = await supabaseClient
+          .from('child_profiles')
+          .select('streak_days')
+          .eq('id', childId)
+          .single()
+          
+        const currentStreak = streakData?.streak_days || 0
+        
+        // Update streak if needed
+        if (currentStreak > 0) {
+          await supabaseClient
+            .from('child_profiles')
+            .update({ 
+              streak_days: currentStreak + 1,
+              last_activity_date: new Date().toISOString().split('T')[0]
+            })
+            .eq('id', childId)
+        }
+
+        result = { 
+          success: true, 
+          message: 'Task completed', 
+          sparks_awarded: 10,
+          streak_updated: currentStreak > 0
+        }
         break
 
       case 'activity':
         // Award sparks for activity completion
         await supabaseClient.rpc('increment_sparks_balance', {
           child_id: childId,
-          amount: 3
+          amount: 5
         })
 
-        result = { success: true, message: 'Activity completed' }
+        result = { success: true, message: 'Activity completed', sparks_awarded: 5 }
         break
 
       case 'mindfulness':
@@ -175,7 +200,7 @@ serve(async (req) => {
           amount: 5
         })
 
-        result = { success: true, message: 'Mindfulness completed' }
+        result = { success: true, message: 'Mindfulness completed', sparks_awarded: 5 }
         break
 
       case 'news':
@@ -195,7 +220,7 @@ serve(async (req) => {
           amount: 3
         })
 
-        result = { success: true, message: 'News read' }
+        result = { success: true, message: 'News read', sparks_awarded: 3 }
         break
 
       case 'creative':
@@ -215,7 +240,7 @@ serve(async (req) => {
           amount: 10
         })
 
-        result = { success: true, message: 'Creative upload processed' }
+        result = { success: true, message: 'Creative upload processed', sparks_awarded: 10 }
         break
 
       default:
