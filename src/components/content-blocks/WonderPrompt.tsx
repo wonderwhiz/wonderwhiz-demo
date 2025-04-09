@@ -23,29 +23,29 @@ const WonderPrompt: React.FC<WonderPromptProps> = ({
   const [wonderPrompts, setWonderPrompts] = useState<string[]>([]);
   
   useEffect(() => {
-    // Generate better wonder prompts using the new utility function
+    // Generate dynamic wonder prompts using the utility function
     const generatedPrompts = createWonderQuestions(blockContent, blockType, specialistId);
     
-    // Add narrative position context for a better storytelling arc
+    // Generate narrative-appropriate prompts based on position
     let positionBasedPrompts: string[] = [];
     
     if (narrativePosition === 'beginning') {
       positionBasedPrompts = [
-        "What might be the first thing you'd want to know about this topic?",
-        "What makes you most curious about this right now?",
-        "How does this connect to things you already know?"
+        `What might be the first thing you'd want to know about this topic?`,
+        `What makes you most curious about this right now?`,
+        `How does this connect to things you already know?`
       ];
     } else if (narrativePosition === 'middle') {
       positionBasedPrompts = [
-        "How does this information change what you thought before?",
-        "What's the most surprising thing you've learned so far?",
-        "What question would help deepen your understanding?"
+        `How does this information change what you thought before?`,
+        `What's the most surprising thing you've learned so far?`,
+        `What question would help deepen your understanding?`
       ];
     } else { // end
       positionBasedPrompts = [
-        "What new directions could this knowledge take you?",
-        "How might you apply what you've learned in your own life?",
-        "What's still a mystery about this topic that you'd like to explore?"
+        `What new directions could this knowledge take you?`,
+        `How might you apply what you've learned in your own life?`,
+        `What's still a mystery about this topic that you'd like to explore?`
       ];
     }
     

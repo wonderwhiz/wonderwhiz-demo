@@ -83,17 +83,6 @@ const CurioSearchBar: React.FC<CurioSearchBarProps> = ({
       `what connections exist between ${topic} and other subjects?`
     );
     
-    // Add specific suggestions for spicy food related queries
-    if (query.includes('spicy') || query.includes('food') || query.includes('burn')) {
-      narrativeSuggestions = [
-        ...narrativeSuggestions,
-        "why do some people handle spicy food better than others?",
-        "how do chili peppers produce capsaicin?",
-        "what's the hottest pepper in the world?",
-        "how can I soothe my stomach after eating spicy food?"
-      ];
-    }
-    
     // Deduplicate and limit suggestions
     const combinedSuggestions = [...topicSuggestions, ...narrativeSuggestions];
     const uniqueSuggestions = Array.from(new Set(combinedSuggestions));
