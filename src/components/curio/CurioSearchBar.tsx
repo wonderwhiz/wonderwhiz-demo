@@ -4,6 +4,7 @@ import { Search, X, Sparkles, ArrowRight } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getTopicSuggestions, extractTopicFromQuestion } from '@/components/content-blocks/utils/specialistUtils';
 
 interface CurioSearchBarProps {
   searchQuery: string;
@@ -22,10 +23,11 @@ const CurioSearchBar: React.FC<CurioSearchBarProps> = ({
 }) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const [dynamicSuggestions, setDynamicSuggestions] = useState<string[]>([]);
   
   const handleFocus = () => {
     setIsFocused(true);
-    if (suggestions.length > 0) {
+    if (dynamicSuggestions.length > 0) {
       setShowSuggestions(true);
     }
   };
@@ -44,35 +46,58 @@ const CurioSearchBar: React.FC<CurioSearchBarProps> = ({
   };
 
   // Generate dynamic suggestions based on current search query
-  const getRelatedSuggestions = () => {
-    if (searchQuery.length < 3) return suggestions;
+  useEffect(() => {
+    if (searchQuery.length < 2) {
+      setDynamicSuggestions(suggestions);
+      return;
+    }
     
     const query = searchQuery.toLowerCase();
-    let dynamicSuggestions = [...suggestions];
+    const topic = extractTopicFromQuestion(query);
+    
+    // Get suggestions based on the extracted topic
+    const topicSuggestions = getTopicSuggestions(topic);
     
     // Add some "why" questions if query starts with specific words
-    if (query.startsWith('what') || query.startsWith('how')) {
-      dynamicSuggestions.push(`why ${query.substring(query.indexOf(' ') + 1)}`);
+    let newSuggestions = [...topicSuggestions];
+    if (query.startsWith('what')) {
+      newSuggestions.push(`why ${query.substring(query.indexOf(' ') + 1)}`);
     }
     
     // Add some "what" questions if query starts with specific words
-    if (query.startsWith('why') || query.startsWith('how')) {
-      dynamicSuggestions.push(`what is ${query.substring(query.indexOf(' ') + 1)}`);
+    if (query.startsWith('why')) {
+      newSuggestions.push(`what is ${query.substring(query.indexOf(' ') + 1)}`);
     }
     
-    // Add some expansions to "what is" style questions
-    if (query.startsWith('what is')) {
-      const topic = query.substring(8);
+    // Add some "how" questions for variety
+    if (!query.startsWith('how')) {
+      const topicPart = query.includes(' ') ? query.substring(query.indexOf(' ') + 1) : query;
+      newSuggestions.push(`how does ${topicPart} affect our bodies`);
+    }
+    
+    // Add some expansions to "why does" style questions
+    if (query.startsWith('why does')) {
+      const topic = query.substring(9);
       if (topic.length > 2) {
-        dynamicSuggestions.push(`how does ${topic} work`);
-        dynamicSuggestions.push(`why is ${topic} important`);
+        newSuggestions.push(`what is the science behind ${topic}`);
+        newSuggestions.push(`how can we prevent ${topic}`);
       }
     }
     
-    return [...new Set(dynamicSuggestions)].slice(0, 5);
-  };
-  
-  const activeSuggestions = getRelatedSuggestions();
+    // Add specific suggestions for spicy food related queries
+    if (query.includes('spicy') || query.includes('food') || query.includes('burn')) {
+      newSuggestions = [
+        ...newSuggestions,
+        "why do some people handle spicy food better than others?",
+        "how do chili peppers produce capsaicin?",
+        "what's the hottest pepper in the world?",
+        "how can I soothe my stomach after eating spicy food?"
+      ];
+    }
+    
+    // Deduplicate and limit suggestions
+    setDynamicSuggestions([...new Set(newSuggestions)].slice(0, 5));
+  }, [searchQuery, suggestions]);
   
   return (
     <div className="relative">
@@ -110,7 +135,6 @@ const CurioSearchBar: React.FC<CurioSearchBarProps> = ({
           <Button 
             type="submit" 
             className="bg-gradient-to-r from-wonderwhiz-vibrant-yellow to-wonderwhiz-bright-pink text-wonderwhiz-deep-purple font-medium rounded-full px-5"
-            disabled={!searchQuery.trim()}
           >
             <span className="mr-1">Explore</span>
             <ArrowRight className="h-4 w-4" />
@@ -120,7 +144,7 @@ const CurioSearchBar: React.FC<CurioSearchBarProps> = ({
       
       {/* Search suggestions */}
       <AnimatePresence>
-        {showSuggestions && activeSuggestions.length > 0 && (
+        {showSuggestions && dynamicSuggestions.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -128,7 +152,7 @@ const CurioSearchBar: React.FC<CurioSearchBarProps> = ({
             className="absolute top-full left-0 right-0 mt-2 bg-wonderwhiz-deep-purple/90 backdrop-blur-md border border-white/10 rounded-lg shadow-lg z-10 overflow-hidden"
           >
             <div className="p-2">
-              {activeSuggestions.map((suggestion, index) => (
+              {dynamicSuggestions.map((suggestion, index) => (
                 <motion.button
                   key={index}
                   className="w-full text-left px-3 py-2 rounded-md hover:bg-white/10 text-white/90 hover:text-white flex items-center group transition-colors"

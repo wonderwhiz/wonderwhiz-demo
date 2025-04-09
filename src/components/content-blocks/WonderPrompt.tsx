@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, ArrowRight, Lightbulb } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { createWonderQuestions } from './utils/specialistUtils';
 
 interface WonderPromptProps {
   specialistId: string;
@@ -22,236 +23,19 @@ const WonderPrompt: React.FC<WonderPromptProps> = ({
   const [wonderPrompts, setWonderPrompts] = useState<string[]>([]);
   
   useEffect(() => {
-    // Generate wonder prompts based on content and specialist
-    const generateWonderPrompts = () => {
-      const basePrompts: string[] = [];
-      
-      // Extract topic from content with improved extraction
-      const topic = extractMainTopic(blockContent);
-      
-      // Identify the topic category
-      const isAboutBollywood = topic.toLowerCase().includes('bollywood');
-      const isAboutAfghanistan = topic.toLowerCase().includes('afghanistan');
-      const isAboutSpace = topic.toLowerCase().includes('space') || topic.toLowerCase().includes('planet');
-      const isAboutTechnology = topic.toLowerCase().includes('robot') || topic.toLowerCase().includes('tech');
-      const isAboutAnimals = topic.toLowerCase().includes('animal') || topic.toLowerCase().includes('wildlife');
-      
-      // Create specialist-specific prompts
-      switch (specialistId) {
-        case 'nova':
-          if (isAboutSpace) {
-            basePrompts.push(
-              `What makes ${topic} different from other celestial bodies?`,
-              `How might humans explore ${topic} in the future?`
-            );
-          } else if (isAboutBollywood) {
-            basePrompts.push(
-              `How has technology changed ${topic} over the decades?`,
-              `What if we made ${topic}-style movies in space?`
-            );
-          } else if (isAboutAfghanistan) {
-            basePrompts.push(
-              `How has satellite technology helped map ${topic}?`,
-              `How might space technology help monitor safety in ${topic}?`
-            );
-          } else {
-            basePrompts.push(
-              `What if ${topic} existed in outer space?`,
-              `How might ${topic} change in the future?`
-            );
-          }
-          break;
-          
-        case 'prism':
-          if (isAboutSpace) {
-            basePrompts.push(
-              `What scientific instruments help us study ${topic}?`,
-              `What chemical elements make up ${topic}?`
-            );
-          } else if (isAboutBollywood) {
-            basePrompts.push(
-              `What scientific principles are behind ${topic} dance choreography?`,
-              `How does the science of sound make ${topic} music unique?`
-            );
-          } else if (isAboutAfghanistan) {
-            basePrompts.push(
-              `What scientific approaches could make ${topic} safer?`,
-              `How do scientists study the geography of ${topic}?`
-            );
-          } else {
-            basePrompts.push(
-              `What scientific discoveries led to ${topic}?`,
-              `How could we experiment with ${topic} at home?`
-            );
-          }
-          break;
-          
-        case 'atlas':
-          if (isAboutBollywood) {
-            basePrompts.push(
-              `How has ${topic} influenced global culture?`,
-              `What historical events shaped ${topic} as we know it today?`
-            );
-          } else if (isAboutAfghanistan) {
-            basePrompts.push(
-              `How has ${topic} been affected by historical conflicts?`,
-              `What were ${topic}'s most peaceful periods in history?`
-            );
-          } else {
-            basePrompts.push(
-              `How did ${topic} change history?`,
-              `What ancient civilizations might have known about ${topic}?`
-            );
-          }
-          break;
-          
-        case 'spark':
-          if (isAboutBollywood) {
-            basePrompts.push(
-              `What makes ${topic} costumes so colorful and unique?`,
-              `How could you create your own ${topic}-inspired dance or story?`
-            );
-          } else if (isAboutAfghanistan) {
-            basePrompts.push(
-              `How could art help people understand ${topic} better?`,
-              `What creative expressions have come from ${topic}?`
-            );
-          } else {
-            basePrompts.push(
-              `What art could we create inspired by ${topic}?`,
-              `How could ${topic} inspire new inventions?`
-            );
-          }
-          break;
-          
-        case 'pixel':
-          if (isAboutBollywood) {
-            basePrompts.push(
-              `How has digital technology changed ${topic} filmmaking?`,
-              `What apps could help people learn ${topic} dance moves?`
-            );
-          } else if (isAboutAfghanistan) {
-            basePrompts.push(
-              `What technologies help keep people safe in ${topic}?`,
-              `How are digital maps helping to navigate ${topic}?`
-            );
-          } else if (isAboutTechnology) {
-            basePrompts.push(
-              `How might ${topic} evolve with AI advancements?`,
-              `What coding projects could help us understand ${topic} better?`
-            );
-          } else {
-            basePrompts.push(
-              `How could technology improve ${topic}?`,
-              `What digital tools help us understand ${topic}?`
-            );
-          }
-          break;
-          
-        case 'lotus':
-          if (isAboutBollywood) {
-            basePrompts.push(
-              `How does ${topic} connect people to their cultural roots?`,
-              `What mindful observations can we make about ${topic} dances?`
-            );
-          } else if (isAboutAfghanistan) {
-            basePrompts.push(
-              `How does the natural landscape of ${topic} affect its people?`,
-              `What mindfulness practices exist in ${topic}'s culture?`
-            );
-          } else if (isAboutAnimals) {
-            basePrompts.push(
-              `How do ${topic} connect to their environments?`,
-              `What can we learn about mindfulness from observing ${topic}?`
-            );
-          } else {
-            basePrompts.push(
-              `How does ${topic} connect to nature?`,
-              `What mindful observations can we make about ${topic}?`
-            );
-          }
-          break;
-          
-        default:
-          basePrompts.push(
-            `What else is interesting about ${topic}?`,
-            `What would you like to learn about ${topic}?`
-          );
-      }
-      
-      // Add narrative-specific prompts
-      if (narrativePosition === 'beginning') {
-        basePrompts.push(`What's the origin story of ${topic}?`);
-      } else if (narrativePosition === 'middle') {
-        basePrompts.push(`How does ${topic} connect to things you already know?`);
-      } else {
-        basePrompts.push(`Where could learning about ${topic} take you next?`);
-      }
-      
-      // Limit to 2-3 prompts
-      setWonderPrompts(basePrompts.slice(0, Math.min(3, basePrompts.length)));
-    };
+    // Generate better wonder prompts using the new utility function
+    const generatedPrompts = createWonderQuestions(blockContent, blockType, specialistId);
     
-    generateWonderPrompts();
+    // Add narrative position context
+    const positionBasedPrompt = narrativePosition === 'beginning' 
+      ? "What else would you like to discover about this topic?" 
+      : narrativePosition === 'end'
+      ? "What new directions could this knowledge take you?"
+      : "How does this connect to what you already know?";
+    
+    // Combine prompts and limit to 3
+    setWonderPrompts([...generatedPrompts, positionBasedPrompt].slice(0, 3));
   }, [specialistId, blockType, blockContent, narrativePosition]);
-  
-  // Extract main topic from content (improved version with better null checking)
-  const extractMainTopic = (content: any): string => {
-    if (!content) return "this topic";
-    
-    // Handle different block types
-    if (blockType === 'fact' || blockType === 'funFact') {
-      if (content.fact && typeof content.fact === 'string') {
-        const factText = content.fact;
-        
-        // Look for known topics
-        if (factText.toLowerCase().includes('bollywood')) return "Bollywood";
-        if (factText.toLowerCase().includes('afghanistan')) return "Afghanistan";
-        if (factText.toLowerCase().includes('robot')) return "robots";
-        if (factText.toLowerCase().includes('planet')) return "planets";
-        if (factText.toLowerCase().includes('space')) return "space exploration";
-        if (factText.toLowerCase().includes('animal')) return "animals";
-        
-        // Default extraction from first sentence
-        const firstSentence = factText.split('.')[0];
-        if (firstSentence && firstSentence.length > 5) {
-          return firstSentence;
-        }
-      }
-    }
-    
-    // Try to extract from content properties
-    if (content.title) return content.title;
-    if (content.topic) return content.topic;
-    if (content.question && typeof content.question === 'string') {
-      const question = content.question;
-      
-      if (question.toLowerCase().includes('bollywood')) return "Bollywood";
-      if (question.toLowerCase().includes('afghanistan')) return "Afghanistan";
-      
-      // Extract main subject from question if possible
-      const matches = question.match(/about\s+([^?\.]+)/i) || 
-                     question.match(/what\s+(?:is|are|makes)\s+([^?\.]+)/i);
-      
-      if (matches && matches[1]) {
-        return matches[1].trim();
-      }
-      
-      const words = question.split(' ').filter((w: string) => w.length > 3);
-      if (words.length > 0) return words.slice(0, 2).join(' ');
-    }
-    
-    // Check the entire content object as string
-    const contentString = JSON.stringify(content).toLowerCase();
-    if (contentString.includes('bollywood')) return "Bollywood";
-    if (contentString.includes('afghanistan')) return "Afghanistan";
-    if (contentString.includes('robot')) return "robots"; 
-    if (contentString.includes('planet')) return "planets";
-    if (contentString.includes('space')) return "space exploration";
-    if (contentString.includes('animal')) return "animals";
-    
-    return "this topic";
-  };
 
   return (
     <motion.div

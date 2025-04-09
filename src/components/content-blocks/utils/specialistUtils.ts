@@ -1,4 +1,3 @@
-
 // Specialist identifiers and information
 export const specialists = {
   nova: {
@@ -148,7 +147,21 @@ export const getTopicSuggestions = (topic: string): string[] => {
   
   const cleanTopic = topic.replace(/[?!.,;:]/g, '').trim();
   
-  // Topic-specific suggestions
+  // Food/spicy specific suggestions 
+  if (cleanTopic.toLowerCase().includes('spicy') || 
+      cleanTopic.toLowerCase().includes('food') || 
+      cleanTopic.toLowerCase().includes('pepper') ||
+      cleanTopic.toLowerCase().includes('taste') ||
+      cleanTopic.toLowerCase().includes('flavor')) {
+    return [
+      `What happens in our bodies when we eat ${cleanTopic}?`,
+      `How have different cultures used ${cleanTopic} throughout history?`,
+      `What scientific discoveries help us understand ${cleanTopic} better?`,
+      `How might ${cleanTopic} be used in medicine or health applications?`
+    ];
+  }
+  
+  // Topic-specific suggestions (keep existing topic-specific suggestions)
   if (cleanTopic.toLowerCase().includes('afghanistan')) {
     return [
       `What makes ${cleanTopic} unique compared to other regions?`,
@@ -196,6 +209,20 @@ export const getRelevantSpecialist = (topic: string): string => {
   
   const topicLower = topic.toLowerCase();
   
+  // Spicy food and taste related topics should go to Prism first (science expert)
+  if (
+    topicLower.includes('spicy') || 
+    topicLower.includes('food') || 
+    topicLower.includes('pepper') ||
+    topicLower.includes('taste') ||
+    topicLower.includes('flavor') ||
+    topicLower.includes('burn') ||
+    topicLower.includes('hot sauce') ||
+    topicLower.includes('capsaicin')
+  ) {
+    return 'prism';
+  }
+  
   // Space-related topics
   if (
     topicLower.includes('space') || 
@@ -227,7 +254,7 @@ export const getRelevantSpecialist = (topic: string): string => {
     return 'spark';
   }
   
-  // Science-related topics
+  // Science-related topics (additional keywords for spicy food)
   if (
     topicLower.includes('science') || 
     topicLower.includes('chemistry') || 
@@ -239,7 +266,10 @@ export const getRelevantSpecialist = (topic: string): string => {
     topicLower.includes('physics') ||
     topicLower.includes('spicy') ||
     topicLower.includes('food science') ||
-    topicLower.includes('taste')
+    topicLower.includes('taste') ||
+    topicLower.includes('stomach') ||
+    topicLower.includes('burn') ||
+    topicLower.includes('capsaicin')
   ) {
     return 'prism';
   }
@@ -276,7 +306,7 @@ export const getRelevantSpecialist = (topic: string): string => {
     return 'atlas';
   }
   
-  // Nature and wellness-related topics
+  // Nature and wellness-related topics (additional food-related keywords)
   if (
     topicLower.includes('nature') || 
     topicLower.includes('environment') || 
@@ -287,19 +317,26 @@ export const getRelevantSpecialist = (topic: string): string => {
     topicLower.includes('meditation') ||
     topicLower.includes('mindfulness') ||
     topicLower.includes('wellness') ||
-    topicLower.includes('health')
+    topicLower.includes('health') ||
+    topicLower.includes('digestion') ||
+    topicLower.includes('gut health')
   ) {
     return 'lotus';
   }
   
-  // For food-related topics that aren't specifically science
+  // For food-related topics that aren't specifically science (refined logic)
   if (
     topicLower.includes('food') && 
     !topicLower.includes('science') && 
     !topicLower.includes('spicy') && 
     !topicLower.includes('chemistry')
   ) {
-    return 'lotus'; // Food as a general topic might be more about enjoyment and wellness
+    // If related to cultural aspects of food, use Atlas
+    if (topicLower.includes('culture') || topicLower.includes('tradition') || topicLower.includes('history')) {
+      return 'atlas';
+    }
+    // If related to health aspects, use Lotus
+    return 'lotus';
   }
   
   // Default to Prism for general knowledge queries
@@ -328,7 +365,35 @@ export const getRelevantSpecialists = (topic: string, count: number = 3): string
       }
     });
     
-    // Give points for certain topic categories
+    // Additional scoring for spicy food topic
+    if (id === 'prism' && (
+      topicLower.includes('spicy') || 
+      topicLower.includes('food') || 
+      topicLower.includes('burn') ||
+      topicLower.includes('stomach') ||
+      topicLower.includes('capsaicin') ||
+      topicLower.includes('pepper')
+    )) {
+      scoreMap[id] += 8; // Higher priority for science expert with spicy food topics
+    }
+    
+    if (id === 'lotus' && (
+      topicLower.includes('spicy') || 
+      topicLower.includes('food') || 
+      topicLower.includes('burn') ||
+      topicLower.includes('stomach')
+    )) {
+      scoreMap[id] += 5; // Health and wellness perspective on spicy food
+    }
+    
+    if (id === 'atlas' && (
+      (topicLower.includes('spicy') || topicLower.includes('food')) &&
+      (topicLower.includes('culture') || topicLower.includes('history'))
+    )) {
+      scoreMap[id] += 6; // Cultural and historical perspective on spicy food
+    }
+    
+    // Give points for certain topic categories (keep existing scoring)
     if (id === 'nova' && (
       topicLower.includes('space') || 
       topicLower.includes('planet') || 
@@ -394,4 +459,156 @@ export const getRelevantSpecialists = (topic: string, count: number = 3): string
     .sort((a, b) => b[1] - a[1])
     .map(([id]) => id)
     .slice(0, count);
+};
+
+// New function to extract topics from wonder questions
+export const extractTopicFromQuestion = (question: string): string => {
+  if (!question) return '';
+  
+  // Clean up the question
+  const cleanQuestion = question.replace(/[?!.,;:]/g, '').trim().toLowerCase();
+  
+  // Try to extract topic from common question patterns
+  const whyDoesMatch = cleanQuestion.match(/why does (.+)/i);
+  const whatIsMatch = cleanQuestion.match(/what is (.+)/i);
+  const howDoesMatch = cleanQuestion.match(/how does (.+)/i);
+  
+  if (whyDoesMatch && whyDoesMatch[1]) return whyDoesMatch[1].trim();
+  if (whatIsMatch && whatIsMatch[1]) return whatIsMatch[1].trim();
+  if (howDoesMatch && howDoesMatch[1]) return howDoesMatch[1].trim();
+  
+  // If we couldn't extract with patterns, just return a reasonable portion
+  const words = cleanQuestion.split(' ');
+  if (words.length > 3) {
+    return words.slice(0, Math.min(5, words.length)).join(' ');
+  }
+  
+  return cleanQuestion;
+};
+
+// New function to create better wonder questions based on content blocks
+export const createWonderQuestions = (blockContent: any, blockType: string, specialistId: string): string[] => {
+  // Extract topic from block content
+  let topic = '';
+  
+  if (blockType === 'fact' && blockContent.fact) {
+    topic = blockContent.fact.split('.')[0];
+  } else if (blockContent.topic) {
+    topic = blockContent.topic;
+  } else if (blockContent.question) {
+    topic = extractTopicFromQuestion(blockContent.question);
+  } else if (blockType === 'quiz' && blockContent.question) {
+    topic = blockContent.question;
+  }
+  
+  // Clean up the topic
+  topic = topic.replace(/[?!.,;:]/g, '').trim();
+  
+  // Default questions if we couldn't extract a topic
+  if (!topic) {
+    return [
+      "What's the most surprising thing about this?",
+      "How does this connect to everyday life?",
+      "What would happen if this changed dramatically?"
+    ];
+  }
+  
+  // Specialist-specific questions for spicy food
+  if (topic.toLowerCase().includes('spicy') || 
+      topic.toLowerCase().includes('food') || 
+      topic.toLowerCase().includes('burn') ||
+      topic.toLowerCase().includes('stomach') ||
+      topic.toLowerCase().includes('capsaicin')) {
+    
+    switch (specialistId) {
+      case 'prism':
+        return [
+          "How do our pain receptors respond to capsaicin at a molecular level?",
+          "What other compounds in food create sensations similar to spiciness?",
+          "Could understanding capsaicin lead to new pain medications?"
+        ];
+      case 'nova':
+        return [
+          "How would spicy food affect astronauts in zero gravity?",
+          "Do other planets have plants that could produce capsaicin-like compounds?",
+          "How have our taste receptors evolved over millions of years?"
+        ];
+      case 'atlas':
+        return [
+          "How have different cultures used spicy foods throughout history?",
+          "Why did humans start eating spicy food despite the pain it causes?",
+          "How has the Columbian Exchange spread chili peppers around the world?"
+        ];
+      case 'lotus':
+        return [
+          "How can mindful eating change our experience of spicy food?",
+          "What natural remedies can soothe the burning sensation from spicy foods?",
+          "How does our body's reaction to spiciness connect to stress responses?"
+        ];
+      case 'pixel':
+        return [
+          "Could we create a digital simulation of how capsaicin affects our nerves?",
+          "How might AI help develop new spicy food combinations?",
+          "What technologies help scientists measure spiciness levels precisely?"
+        ];
+      case 'spark':
+        return [
+          "How could you create art inspired by the sensation of eating spicy food?",
+          "What music would best capture the experience of a burning stomach?",
+          "How have different cultures expressed spiciness in their art forms?"
+        ];
+      default:
+        return [
+          "Why do some people enjoy the burning sensation from spicy food?",
+          "How does spicy food affect different parts of our digestive system?",
+          "What surprising benefits might come from eating spicy food regularly?"
+        ];
+    }
+  }
+  
+  // Generic specialist-specific questions
+  switch (specialistId) {
+    case 'prism':
+      return [
+        `What scientific principles explain ${topic}?`,
+        `How could we design an experiment to learn more about ${topic}?`,
+        `What might be happening with ${topic} at a molecular level?`
+      ];
+    case 'nova':
+      return [
+        `How would ${topic} be different in space?`,
+        `What cosmic forces might relate to ${topic}?`,
+        `How might ${topic} change our understanding of the universe?`
+      ];
+    case 'atlas':
+      return [
+        `How has ${topic} changed throughout human history?`,
+        `What ancient civilizations might have understood about ${topic}?`,
+        `How have different cultures approached ${topic}?`
+      ];
+    case 'lotus':
+      return [
+        `How does ${topic} connect to nature's patterns?`,
+        `What mindful observations could we make about ${topic}?`,
+        `How might ${topic} affect our wellbeing?`
+      ];
+    case 'pixel':
+      return [
+        `How could technology help us understand ${topic} better?`,
+        `What digital tools could we create to explore ${topic}?`,
+        `How might ${topic} change with future technological advances?`
+      ];
+    case 'spark':
+      return [
+        `What art could we create inspired by ${topic}?`,
+        `How might ${topic} spark new creative ideas?`,
+        `What music or stories could express the essence of ${topic}?`
+      ];
+    default:
+      return [
+        `What's most fascinating about ${topic}?`,
+        `How does ${topic} connect to other areas of knowledge?`,
+        `What questions does ${topic} raise about our world?`
+      ];
+  }
 };
