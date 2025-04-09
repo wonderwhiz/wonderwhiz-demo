@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import { Check, Star, Trophy } from 'lucide-react';
+import { Check, Star, Trophy, Sparkles } from 'lucide-react';
 
 interface TaskBlockProps {
   content: {
@@ -32,7 +32,7 @@ const TaskBlock: React.FC<TaskBlockProps> = ({ content, onTaskComplete }) => {
   };
   
   return (
-    <div>
+    <div className="p-4 bg-gradient-to-r from-purple-900/50 to-pink-900/30 rounded-lg border border-wonderwhiz-bright-pink/20">
       <div className="flex items-start space-x-3 mb-3">
         <div className="flex-shrink-0 mt-1">
           <motion.div 
@@ -58,7 +58,7 @@ const TaskBlock: React.FC<TaskBlockProps> = ({ content, onTaskComplete }) => {
       {!completed ? (
         <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 sm:gap-4">
           <div className="flex items-center space-x-1.5 text-wonderwhiz-gold text-xs sm:text-sm">
-            <Star className="h-4 w-4 fill-wonderwhiz-gold text-wonderwhiz-gold" /> 
+            <Sparkles className="h-4 w-4 text-wonderwhiz-gold" /> 
             <span>Earn {content.reward} sparks by completing this task!</span>
           </div>
           <motion.div
@@ -67,7 +67,7 @@ const TaskBlock: React.FC<TaskBlockProps> = ({ content, onTaskComplete }) => {
           >
             <Button 
               onClick={handleComplete}
-              className="bg-gradient-to-r from-wonderwhiz-gold to-amber-400 hover:from-amber-400 hover:to-wonderwhiz-gold text-black font-medium text-xs sm:text-sm px-4 py-2 rounded-full shadow-lg w-full sm:w-auto flex items-center justify-center"
+              className="bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-purple hover:from-wonderwhiz-purple hover:to-wonderwhiz-bright-pink text-white font-medium text-xs sm:text-sm px-4 py-2 rounded-full shadow-lg w-full sm:w-auto flex items-center justify-center"
             >
               <Check className="h-4 w-4 mr-1.5" />
               Mark Complete
@@ -95,7 +95,7 @@ const TaskBlock: React.FC<TaskBlockProps> = ({ content, onTaskComplete }) => {
               transition={{ delay: 0.3, type: "spring" }}
             >
               <div className="relative mr-2">
-                <Star className="h-5 w-5 fill-wonderwhiz-gold text-wonderwhiz-gold" />
+                <Sparkles className="h-5 w-5 text-wonderwhiz-gold" />
                 {showSparkles && (
                   <>
                     <motion.div

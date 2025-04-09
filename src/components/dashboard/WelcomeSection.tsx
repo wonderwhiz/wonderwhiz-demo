@@ -82,15 +82,15 @@ const WelcomeSection: React.FC<WelcomeSectionProps> = ({
             
             <div className="flex items-center gap-3">
               {childProfile?.streak_days > 0 && (
-                <Badge variant="outline" className="bg-wonderwhiz-gold/20 text-wonderwhiz-gold border-wonderwhiz-gold/20 flex items-center gap-1 px-3 py-1">
+                <Badge variant="outline" className="bg-wonderwhiz-bright-pink/20 text-wonderwhiz-bright-pink border-wonderwhiz-bright-pink/30 flex items-center gap-1 px-3 py-1">
                   <Rocket className="h-3.5 w-3.5" />
                   <span>{childProfile.streak_days} day streak!</span>
                 </Badge>
               )}
               
-              <div className="flex items-center gap-1 px-3 py-1 bg-white/10 rounded-full">
+              <div className="flex items-center gap-1 px-3 py-1 bg-wonderwhiz-gold/20 rounded-full border border-wonderwhiz-gold/30">
                 <Sparkles className="h-3.5 w-3.5 text-wonderwhiz-gold" />
-                <span className="text-white font-medium text-sm">
+                <span className="text-wonderwhiz-gold font-medium text-sm">
                   {childProfile?.sparks_balance || 0}
                 </span>
               </div>

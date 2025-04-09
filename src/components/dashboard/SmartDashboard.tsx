@@ -1,11 +1,25 @@
-
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Card } from '@/components/ui/card';
-import AnimatedCurioCard from './AnimatedCurioCard';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Brain, RefreshCw, Rocket, Sparkles } from 'lucide-react';
+import CurioSuggestion from '@/components/CurioSuggestion';
 import TopicExplorer from './TopicExplorer';
 import MemoryJourney from './MemoryJourney';
-import { Sparkles } from 'lucide-react';
+import DailyChallenge from './DailyChallenge';
+import ChildDashboardTasks from '@/components/ChildDashboardTasks';
+
+type CardType = 'space' | 'animals' | 'science' | 'history' | 'technology' | 'general';
+
+const getCardTypeForSuggestion = (suggestion: string): CardType => {
+  suggestion = suggestion.toLowerCase();
+  if (suggestion.includes('space')) return 'space';
+  if (suggestion.includes('animal')) return 'animals';
+  if (suggestion.includes('science')) return 'science';
+  if (suggestion.includes('history')) return 'history';
+   if (suggestion.includes('technology')) return 'technology';
+  return 'general';
+};
 
 interface SmartDashboardProps {
   childId: string;
@@ -15,106 +29,83 @@ interface SmartDashboardProps {
   onCurioSuggestionClick: (suggestion: string) => void;
   handleRefreshSuggestions: () => void;
   pastCurios: any[];
-  selectedCategory?: string | null;
 }
 
-const SmartDashboard: React.FC<SmartDashboardProps> = ({
+const SmartDashboard = ({
   childId,
   childProfile,
   curioSuggestions,
   isLoadingSuggestions,
   onCurioSuggestionClick,
   handleRefreshSuggestions,
-  pastCurios,
-  selectedCategory
+  pastCurios
 }) => {
-  // Get recently viewed topics based on past curios
-  const getRecentlyViewedTopics = () => {
-    const topics = new Set<string>();
-    pastCurios.slice(0, 15).forEach(curio => {
-      const title = curio.title || '';
-      const words = title.split(' ').filter(word => word.length > 3);
-      words.forEach(word => {
-        if (word.length > 3 && !['about', 'what', 'when', 'where', 'which', 'with', 'tell'].includes(word.toLowerCase())) {
-          topics.add(word);
-        }
-      });
-    });
-    return Array.from(topics).slice(0, 5);
-  };
+  // Add state for managing sparks and streak
+  const [sparks, setSparks] = useState(childProfile?.sparks_balance || 0);
+  const [streak, setStreak] = useState(childProfile?.streak_days || 0);
 
-  // Get topics child is strongest in based on learning history
-  // This would ideally come from a backend call using the learning_history table
-  const getStrongestTopics = () => {
-    const topicMap = new Map<string, number>();
-    pastCurios.forEach(curio => {
-      const title = curio.title || '';
-      const mainTopic = title.split(' ').find(word => 
-        word.length > 3 && !['about', 'what', 'when', 'where', 'which', 'with', 'tell'].includes(word.toLowerCase())
-      );
-      if (mainTopic) {
-        topicMap.set(mainTopic, (topicMap.get(mainTopic) || 0) + 1);
-      }
-    });
-    
-    return Array.from(topicMap.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([topic, count]) => ({
-        topic,
-        level: Math.min(10, count * 2)
-      }));
-  };
-
-  // Get curio type based on title for visual categorization
-  const getCurioType = (title: string) => {
-    title = title.toLowerCase();
-    if (title.includes('space') || title.includes('planet') || title.includes('star') || title.includes('universe')) return 'space';
-    if (title.includes('animal') || title.includes('whale') || title.includes('dolphin') || title.includes('fish')) return 'animals';
-    if (title.includes('science') || title.includes('volcan') || title.includes('experiment')) return 'science';
-    if (title.includes('history') || title.includes('ancient') || title.includes('dinosaur') || title.includes('past')) return 'history';
-    if (title.includes('robot') || title.includes('technology') || title.includes('tech') || title.includes('computer')) return 'technology';
-    return 'general';
-  };
-
-  const recentlyViewedTopics = getRecentlyViewedTopics();
-  const strongestTopics = getStrongestTopics();
+  // Update sparks and streak when childProfile changes
+  useEffect(() => {
+    setSparks(childProfile?.sparks_balance || 0);
+    setStreak(childProfile?.streak_days || 0);
+  }, [childProfile]);
 
   return (
     <div className="space-y-6">
-      {/* Curio Suggestions */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-      >
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {curioSuggestions.slice(0, 3).map((suggestion, index) => (
-            <AnimatedCurioCard
-              key={index}
-              title={suggestion}
-              onClick={() => onCurioSuggestionClick(suggestion)}
-              index={index}
-              type={getCurioType(suggestion)}
-            />
-          ))}
+      {/* Curio suggestions row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {curioSuggestions.slice(0, 3).map((suggestion, index) => (
+          <CurioSuggestion
+            key={index}
+            suggestion={suggestion}
+            onClick={() => onCurioSuggestionClick(suggestion)}
+            type={getCardTypeForSuggestion(suggestion)}
+            loading={isLoadingSuggestions}
+          />
+        ))}
+      </div>
+
+      {/* Dashboard content */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Column 1: Brain Power */}
+        <Card className="bg-white/5 border-white/10 overflow-hidden">
+          <CardContent className="p-0">
+            <TopicExplorer childId={childId} pastCurios={pastCurios} />
+          </CardContent>
+        </Card>
+
+        {/* Column 2: Tasks and Achievements */}
+        <div className="space-y-6">
+          <ChildDashboardTasks 
+            childId={childId} 
+            onSparkEarned={(amount) => console.log('Earned', amount, 'sparks')} 
+          />
+          
+          <DailyChallenge 
+            childId={childId}
+            onComplete={() => console.log('Challenge completed')}
+          />
+
+          <Card className="bg-white/5 border-white/10 overflow-hidden">
+            <CardContent className="p-0">
+              <MemoryJourney childId={childId} />
+            </CardContent>
+          </Card>
         </div>
-      </motion.div>
+      </div>
 
-      {/* Personal Learning Journey Section */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Brain Power - Topics explorer */}
-        <TopicExplorer
-          recentlyViewedTopics={recentlyViewedTopics}
-          strongestTopics={strongestTopics}
-          onTopicClick={(topic) => onCurioSuggestionClick(topic)}
-        />
-
-        {/* Memory Journey */}
-        <MemoryJourney
-          pastCurios={pastCurios}
-          onCurioClick={(curio) => onCurioSuggestionClick(curio.query || `Tell me about ${curio.title}`)}
-        />
+      {/* Refresh button */}
+      <div className="flex justify-center pt-3">
+        <Button
+          variant="outline"
+          size="sm"
+          className="bg-white/5 text-white/80 hover:bg-white/10 border-white/10"
+          onClick={handleRefreshSuggestions}
+          disabled={isLoadingSuggestions}
+        >
+          <RefreshCw className="h-3.5 w-3.5 mr-2" />
+          Refresh Suggestions
+        </Button>
       </div>
     </div>
   );

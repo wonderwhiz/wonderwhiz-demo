@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import EnhancedSearchBar from './EnhancedSearchBar';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Lightbulb } from 'lucide-react';
+import { Sparkles, Lightbulb, Hash } from 'lucide-react';
 
 interface SearchBarProps {
   query: string;
@@ -60,10 +60,26 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
   return (
     <div className="relative">
-      <div className="mb-2 flex justify-between items-center">
+      <div className="mb-2 flex flex-col space-y-2">
         <div className="flex items-center">
-          <Lightbulb className="h-4 w-4 text-wonderwhiz-gold mr-1.5" />
+          <Lightbulb className="h-4 w-4 text-wonderwhiz-vibrant-yellow mr-1.5" />
           <span className="text-white text-sm font-medium">Ask me anything!</span>
+        </div>
+        
+        {/* Trending topics */}
+        <div className="flex flex-wrap gap-2">
+          {getTrendingTopics().map((topic, index) => (
+            <motion.button
+              key={topic}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setQuery(`Tell me about ${topic}`)}
+              className="flex items-center text-xs px-3 py-1 rounded-full bg-wonderwhiz-cyan/20 text-wonderwhiz-cyan border border-wonderwhiz-cyan/30 hover:bg-wonderwhiz-cyan/30 transition-colors"
+            >
+              <Hash className="h-3 w-3 mr-1" />
+              {topic}
+            </motion.button>
+          ))}
         </div>
       </div>
       
@@ -83,7 +99,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 5 }}
             transition={{ duration: 0.3 }}
-            className="mt-3 px-3.5 py-2.5 bg-white/5 border border-white/10 rounded-lg flex items-center"
+            className="mt-3 px-3.5 py-2.5 bg-wonderwhiz-purple/20 border border-wonderwhiz-purple/30 rounded-lg flex items-center"
           >
             <div className="h-7 w-7 rounded-full bg-wonderwhiz-bright-pink/20 flex items-center justify-center mr-3 flex-shrink-0">
               <Sparkles className="h-3.5 w-3.5 text-wonderwhiz-bright-pink" />
