@@ -25,10 +25,25 @@ const ContextualRecommendations: React.FC<ContextualRecommendationsProps> = ({
   
   if (safeRecommendations.length === 0) return null;
   
+  // Filter and transform recommendations to be more engaging
+  const transformedRecommendations = safeRecommendations.map(rec => {
+    // Make questions more direct and personal
+    let improved = rec.replace(/What is/i, "Discover");
+    improved = improved.replace(/How does/i, "Explore how");
+    improved = improved.replace(/Why do/i, "Uncover why");
+    
+    // Add excitement where appropriate
+    if (!improved.includes("!") && !improved.includes("?")) {
+      improved += "!";
+    }
+    
+    return improved;
+  });
+  
   const handleRecommendationClick = async (recommendation: string) => {
     if (profileId) {
       try {
-        toast.loading("Creating new exploration...", {
+        toast.loading("Creating your wonder journey...", {
           id: "create-curio",
           duration: 3000
         });
@@ -46,7 +61,7 @@ const ContextualRecommendations: React.FC<ContextualRecommendationsProps> = ({
           
         if (error) {
           console.error('Error creating curio from recommendation:', error);
-          toast.error("Could not create new exploration", {
+          toast.error("Oops! Couldn't start your journey", {
             id: "create-curio"
           });
           // Fallback to just setting the query
@@ -64,7 +79,7 @@ const ContextualRecommendations: React.FC<ContextualRecommendationsProps> = ({
             disableForReducedMotion: true
           });
           
-          toast.success("New exploration created!", {
+          toast.success("Your adventure begins!", {
             id: "create-curio"
           });
           
@@ -83,7 +98,7 @@ const ContextualRecommendations: React.FC<ContextualRecommendationsProps> = ({
               reason: 'Following curiosity'
             });
             
-            toast.success('You earned 2 sparks for exploring your curiosity!', {
+            toast.success('You earned 2 sparks for exploring!', {
               icon: '✨',
               position: 'bottom-right',
               duration: 3000
@@ -92,18 +107,18 @@ const ContextualRecommendations: React.FC<ContextualRecommendationsProps> = ({
             console.error('Error awarding sparks:', err);
           }
           
-          // FIX: Navigate to the correct curio path
+          // Navigate to the correct curio path
           navigate(`/curio/${profileId}/${newCurio.id}`);
         } else {
           console.error('No curio ID returned after creation');
-          toast.error("Could not create new exploration", {
+          toast.error("Couldn't create your journey", {
             id: "create-curio"
           });
           onRecommendationClick(recommendation);
         }
       } catch (error) {
         console.error('Error creating curio from recommendation:', error);
-        toast.error("Could not create new exploration", {
+        toast.error("Couldn't create your journey", {
           id: "create-curio"
         });
         // Fallback to just setting the query
@@ -145,11 +160,11 @@ const ContextualRecommendations: React.FC<ContextualRecommendationsProps> = ({
     <div className="mt-6 pt-4 border-t border-white/10">
       <h4 className="text-sm font-medium text-white/80 mb-3 flex items-center">
         <Sparkles className="w-3 h-3 mr-1.5 text-wonderwhiz-gold" />
-        <span>Related wonders to explore</span>
+        <span>Where should we go next?</span>
       </h4>
       <div className="flex flex-wrap gap-2.5">
         <AnimatePresence>
-          {safeRecommendations.map((recommendation, index) => (
+          {transformedRecommendations.map((recommendation, index) => (
             <motion.button
               key={index}
               initial={{ opacity: 0, y: 10 }}
@@ -180,32 +195,6 @@ const ContextualRecommendations: React.FC<ContextualRecommendationsProps> = ({
       </div>
     </div>
   );
-};
-
-// Define these helper functions here, which were referenced above
-const getRecommendationBg = (index: number) => {
-  const options = [
-    'bg-gradient-to-r from-purple-500/10 to-indigo-500/10 hover:from-purple-500/20 hover:to-indigo-500/20',
-    'bg-gradient-to-r from-pink-500/10 to-rose-500/10 hover:from-pink-500/20 hover:to-rose-500/20',
-    'bg-gradient-to-r from-amber-500/10 to-orange-500/10 hover:from-amber-500/20 hover:to-orange-500/20',
-    'bg-gradient-to-r from-emerald-500/10 to-teal-500/10 hover:from-emerald-500/20 hover:to-teal-500/20',
-    'bg-gradient-to-r from-blue-500/10 to-cyan-500/10 hover:from-blue-500/20 hover:to-cyan-500/20'
-  ];
-  return options[index % options.length];
-};
-
-// Get recommendation icon based on the recommendation text
-const getRecommendationIcon = (recommendation: string, index: number) => {
-  // Check if recommendation text contains certain keywords
-  if (recommendation.toLowerCase().includes('why') || recommendation.toLowerCase().includes('how')) {
-    return <Compass className="w-3 h-3 mr-1.5 text-cyan-300" />;
-  } else if (recommendation.toLowerCase().includes('discover') || recommendation.toLowerCase().includes('explore')) {
-    return <BookOpen className="w-3 h-3 mr-1.5 text-amber-300" />;
-  } else if (recommendation.toLowerCase().includes('fact') || recommendation.toLowerCase().includes('learn')) {
-    return <Lightbulb className="w-3 h-3 mr-1.5 text-emerald-300" />;
-  } else {
-    return <Sparkles className="w-3 h-3 mr-1.5 text-wonderwhiz-gold" />;
-  }
 };
 
 export default ContextualRecommendations;

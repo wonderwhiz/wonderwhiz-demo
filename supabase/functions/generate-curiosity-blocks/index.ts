@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -8,11 +9,27 @@ const corsHeaders = {
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')!;
 const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY')!;
 
-// Basic fallback content for when API is unavailable or for quick first rendering
+// Enhanced fallback content for when API is unavailable or for quick first rendering
 const generateFallbackContent = (query: string, blockCount: number) => {
   const blocks = [];
   const specialistIds = ['nova', 'spark', 'prism', 'pixel', 'atlas', 'lotus'];
   const types = ['fact', 'quiz', 'flashcard', 'creative', 'task', 'riddle', 'funFact', 'activity', 'news', 'mindfulness'];
+  
+  // Engaging facts based on common educational topics
+  const engagingFacts = [
+    `Did you know that ${query} is something scientists are still discovering new things about every day?`,
+    `The most amazing thing about ${query} is how it connects to so many other cool subjects!`,
+    `One thing that might surprise you about ${query} is how it affects our everyday lives.`,
+    `Explorers and scientists have spent centuries trying to understand all the secrets of ${query}!`
+  ];
+  
+  // Educational rabbit holes that encourage deeper learning
+  const rabbitHoles = [
+    `What makes ${query} so fascinating?`,
+    `How does ${query} change our world?`,
+    `Why is ${query} important to understand?`,
+    `What would happen if ${query} didn't exist?`
+  ];
   
   for (let i = 0; i < blockCount; i++) {
     const specialistId = specialistIds[Math.floor(Math.random() * specialistIds.length)];
@@ -23,63 +40,64 @@ const generateFallbackContent = (query: string, blockCount: number) => {
       case 'fact':
       case 'funFact':
         content = {
-          fact: `Here's an interesting fact related to "${query}". We're currently generating more detailed content for you.`,
-          rabbitHoles: [`Learn more about ${query}`, `Explore related topics`]
+          fact: engagingFacts[Math.floor(Math.random() * engagingFacts.length)],
+          rabbitHoles: rabbitHoles.slice(0, 2 + Math.floor(Math.random() * 2))
         };
         break;
       case 'quiz':
         content = {
-          question: `What's something interesting about ${query}?`,
-          options: ["Option A", "Option B", "Option C", "Option D"],
-          correctIndex: 2
+          question: `What's something that might surprise you about ${query}?`,
+          options: ["It's older than you might think!", "It changes all the time!", "It connects to many other subjects!", "All of these are true!"],
+          correctIndex: 3,
+          explanation: "Learning is full of surprises - that's what makes it fun!"
         };
         break;
       case 'flashcard':
         content = {
-          front: `Key concept about ${query}`,
-          back: `This is where you'll find the answer! More detailed content is being generated.`
+          front: `What's one amazing fact about ${query}?`,
+          back: `${query} is connected to many parts of our world in ways we might not notice at first. Scientists are still making new discoveries about it!`
         };
         break;
       case 'creative':
         content = {
-          prompt: `Draw or write something about ${query}`,
+          prompt: `Imagine you could talk to an expert on ${query}. What would you ask them? Draw or write your conversation!`,
           type: Math.random() > 0.5 ? "drawing" : "writing"
         };
         break;
       case 'task':
         content = {
-          task: `Do a simple activity related to ${query}`,
+          task: `Look around you right now. Can you find something that connects to ${query} in some way? Write down what you found!`,
           reward: 5
         };
         break;
       case 'riddle':
         content = {
-          riddle: `Here's a riddle about ${query}`,
-          answer: `The answer relates to ${query}`
+          riddle: `I'm part of ${query}, but I'm also part of your daily life. You might not notice me, but I'm always there. What could I be?`,
+          answer: `Knowledge! The more you learn about ${query}, the more you see it everywhere!`
         };
         break;
       case 'activity':
         content = {
-          activity: `Try this activity to learn more about ${query}`
+          activity: `Become a ${query} detective! For the next hour, notice anything that might be connected to ${query}. Keep a list of what you find.`
         };
         break;
       case 'news':
         content = {
-          headline: `Latest Discovery About ${query}!`,
-          summary: `Scientists have made an amazing discovery about ${query}. More detailed content coming soon!`,
+          headline: `Amazing New Discovery About ${query}!`,
+          summary: `Scientists have just found something incredible about ${query} that changes how we understand it. The more we learn, the more questions we have!`,
           source: "WonderWhiz News"
         };
         break;
       case 'mindfulness':
         content = {
-          exercise: `Take a moment to think about ${query} and how it relates to the world around you`,
+          exercise: `Close your eyes and imagine ${query} in your mind. What details do you notice? How does thinking about it make you feel?`,
           duration: 30
         };
         break;
       default:
         content = {
-          fact: `Learning about ${query} is fascinating! More content is being generated.`,
-          rabbitHoles: ["Explore more"]
+          fact: `Learning about ${query} helps us understand our world better. What part of it makes you most curious?`,
+          rabbitHoles: ["What else connects to this?", "How does this affect our future?"]
         };
     }
     
@@ -105,8 +123,9 @@ serve(async (req) => {
   try {
     const { query, childProfile, blockCount = 10, quickGeneration = false, skipInitial = 0 } = await req.json();
     const language = childProfile.language || 'English';
+    const childAge = childProfile.age || 8;
     
-    console.log(`Generating ${blockCount} blocks for query: "${query}" with quickGeneration=${quickGeneration}, skipInitial=${skipInitial}`);
+    console.log(`Generating ${blockCount} blocks for query: "${query}" with quickGeneration=${quickGeneration}, skipInitial=${skipInitial}, age=${childAge}`);
     
     // Record start time to track performance
     const startTime = Date.now();
@@ -131,6 +150,43 @@ serve(async (req) => {
       });
     }
 
+    // Get age-appropriate language level and complexity
+    const getAgeAppropriateGuidelines = (age: number) => {
+      if (age < 7) {
+        return {
+          vocabulary: "simple, concrete words with some new vocabulary to stretch learning",
+          sentenceLength: "short 5-7 word sentences",
+          concepts: "familiar concepts with one new idea per block",
+          tone: "warm, playful, and encouraging",
+          questions: "what and where questions with some simple how questions",
+          examples: "concrete examples from everyday life",
+          personalization: "references to family, friends, and familiar experiences"
+        };
+      } else if (age < 10) {
+        return {
+          vocabulary: "rich vocabulary with some challenging words explained in context",
+          sentenceLength: "8-12 word sentences with some compound sentences",
+          concepts: "concrete concepts with some abstract ideas explained through analogies",
+          tone: "enthusiastic, curious, and supportive",
+          questions: "how and why questions that encourage analytical thinking",
+          examples: "relatable examples that connect to children's experiences plus some novel contexts",
+          personalization: "references to peers, school experiences, and growing independence"
+        };
+      } else {
+        return {
+          vocabulary: "advanced vocabulary with academic terms explained clearly",
+          sentenceLength: "varied sentence length with compound and complex structures",
+          concepts: "abstract concepts with logical connections between ideas",
+          tone: "respectful, collaborative, slightly more mature",
+          questions: "complex why and what-if questions that encourage critical thinking",
+          examples: "diverse examples from various contexts including historical and global perspectives",
+          personalization: "references to identity development, social awareness, and future aspirations"
+        };
+      }
+    };
+    
+    const ageGuidelines = getAgeAppropriateGuidelines(childAge);
+
     // Prepare system message and user message for the API with enhanced prompting
     const systemMessage = `You are an AI assistant creating EXTRAORDINARILY engaging, educational content for children aged ${childProfile.age}. 
     Each piece of content should be scientifically accurate, richly detailed, and presented with an exciting sense of discovery and wonder.
@@ -138,7 +194,13 @@ serve(async (req) => {
     
     EXTREMELY IMPORTANT GUIDELINES:
     - Content must be 100% factually accurate with no embellishments that might mislead
-    - Use age-appropriate but rich vocabulary that expands a child's language while remaining accessible
+    - Use vocabulary appropriate for a ${childProfile.age} year old: ${ageGuidelines.vocabulary}
+    - Keep sentences at an appropriate length: ${ageGuidelines.sentenceLength}
+    - Present concepts with proper complexity: ${ageGuidelines.concepts}
+    - Use a tone that resonates emotionally: ${ageGuidelines.tone}
+    - Ask questions at the right level: ${ageGuidelines.questions}
+    - Use examples that connect: ${ageGuidelines.examples}
+    - Personalize content: ${ageGuidelines.personalization}
     - Frame information as exciting discoveries with expressions like "Scientists recently discovered..." or "Did you know that..."
     - Include specific, memorable numbers, measurements, and comparisons that help children grasp scale and significance
     - Connect abstract concepts to everyday experiences a child can relate to
@@ -155,9 +217,10 @@ serve(async (req) => {
     1. Be HYPER-RELEVANT to "${query}" with laser-focused content that directly addresses the topic
     2. Contain at least one genuinely mind-blowing, scientific fact that would make a ${childProfile.age}-year-old gasp with wonder
     3. Include vibrant visual language suitable for generating captivating illustrations
-    4. Connect with these interests: ${childProfile.interests.join(', ')}
+    4. Connect with these interests: ${childProfile.interests ? childProfile.interests.join(', ') : 'general learning topics'}
     5. Have interactive elements that make children feel personally involved in the discovery
     6. Be written with a dynamic, enthusiastic tone but avoid being cartoonishly over-excited
+    7. LIMIT "rabbit hole" suggestions to a MAXIMUM of 3-4 per block, focusing on QUALITY over quantity
 
     SPECIFIC REQUIREMENTS FOR EACH BLOCK TYPE:
     
@@ -426,6 +489,18 @@ serve(async (req) => {
     if (!Array.isArray(contentBlocksArray) && contentBlocksArray.type && contentBlocksArray.content) {
       contentBlocksArray = [contentBlocksArray];
     }
+    
+    // Post-process all blocks to ensure they follow best practices:
+    contentBlocksArray = contentBlocksArray.map(block => {
+      // Process fact blocks to limit rabbit holes
+      if (block.type === 'fact' || block.type === 'funFact') {
+        if (block.content && block.content.rabbitHoles && block.content.rabbitHoles.length > 4) {
+          block.content.rabbitHoles = block.content.rabbitHoles.slice(0, 4);
+        }
+      }
+      
+      return block;
+    });
     
     // Ensure we have enough blocks
     if (contentBlocksArray.length < blockCount) {
