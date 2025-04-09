@@ -22,7 +22,7 @@ const Dashboard = () => {
     
     // Show welcome toast based on time of day with child-friendly messaging
     const welcomeMessages = [
-      '✨ What amazing thing will you discover today?',
+      '✨ What will you discover today?',
       '🔎 Ready for a wonder adventure?',
       '🧠 Time to grow your super brain!',
       '🚀 Let\'s blast off into learning fun!',
@@ -68,7 +68,7 @@ const Dashboard = () => {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.4 }}
-      className="min-h-screen bg-gradient-to-b from-wonderwhiz-deep-purple to-wonderwhiz-light-purple overflow-hidden"
+      className="min-h-screen bg-gradient-to-br from-indigo-950 to-purple-950 overflow-hidden"
     >
       <Helmet>
         <title>WonderWhiz - Your Learning Adventure</title>
