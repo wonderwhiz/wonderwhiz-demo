@@ -95,7 +95,10 @@ const WonderPrompt: React.FC<WonderPromptProps> = ({
     if (!content) return "this topic";
     
     if (blockType === 'fact' || blockType === 'funFact') {
-      return content.fact.split(' ').slice(0, 2).join(' ') || "this topic";
+      // Add null check before calling split
+      if (content.fact && typeof content.fact === 'string') {
+        return content.fact.split(' ').slice(0, 2).join(' ') || "this topic";
+      }
     }
     
     if (content.title) return content.title;
@@ -137,7 +140,7 @@ const WonderPrompt: React.FC<WonderPromptProps> = ({
           variant="ghost"
           size="sm"
           className="text-xs text-white/70 hover:text-white p-0 h-auto"
-          onClick={() => onRabbitHoleClick(wonderPrompts[0])}
+          onClick={() => onRabbitHoleClick(wonderPrompts[0] || "What else is interesting about this topic?")}
         >
           <span>Explore more wonders</span>
           <ArrowRight className="ml-1 h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
