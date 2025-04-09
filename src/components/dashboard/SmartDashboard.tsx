@@ -1,9 +1,9 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Brain, RefreshCw, Rocket, Sparkles } from 'lucide-react';
+import { RefreshCw, Compass, Sparkles, Lightbulb } from 'lucide-react';
 import CurioSuggestion from '@/components/CurioSuggestion';
 import TopicExplorer from './TopicExplorer';
 import MemoryJourney from './MemoryJourney';
@@ -42,14 +42,8 @@ const SmartDashboard = ({
   pastCurios = []
 }: SmartDashboardProps) => {
   // Add state for managing sparks and streak
-  const [sparks, setSparks] = useState(childProfile?.sparks_balance || 0);
-  const [streak, setStreak] = useState(childProfile?.streak_days || 0);
-
-  // Update sparks and streak when childProfile changes
-  useEffect(() => {
-    setSparks(childProfile?.sparks_balance || 0);
-    setStreak(childProfile?.streak_days || 0);
-  }, [childProfile]);
+  const [sparks] = useState(childProfile?.sparks_balance || 0);
+  const [streak] = useState(childProfile?.streak_days || 0);
 
   // Mock function for topic clicks - will be replaced with actual navigation
   const handleTopicClick = (topicQuery: string) => {
@@ -68,74 +62,147 @@ const SmartDashboard = ({
   // Make sure curioSuggestions is always an array
   const safeCurioSuggestions = Array.isArray(curioSuggestions) ? curioSuggestions : [];
 
+  // Main content container transition variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        when: "beforeChildren",
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: { 
+      y: 0, 
+      opacity: 1,
+      transition: { 
+        duration: 0.6,
+        ease: [0.23, 1, 0.32, 1]
+      }
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Curio suggestions row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {safeCurioSuggestions.slice(0, 3).map((suggestion, index) => (
-          <CurioSuggestion
-            key={index}
-            suggestion={suggestion}
-            onClick={() => onCurioSuggestionClick(suggestion)}
-            type={getCardTypeForSuggestion(suggestion)}
-            loading={isLoadingSuggestions}
-            index={index}
-            profileId={childId}
-          />
-        ))}
-      </div>
-
-      {/* Dashboard content */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Column 1: Brain Power */}
-        <Card className="bg-white/5 border-white/10 overflow-hidden">
-          <CardContent className="p-0">
-            <TopicExplorer 
-              childId={childId} 
-              pastCurios={pastCurios}
-              onTopicClick={handleTopicClick}
-            />
-          </CardContent>
-        </Card>
-
-        {/* Column 2: Tasks and Achievements */}
-        <div className="space-y-6">
-          <ChildDashboardTasks 
-            childId={childId} 
-            onSparkEarned={(amount) => console.log('Earned', amount, 'sparks')} 
-          />
+    <motion.div 
+      className="space-y-8"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      {/* Wonder Journey section with curio suggestions */}
+      <motion.div variants={itemVariants} className="mb-8">
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center">
+            <div className="w-10 h-10 rounded-full bg-wonderwhiz-bright-pink/30 flex items-center justify-center mr-3 shadow-glow-brand-pink">
+              <Compass className="h-5 w-5 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-white">Wonder Journeys</h2>
+          </div>
           
-          <DailyChallenge 
-            childId={childId}
-            onComplete={() => console.log('Challenge completed')}
-          />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="bg-white/10 hover:bg-white/20 text-white rounded-full h-10 w-10"
+            onClick={handleRefreshSuggestions}
+            disabled={isLoadingSuggestions}
+          >
+            <RefreshCw className={`h-5 w-5 ${isLoadingSuggestions ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
 
-          <Card className="bg-white/5 border-white/10 overflow-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {safeCurioSuggestions.slice(0, 3).map((suggestion, index) => (
+            <motion.div
+              key={index}
+              variants={itemVariants}
+              whileHover={{ y: -5, transition: { duration: 0.2 } }}
+              className="h-full"
+            >
+              <CurioSuggestion
+                suggestion={suggestion}
+                onClick={() => onCurioSuggestionClick(suggestion)}
+                type={getCardTypeForSuggestion(suggestion)}
+                loading={isLoadingSuggestions}
+                index={index}
+                profileId={childId}
+              />
+            </motion.div>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* Dashboard content - main sections */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Column 1: Wonder Path */}
+        <motion.div variants={itemVariants}>
+          <Card className="bg-transparent border-0 overflow-hidden shadow-none">
             <CardContent className="p-0">
-              <MemoryJourney 
+              <TopicExplorer 
                 childId={childId} 
                 pastCurios={pastCurios}
-                onCurioClick={handleCurioClick}
+                onTopicClick={handleTopicClick}
               />
             </CardContent>
           </Card>
+        </motion.div>
+
+        {/* Column 2: Time Capsule and Daily Challenge */}
+        <div className="space-y-6">
+          <motion.div variants={itemVariants}>
+            <DailyChallenge 
+              childId={childId}
+              onComplete={() => console.log('Challenge completed')}
+            />
+          </motion.div>
+          
+          <motion.div variants={itemVariants}>
+            <Card className="bg-transparent border-0 overflow-hidden shadow-none">
+              <CardContent className="p-0">
+                <MemoryJourney 
+                  childId={childId} 
+                  pastCurios={pastCurios}
+                  onCurioClick={handleCurioClick}
+                />
+              </CardContent>
+            </Card>
+          </motion.div>
+          
+          <motion.div 
+            variants={itemVariants}
+            className="hidden lg:block"
+          >
+            <ChildDashboardTasks 
+              childId={childId} 
+              onSparkEarned={(amount) => console.log('Earned', amount, 'sparks')} 
+            />
+          </motion.div>
         </div>
       </div>
 
-      {/* Refresh button */}
-      <div className="flex justify-center pt-3">
+      {/* Magic wand "Ask anything" UI focus element */}
+      <motion.div 
+        variants={itemVariants}
+        whileHover={{ scale: 1.02 }}
+        className="flex justify-center pt-8"
+      >
         <Button
-          variant="outline"
-          size="sm"
-          className="bg-white/5 text-white/80 hover:bg-white/10 border-white/10"
-          onClick={handleRefreshSuggestions}
-          disabled={isLoadingSuggestions}
+          variant="ghost"
+          size="lg"
+          className="bg-gradient-to-r from-wonderwhiz-vibrant-yellow/20 to-wonderwhiz-bright-pink/20 hover:from-wonderwhiz-vibrant-yellow/30 hover:to-wonderwhiz-bright-pink/30 text-white border border-white/10 backdrop-blur-sm rounded-full py-6 px-8 shadow-lg group"
+          onClick={() => document.querySelector('input[type="text"]')?.focus()}
         >
-          <RefreshCw className="h-3.5 w-3.5 mr-2" />
-          Refresh Suggestions
+          <Lightbulb className="h-5 w-5 mr-3 text-wonderwhiz-vibrant-yellow group-hover:animate-pulse-gentle" />
+          <span className="text-lg">What are you curious about?</span>
+          <div className="ml-3 bg-white/20 rounded-full p-1.5">
+            <Sparkles className="h-4 w-4 text-white" />
+          </div>
         </Button>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 
