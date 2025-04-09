@@ -109,29 +109,39 @@ export const getSpecialistStyle = (specialistId: string): { gradient: string, ac
 export const getRelevantSpecialists = (topic: string): string[] => {
   const topicLower = topic.toLowerCase();
   
-  // Topic-specific specialist assignments
-  if (topicLower.includes('afghanistan') || topicLower.includes('dangerous place')) {
-    return ['atlas', 'prism', 'pixel', 'lotus']; // History, science, tech, and mindfulness experts
+  // Bollywood-specific specialist assignments
+  if (topicLower.includes('bollywood') || topicLower.includes('india') || topicLower.includes('film') || topicLower.includes('movie')) {
+    return ['spark', 'atlas', 'lotus']; // Creative, history, and culture experts
   }
   
+  // Afghanistan-specific specialist assignments
+  if (topicLower.includes('afghanistan') || topicLower.includes('dangerous place')) {
+    return ['atlas', 'prism', 'pixel']; // History, science, and tech experts
+  }
+  
+  // Space-specific specialist assignments
   if (topicLower.includes('space') || topicLower.includes('jupiter') || topicLower.includes('planet')) {
     return ['nova', 'prism', 'pixel']; // Space, science, and tech experts
   }
   
+  // Animal-specific specialist assignments
   if (topicLower.includes('animal') || topicLower.includes('wildlife') || topicLower.includes('nature')) {
-    return ['lotus', 'prism', 'atlas']; // Nature, science, and history experts
+    return ['lotus', 'prism', 'nova']; // Nature, science, and space experts
   }
   
+  // Technology-specific specialist assignments
   if (topicLower.includes('robot') || topicLower.includes('tech') || topicLower.includes('computer')) {
-    return ['pixel', 'spark', 'prism']; // Tech, creative, and science experts
+    return ['pixel', 'spark', 'nova']; // Tech, creative, and space experts
   }
   
+  // Art-specific specialist assignments
   if (topicLower.includes('art') || topicLower.includes('music') || topicLower.includes('creat')) {
-    return ['spark', 'atlas', 'lotus']; // Creative, history, and mindfulness experts
+    return ['spark', 'lotus', 'atlas']; // Creative, mindfulness, and history experts
   }
   
+  // History-specific specialist assignments
   if (topicLower.includes('history') || topicLower.includes('war') || topicLower.includes('ancient')) {
-    return ['atlas', 'lotus', 'nova']; // History, mindfulness, and space experts
+    return ['atlas', 'nova', 'prism']; // History, space, and science experts
   }
   
   // If no specific topic is detected, return all specialists
@@ -142,6 +152,17 @@ export const getRelevantSpecialists = (topic: string): string[] => {
 export const getTopicSuggestions = (topic: string): string[] => {
   const topicLower = topic.toLowerCase();
   
+  // Bollywood-specific suggestions
+  if (topicLower.includes('bollywood') || topicLower.includes('india') || topicLower.includes('film') || topicLower.includes('movie')) {
+    return [
+      "What makes Bollywood dance sequences so unique?",
+      "How has Bollywood influenced global cinema?",
+      "What are the most iconic Bollywood films of all time?",
+      "How do Bollywood movies reflect Indian culture?"
+    ];
+  }
+  
+  // Afghanistan-specific suggestions
   if (topicLower.includes('afghanistan') || topicLower.includes('dangerous place')) {
     return [
       "How has Afghanistan's geography contributed to its challenges?",
@@ -151,12 +172,33 @@ export const getTopicSuggestions = (topic: string): string[] => {
     ];
   }
   
+  // Space-specific suggestions
   if (topicLower.includes('space') || topicLower.includes('jupiter') || topicLower.includes('planet')) {
     return [
       "What makes Jupiter's atmosphere so colorful and dynamic?",
       "How do Jupiter's moons differ from Earth's moon?",
       "Could humans ever visit or live near Jupiter?",
       "What have space probes taught us about Jupiter?"
+    ];
+  }
+  
+  // Animal-specific suggestions
+  if (topicLower.includes('animal') || topicLower.includes('wildlife')) {
+    return [
+      "What are the most unique animal adaptations?",
+      "How do animals communicate with each other?",
+      "What are the most endangered animals today?",
+      "How do animals navigate their environments?"
+    ];
+  }
+  
+  // Robot-specific suggestions
+  if (topicLower.includes('robot') || topicLower.includes('tech')) {
+    return [
+      "How are robots helping solve real-world problems?",
+      "What's the difference between robots and AI?",
+      "How might robots change our daily lives in the future?",
+      "What ethical questions do advanced robots raise?"
     ];
   }
   
@@ -167,4 +209,69 @@ export const getTopicSuggestions = (topic: string): string[] => {
     `What's the connection between ${topic} and everyday life?`,
     `What scientific discoveries relate to ${topic}?`
   ];
+};
+
+// Get the most appropriate specialist for a specific topic and block type
+export const getAppropriateSpecialist = (topic: string, blockType: string): string => {
+  const topicLower = topic.toLowerCase();
+  
+  // Match specialists to block types and topics
+  if (blockType === 'quiz' || blockType === 'flashcard') {
+    // Science and fact-based content
+    if (topicLower.includes('space') || topicLower.includes('planet')) return 'nova';
+    if (topicLower.includes('animal') || topicLower.includes('nature')) return 'lotus';
+    if (topicLower.includes('history') || topicLower.includes('war')) return 'atlas';
+    if (topicLower.includes('tech') || topicLower.includes('robot')) return 'pixel';
+    return 'prism';
+  }
+  
+  if (blockType === 'creative' || blockType === 'activity') {
+    // Creative content
+    if (topicLower.includes('bollywood') || topicLower.includes('art')) return 'spark';
+    if (topicLower.includes('tech') || topicLower.includes('robot')) return 'pixel';
+    return 'spark';
+  }
+  
+  if (blockType === 'mindfulness') {
+    return 'lotus';
+  }
+  
+  if (blockType === 'news') {
+    // News content
+    if (topicLower.includes('space') || topicLower.includes('planet')) return 'nova';
+    if (topicLower.includes('history') || topicLower.includes('war')) return 'atlas';
+    if (topicLower.includes('tech') || topicLower.includes('robot')) return 'pixel';
+    return 'prism';
+  }
+  
+  // For other block types, use topic-based matching
+  if (topicLower.includes('bollywood') || topicLower.includes('art')) return 'spark';
+  if (topicLower.includes('afghanistan') || topicLower.includes('history')) return 'atlas';
+  if (topicLower.includes('space') || topicLower.includes('planet')) return 'nova';
+  if (topicLower.includes('animal') || topicLower.includes('nature')) return 'lotus';
+  if (topicLower.includes('tech') || topicLower.includes('robot')) return 'pixel';
+  if (topicLower.includes('science')) return 'prism';
+  
+  // Default to a random specialist if no match
+  const allSpecialists = ['nova', 'spark', 'prism', 'pixel', 'atlas', 'lotus'];
+  return allSpecialists[Math.floor(Math.random() * allSpecialists.length)];
+};
+
+// Format a topic for display
+export const formatTopicForDisplay = (topic: string): string => {
+  if (!topic) return "this topic";
+  
+  // Clean up the topic
+  let cleanTopic = topic.trim();
+  
+  // Remove common prefixes
+  cleanTopic = cleanTopic.replace(/^what is |^how does |^why is |^where is |^when is |^who is /i, '');
+  
+  // If topic ends with a question mark, remove it
+  cleanTopic = cleanTopic.replace(/\?$/, '');
+  
+  // Capitalize first letter
+  cleanTopic = cleanTopic.charAt(0).toUpperCase() + cleanTopic.slice(1);
+  
+  return cleanTopic;
 };

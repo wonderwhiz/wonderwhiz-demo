@@ -26,98 +26,166 @@ const WonderPrompt: React.FC<WonderPromptProps> = ({
     const generateWonderPrompts = () => {
       const basePrompts: string[] = [];
       
-      // Extract topic from content
+      // Extract topic from content with improved extraction
       const topic = extractMainTopic(blockContent);
       
-      // Is this related to Afghanistan?
-      const isAfghanistanRelated = topic.toLowerCase().includes('afghanistan');
+      // Identify the topic category
+      const isAboutBollywood = topic.toLowerCase().includes('bollywood');
+      const isAboutAfghanistan = topic.toLowerCase().includes('afghanistan');
+      const isAboutSpace = topic.toLowerCase().includes('space') || topic.toLowerCase().includes('planet');
+      const isAboutTechnology = topic.toLowerCase().includes('robot') || topic.toLowerCase().includes('tech');
+      const isAboutAnimals = topic.toLowerCase().includes('animal') || topic.toLowerCase().includes('wildlife');
       
       // Create specialist-specific prompts
       switch (specialistId) {
         case 'nova':
-          basePrompts.push(
-            isAfghanistanRelated ? 
-              `How has satellite technology helped map dangerous areas in ${topic}?` :
+          if (isAboutSpace) {
+            basePrompts.push(
+              `What makes ${topic} different from other celestial bodies?`,
+              `How might humans explore ${topic} in the future?`
+            );
+          } else if (isAboutBollywood) {
+            basePrompts.push(
+              `How has technology changed ${topic} over the decades?`,
+              `What if we made ${topic}-style movies in space?`
+            );
+          } else if (isAboutAfghanistan) {
+            basePrompts.push(
+              `How has satellite technology helped map ${topic}?`,
+              `How might space technology help monitor safety in ${topic}?`
+            );
+          } else {
+            basePrompts.push(
               `What if ${topic} existed in outer space?`,
-            isAfghanistanRelated ?
-              `How might space technology help make ${topic} safer in the future?` :
               `How might ${topic} change in the future?`
-          );
+            );
+          }
           break;
+          
         case 'prism':
-          basePrompts.push(
-            isAfghanistanRelated ?
-              `What scientific approaches could make ${topic} safer?` :
+          if (isAboutSpace) {
+            basePrompts.push(
+              `What scientific instruments help us study ${topic}?`,
+              `What chemical elements make up ${topic}?`
+            );
+          } else if (isAboutBollywood) {
+            basePrompts.push(
+              `What scientific principles are behind ${topic} dance choreography?`,
+              `How does the science of sound make ${topic} music unique?`
+            );
+          } else if (isAboutAfghanistan) {
+            basePrompts.push(
+              `What scientific approaches could make ${topic} safer?`,
+              `How do scientists study the geography of ${topic}?`
+            );
+          } else {
+            basePrompts.push(
               `What scientific discoveries led to ${topic}?`,
-            isAfghanistanRelated ?
-              `How do scientists study the dangers in ${topic}?` :
               `How could we experiment with ${topic} at home?`
-          );
+            );
+          }
           break;
+          
         case 'atlas':
-          basePrompts.push(
-            isAfghanistanRelated ?
-              `How has ${topic} been affected by historical conflicts?` :
+          if (isAboutBollywood) {
+            basePrompts.push(
+              `How has ${topic} influenced global culture?`,
+              `What historical events shaped ${topic} as we know it today?`
+            );
+          } else if (isAboutAfghanistan) {
+            basePrompts.push(
+              `How has ${topic} been affected by historical conflicts?`,
+              `What were ${topic}'s most peaceful periods in history?`
+            );
+          } else {
+            basePrompts.push(
               `How did ${topic} change history?`,
-            isAfghanistanRelated ?
-              `What were Afghanistan's safest periods in history?` :
               `What ancient civilizations might have known about ${topic}?`
-          );
+            );
+          }
           break;
+          
         case 'spark':
-          basePrompts.push(
-            isAfghanistanRelated ?
-              `How could art help people understand the dangers in ${topic}?` :
+          if (isAboutBollywood) {
+            basePrompts.push(
+              `What makes ${topic} costumes so colorful and unique?`,
+              `How could you create your own ${topic}-inspired dance or story?`
+            );
+          } else if (isAboutAfghanistan) {
+            basePrompts.push(
+              `How could art help people understand ${topic} better?`,
+              `What creative expressions have come from ${topic}?`
+            );
+          } else {
+            basePrompts.push(
               `What art could we create inspired by ${topic}?`,
-            isAfghanistanRelated ?
-              `How could creative solutions make ${topic} safer to visit?` :
               `How could ${topic} inspire new inventions?`
-          );
+            );
+          }
           break;
+          
         case 'pixel':
-          basePrompts.push(
-            isAfghanistanRelated ?
-              `What technologies help keep people safe in ${topic}?` :
+          if (isAboutBollywood) {
+            basePrompts.push(
+              `How has digital technology changed ${topic} filmmaking?`,
+              `What apps could help people learn ${topic} dance moves?`
+            );
+          } else if (isAboutAfghanistan) {
+            basePrompts.push(
+              `What technologies help keep people safe in ${topic}?`,
+              `How are digital maps helping to navigate ${topic}?`
+            );
+          } else if (isAboutTechnology) {
+            basePrompts.push(
+              `How might ${topic} evolve with AI advancements?`,
+              `What coding projects could help us understand ${topic} better?`
+            );
+          } else {
+            basePrompts.push(
               `How could technology improve ${topic}?`,
-            isAfghanistanRelated ?
-              `How are digital maps helping to identify dangerous areas in ${topic}?` :
               `What digital tools help us understand ${topic}?`
-          );
+            );
+          }
           break;
+          
         case 'lotus':
-          basePrompts.push(
-            isAfghanistanRelated ?
-              `How does the natural landscape contribute to dangers in ${topic}?` :
+          if (isAboutBollywood) {
+            basePrompts.push(
+              `How does ${topic} connect people to their cultural roots?`,
+              `What mindful observations can we make about ${topic} dances?`
+            );
+          } else if (isAboutAfghanistan) {
+            basePrompts.push(
+              `How does the natural landscape of ${topic} affect its people?`,
+              `What mindfulness practices exist in ${topic}'s culture?`
+            );
+          } else if (isAboutAnimals) {
+            basePrompts.push(
+              `How do ${topic} connect to their environments?`,
+              `What can we learn about mindfulness from observing ${topic}?`
+            );
+          } else {
+            basePrompts.push(
               `How does ${topic} connect to nature?`,
-            isAfghanistanRelated ?
-              `How do local communities stay safe in dangerous regions of ${topic}?` :
               `What mindful observations can we make about ${topic}?`
-          );
+            );
+          }
           break;
+          
         default:
           basePrompts.push(
-            isAfghanistanRelated ?
-              `What makes ${topic} unique despite its dangers?` :
-              `What else is interesting about ${topic}?`,
-            isAfghanistanRelated ?
-              `How might ${topic} become safer in the future?` :
-              `What would you like to learn about ${topic}?`
+            `What else is interesting about ${topic}?`,
+            `What would you like to learn about ${topic}?`
           );
       }
       
       // Add narrative-specific prompts
       if (narrativePosition === 'beginning') {
-        basePrompts.push(isAfghanistanRelated ? 
-          `What historical events led to the current situation in ${topic}?` :
-          `What's the origin story of ${topic}?`);
+        basePrompts.push(`What's the origin story of ${topic}?`);
       } else if (narrativePosition === 'middle') {
-        basePrompts.push(isAfghanistanRelated ?
-          `How do the dangers in ${topic} compare to other regions you've learned about?` :
-          `How does ${topic} connect to things you already know?`);
+        basePrompts.push(`How does ${topic} connect to things you already know?`);
       } else {
-        basePrompts.push(isAfghanistanRelated ?
-          `What could we learn about peaceful solutions by studying ${topic}?` :
-          `Where could learning about ${topic} take you next?`);
+        basePrompts.push(`Where could learning about ${topic} take you next?`);
       }
       
       // Limit to 2-3 prompts
@@ -127,37 +195,60 @@ const WonderPrompt: React.FC<WonderPromptProps> = ({
     generateWonderPrompts();
   }, [specialistId, blockType, blockContent, narrativePosition]);
   
-  // Extract main topic from content (improved version)
+  // Extract main topic from content (improved version with better null checking)
   const extractMainTopic = (content: any): string => {
     if (!content) return "this topic";
     
     // Handle different block types
     if (blockType === 'fact' || blockType === 'funFact') {
-      // Add null check before calling split
       if (content.fact && typeof content.fact === 'string') {
-        // Look for Afghanistan mentions
-        if (content.fact.toLowerCase().includes('afghanistan')) {
-          return "Afghanistan";
+        const factText = content.fact;
+        
+        // Look for known topics
+        if (factText.toLowerCase().includes('bollywood')) return "Bollywood";
+        if (factText.toLowerCase().includes('afghanistan')) return "Afghanistan";
+        if (factText.toLowerCase().includes('robot')) return "robots";
+        if (factText.toLowerCase().includes('planet')) return "planets";
+        if (factText.toLowerCase().includes('space')) return "space exploration";
+        if (factText.toLowerCase().includes('animal')) return "animals";
+        
+        // Default extraction from first sentence
+        const firstSentence = factText.split('.')[0];
+        if (firstSentence && firstSentence.length > 5) {
+          return firstSentence;
         }
-        return content.fact.split(' ').slice(0, 2).join(' ') || "this topic";
       }
     }
     
-    // Try to extract from content
+    // Try to extract from content properties
     if (content.title) return content.title;
     if (content.topic) return content.topic;
     if (content.question && typeof content.question === 'string') {
-      if (content.question.toLowerCase().includes('afghanistan')) {
-        return "Afghanistan";
+      const question = content.question;
+      
+      if (question.toLowerCase().includes('bollywood')) return "Bollywood";
+      if (question.toLowerCase().includes('afghanistan')) return "Afghanistan";
+      
+      // Extract main subject from question if possible
+      const matches = question.match(/about\s+([^?\.]+)/i) || 
+                     question.match(/what\s+(?:is|are|makes)\s+([^?\.]+)/i);
+      
+      if (matches && matches[1]) {
+        return matches[1].trim();
       }
-      const words = content.question.split(' ').filter((w: string) => w.length > 3);
-      if (words.length > 0) return words[0];
+      
+      const words = question.split(' ').filter((w: string) => w.length > 3);
+      if (words.length > 0) return words.slice(0, 2).join(' ');
     }
     
-    // If the block is about Afghanistan specifically
-    if (JSON.stringify(content).toLowerCase().includes('afghanistan')) {
-      return "Afghanistan";
-    }
+    // Check the entire content object as string
+    const contentString = JSON.stringify(content).toLowerCase();
+    if (contentString.includes('bollywood')) return "Bollywood";
+    if (contentString.includes('afghanistan')) return "Afghanistan";
+    if (contentString.includes('robot')) return "robots"; 
+    if (contentString.includes('planet')) return "planets";
+    if (contentString.includes('space')) return "space exploration";
+    if (contentString.includes('animal')) return "animals";
     
     return "this topic";
   };
@@ -195,7 +286,7 @@ const WonderPrompt: React.FC<WonderPromptProps> = ({
           variant="ghost"
           size="sm"
           className="text-xs text-white/70 hover:text-white p-0 h-auto"
-          onClick={() => onRabbitHoleClick(wonderPrompts[0] || "What else is interesting about this topic?")}
+          onClick={() => onRabbitHoleClick(wonderPrompts[0] || "Tell me more about this topic")}
         >
           <span>Explore more wonders</span>
           <ArrowRight className="ml-1 h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />

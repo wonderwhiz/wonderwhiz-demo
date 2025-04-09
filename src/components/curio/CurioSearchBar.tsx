@@ -29,6 +29,9 @@ const CurioSearchBar: React.FC<CurioSearchBarProps> = ({
   const handleSuggestionClick = (suggestion: string) => {
     setSearchQuery(suggestion);
     setShowSuggestions(false);
+    // Submit the form programmatically when a suggestion is clicked
+    const form = document.querySelector('form');
+    if (form) form.dispatchEvent(new Event('submit', { cancelable: true }));
   };
   
   return (

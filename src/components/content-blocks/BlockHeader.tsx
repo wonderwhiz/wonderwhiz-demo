@@ -55,21 +55,55 @@ const BlockHeader: React.FC<BlockHeaderProps> = ({
 
   // Get specialist tagline based on current topic or type
   const getSpecialistTagline = () => {
-    const isAfghanistanRelated = blockTitle.toLowerCase().includes('afghanistan') || 
-                                (blockType === 'quiz' && blockTitle.includes('Brain Teaser'));
+    // Check if title contains certain keywords
+    const isBollywoodRelated = blockTitle.toLowerCase().includes('bollywood');
+    const isAfghanistanRelated = blockTitle.toLowerCase().includes('afghanistan');
+    const isSpaceRelated = blockTitle.toLowerCase().includes('space') || 
+                           blockTitle.toLowerCase().includes('planet') ||
+                           blockTitle.toLowerCase().includes('jupiter');
+    const isTechRelated = blockTitle.toLowerCase().includes('robot') || 
+                          blockTitle.toLowerCase().includes('tech');
+    const isAnimalRelated = blockTitle.toLowerCase().includes('animal') || 
+                           blockTitle.toLowerCase().includes('wildlife');
     
+    // Adjust style based on block type
+    const isBrainTeaser = blockType === 'quiz';
+    const isCreative = blockType === 'creative' || blockType === 'task';
+    const isFactual = blockType === 'fact' || blockType === 'funFact';
+    
+    // Bollywood-specific taglines
+    if (isBollywoodRelated) {
+      switch (specialistId) {
+        case 'nova':
+          return "Exploring how technology transforms entertainment";
+        case 'spark':
+          return "Celebrating the colors and creativity of cinema";
+        case 'prism':
+          return "Analyzing the science behind music and dance";
+        case 'pixel':
+          return "Discovering how digital tools enhance storytelling";
+        case 'atlas':
+          return "Revealing the rich history of Indian cinema";
+        case 'lotus':
+          return "Finding cultural connections through art";
+        default:
+          return specialistName;
+      }
+    }
+    
+    // Afghanistan-specific taglines
     if (isAfghanistanRelated) {
       switch (specialistId) {
         case 'nova':
-          return "Exploring how space tech monitors conflict zones";
+          return "Exploring how space tech monitors regions";
         case 'spark':
           return "Creating awareness through art and storytelling";
         case 'prism':
-          return "Analyzing the science behind regional dangers";
+          return "Analyzing the science behind regional features";
         case 'pixel':
-          return "Using technology to navigate high-risk areas";
+          return "Using technology to navigate challenging areas";
         case 'atlas':
-          return "Revealing the historical context of conflicts";
+          return "Revealing the historical context of regions";
         case 'lotus':
           return "Finding mindfulness amidst challenging environments";
         default:
@@ -77,22 +111,121 @@ const BlockHeader: React.FC<BlockHeaderProps> = ({
       }
     }
     
-    if (blockTitle.toLowerCase().includes('jupiter') || blockTitle.toLowerCase().includes('space')) {
+    // Space-specific taglines
+    if (isSpaceRelated) {
       switch (specialistId) {
         case 'nova':
-          return "Your cosmic guide to Jupiter's mysteries";
+          return "Your cosmic guide to space mysteries";
         case 'spark':
           return "Igniting creative curiosity about space";
         case 'prism':
-          return "Revealing the science of gas giants";
+          return "Revealing the science of celestial bodies";
         case 'pixel':
           return "Exploring space through technology";
         case 'atlas':
-          return "Mapping Jupiter's historical discovery";
+          return "Mapping the history of space discovery";
         case 'lotus':
-          return "Connecting Earth's life to space";
+          return "Connecting Earth's life to the cosmos";
         default:
           return specialistName;
+      }
+    }
+    
+    // Technology-specific taglines
+    if (isTechRelated) {
+      switch (specialistId) {
+        case 'nova':
+          return "Exploring the future of technology";
+        case 'spark':
+          return "Creating art with technological tools";
+        case 'prism':
+          return "Understanding the science behind gadgets";
+        case 'pixel':
+          return "Navigating the digital world with expertise";
+        case 'atlas':
+          return "Revealing how technology changed history";
+        case 'lotus':
+          return "Finding balance in our tech-filled world";
+        default:
+          return specialistName;
+      }
+    }
+    
+    // Animal-specific taglines
+    if (isAnimalRelated) {
+      switch (specialistId) {
+        case 'nova':
+          return "Discovering creatures across the universe";
+        case 'spark':
+          return "Creating art inspired by amazing creatures";
+        case 'prism':
+          return "Exploring the science of animal adaptations";
+        case 'pixel':
+          return "Using technology to protect wildlife";
+        case 'atlas':
+          return "Tracing the history of animals through time";
+        case 'lotus':
+          return "Learning mindfulness from nature's creatures";
+        default:
+          return specialistName;
+      }
+    }
+    
+    // Block type specific taglines
+    if (isBrainTeaser) {
+      switch (specialistId) {
+        case 'nova':
+          return "Challenging your cosmic thinking!";
+        case 'spark':
+          return "Sparking your creative problem-solving!";
+        case 'prism':
+          return "Testing your scientific knowledge!";
+        case 'pixel':
+          return "Puzzling through tech mysteries!";
+        case 'atlas':
+          return "Exploring historical riddles!";
+        case 'lotus':
+          return "Cultivating mindful curiosity!";
+        default:
+          return "Test your knowledge!";
+      }
+    }
+    
+    if (isCreative) {
+      switch (specialistId) {
+        case 'nova':
+          return "Time for cosmic creativity!";
+        case 'spark':
+          return "Let's get creative together!";
+        case 'prism':
+          return "Experiment with scientific creativity!";
+        case 'pixel':
+          return "Let's design something amazing!";
+        case 'atlas':
+          return "Create with historical inspiration!";
+        case 'lotus':
+          return "Express yourself mindfully!";
+        default:
+          return "Time to create!";
+      }
+    }
+    
+    if (isFactual) {
+      switch (specialistId) {
+        case 'nova':
+          return "Expanding your cosmic knowledge!";
+        case 'spark':
+          return "Fueling your creative inspiration!";
+        case 'prism':
+          return "Revealing fascinating scientific facts!";
+        case 'pixel':
+          return "Uncovering tech wonders!";
+        case 'atlas':
+          return "Journey through time with amazing facts!";
+        case 'lotus':
+          return "Connecting us through nature's wisdom!";
+        default:
+          return "Discover something amazing!";
       }
     }
     
