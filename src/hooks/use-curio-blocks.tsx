@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { ContentBlock } from '@/types/curio';
+import { ContentBlock, isValidContentBlockType, ContentBlockType } from '@/types/curio';
 import { v4 as uuidv4 } from 'uuid';
 
 interface UseCurioBlocksResult {
@@ -56,7 +56,7 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
         const typedBlocks = data.map(block => ({
           id: block.id,
           curio_id: block.curio_id,
-          type: block.type,
+          type: isValidContentBlockType(block.type) ? block.type as ContentBlockType : 'fact',
           specialist_id: block.specialist_id,
           content: block.content,
           liked: block.liked || false,

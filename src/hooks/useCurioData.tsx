@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { ContentBlock } from '@/types/curio';
+import { ContentBlock, isValidContentBlockType, ContentBlockType } from '@/types/curio';
 import { v4 as uuidv4 } from 'uuid';
 
 export const useCurioData = (curioId?: string, childProfile?: any) => {
@@ -10,6 +10,12 @@ export const useCurioData = (curioId?: string, childProfile?: any) => {
   const [error, setError] = useState<Error | null>(null);
   const [generatingBlocks, setGeneratingBlocks] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
+  
+  // Additional properties needed by DashboardContainer
+  const [hasMoreBlocks, setHasMoreBlocks] = useState(true);
+  const [loadingMoreBlocks, setLoadingMoreBlocks] = useState(false);
+  const [totalBlocksLoaded, setTotalBlocksLoaded] = useState(0);
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
 
   // Fetch the curio blocks
   const fetchBlocks = useCallback(async () => {
@@ -49,7 +55,7 @@ export const useCurioData = (curioId?: string, childProfile?: any) => {
         const processedBlocks = blockData.map((block: any) => ({
           id: block.id,
           curio_id: block.curio_id,
-          type: block.type,
+          type: isValidContentBlockType(block.type) ? block.type as ContentBlockType : 'fact',
           specialist_id: block.specialist_id,
           content: block.content,
           liked: block.liked || false,
@@ -58,6 +64,8 @@ export const useCurioData = (curioId?: string, childProfile?: any) => {
         }));
         
         setBlocks(processedBlocks);
+        setTotalBlocksLoaded(processedBlocks.length);
+        setIsFirstLoad(false);
       } else {
         console.info('No existing blocks found, generating new ones');
         // Generate blocks if there are none yet
@@ -194,10 +202,13 @@ export const useCurioData = (curioId?: string, childProfile?: any) => {
         }
         
         if (data) {
-          const processedBlock = {
+          // Make sure we validate the block type to match ContentBlockType
+          const blockType = isValidContentBlockType(data.type) ? data.type as ContentBlockType : 'fact';
+          
+          const processedBlock: ContentBlock = {
             id: data.id,
             curio_id: data.curio_id,
-            type: data.type,
+            type: blockType,
             specialist_id: data.specialist_id,
             content: data.content,
             liked: data.liked || false,
@@ -206,6 +217,7 @@ export const useCurioData = (curioId?: string, childProfile?: any) => {
           };
           
           savedBlocks.push(processedBlock);
+          setTotalBlocksLoaded(prev => prev + 1);
           
           // Update the local state with new blocks as they're saved
           setBlocks(prev => {
@@ -223,6 +235,103 @@ export const useCurioData = (curioId?: string, childProfile?: any) => {
     return savedBlocks;
   };
 
+  // Implementation of additional methods needed by DashboardContainer
+  const handleToggleLike = async (blockId: string) => {
+    const block = blocks.find(b => b.id === blockId);
+    if (!block) return;
+    
+    try {
+      const newLikedState = !block.liked;
+      
+      // Update local state
+      setBlocks(prev => 
+        prev.map(b => b.id === blockId ? { ...b, liked: newLikedState } : b)
+      );
+      
+      // Update in the database
+      await supabase
+        .from('content_blocks')
+        .update({ liked: newLikedState })
+        .eq('id', blockId);
+        
+    } catch (err) {
+      console.error('Error toggling like:', err);
+    }
+  };
+  
+  const handleToggleBookmark = async (blockId: string) => {
+    const block = blocks.find(b => b.id === blockId);
+    if (!block) return;
+    
+    try {
+      const newBookmarkedState = !block.bookmarked;
+      
+      // Update local state
+      setBlocks(prev => 
+        prev.map(b => b.id === blockId ? { ...b, bookmarked: newBookmarkedState } : b)
+      );
+      
+      // Update in the database
+      await supabase
+        .from('content_blocks')
+        .update({ bookmarked: newBookmarkedState })
+        .eq('id', blockId);
+        
+    } catch (err) {
+      console.error('Error toggling bookmark:', err);
+    }
+  };
+  
+  const loadMoreBlocks = async () => {
+    if (!curioId || loadingMoreBlocks) return;
+    
+    setLoadingMoreBlocks(true);
+    
+    try {
+      const { data, error } = await supabase
+        .from('content_blocks')
+        .select('*')
+        .eq('curio_id', curioId)
+        .order('created_at', { ascending: true })
+        .range(blocks.length, blocks.length + 5);
+        
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        const processedBlocks = data.map((block: any) => ({
+          id: block.id,
+          curio_id: block.curio_id,
+          type: isValidContentBlockType(block.type) ? block.type as ContentBlockType : 'fact',
+          specialist_id: block.specialist_id,
+          content: block.content,
+          liked: block.liked || false,
+          bookmarked: block.bookmarked || false,
+          created_at: block.created_at
+        }));
+        
+        setBlocks(prev => [...prev, ...processedBlocks]);
+        setTotalBlocksLoaded(prev => prev + processedBlocks.length);
+        setHasMoreBlocks(data.length === 6); // If we got less than requested, we're at the end
+      } else {
+        setHasMoreBlocks(false);
+      }
+    } catch (err) {
+      console.error('Error loading more blocks:', err);
+    } finally {
+      setLoadingMoreBlocks(false);
+    }
+  };
+  
+  const handleSearch = async (searchTerm: string) => {
+    // Would implement search functionality here
+    console.log("Search not implemented yet");
+  };
+  
+  const clearSearch = () => {
+    // Would clear search results here
+    console.log("Clear search not implemented yet");
+  };
+
   // Initial fetch
   useEffect(() => {
     if (curioId) {
@@ -236,6 +345,16 @@ export const useCurioData = (curioId?: string, childProfile?: any) => {
     error,
     generatingBlocks,
     generationError,
+    isGeneratingContent: generatingBlocks, // Alias for backward compatibility
+    hasMoreBlocks,
+    loadingMoreBlocks,
+    loadMoreBlocks,
+    totalBlocksLoaded,
+    handleToggleLike,
+    handleToggleBookmark,
+    handleSearch,
+    clearSearch,
+    isFirstLoad,
     refreshBlocks: fetchBlocks
   };
 };
