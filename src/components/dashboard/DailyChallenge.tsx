@@ -10,11 +10,13 @@ import { cn } from '@/lib/utils';
 interface DailyChallengeProps {
   childId: string;
   onNewChallenges?: (count: number) => void;
+  onComplete?: () => void; // Add this optional prop
 }
 
 const DailyChallenge: React.FC<DailyChallengeProps> = ({ 
   childId,
-  onNewChallenges
+  onNewChallenges,
+  onComplete
 }) => {
   const [challenges, setChallenges] = useState<any[]>([]);
   
@@ -64,6 +66,22 @@ const DailyChallenge: React.FC<DailyChallengeProps> = ({
     
     generateChallenges();
   }, [childId, onNewChallenges]);
+  
+  // Handle challenge completion
+  const handleChallengeComplete = (challengeId: string) => {
+    setChallenges(prevChallenges => 
+      prevChallenges.map(challenge => 
+        challenge.id === challengeId 
+          ? { ...challenge, progress: 100 } 
+          : challenge
+      )
+    );
+    
+    // Notify parent component if needed
+    if (onComplete) {
+      onComplete();
+    }
+  };
   
   // Animation variants
   const containerVariants = {
@@ -124,11 +142,12 @@ const DailyChallenge: React.FC<DailyChallengeProps> = ({
             key={challenge.id}
             variants={itemVariants}
             whileHover={{ scale: 1.03, y: -1 }}
+            onClick={() => challenge.progress < 100 && handleChallengeComplete(challenge.id)}
             className={cn(
-              "p-3 rounded-lg transition-all overflow-hidden group border",
+              "p-3 rounded-lg transition-all overflow-hidden group border cursor-pointer",
               challenge.progress === 100 
                 ? "bg-gradient-to-r from-green-500/10 to-green-600/10 border-green-500/20" 
-                : "bg-gradient-to-r from-amber-500/5 to-amber-600/5 border-amber-500/10"
+                : "bg-gradient-to-r from-amber-500/5 to-amber-600/5 border-amber-500/10 hover:border-amber-500/30"
             )}
           >
             <div className="flex justify-between items-start">
