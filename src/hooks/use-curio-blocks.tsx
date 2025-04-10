@@ -27,6 +27,7 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
 
     setIsLoading(true);
     setError(null);
+    console.info(`Fetching blocks for curioId: ${curioId}, with search: ${searchQuery}`);
 
     const start = page * 10;
     const end = start + 9;
@@ -47,10 +48,12 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
 
       if (error) {
         setError(error);
+        console.error('Error fetching blocks:', error);
         return;
       }
 
       if (data) {
+        console.info(`Fetched ${data.length} blocks`);
         // Make sure we're properly typing our ContentBlock before setting state
         const typedBlocks = data.map(block => ({
           id: block.id,
@@ -69,6 +72,7 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
       }
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch blocks'));
+      console.error('Error in fetchBlocks:', err);
     } finally {
       setIsLoading(false);
     }

@@ -43,11 +43,11 @@ export const useCurioData = (curioId?: string, childProfile?: any) => {
         .select('*')
         .eq('curio_id', curioId)
         .order('created_at', { ascending: true })
-        .limit(2); // Start with just a couple of blocks for quick rendering
+        .limit(10); // Start with blocks for quick rendering
         
       if (blockError) throw blockError;
       
-      console.info(`Fetching initial 2 blocks for curio: ${curioId}`);
+      console.info(`Fetching initial blocks for curio: ${curioId}`);
       
       if (blockData && blockData.length > 0) {
         // Process the block data before setting it
@@ -60,11 +60,12 @@ export const useCurioData = (curioId?: string, childProfile?: any) => {
           liked: block.liked || false,
           bookmarked: block.bookmarked || false,
           created_at: block.created_at
-        }));
+        })) as ContentBlock[];
         
         setBlocks(processedBlocks);
         setTotalBlocksLoaded(processedBlocks.length);
         setIsFirstLoad(false);
+        setHasMoreBlocks(blockData.length === 10);
       } else {
         console.info('No existing blocks found, generating new ones');
         // Generate blocks if there are none yet
@@ -78,7 +79,7 @@ export const useCurioData = (curioId?: string, childProfile?: any) => {
     } finally {
       setIsLoading(false);
     }
-  }, [curioId]);
+  }, [curioId, childProfile]);
 
   // Generate initial blocks with AI
   const generateInitialBlocks = async (query: string, profile: any) => {
@@ -98,7 +99,7 @@ export const useCurioData = (curioId?: string, childProfile?: any) => {
             interests: profile.interests,
             language: profile.language
           },
-          blockCount: 2,
+          blockCount: 5,
           quickGeneration: true
         }
       });
@@ -106,11 +107,16 @@ export const useCurioData = (curioId?: string, childProfile?: any) => {
       if (genError) throw genError;
       
       const initialDuration = (new Date().getTime() - startTime.getTime()) / 1000;
-      console.info(`Generated initial ${initialBlocks.length} blocks in ${initialDuration} seconds`);
+      console.info(`Generated initial ${initialBlocks?.length || 0} blocks in ${initialDuration} seconds`);
       
       // Process and save the generated blocks
       if (initialBlocks && initialBlocks.length > 0) {
-        await saveBlocksInSequence(initialBlocks, curioId);
+        const savedBlocks = await saveBlocksInSequence(initialBlocks, curioId || '');
+        
+        if (savedBlocks && savedBlocks.length > 0) {
+          setBlocks(savedBlocks);
+          setTotalBlocksLoaded(savedBlocks.length);
+        }
         
         // Generate more blocks in the background
         generateRemainingBlocks(query, profile);
@@ -149,7 +155,7 @@ export const useCurioData = (curioId?: string, childProfile?: any) => {
             language: profile.language
           },
           blockCount: 8,
-          skipInitial: 2,
+          skipInitial: 5,
           quickGeneration: false
         }
       });
@@ -157,11 +163,16 @@ export const useCurioData = (curioId?: string, childProfile?: any) => {
       if (genError) throw genError;
       
       const remainingDuration = (new Date().getTime() - startTime.getTime()) / 1000;
-      console.info(`Generated remaining ${remainingBlocks.length} blocks in ${remainingDuration} seconds`);
+      console.info(`Generated remaining ${remainingBlocks?.length || 0} blocks in ${remainingDuration} seconds`);
       
       // Process and save the additional blocks
       if (remainingBlocks && remainingBlocks.length > 0) {
-        await saveBlocksInSequence(remainingBlocks, curioId);
+        const savedBlocks = await saveBlocksInSequence(remainingBlocks, curioId || '');
+        
+        if (savedBlocks && savedBlocks.length > 0) {
+          setBlocks(prev => [...prev, ...savedBlocks]);
+          setTotalBlocksLoaded(prev => prev + savedBlocks.length);
+        }
       }
     } catch (err) {
       console.error('Error generating additional blocks:', err);
@@ -172,22 +183,28 @@ export const useCurioData = (curioId?: string, childProfile?: any) => {
   
   // Save blocks sequentially to maintain order
   const saveBlocksInSequence = async (blocks: any[], curioId: string) => {
-    if (!blocks || blocks.length === 0) return;
+    if (!blocks || blocks.length === 0) return [];
     
     const savedBlocks: ContentBlock[] = [];
     
     for (let i = 0; i < blocks.length; i++) {
       try {
+        // Ensure the block type is valid
+        const blockType = isValidContentBlockType(blocks[i].type) ? blocks[i].type : 'fact';
+        
         // Create a new block with proper structure
         const newBlock = {
           // Don't include an ID - let Supabase generate it
-          type: isValidContentBlockType(blocks[i].type) ? blocks[i].type : 'fact',
-          specialist_id: blocks[i].specialist_id,
+          type: blockType,
+          specialist_id: blocks[i].specialist_id || 'nova',
           content: blocks[i].content,
           curio_id: curioId,
           liked: false,
           bookmarked: false
         };
+        
+        // Log the block being saved for debugging
+        console.info(`Saving block ${i+1} of type ${blockType}`);
         
         const { data, error } = await supabase
           .from('content_blocks')
@@ -214,15 +231,6 @@ export const useCurioData = (curioId?: string, childProfile?: any) => {
           };
           
           savedBlocks.push(processedBlock);
-          setTotalBlocksLoaded(prev => prev + 1);
-          
-          // Update the local state with new blocks as they're saved
-          setBlocks(prev => {
-            // Make sure we don't add duplicates
-            const exists = prev.some(b => b.id === processedBlock.id);
-            if (exists) return prev;
-            return [...prev, processedBlock];
-          });
         }
       } catch (err) {
         console.error(`Error saving block ${i+1}:`, err);
@@ -304,7 +312,7 @@ export const useCurioData = (curioId?: string, childProfile?: any) => {
           liked: block.liked || false,
           bookmarked: block.bookmarked || false,
           created_at: block.created_at
-        }));
+        })) as ContentBlock[];
         
         setBlocks(prev => [...prev, ...processedBlocks]);
         setTotalBlocksLoaded(prev => prev + processedBlocks.length);
@@ -320,13 +328,43 @@ export const useCurioData = (curioId?: string, childProfile?: any) => {
   };
   
   const handleSearch = async (searchTerm: string) => {
-    // Would implement search functionality here
-    console.log("Search not implemented yet");
+    if (!curioId) return;
+    
+    setIsLoading(true);
+    
+    try {
+      const { data, error } = await supabase
+        .from('content_blocks')
+        .select('*')
+        .eq('curio_id', curioId)
+        .textSearch('content', searchTerm);
+        
+      if (error) throw error;
+      
+      if (data) {
+        const processedBlocks = data.map((block: any) => ({
+          id: block.id,
+          curio_id: block.curio_id,
+          type: isValidContentBlockType(block.type) ? block.type as ContentBlockType : 'fact',
+          specialist_id: block.specialist_id,
+          content: block.content,
+          liked: block.liked || false,
+          bookmarked: block.bookmarked || false,
+          created_at: block.created_at
+        })) as ContentBlock[];
+        
+        setBlocks(processedBlocks);
+        setTotalBlocksLoaded(processedBlocks.length);
+      }
+    } catch (err) {
+      console.error('Error searching blocks:', err);
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   const clearSearch = () => {
-    // Would clear search results here
-    console.log("Clear search not implemented yet");
+    fetchBlocks();
   };
 
   // Initial fetch

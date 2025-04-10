@@ -21,6 +21,8 @@ import CurioLoadingState from '@/components/curio/CurioLoadingState';
 import CurioErrorState from '@/components/curio/CurioErrorState';
 import ViewModeSwitcher from '@/components/curio/ViewModeSwitcher';
 import RabbitHoleSuggestions from '@/components/content-blocks/RabbitHoleSuggestions';
+import CurioPageNavigation from '@/components/curio/CurioPageNavigation';
+import CurioPageSearch from '@/components/curio/CurioPageSearch';
 
 const SimplifiedCurioPage: React.FC = () => {
   const { childId, curioId } = useParams<{ childId: string, curioId: string }>();
@@ -381,6 +383,14 @@ const SimplifiedCurioPage: React.FC = () => {
     }
   };
 
+  // Enhanced search handling
+  const handleCurioSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      handleSearch(e);
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-indigo-950 to-indigo-900">
       <motion.header 
@@ -392,6 +402,9 @@ const SimplifiedCurioPage: React.FC = () => {
         <div className="max-w-4xl mx-auto">
           <ViewModeSwitcher currentMode="simplified" />
           
+          {/* Add Navigation */}
+          <CurioPageNavigation childId={childId} />
+          
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>
               {curioTitle && (
@@ -402,12 +415,13 @@ const SimplifiedCurioPage: React.FC = () => {
             </div>
           </div>
           
+          {/* Add improved search */}
           <div className="mt-3">
-            <CurioSearchBar
+            <CurioPageSearch 
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
-              handleSearch={handleSearch}
-              placeholder="Search within this exploration..."
+              handleSearch={handleCurioSearch}
+              handleBackToDashboard={handleBackToDashboard}
             />
           </div>
         </div>
