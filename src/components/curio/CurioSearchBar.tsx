@@ -11,6 +11,7 @@ interface CurioSearchBarProps {
   handleSearch: (e: React.FormEvent) => void;
   placeholder?: string;
   variant?: 'default' | 'large' | 'minimal';
+  isActive?: boolean;
 }
 
 const CurioSearchBar: React.FC<CurioSearchBarProps> = ({
@@ -18,7 +19,8 @@ const CurioSearchBar: React.FC<CurioSearchBarProps> = ({
   setSearchQuery,
   handleSearch,
   placeholder = "Ask a question or search for a topic...",
-  variant = 'default'
+  variant = 'default',
+  isActive
 }) => {
   // Define styles based on variant
   const getStyles = () => {

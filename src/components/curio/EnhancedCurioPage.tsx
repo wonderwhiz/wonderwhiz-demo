@@ -538,7 +538,7 @@ const EnhancedCurioPage: React.FC = () => {
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           handleSearch={handleSearch}
-          isActive={true}
+          placeholder="Search within this exploration..."
         />
       </div>
 
@@ -583,6 +583,8 @@ const EnhancedCurioPage: React.FC = () => {
             <ProgressVisualization 
               progress={progress} 
               ageGroup={ageGroup}
+              totalChapters={chapters.length}
+              completedChapters={chapters.filter(chapter => chapter.isCompleted).length}
             />
           )}
 
