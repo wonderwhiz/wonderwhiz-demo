@@ -2,7 +2,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { ContentBlock, isValidContentBlockType, ContentBlockType } from '@/types/curio';
-import { v4 as uuidv4 } from 'uuid';
 
 export const useCurioData = (curioId?: string, childProfile?: any) => {
   const [blocks, setBlocks] = useState<ContentBlock[]>([]);
@@ -179,10 +178,10 @@ export const useCurioData = (curioId?: string, childProfile?: any) => {
     
     for (let i = 0; i < blocks.length; i++) {
       try {
-        // Create a new block with proper UUID
+        // Create a new block with proper structure
         const newBlock = {
-          // Remove the generated ID and let Supabase generate a proper UUID
-          type: blocks[i].type,
+          // Don't include an ID - let Supabase generate it
+          type: isValidContentBlockType(blocks[i].type) ? blocks[i].type : 'fact',
           specialist_id: blocks[i].specialist_id,
           content: blocks[i].content,
           curio_id: curioId,
@@ -202,13 +201,11 @@ export const useCurioData = (curioId?: string, childProfile?: any) => {
         }
         
         if (data) {
-          // Make sure we validate the block type to match ContentBlockType
-          const blockType = isValidContentBlockType(data.type) ? data.type as ContentBlockType : 'fact';
-          
+          // Process the returned block to ensure it matches ContentBlock type
           const processedBlock: ContentBlock = {
             id: data.id,
             curio_id: data.curio_id,
-            type: blockType,
+            type: isValidContentBlockType(data.type) ? data.type as ContentBlockType : 'fact',
             specialist_id: data.specialist_id,
             content: data.content,
             liked: data.liked || false,

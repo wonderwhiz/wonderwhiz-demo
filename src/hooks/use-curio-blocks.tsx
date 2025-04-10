@@ -2,7 +2,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { ContentBlock, isValidContentBlockType, ContentBlockType } from '@/types/curio';
-import { v4 as uuidv4 } from 'uuid';
 
 interface UseCurioBlocksResult {
   blocks: ContentBlock[];
