@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,6 +23,7 @@ import TableOfContents, { Chapter } from '@/components/curio/TableOfContents';
 import ProgressVisualization from '@/components/curio/ProgressVisualization';
 import LearningCertificate from '@/components/curio/LearningCertificate';
 import ChapterHeader from '@/components/curio/ChapterHeader';
+import IllustratedContentBlock from '@/components/content-blocks/IllustratedContentBlock';
 
 // Define chapter structure
 const DEFAULT_CHAPTERS: Chapter[] = [
@@ -572,14 +572,26 @@ const CurioPage: React.FC = () => {
             <CurioEmptyState />
           )}
 
-          {/* Quick Answer */}
-          {quickAnswer && blocks.length > 0 && !searchQuery && (
+          {/* Quick Answer - Using Groq for generation */}
+          {curioTitle && !isLoadingBlocks && !searchQuery && (
             <QuickAnswer 
-              question={curioTitle || "Your question"}
-              answer={quickAnswer}
+              question={curioTitle}
               isExpanded={quickAnswerExpanded}
               onToggleExpand={() => setQuickAnswerExpanded(!quickAnswerExpanded)}
               onStartJourney={handleStartJourney}
+              childId={childId}
+            />
+          )}
+
+          {/* Illustrated first content block - Using OpenAI DALL-E for image generation */}
+          {curioTitle && !isLoadingBlocks && !searchQuery && (
+            <IllustratedContentBlock
+              topic={curioTitle}
+              childId={childId}
+              onLike={() => {}}
+              onSave={() => {}}
+              onShare={() => {}}
+              onReply={(reply) => console.log('Reply:', reply)}
             />
           )}
           

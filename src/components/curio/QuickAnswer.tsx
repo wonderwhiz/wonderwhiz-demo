@@ -1,24 +1,51 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronDown, ChevronUp, Rocket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useGroqGeneration } from '@/hooks/useGroqGeneration';
+import { useChildProfile } from '@/hooks/use-child-profile';
 
 interface QuickAnswerProps {
   question: string;
-  answer: string;
   isExpanded: boolean;
   onToggleExpand: () => void;
   onStartJourney: () => void;
+  childId?: string;
 }
 
 const QuickAnswer: React.FC<QuickAnswerProps> = ({
   question,
-  answer,
   isExpanded,
   onToggleExpand,
-  onStartJourney
+  onStartJourney,
+  childId
 }) => {
+  const [answer, setAnswer] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
+  const { generateQuickAnswer } = useGroqGeneration();
+  const { childProfile } = useChildProfile(childId);
+
+  useEffect(() => {
+    async function loadQuickAnswer() {
+      if (!question) return;
+      
+      setIsLoading(true);
+      try {
+        const childAge = childProfile?.age ? Number(childProfile.age) : 10;
+        const generatedAnswer = await generateQuickAnswer(question, childAge);
+        setAnswer(generatedAnswer);
+      } catch (error) {
+        console.error('Error loading quick answer:', error);
+        setAnswer(`Let's explore ${question} together! This topic has many fascinating aspects to discover.`);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    loadQuickAnswer();
+  }, [question, childProfile]);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -37,7 +64,15 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
             WebkitMaskImage: !isExpanded ? 'linear-gradient(to bottom, rgba(0,0,0,1) 60%, rgba(0,0,0,0))' : 'none' 
           }}
         >
-          <p className="text-white/90 leading-relaxed">{answer}</p>
+          {isLoading ? (
+            <div className="animate-pulse">
+              <div className="h-4 bg-white/10 rounded w-3/4 mb-2"></div>
+              <div className="h-4 bg-white/10 rounded w-full mb-2"></div>
+              <div className="h-4 bg-white/10 rounded w-2/3"></div>
+            </div>
+          ) : (
+            <p className="text-white/90 leading-relaxed">{answer}</p>
+          )}
         </div>
         
         <div className="flex flex-col sm:flex-row items-center mt-4 gap-3 justify-between">

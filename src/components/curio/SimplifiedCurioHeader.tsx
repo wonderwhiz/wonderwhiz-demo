@@ -28,39 +28,41 @@ const SimplifiedCurioHeader: React.FC<SimplifiedCurioHeaderProps> = ({
 }) => {
   return (
     <motion.div
-      className="mb-6"
+      className="mb-6 px-4 sm:px-6"
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
-        <h1 className="text-2xl sm:text-3xl font-bold text-center sm:text-left text-white font-nunito">
-          {title}
-        </h1>
+      <div className="max-w-3xl mx-auto">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
+          <h1 className="text-2xl sm:text-3xl font-bold text-center sm:text-left text-white font-nunito">
+            {title}
+          </h1>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowLearningPath(!showLearningPath)}
+            className="bg-white/10 hover:bg-white/20 text-white"
+          >
+            <BookOpen className="w-4 h-4 mr-2" />
+            {showLearningPath ? "Hide Path" : "Show Path"}
+          </Button>
+        </div>
         
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setShowLearningPath(!showLearningPath)}
-          className="bg-white/10 hover:bg-white/20 text-white"
-        >
-          <BookOpen className="w-4 h-4 mr-2" />
-          {showLearningPath ? "Hide Path" : "Show Path"}
-        </Button>
+        <MagicalSearchBar
+          query={query}
+          setQuery={setQuery}
+          handleSubmitQuery={() => {
+            if (query.trim()) {
+              handleSearch({ preventDefault: () => {} } as React.FormEvent);
+            }
+          }}
+          isGenerating={isGenerating}
+          recentQueries={recentQueries}
+          placeholder="Ask another question or search within this topic..."
+        />
       </div>
-      
-      <MagicalSearchBar
-        query={query}
-        setQuery={setQuery}
-        handleSubmitQuery={() => {
-          if (query.trim()) {
-            handleSearch({ preventDefault: () => {} } as React.FormEvent);
-          }
-        }}
-        isGenerating={isGenerating}
-        recentQueries={recentQueries}
-        placeholder="Ask another question or search within this topic..."
-      />
     </motion.div>
   );
 };

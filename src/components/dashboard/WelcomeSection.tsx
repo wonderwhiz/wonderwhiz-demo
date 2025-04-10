@@ -42,14 +42,16 @@ const WelcomeSection: React.FC<WelcomeSectionProps> = ({
         handleSubmitQuery={handleSubmitQuery}
         isGenerating={isGenerating}
         onCurioSuggestionClick={handleCurioSuggestionClick}
+        onRefreshSuggestions={handleRefreshSuggestions}
+        isLoadingSuggestions={isLoadingSuggestions}
       />
       
-      {/* Integrate tasks directly into the welcome flow */}
+      {/* Integrated discovery section with improved visuals */}
       <DiscoverySection 
         childId={childId} 
         sparksBalance={childProfile?.sparks_balance || 0}
         onSparkEarned={(amount) => {
-          // This would be handled by the parent component
+          // Handle earned sparks in parent component
           console.log(`Earned ${amount} sparks`);
         }}
       />
