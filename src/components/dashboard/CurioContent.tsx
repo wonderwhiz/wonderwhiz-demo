@@ -128,9 +128,9 @@ const CurioContent: React.FC<CurioContentProps> = ({
         handleToggleLike={onToggleLike}
         handleToggleBookmark={onToggleBookmark}
         handleReply={onReply}
-        handleQuizCorrect={(blockId, isCorrect) => onQuizCorrect(blockId)}
+        handleQuizCorrect={onQuizCorrect}
         handleNewsRead={onNewsRead}
-        handleCreativeUpload={(blockId, fileUrl) => onCreativeUpload(blockId)}
+        handleCreativeUpload={onCreativeUpload}
         handleTaskComplete={() => {}} 
         handleActivityComplete={() => {}}
         handleMindfulnessComplete={() => {}}

@@ -138,7 +138,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
               correctIndex={block.content.correctIndex || 0}
               explanation={block.content.explanation}
               specialistId={block.specialist_id}
-              onCorrectAnswer={(isCorrect) => handleQuizCorrect(block.id, isCorrect)}
+              onCorrectAnswer={() => handleQuizCorrect(block.id)}
               onLike={() => handleToggleLike(block.id)}
               onBookmark={() => handleToggleBookmark(block.id)}
               onReply={(message) => handleReply(block.id, message)}
@@ -154,7 +154,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
                 examples: block.content.examples || []
               }}
               specialistId={block.specialist_id}
-              onCreativeUpload={(fileUrl) => handleCreativeUpload(block.id, fileUrl)}
+              onCreativeUpload={() => handleCreativeUpload(block.id)}
               onLike={() => handleToggleLike(block.id)}
               onBookmark={() => handleToggleBookmark(block.id)}
               onReply={(message) => handleReply(block.id, message)}
