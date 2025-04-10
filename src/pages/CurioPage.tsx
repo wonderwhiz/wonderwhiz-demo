@@ -33,6 +33,7 @@ const DEFAULT_CHAPTERS: Chapter[] = [
     id: 'introduction',
     title: 'Introduction',
     description: 'Get started with your learning journey.',
+    icon: 'introduction',
     isCompleted: false,
     isActive: true
   },
@@ -40,6 +41,7 @@ const DEFAULT_CHAPTERS: Chapter[] = [
     id: 'exploration',
     title: 'Exploration',
     description: 'Discover new information.',
+    icon: 'exploration',
     isCompleted: false,
     isActive: false
   },
@@ -47,6 +49,7 @@ const DEFAULT_CHAPTERS: Chapter[] = [
     id: 'understanding',
     title: 'Understanding',
     description: 'Gain deeper insights.',
+    icon: 'understanding',
     isCompleted: false,
     isActive: false
   },
@@ -54,6 +57,7 @@ const DEFAULT_CHAPTERS: Chapter[] = [
     id: 'challenge',
     title: 'Challenge',
     description: 'Test your knowledge.',
+    icon: 'challenge',
     isCompleted: false,
     isActive: false
   },
@@ -61,6 +65,7 @@ const DEFAULT_CHAPTERS: Chapter[] = [
     id: 'creation',
     title: 'Creation',
     description: 'Create something new.',
+    icon: 'creation',
     isCompleted: false,
     isActive: false
   },
@@ -68,6 +73,7 @@ const DEFAULT_CHAPTERS: Chapter[] = [
     id: 'reflection',
     title: 'Reflection',
     description: 'Reflect on your learning.',
+    icon: 'reflection',
     isCompleted: false,
     isActive: false
   },
@@ -75,6 +81,7 @@ const DEFAULT_CHAPTERS: Chapter[] = [
     id: 'nextSteps',
     title: 'Next Steps',
     description: 'Continue your learning.',
+    icon: 'nextSteps',
     isCompleted: false,
     isActive: false
   }
@@ -136,7 +143,7 @@ const CurioPage: React.FC = () => {
         setAgeGroup('5-7');
       } else if (age >= 8 && age <= 11) {
         setAgeGroup('8-11');
-      } else {
+      } else if (age >= 12 && age <= 16) {
         setAgeGroup('12-16');
       }
     }
@@ -316,7 +323,6 @@ const CurioPage: React.FC = () => {
 
   const handleClearSearch = () => {
     setSearchQuery('');
-    clearSearch();
   };
 
   if (profileError) {
