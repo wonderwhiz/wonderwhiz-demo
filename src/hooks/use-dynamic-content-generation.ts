@@ -169,7 +169,7 @@ export function useDynamicContentGeneration() {
     setIsGenerating(true);
     
     try {
-      const { data, error } = await supabase.functions.invoke('generate-related-questions', {
+      const { data, error } = await supabase.functions.invoke('generate-curio-suggestions', {
         body: { 
           topic,
           count
@@ -178,8 +178,8 @@ export function useDynamicContentGeneration() {
       
       if (error) throw error;
       
-      if (data && Array.isArray(data.questions)) {
-        return data.questions;
+      if (data && Array.isArray(data.suggestions)) {
+        return data.suggestions.map(suggestion => suggestion.question);
       }
       
       return generateFallbackQuestions(topic, count);
