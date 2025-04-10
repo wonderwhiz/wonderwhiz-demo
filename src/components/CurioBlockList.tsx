@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ContentBlock } from '@/types/curio';
 import FactBlock from '@/components/content-blocks/FactBlock';
@@ -11,6 +12,8 @@ import NewsBlock from '@/components/content-blocks/NewsBlock';
 import FlashcardBlock from '@/components/content-blocks/FlashcardBlock';
 import GeneratingBlock from '@/components/content-blocks/GeneratingBlock';
 import ErrorBlock from '@/components/content-blocks/ErrorBlock';
+import NarrativePrompt from '@/components/content-blocks/NarrativePrompt';
+import StoryTransition from '@/components/content-blocks/StoryTransition';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -61,6 +64,15 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
   onRefresh
 }) => {
   const [blockHeights, setBlockHeights] = useState<{[key: string]: number}>({});
+  const [storyProgress, setStoryProgress] = useState(0);
+  
+  useEffect(() => {
+    // Update story progress based on blocks viewed
+    if (blocks.length > 0) {
+      const progress = Math.min(100, Math.floor((storyProgress + 5) * (blocks.filter(b => !b.id?.startsWith('generating-')).length / blocks.length)));
+      setStoryProgress(progress);
+    }
+  }, [blocks]);
   
   const updateBlockHeight = (blockId: string, height: number) => {
     setBlockHeights(prev => ({
@@ -76,6 +88,44 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
   const contentBlocks = blocks.filter(block => 
     !block.id?.startsWith('generating-')
   );
+
+  // Group blocks by type to create narrative arcs
+  const factBlocks = contentBlocks.filter(block => 
+    block.type === 'fact' || block.type === 'funFact'
+  );
+  
+  const quizBlocks = contentBlocks.filter(block => 
+    block.type === 'quiz'
+  );
+  
+  const creativeBlocks = contentBlocks.filter(block => 
+    block.type === 'creative' || block.type === 'activity' || block.type === 'mindfulness'
+  );
+
+  // Insert narrative prompts and transitions at appropriate points
+  const shouldShowNarrativePrompt = (index: number) => {
+    return index > 0 && index % 3 === 0 && contentBlocks.length > 3;
+  };
+
+  const getTransitionMessage = (blockIndex: number, blockType: string) => {
+    const messages = [
+      "Let's dive deeper into this fascinating topic...",
+      "Now that we understand the basics, let's explore further...",
+      "Here's an interesting perspective on what we've learned...",
+      "Let's challenge ourselves with what we've discovered...",
+      "Time to put our knowledge into action..."
+    ];
+    
+    if (blockType === 'quiz') {
+      return "Let's test our knowledge with a fun challenge!";
+    } else if (blockType === 'creative' || blockType === 'activity') {
+      return "Time to get creative with what we've learned!";
+    } else if (blockIndex === contentBlocks.length - 1) {
+      return "We've come to the end of our journey, but there's always more to explore!";
+    }
+    
+    return messages[blockIndex % messages.length];
+  };
 
   return (
     <div className="space-y-6">
@@ -246,16 +296,32 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
         }
         
         return (
-          <motion.div
-            key={block.id}
-            initial={animateBlocks ? { opacity: 0, y: 20 } : false}
-            animate={animateBlocks ? { opacity: 1, y: 0 } : false}
-            transition={{ duration: 0.4, delay }}
-            style={{ height: blockHeight }}
-            className="transition-all duration-300"
-          >
-            {BlockComponent}
-          </motion.div>
+          <React.Fragment key={block.id}>
+            {shouldShowNarrativePrompt(index) && (
+              <NarrativePrompt 
+                profileId={profileId || ''}
+                specialistId={block.specialist_id}
+                onPromptClick={handleRabbitHoleClick}
+              />
+            )}
+            
+            {index > 0 && (
+              <StoryTransition 
+                message={getTransitionMessage(index, block.type)}
+                specialistId={block.specialist_id}
+              />
+            )}
+            
+            <motion.div
+              initial={animateBlocks ? { opacity: 0, y: 20 } : false}
+              animate={animateBlocks ? { opacity: 1, y: 0 } : false}
+              transition={{ duration: 0.4, delay }}
+              style={{ height: blockHeight }}
+              className="transition-all duration-300"
+            >
+              {BlockComponent}
+            </motion.div>
+          </React.Fragment>
         );
       })}
       

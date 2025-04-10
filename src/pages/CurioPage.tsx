@@ -12,8 +12,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import RabbitHoleSuggestions from '@/components/content-blocks/RabbitHoleSuggestions';
 import CurioPageHeader from '@/components/curio/CurioPageHeader';
+import CurioPageSearch from '@/components/curio/CurioPageSearch';
 import CurioPageInsights from '@/components/curio/CurioPageInsights';
-import CurioSearchBar from '@/components/curio/CurioSearchBar';
 import CurioLoadingState from '@/components/curio/CurioLoadingState';
 import CurioEmptyState from '@/components/curio/CurioEmptyState';
 import CurioErrorState from '@/components/curio/CurioErrorState';
@@ -25,6 +25,9 @@ import LearningCertificate from '@/components/curio/LearningCertificate';
 import ChapterHeader from '@/components/curio/ChapterHeader';
 import IllustratedContentBlock from '@/components/content-blocks/IllustratedContentBlock';
 import { Chapter } from '@/types/Chapter';
+import { ArrowLeft, Search } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 const DEFAULT_CHAPTERS: Chapter[] = [
   {
@@ -355,63 +358,43 @@ const CurioPage: React.FC = () => {
     return <CurioLoadingState message="Loading profile..." />;
   }
 
-  const handleRabbitHoleClick = async (question: string) => {
-    if (!childId) return;
+  const organizeBlocksIntoChapters = (blocks: any[]) => {
+    if (!blocks.length) return {};
     
-    try {
-      toast.loading("Creating new exploration...");
-      
-      const { data: newCurio, error } = await supabase
-        .from('curios')
-        .insert({
-          child_id: childId,
-          title: question,
-          query: question,
-        })
-        .select('id')
-        .single();
-        
-      if (error) throw error;
-      
-      if (newCurio) {
-        toast.success("New exploration created!");
-        
-        try {
-          await supabase.functions.invoke('increment-sparks-balance', {
-            body: JSON.stringify({
-              profileId: childId,
-              amount: 2
-            })
-          });
-          
-          await supabase.from('sparks_transactions').insert({
-            child_id: childId,
-            amount: 2,
-            reason: 'Following curiosity'
-          });
-          
-          toast.success('You earned 2 sparks for exploring your curiosity!', {
-            icon: '✨',
-            position: 'bottom-right',
-            duration: 3000
-          });
-        } catch (err) {
-          console.error('Error awarding sparks:', err);
+    const chapterMap: Record<string, any[]> = {
+      introduction: [],
+      exploration: [],
+      understanding: [],
+      challenge: [],
+      creation: [],
+      reflection: [],
+      nextSteps: []
+    };
+    
+    blocks.forEach(block => {
+      if (block.type === 'quiz') {
+        chapterMap.challenge.push(block);
+      } else if (block.type === 'fact' || block.type === 'funFact') {
+        if (chapterMap.introduction.length < 2) {
+          chapterMap.introduction.push(block);
+        } else if (chapterMap.understanding.length < 3) {
+          chapterMap.understanding.push(block);
+        } else {
+          chapterMap.exploration.push(block);
         }
-        
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 }
-        });
-        
-        navigate(`/curio/${childId}/${newCurio.id}`);
+      } else if (block.type === 'creative' || block.type === 'activity') {
+        chapterMap.creation.push(block);
+      } else if (block.type === 'mindfulness') {
+        chapterMap.reflection.push(block);
+      } else {
+        chapterMap.exploration.push(block);
       }
-    } catch (error) {
-      console.error('Error creating rabbit hole curio:', error);
-      toast.error("Could not create new exploration. Please try again later.");
-    }
+    });
+    
+    return chapterMap;
   };
+  
+  const blocksByChapter = organizeBlocksIntoChapters(blocks);
 
   const handleBackToDashboard = () => {
     navigate(`/dashboard/${childId}`);
@@ -466,46 +449,21 @@ const CurioPage: React.FC = () => {
     handleBookmark(blockId);
   };
 
-  const organizeBlocksIntoChapters = (blocks: any[]) => {
-    if (!blocks.length) return {};
-    
-    const chapterMap: Record<string, any[]> = {
-      introduction: [],
-      exploration: [],
-      understanding: [],
-      challenge: [],
-      creation: [],
-      reflection: [],
-      nextSteps: []
-    };
-    
-    blocks.forEach(block => {
-      if (block.type === 'quiz') {
-        chapterMap.challenge.push(block);
-      } else if (block.type === 'fact' || block.type === 'funFact') {
-        if (chapterMap.introduction.length < 2) {
-          chapterMap.introduction.push(block);
-        } else if (chapterMap.understanding.length < 3) {
-          chapterMap.understanding.push(block);
-        } else {
-          chapterMap.exploration.push(block);
-        }
-      } else if (block.type === 'creative' || block.type === 'activity') {
-        chapterMap.creation.push(block);
-      } else if (block.type === 'mindfulness') {
-        chapterMap.reflection.push(block);
-      } else {
-        chapterMap.exploration.push(block);
-      }
-    });
-    
-    return chapterMap;
-  };
-  
-  const blocksByChapter = organizeBlocksIntoChapters(blocks);
-
   return (
     <div className="flex flex-col h-full">
+      {/* New Back to Dashboard Button */}
+      <div className="fixed top-4 left-4 z-50">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleBackToDashboard}
+          className="bg-white/10 hover:bg-white/20 text-white border-white/20 flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span className="hidden sm:inline">Back to Dashboard</span>
+        </Button>
+      </div>
+
       <CurioPageHeader 
         curioTitle={curioTitle} 
         handleBackToDashboard={handleBackToDashboard}
@@ -514,6 +472,22 @@ const CurioPage: React.FC = () => {
         refreshing={refreshing}
         showInsights={showInsights}
       />
+
+      {/* New Search Bar Component */}
+      <div className="sticky top-0 z-40 bg-gradient-to-r from-indigo-950/95 to-purple-950/95 backdrop-blur-sm py-3 px-4 border-b border-white/10">
+        <div className="max-w-3xl mx-auto">
+          <form onSubmit={handleSearch} className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/50" />
+            <Input
+              type="text"
+              placeholder="Search within this exploration..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 pr-4 py-2 bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30 focus:ring-1 focus:ring-purple-500/50"
+            />
+          </form>
+        </div>
+      </div>
 
       <AnimatePresence>
         {showInsights && (

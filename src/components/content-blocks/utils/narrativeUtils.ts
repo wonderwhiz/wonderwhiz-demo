@@ -1,130 +1,61 @@
 
-import { ContentBlock } from '@/types/curio';
+// Helper functions for narrative content
 
-type NarrativeTheme = 'space' | 'nature' | 'science' | 'history' | 'arts' | 'technology' | 'general';
-
-export const getNarrativeTheme = (blocks: ContentBlock[]): NarrativeTheme => {
-  if (!blocks || blocks.length === 0) return 'general';
+export const getRandomPrompt = (type: string, specialistId: string): string => {
+  const generalPrompts = [
+    "What do you think about this?",
+    "How could you use this information?",
+    "What questions does this raise for you?",
+    "How would you explain this to a friend?",
+    "What's the most interesting part about this for you?"
+  ];
   
-  // Count specialist occurrences to determine dominant theme
-  const specialistCounts = blocks.reduce((acc, block) => {
-    const specialistId = block.specialist_id || '';
-    acc[specialistId] = (acc[specialistId] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  const creativePrompts = [
+    "Draw or sketch what this makes you think of.",
+    "Write a short story inspired by this.",
+    "Create a song or poem about this topic.",
+    "Design a poster to explain this concept.",
+    "Imagine you're teaching this to someone else. What would you say?"
+  ];
   
-  // Find most frequent specialist
-  let maxCount = 0;
-  let dominantSpecialist = '';
+  const sciencePrompts = [
+    "Design an experiment to test this.",
+    "What would happen if we changed one part of this?",
+    "How could this be applied to solve a problem?",
+    "Can you think of a real-world example of this?",
+    "What other scientific concepts connect to this?"
+  ];
   
-  Object.entries(specialistCounts).forEach(([specialist, count]) => {
-    if (count > maxCount) {
-      maxCount = count;
-      dominantSpecialist = specialist;
-    }
-  });
-  
-  // Map specialist to theme
-  switch(dominantSpecialist) {
-    case 'nova': return 'space';
-    case 'lotus': return 'nature';
-    case 'prism': return 'science';
-    case 'atlas': return 'history';
-    case 'spark': return 'arts';
-    case 'pixel': return 'technology';
-    default: return 'general';
+  if (type === 'creative' || specialistId === 'spark') {
+    return creativePrompts[Math.floor(Math.random() * creativePrompts.length)];
+  } else if (type === 'fact' || specialistId === 'prism' || specialistId === 'nova') {
+    return sciencePrompts[Math.floor(Math.random() * sciencePrompts.length)];
+  } else {
+    return generalPrompts[Math.floor(Math.random() * generalPrompts.length)];
   }
 };
 
-export const getThemeColor = (theme: NarrativeTheme): string => {
-  switch(theme) {
-    case 'space': return 'from-indigo-500 to-purple-600';
-    case 'nature': return 'from-emerald-500 to-green-600';
-    case 'science': return 'from-cyan-500 to-blue-600';
-    case 'history': return 'from-amber-500 to-orange-600';
-    case 'arts': return 'from-pink-500 to-rose-600';
-    case 'technology': return 'from-blue-500 to-violet-600';
-    default: return 'from-wonderwhiz-bright-pink to-wonderwhiz-vibrant-yellow';
+export const getNarrativeTransition = (fromType: string, toType: string): string => {
+  if (fromType === 'fact' && toType === 'quiz') {
+    return "Now that we've learned some interesting facts, let's test our knowledge!";
+  } else if (fromType === 'fact' && toType === 'creative') {
+    return "Let's use what we've learned to create something amazing!";
+  } else if (fromType === 'quiz' && toType === 'fact') {
+    return "Great job with that quiz! Let's learn some more fascinating information.";
+  } else if (toType === 'mindfulness') {
+    return "Let's take a moment to reflect on what we've discovered.";
+  } else {
+    return "Let's continue our journey of discovery...";
   }
 };
 
-// Add the missing function exports
-
-/**
- * Determine the position of a block in the narrative sequence
- */
-export const getSequencePosition = (
-  sequencePosition: number, 
-  totalBlocks: number
-): 'beginning' | 'middle' | 'end' => {
-  if (sequencePosition === 0) return 'beginning';
-  if (sequencePosition >= totalBlocks - 1) return 'end';
-  return 'middle';
-};
-
-/**
- * Determine if a wonder prompt should be shown for a block
- */
-export const shouldShowWonderPrompt = (
-  blockType: string,
-  narrativePosition: 'beginning' | 'middle' | 'end',
-  specialistId: string,
-  sequencePosition: number
-): boolean => {
-  // Show wonder prompts for fact blocks
-  if (blockType === 'fact' || blockType === 'funFact') {
-    // Show more wonder prompts at the end of sequences
-    if (narrativePosition === 'end') return true;
-    
-    // Show some wonder prompts in the middle, but not for every block
-    if (narrativePosition === 'middle') {
-      // Show for blocks by certain specialists more often
-      if (['nova', 'prism', 'atlas'].includes(specialistId)) {
-        return sequencePosition % 2 === 0; // Every other block
-      }
-      return sequencePosition % 3 === 0; // Every third block for others
-    }
-    
-    // Show fewer wonder prompts at the beginning to not overwhelm
-    return false;
-  }
+export const getPersonalizedMessage = (childName: string, interest: string): string => {
+  const messages = [
+    `${childName}, since you like ${interest}, you might find this especially interesting!`,
+    `This reminds me of your interest in ${interest}, ${childName}!`,
+    `${childName}, how does this connect to your love of ${interest}?`,
+    `I thought of your interest in ${interest} when I found this, ${childName}!`
+  ];
   
-  // For quizzes, occasionally show wonder prompts to encourage deeper thinking
-  if (blockType === 'quiz') {
-    return narrativePosition === 'end';
-  }
-  
-  // For creative blocks, show wonder prompts to inspire more creativity
-  if (blockType === 'creative') {
-    return true;
-  }
-  
-  // Default: don't show for other block types
-  return false;
-};
-
-/**
- * Determine if a plot twist element should be shown
- */
-export const shouldShowPlotTwist = (
-  blockType: string,
-  narrativePosition: 'beginning' | 'middle' | 'end',
-  specialistId: string,
-  hasSurpriseElement: boolean
-): boolean => {
-  // Only show if the block has surprise content
-  if (!hasSurpriseElement) return false;
-  
-  // Always show surprise elements for fact blocks
-  if (blockType === 'fact' || blockType === 'funFact') {
-    return true;
-  }
-  
-  // For certain specialists, show more plot twists
-  if (['nova', 'atlas'].includes(specialistId)) {
-    return narrativePosition !== 'beginning'; // Not at the very start
-  }
-  
-  // Default: don't show for other block types
-  return false;
+  return messages[Math.floor(Math.random() * messages.length)];
 };
