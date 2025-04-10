@@ -45,6 +45,12 @@ const CurioSearchBar: React.FC<CurioSearchBarProps> = ({
     const form = document.querySelector('form');
     if (form) form.dispatchEvent(new Event('submit', { cancelable: true }));
   };
+  
+  const handleSubmitSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleSearch(e);
+    setShowSuggestions(false);
+  };
 
   // Generate dynamic suggestions based on current search query
   useEffect(() => {
@@ -108,7 +114,7 @@ const CurioSearchBar: React.FC<CurioSearchBarProps> = ({
   
   return (
     <div className="relative">
-      <form onSubmit={handleSearch} className="flex items-center gap-2">
+      <form onSubmit={handleSubmitSearch} className="flex items-center gap-2">
         <div className={cn(
           "relative flex-grow group",
           isFocused ? "ring-2 ring-wonderwhiz-bright-pink/50 rounded-full" : "",
@@ -162,7 +168,7 @@ const CurioSearchBar: React.FC<CurioSearchBarProps> = ({
         </motion.div>
       </form>
       
-      {/* Search suggestions with narrative structure */}
+      {/* Search suggestions with narrative structure - now optional */}
       <AnimatePresence>
         {showSuggestions && dynamicSuggestions.length > 0 && (
           <motion.div
@@ -186,7 +192,7 @@ const CurioSearchBar: React.FC<CurioSearchBarProps> = ({
                 </motion.button>
               ))}
               
-              {/* Important: Add option to use exactly what the user typed */}
+              {/* Important: Option to use exactly what the user typed */}
               <motion.button
                 className="w-full text-left px-3 py-2 mt-1 border-t border-white/10 rounded-md hover:bg-wonderwhiz-bright-pink/20 text-wonderwhiz-bright-pink flex items-center group transition-colors"
                 onClick={() => {

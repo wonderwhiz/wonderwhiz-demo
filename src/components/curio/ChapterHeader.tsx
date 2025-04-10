@@ -1,8 +1,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Lightbulb, Globe, Brain, Rocket, PencilRuler, BookOpen, Sparkles } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Lightbulb, Compass, Brain, Sparkles, PenTool, Flame, ArrowRight } from 'lucide-react';
 
 interface ChapterHeaderProps {
   chapterId: string;
@@ -19,58 +18,65 @@ const ChapterHeader: React.FC<ChapterHeaderProps> = ({
   index,
   totalChapters
 }) => {
-  // Map chapter IDs to icons
-  const getChapterIcon = (id: string) => {
-    switch (id) {
+  const getChapterIcon = () => {
+    switch(chapterId) {
       case 'introduction': return <Lightbulb className="h-5 w-5 text-wonderwhiz-vibrant-yellow" />;
-      case 'exploration': return <Globe className="h-5 w-5 text-wonderwhiz-bright-pink" />;
+      case 'exploration': return <Compass className="h-5 w-5 text-wonderwhiz-bright-pink" />;
       case 'understanding': return <Brain className="h-5 w-5 text-wonderwhiz-cyan" />;
-      case 'challenge': return <Rocket className="h-5 w-5 text-wonderwhiz-orange" />;
-      case 'creation': return <PencilRuler className="h-5 w-5 text-wonderwhiz-gold" />;
-      case 'reflection': return <BookOpen className="h-5 w-5 text-wonderwhiz-green" />;
-      case 'nextSteps': return <Sparkles className="h-5 w-5 text-wonderwhiz-blue-accent" />;
+      case 'challenge': return <Sparkles className="h-5 w-5 text-wonderwhiz-gold" />;
+      case 'creation': return <PenTool className="h-5 w-5 text-emerald-400" />;
+      case 'reflection': return <Flame className="h-5 w-5 text-wonderwhiz-bright-pink" />;
+      case 'nextSteps': return <ArrowRight className="h-5 w-5 text-wonderwhiz-blue-accent" />;
       default: return <Lightbulb className="h-5 w-5 text-wonderwhiz-vibrant-yellow" />;
     }
   };
 
-  // Map chapter IDs to background gradients
-  const getChapterGradient = (id: string) => {
-    switch (id) {
-      case 'introduction': return 'from-wonderwhiz-vibrant-yellow/20 to-wonderwhiz-vibrant-yellow/5';
-      case 'exploration': return 'from-wonderwhiz-bright-pink/20 to-wonderwhiz-bright-pink/5';
-      case 'understanding': return 'from-wonderwhiz-cyan/20 to-wonderwhiz-cyan/5';
-      case 'challenge': return 'from-wonderwhiz-orange/20 to-wonderwhiz-orange/5';
-      case 'creation': return 'from-wonderwhiz-gold/20 to-wonderwhiz-gold/5';
-      case 'reflection': return 'from-wonderwhiz-green/20 to-wonderwhiz-green/5';
-      case 'nextSteps': return 'from-wonderwhiz-blue-accent/20 to-wonderwhiz-blue-accent/5';
-      default: return 'from-white/15 to-white/5';
+  // Get background style based on chapter type
+  const getBackgroundStyle = () => {
+    switch(chapterId) {
+      case 'introduction': return 'from-wonderwhiz-vibrant-yellow/20 to-transparent';
+      case 'exploration': return 'from-wonderwhiz-bright-pink/20 to-transparent';
+      case 'understanding': return 'from-wonderwhiz-cyan/20 to-transparent';
+      case 'challenge': return 'from-wonderwhiz-gold/20 to-transparent';
+      case 'creation': return 'from-emerald-400/20 to-transparent';
+      case 'reflection': return 'from-wonderwhiz-bright-pink/20 to-transparent';
+      case 'nextSteps': return 'from-wonderwhiz-blue-accent/20 to-transparent';
+      default: return 'from-wonderwhiz-vibrant-yellow/20 to-transparent';
     }
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.2 }}
-      className={cn(
-        "my-8 p-4 rounded-xl bg-gradient-to-r border",
-        getChapterGradient(chapterId),
-        index === 0 ? "border-wonderwhiz-vibrant-yellow/30" : "border-white/10"
-      )}
+    <motion.div 
+      className="mb-5 mt-8 pt-6 relative"
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      viewport={{ once: true }}
     >
-      <div className="flex items-center">
-        <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center mr-3">
-          {getChapterIcon(chapterId)}
+      {/* Animated background gradient */}
+      <div className={`absolute top-0 left-0 right-0 h-16 bg-gradient-to-r ${getBackgroundStyle()} opacity-25 rounded-t-xl -z-10`} />
+      
+      {/* Connecting lines to show progress */}
+      {index > 0 && (
+        <div className="absolute top-0 left-6 w-0.5 h-6 bg-white/10" />
+      )}
+      {index < totalChapters - 1 && (
+        <div className="absolute bottom-0 left-6 w-0.5 h-full bg-white/10" />
+      )}
+      
+      {/* Chapter indicator */}
+      <div className="flex items-center mb-3">
+        <div className={`
+          w-12 h-12 rounded-full flex items-center justify-center
+          bg-wonderwhiz-deep-purple border-2 border-white/20
+          shadow-lg shadow-wonderwhiz-bright-pink/10
+        `}>
+          {getChapterIcon()}
         </div>
         
-        <div className="flex-grow">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-nunito font-bold text-white">{title}</h3>
-            <span className="text-xs text-white/50 font-inter">
-              Chapter {index + 1}/{totalChapters}
-            </span>
-          </div>
-          <p className="text-sm text-white/70 font-inter mt-0.5">{description}</p>
+        <div className="ml-4">
+          <h2 className="text-xl font-bold text-white font-nunito">{title}</h2>
+          <p className="text-white/70 text-sm">{description}</p>
         </div>
       </div>
     </motion.div>

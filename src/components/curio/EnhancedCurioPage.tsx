@@ -28,7 +28,7 @@ import ProgressVisualization from '@/components/curio/ProgressVisualization';
 import LearningCertificate from '@/components/curio/LearningCertificate';
 import ChapterHeader from '@/components/curio/ChapterHeader';
 
-// Define chapter structure
+// Define chapter structure with proper typing
 const DEFAULT_CHAPTERS: Chapter[] = [
   {
     id: 'introduction',
@@ -532,12 +532,13 @@ const EnhancedCurioPage: React.FC = () => {
         )}
       </AnimatePresence>
       
-      {/* Search Bar */}
+      {/* Search Bar - Always visible at the top */}
       <div className="mt-4 px-4 sm:px-6 max-w-3xl mx-auto w-full">
         <CurioSearchBar
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           handleSearch={handleSearch}
+          isActive={true}
         />
       </div>
 

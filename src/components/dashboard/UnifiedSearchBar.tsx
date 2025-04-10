@@ -191,12 +191,14 @@ const UnifiedSearchBar: React.FC<UnifiedSearchBarProps> = ({
         </div>
       </form>
       
-      {/* Enhanced search dialog */}
+      {/* Enhanced search dialog - now with direct search option */}
       <CommandDialog open={showCommandDialog} onOpenChange={setShowCommandDialog}>
         <Command className="rounded-lg border-none bg-gradient-to-b from-wonderwhiz-deep-purple to-wonderwhiz-deep-purple/90">
           <CommandInput 
             placeholder={`Discover something amazing${childProfile?.name ? ', ' + childProfile.name : ''}...`}
             className="border-b border-wonderwhiz-bright-pink/20"
+            value={query}
+            onValueChange={setQuery}
           />
           <CommandList>
             <CommandEmpty>
@@ -261,7 +263,7 @@ const UnifiedSearchBar: React.FC<UnifiedSearchBarProps> = ({
               </CommandGroup>
             )}
             
-            {/* Important: Add option to use exactly what the user typed */}
+            {/* Important: Added direct search capability without forcing selection */}
             <div className="p-2 border-t border-white/10">
               <Button
                 onClick={() => {
