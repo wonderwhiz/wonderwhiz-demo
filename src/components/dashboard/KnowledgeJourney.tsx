@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Compass, Star, ArrowRight, Sparkles, Book, Map } from 'lucide-react';
+import { Compass, Star, ArrowRight, Sparkles, Book, Map, Lightning, Zap } from 'lucide-react';
 import { useChildLearningHistory } from '@/hooks/useChildLearningHistory';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -21,35 +21,39 @@ const KnowledgeJourney: React.FC<KnowledgeJourneyProps> = ({
 }) => {
   const { recentlyViewedTopics, strongestTopics, getPersonalizedSuggestions } = useChildLearningHistory(childId);
   
-  // Define a consistent color palette
+  // Simplified, consistent color palette
   const nodeColors = {
     strength: {
-      bg: "bg-gradient-to-br from-amber-500/10 to-amber-600/10",
-      iconBg: "bg-gradient-to-br from-amber-500 to-amber-600",
-      icon: <Star className="h-4 w-4 text-amber-300" />,
-      hover: "hover:border-amber-500/30"
+      bg: "bg-indigo-100/10",
+      border: "border-indigo-400/30",
+      hover: "hover:border-indigo-400/50 hover:bg-indigo-100/15",
+      icon: <Star className="h-4 w-4 text-indigo-300" />,
+      iconBg: "bg-indigo-500/70"
     },
     recent: {
-      bg: "bg-gradient-to-br from-blue-500/10 to-blue-600/10",
-      iconBg: "bg-gradient-to-br from-blue-500 to-blue-600",
-      icon: <Book className="h-4 w-4 text-blue-300" />,
-      hover: "hover:border-blue-500/30"
+      bg: "bg-indigo-100/10",
+      border: "border-indigo-400/30",
+      hover: "hover:border-indigo-400/50 hover:bg-indigo-100/15",
+      icon: <Book className="h-4 w-4 text-indigo-300" />,
+      iconBg: "bg-indigo-500/70"
     },
     suggestion: {
-      bg: "bg-gradient-to-br from-green-500/10 to-green-600/10",
-      iconBg: "bg-gradient-to-br from-green-500 to-green-600",
-      icon: <Compass className="h-4 w-4 text-green-300" />,
-      hover: "hover:border-green-500/30"
+      bg: "bg-indigo-100/10",
+      border: "border-indigo-400/30",
+      hover: "hover:border-indigo-400/50 hover:bg-indigo-100/15",
+      icon: <Compass className="h-4 w-4 text-indigo-300" />,
+      iconBg: "bg-indigo-500/70"
     },
     interest: {
-      bg: "bg-gradient-to-br from-purple-500/10 to-purple-600/10",
-      iconBg: "bg-gradient-to-br from-purple-500 to-purple-600",
-      icon: <Sparkles className="h-4 w-4 text-purple-300" />,
-      hover: "hover:border-purple-500/30"
+      bg: "bg-indigo-100/10",
+      border: "border-indigo-400/30",
+      hover: "hover:border-indigo-400/50 hover:bg-indigo-100/15",
+      icon: <Sparkles className="h-4 w-4 text-indigo-300" />,
+      iconBg: "bg-indigo-500/70"
     }
   };
   
-  // Combine data sources for a rich journey visualization
+  // Combine data sources for a clean journey visualization
   const generateJourneyNodes = () => {
     const nodes = [];
     
@@ -155,20 +159,20 @@ const KnowledgeJourney: React.FC<KnowledgeJourneyProps> = ({
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="bg-gradient-to-br from-indigo-600/10 to-indigo-800/10 backdrop-blur-sm rounded-xl border border-indigo-600/20 p-4"
+      className="bg-indigo-950/50 backdrop-blur-sm rounded-xl border border-indigo-500/20 p-4"
     >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-500/30 to-indigo-700/30 flex items-center justify-center mr-3">
-            <Map className="h-5 w-5 text-white" />
+          <div className="w-10 h-10 rounded-full bg-indigo-600/30 flex items-center justify-center mr-3">
+            <Map className="h-5 w-5 text-indigo-300" />
           </div>
           <div>
             <h3 className="text-lg font-medium text-white">Knowledge Journey</h3>
-            <p className="text-sm text-white/60">Your path of discovery</p>
+            <p className="text-sm text-indigo-200/70">Your path of discovery</p>
           </div>
         </div>
         
-        <Badge variant="outline" className="bg-white/10 text-white/90 border-white/20">
+        <Badge className="bg-indigo-600/50 text-indigo-100 border-none">
           {journeyNodes.length} pathways
         </Badge>
       </div>
@@ -176,7 +180,7 @@ const KnowledgeJourney: React.FC<KnowledgeJourneyProps> = ({
       {/* Knowledge journey visualization - simplified & beautiful */}
       <div className="space-y-3 relative">
         {journeyNodes.length === 0 ? (
-          <div className="text-center py-6 text-white/60">
+          <div className="text-center py-6 text-indigo-200/70">
             <p>Start your learning journey by exploring topics!</p>
           </div>
         ) : (
@@ -190,27 +194,30 @@ const KnowledgeJourney: React.FC<KnowledgeJourneyProps> = ({
               >
                 <Card 
                   className={cn(
-                    "overflow-hidden border-white/10",
+                    "overflow-hidden border transition-all cursor-pointer group",
                     nodeColors[node.type as keyof typeof nodeColors].bg,
-                    nodeColors[node.type as keyof typeof nodeColors].hover,
-                    "transition-all cursor-pointer group"
+                    nodeColors[node.type as keyof typeof nodeColors].border,
+                    nodeColors[node.type as keyof typeof nodeColors].hover
                   )}
                   onClick={() => handleNodeClick(node)}
                 >
                   <CardContent className="p-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
-                        <div className={cn("p-2 rounded-full mr-3", nodeColors[node.type as keyof typeof nodeColors].iconBg)}>
+                        <div className={cn(
+                          "p-2 rounded-full mr-3", 
+                          nodeColors[node.type as keyof typeof nodeColors].iconBg
+                        )}>
                           {nodeColors[node.type as keyof typeof nodeColors].icon}
                         </div>
                         
                         <div>
-                          <h4 className="font-medium text-white group-hover:text-white/90">{node.title}</h4>
-                          <p className="text-xs text-white/60">{node.subtitle}</p>
+                          <h4 className="font-medium text-white group-hover:text-white/90 text-sm">{node.title}</h4>
+                          <p className="text-xs text-indigo-200/70">{node.subtitle}</p>
                         </div>
                       </div>
                       
-                      <ArrowRight className="h-4 w-4 text-white/40 group-hover:text-white/70 group-hover:translate-x-0.5 transition-all" />
+                      <ArrowRight className="h-4 w-4 text-indigo-300/40 group-hover:text-indigo-300/70 group-hover:translate-x-0.5 transition-all" />
                     </div>
                   </CardContent>
                 </Card>
@@ -222,7 +229,7 @@ const KnowledgeJourney: React.FC<KnowledgeJourneyProps> = ({
       
       <Button 
         variant="ghost" 
-        className="w-full mt-3 text-white/70 hover:text-white hover:bg-white/10"
+        className="w-full mt-3 text-indigo-200/80 hover:text-white hover:bg-indigo-600/30"
         onClick={() => onTopicClick("Suggest a new topic for me to learn about")}
       >
         <Compass className="mr-2 h-4 w-4" />

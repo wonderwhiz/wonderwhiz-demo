@@ -55,6 +55,11 @@ const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
     setNewChallengesCount(count);
   };
   
+  // Handle challenge completion
+  const handleChallengeComplete = () => {
+    setNewChallengesCount(Math.max(0, newChallengesCount - 1));
+  };
+  
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -165,7 +170,7 @@ const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
       {/* Main content area with tabs */}
       <motion.div variants={sectionVariants}>
         <Tabs defaultValue="explore" value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="grid grid-cols-2 mb-6 w-full max-w-md mx-auto bg-white/10 backdrop-blur-sm border border-white/10">
+          <TabsList className="grid grid-cols-2 mb-6 w-full max-w-md mx-auto bg-indigo-950/50 backdrop-blur-sm border border-indigo-500/20">
             <TabsTrigger value="explore" className="data-[state=active]:bg-indigo-600/70 relative">
               Explore & Learn
             </TabsTrigger>
@@ -180,34 +185,31 @@ const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
           </TabsList>
           
           <TabsContent value="explore" className="mt-0">
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-              {/* Knowledge journey - spans two columns */}
-              <div className="lg:col-span-2">
-                <KnowledgeJourney
-                  childId={childId}
-                  childProfile={childProfile}
-                  onTopicClick={handleTopicClick}
-                />
-              </div>
-              
-              {/* Current tab only shows challenges if on explore tab */}
-              <div>
-                <DailyChallenge 
-                  childId={childId}
-                  onNewChallenges={handleChallengeCountUpdate} 
-                />
-              </div>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-1">
+              {/* Knowledge journey - spans full width for cleaner design */}
+              <KnowledgeJourney
+                childId={childId}
+                childProfile={childProfile}
+                onTopicClick={handleTopicClick}
+              />
             </div>
           </TabsContent>
           
           <TabsContent value="tasks" className="mt-0">
-            <div className="grid grid-cols-1 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Full-width tasks section when on tasks tab */}
               <IntelligentTasks
                 childId={childId}
                 childProfile={childProfile}
                 onTaskAction={handleTaskAction}
                 onPendingTasksCount={handleTaskCountUpdate}
+              />
+              
+              {/* Daily challenges - only show on tasks tab */}
+              <DailyChallenge 
+                childId={childId}
+                onNewChallenges={handleChallengeCountUpdate}
+                onComplete={handleChallengeComplete}
               />
             </div>
           </TabsContent>
