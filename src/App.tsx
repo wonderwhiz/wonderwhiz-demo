@@ -1,9 +1,11 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider, Helmet } from 'react-helmet-async';
+import React from 'react'; // Add explicit React import
 import Index from "./pages/Index";
 import About from "./pages/About";
 import Features from "./pages/Features";
@@ -20,7 +22,6 @@ import ParentZone from "./pages/ParentZone";
 import CurioPage from "./pages/CurioPage";
 import EnhancedCurioPage from '@/components/curio/EnhancedCurioPage';
 import SimplifiedCurioPage from '@/components/curio/SimplifiedCurioPage';
-import { useEffect } from "react";
 
 // Import the spark animations CSS
 import './components/sparkAnimations.css';
@@ -172,7 +173,7 @@ const CustomCursorStyles = () => (
 // App component with proper viewport setup for mobile
 const App = () => {
   // Set proper viewport meta tag for all pages
-  useEffect(() => {
+  React.useEffect(() => {
     const viewportMeta = document.querySelector('meta[name="viewport"]');
     if (!viewportMeta) {
       const meta = document.createElement('meta');
