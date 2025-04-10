@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -19,6 +18,7 @@ import ProfileSelector from "./pages/ProfileSelector";
 import Dashboard from "./pages/Dashboard";
 import ParentZone from "./pages/ParentZone";
 import CurioPage from "./pages/CurioPage";
+import EnhancedCurioPage from '@/components/curio/EnhancedCurioPage';
 import { useEffect } from "react";
 
 // Import the spark animations CSS
@@ -216,7 +216,7 @@ const App = () => {
               <Route path="/profiles" element={<ProfileSelector />} />
               <Route path="/dashboard/:profileId" element={<Dashboard />} />
               <Route path="/parent-zone/:profileId" element={<ParentZone />} />
-              <Route path="/curio/:profileId/:curioId" element={<CurioPage />} />
+              <Route path="/curio/:childId/:curioId" element={<EnhancedCurioPage />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
