@@ -31,29 +31,37 @@ serve(async (req) => {
       });
     }
     
-    // Extract parameters, supporting multiple possible property names for topic
-    let topic = requestBody.topic || 
-                requestBody.blockContent || 
-                requestBody.query || 
-                requestBody.content?.fact || 
-                requestBody.content?.question || 
-                requestBody.content?.front || 
-                "ocean mysteries";  // Provide a strong default
+    // Extract parameters with better error handling
+    let topic = '';
+    
+    // Try multiple possible property names to be robust
+    if (typeof requestBody.topic === 'string' && requestBody.topic.trim()) {
+      topic = requestBody.topic.trim();
+    } else if (typeof requestBody.blockContent === 'string' && requestBody.blockContent.trim()) {
+      topic = requestBody.blockContent.trim();
+    } else if (typeof requestBody.query === 'string' && requestBody.query.trim()) {
+      topic = requestBody.query.trim();
+    } else if (requestBody.content) {
+      if (typeof requestBody.content.fact === 'string' && requestBody.content.fact.trim()) {
+        topic = requestBody.content.fact.trim();
+      } else if (typeof requestBody.content.question === 'string' && requestBody.content.question.trim()) {
+        topic = requestBody.content.question.trim();
+      } else if (typeof requestBody.content.front === 'string' && requestBody.content.front.trim()) {
+        topic = requestBody.content.front.trim();
+      }
+    }
+    
+    // If still no topic, default to ocean mysteries
+    if (!topic) {
+      console.warn('No valid topic found in request, using default');
+      topic = "ocean mysteries and deep sea exploration";
+    }
     
     // Extract other common parameters with defaults
     const style = requestBody.style || "Pixar-style educational illustration";
     const childAge = requestBody.childAge || requestBody.age || 10;
     
     // Log request parameters
-    console.log(`Request params: topic=${topic}, style=${style}, age=${childAge}`);
-    
-    // Validate topic parameter exists
-    if (!topic) {
-      console.warn('Topic parameter not found in request body:', JSON.stringify(requestBody));
-      // Use ocean mystery as default topic
-      topic = "ocean mysteries and deep sea exploration";
-    }
-
     console.log(`Generating image for topic: ${topic}, style: ${style}, age: ${childAge}`);
 
     // Check if OpenAI API key is available
@@ -61,7 +69,7 @@ serve(async (req) => {
       console.error('OPENAI_API_KEY is not configured');
       return new Response(JSON.stringify({ 
         error: 'API key not configured',
-        imageUrl: getFallbackImage('ocean') 
+        imageUrl: getFallbackImage(topic) 
       }), {
         status: 200, // Return 200 even with errors
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

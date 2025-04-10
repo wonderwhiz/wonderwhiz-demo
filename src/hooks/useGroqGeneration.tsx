@@ -1,7 +1,6 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 
 interface GenerationOptions {
   prompt: string;
@@ -21,9 +20,22 @@ export function useGroqGeneration() {
     setError(null);
     
     try {
+      // Determine if the query is ocean-related for more targeted generation
+      const isOceanQuery = query.toLowerCase().includes('ocean') || 
+                           query.toLowerCase().includes('sea') ||
+                           query.toLowerCase().includes('marine') ||
+                           query.toLowerCase().includes('underwater');
+      
+      let enhancedQuery = query;
+      
+      // For vague ocean queries, enhance them for better answers
+      if (isOceanQuery && query.length < 30) {
+        enhancedQuery = `Explain fascinating ocean mysteries and deep sea phenomena for ${childAge}-year-old children`;
+      }
+      
       const { data, error } = await supabase.functions.invoke('generate-quick-answer', {
         body: { 
-          query,
+          query: enhancedQuery,
           childAge
         }
       });
@@ -57,7 +69,7 @@ export function useGroqGeneration() {
       const { data, error } = await supabase.functions.invoke('generate-contextual-image', {
         body: { 
           topic,
-          style: "Pixar-style educational illustration",
+          style: "educational illustration, minimalist style",
           childAge
         }
       });

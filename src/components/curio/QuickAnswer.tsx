@@ -81,14 +81,14 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="mb-6 backdrop-blur-sm overflow-hidden"
+      className="mb-6"
     >
-      <div className="p-4 sm:p-6">
+      <div className="p-0 sm:p-4">
         <h3 className="font-bold text-xl sm:text-2xl text-white mb-2">Quick Answer</h3>
-        <p className="text-white/80 text-sm sm:text-base mb-3">{question}</p>
+        <p className="text-white/90 text-sm sm:text-base mb-3">{question}</p>
         
         <div 
-          className={`relative overflow-hidden transition-all duration-300 ${isExpanded ? 'max-h-[300px]' : 'max-h-24'}`}
+          className={`relative overflow-hidden transition-all duration-300 ${isExpanded ? 'max-h-[500px]' : 'max-h-24'}`}
           style={{ 
             maskImage: !isExpanded ? 'linear-gradient(to bottom, rgba(0,0,0,1) 80%, rgba(0,0,0,0))' : 'none',
             WebkitMaskImage: !isExpanded ? 'linear-gradient(to bottom, rgba(0,0,0,1) 80%, rgba(0,0,0,0))' : 'none' 
@@ -127,10 +127,10 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
           
           <Button
             onClick={onStartJourney}
-            className="bg-gradient-to-r from-wonderwhiz-bright-pink/90 to-wonderwhiz-vibrant-yellow/90 hover:opacity-90 text-wonderwhiz-deep-purple font-medium rounded-full w-full sm:w-auto"
+            className="w-full sm:w-auto text-white font-medium rounded-full bg-white/10 hover:bg-white/20 transition-colors"
           >
             <Rocket className="h-4 w-4 mr-2" />
-            <span>Start Knowledge Journey</span>
+            <span>Explore Further</span>
           </Button>
         </div>
       </div>
