@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, Brain, Book, Mountain, Palette, LightbulbIcon, Map } from 'lucide-react';
@@ -51,24 +52,24 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({
     switch(ageGroup) {
       case '5-7':
         return {
-          title: "text-lg font-bold",
-          iconSize: "w-10 h-10",
-          spacing: "gap-3",
-          fontSize: "text-sm"
+          title: "text-base font-bold",
+          iconSize: "w-8 h-8",
+          spacing: "gap-2",
+          fontSize: "text-xs"
         };
       case '12-16':
         return {
-          title: "text-xl font-semibold",
-          iconSize: "w-6 h-6",
-          spacing: "gap-4",
-          fontSize: "text-base"
+          title: "text-lg font-semibold",
+          iconSize: "w-5 h-5",
+          spacing: "gap-3",
+          fontSize: "text-sm"
         };
       default: // 8-11
         return {
-          title: "text-lg font-semibold",
-          iconSize: "w-8 h-8",
-          spacing: "gap-3",
-          fontSize: "text-sm"
+          title: "text-base font-semibold",
+          iconSize: "w-6 h-6",
+          spacing: "gap-2.5",
+          fontSize: "text-xs"
         };
     }
   };
@@ -80,39 +81,39 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="mb-8"
+      className="mb-6"
     >
-      <h3 className={`mb-4 text-white ${styles.title}`}>Your Knowledge Journey</h3>
+      <h3 className={`mb-3 text-white ${styles.title} font-nunito`}>Your Learning Journey</h3>
       
       {/* Desktop version - horizontal display */}
-      <div className="hidden md:flex overflow-x-auto pb-4 mb-2 -mx-2 px-2 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
-        <div className="flex space-x-4">
+      <div className="hidden md:flex overflow-x-auto pb-2 -mx-2 px-2 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
+        <div className="flex space-x-3">
           {chapters.map((chapter, index) => (
             <motion.button
               key={chapter.id}
               onClick={() => onChapterClick(chapter.id)}
-              className={`flex-shrink-0 flex flex-col items-center p-3 rounded-lg border transition-all duration-300 ${
+              className={`flex-shrink-0 flex flex-col items-center p-2.5 rounded-lg border transition-all duration-300 ${
                 chapter.isActive 
                   ? 'bg-white/15 border-white/30' 
                   : chapter.isCompleted 
                     ? 'bg-white/5 border-white/20 hover:bg-white/10' 
                     : 'bg-white/5 border-white/10 hover:bg-white/10'
               }`}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              initial={{ opacity: 0, y: 20 }}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.98 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.1 }}
+              transition={{ duration: 0.3, delay: index * 0.05 }}
             >
-              <div className={`${chapter.isCompleted ? 'bg-white/20' : 'bg-white/10'} rounded-full p-3 mb-2`}>
+              <div className={`${chapter.isCompleted ? 'bg-white/20' : 'bg-white/10'} rounded-full p-2 mb-1.5`}>
                 {renderIcon(chapter.icon)}
               </div>
-              <span className="text-white font-medium text-sm mb-1">{chapter.title}</span>
-              <span className="text-white/60 text-xs text-center max-w-[120px]">{chapter.description}</span>
+              <span className="text-white font-medium text-xs mb-0.5 font-nunito">{chapter.title}</span>
+              <span className="text-white/60 text-[10px] text-center max-w-[100px] font-inter">{chapter.description}</span>
               
               {chapter.isCompleted && (
-                <div className="mt-2 text-xs px-2 py-0.5 bg-wonderwhiz-vibrant-yellow/20 text-wonderwhiz-vibrant-yellow rounded-full">
-                  Completed
+                <div className="mt-1.5 text-[10px] px-1.5 py-0.5 bg-wonderwhiz-vibrant-yellow/20 text-wonderwhiz-vibrant-yellow rounded-full">
+                  ✓
                 </div>
               )}
             </motion.button>
@@ -121,12 +122,12 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({
       </div>
       
       {/* Mobile version - vertical compact list */}
-      <div className="md:hidden space-y-2">
+      <div className="md:hidden space-y-1.5">
         {chapters.map((chapter, index) => (
           <motion.button
             key={chapter.id}
             onClick={() => onChapterClick(chapter.id)}
-            className={`w-full flex items-center p-3 rounded-lg border transition-all duration-300 ${
+            className={`w-full flex items-center p-2.5 rounded-lg border transition-all duration-300 ${
               chapter.isActive 
                 ? 'bg-white/15 border-white/30' 
                 : chapter.isCompleted 
@@ -134,19 +135,19 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({
                   : 'bg-white/5 border-white/10'
             }`}
             whileTap={{ scale: 0.98 }}
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: index * 0.05 }}
+            transition={{ duration: 0.2, delay: index * 0.03 }}
           >
-            <div className={`${chapter.isCompleted ? 'bg-white/20' : 'bg-white/10'} rounded-full p-2 mr-3 flex-shrink-0`}>
+            <div className={`${chapter.isCompleted ? 'bg-white/20' : 'bg-white/10'} rounded-full p-1.5 mr-2.5 flex-shrink-0`}>
               {renderIcon(chapter.icon)}
             </div>
             <div className="flex-grow text-left">
-              <div className="text-white text-sm font-medium">{chapter.title}</div>
-              <div className="text-white/60 text-xs">{chapter.description}</div>
+              <div className="text-white text-xs font-medium font-nunito">{chapter.title}</div>
+              <div className="text-white/60 text-[10px] font-inter">{chapter.description}</div>
             </div>
             {chapter.isCompleted && (
-              <div className="ml-2 text-xs px-2 py-0.5 bg-wonderwhiz-vibrant-yellow/20 text-wonderwhiz-vibrant-yellow rounded-full flex-shrink-0">
+              <div className="ml-1.5 text-[10px] px-1.5 py-0.5 bg-wonderwhiz-vibrant-yellow/20 text-wonderwhiz-vibrant-yellow rounded-full flex-shrink-0">
                 ✓
               </div>
             )}

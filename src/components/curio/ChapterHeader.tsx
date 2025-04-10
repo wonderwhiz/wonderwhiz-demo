@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { LightbulbIcon, Brain, Book, Mountain, Palette, Sparkles, Map } from 'lucide-react';
@@ -68,37 +69,20 @@ const ChapterHeader: React.FC<ChapterHeaderProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.1 }}
-      className={`relative my-8 bg-gradient-to-r ${colors} backdrop-blur-sm border border-l-4 rounded-lg overflow-hidden`}
+      className={`relative my-6 bg-gradient-to-r ${colors} backdrop-blur-sm border border-l-4 rounded-lg overflow-hidden`}
     >
-      <div className="p-4 sm:p-6">
-        {/* Small decorative elements in the background */}
-        <svg 
-          className="absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 text-white/5 transform translate-x-8 -translate-y-8"
-          viewBox="0 0 100 100"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <circle cx="50" cy="50" r="50" fill="currentColor" />
-        </svg>
-        
-        <svg 
-          className="absolute bottom-0 left-0 w-16 h-16 text-white/5 transform -translate-x-8 translate-y-8"
-          viewBox="0 0 100 100"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <circle cx="50" cy="50" r="50" fill="currentColor" />
-        </svg>
-        
-        <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-3">
-          <div className="bg-white/10 p-3 rounded-full">
+      <div className="p-3 sm:p-4">
+        <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
+          <div className="bg-white/10 p-2 sm:p-3 rounded-full">
             {getChapterIcon()}
           </div>
           
           <div>
-            <h3 className="text-white font-bold text-lg sm:text-xl">{title}</h3>
-            <p className="text-white/70 text-sm sm:text-base">{description}</p>
+            <h3 className="text-white font-bold text-base sm:text-lg font-nunito">{title}</h3>
+            <p className="text-white/70 text-xs sm:text-sm font-inter">{description}</p>
           </div>
           
-          <div className="absolute top-0 right-0 text-white/40 text-xs sm:text-sm">
+          <div className="absolute top-0 right-0 sm:top-auto sm:right-0 text-white/40 text-xs">
             {index + 1} / {totalChapters}
           </div>
         </div>

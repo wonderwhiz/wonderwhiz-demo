@@ -11,27 +11,27 @@ interface CurioErrorStateProps {
 const CurioErrorState: React.FC<CurioErrorStateProps> = ({ message = "Something went wrong" }) => {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="flex flex-col items-center justify-center py-8 sm:py-12 text-center"
+      transition={{ duration: 0.4 }}
+      className="flex flex-col items-center justify-center py-6 sm:py-8 text-center"
     >
-      <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-red-500/10 flex items-center justify-center mb-4">
-        <AlertCircle className="h-6 w-6 sm:h-8 sm:w-8 text-red-500" />
+      <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-red-500/10 flex items-center justify-center mb-3">
+        <AlertCircle className="h-5 w-5 sm:h-6 sm:w-6 text-red-400" />
       </div>
       
-      <h3 className="text-lg sm:text-xl font-bold text-white mb-2 font-nunito">Oops! {message}</h3>
+      <h3 className="text-base sm:text-lg font-bold text-white mb-1.5 font-nunito">Oops! {message}</h3>
       
-      <p className="text-white/60 max-w-md mb-6 px-4 sm:px-0 text-sm sm:text-base">
+      <p className="text-white/60 max-w-sm mb-4 px-4 sm:px-0 text-xs sm:text-sm">
         We've encountered an issue while preparing your content. Let's try again.
       </p>
       
       <Button 
         variant="default"
         onClick={() => window.location.reload()}
-        className="bg-white/10 text-white hover:bg-white/20"
+        className="bg-white/10 hover:bg-white/15 text-white text-sm"
       >
-        <RefreshCw className="h-4 w-4 mr-2" />
+        <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
         <span>Refresh</span>
       </Button>
     </motion.div>
