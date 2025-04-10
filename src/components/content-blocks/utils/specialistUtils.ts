@@ -1,136 +1,140 @@
 
-// Specialist utility functions
-
-export const getSpecialistName = (specialistId: string): string => {
-  const names: Record<string, string> = {
-    nova: 'Nova',
-    prism: 'Prism',
-    spark: 'Spark',
-    atlas: 'Atlas',
-    pixel: 'Pixel',
-    lotus: 'Lotus'
-  };
-  
-  return names[specialistId] || 'Wonder Guide';
-};
-
-export const getSpecialistEmoji = (specialistId: string): string => {
-  const emojis: Record<string, string> = {
-    nova: '🚀',
-    prism: '🔬',
-    spark: '✨',
-    atlas: '🗺️',
-    pixel: '🖥️',
-    lotus: '🌸'
-  };
-  
-  return emojis[specialistId] || '🧠';
-};
-
-export const getSpecialistAvatarUrl = (specialistId: string): string => {
-  // This would typically return actual avatar URLs
-  return `/assets/specialists/${specialistId}.png`;
-};
-
 export const getSpecialistStyle = (specialistId: string) => {
-  const styles: Record<string, { gradient: string, color: string }> = {
-    nova: {
-      gradient: 'bg-gradient-to-br from-blue-500/10 to-purple-500/10',
-      color: 'text-blue-400'
-    },
-    prism: {
-      gradient: 'bg-gradient-to-br from-teal-500/10 to-green-500/10',
-      color: 'text-teal-400'
-    },
-    spark: {
-      gradient: 'bg-gradient-to-br from-pink-500/10 to-orange-500/10',
-      color: 'text-pink-400'
-    },
-    atlas: {
-      gradient: 'bg-gradient-to-br from-amber-500/10 to-red-500/10',
-      color: 'text-amber-400'
-    },
-    pixel: {
-      gradient: 'bg-gradient-to-br from-indigo-500/10 to-blue-500/10',
-      color: 'text-indigo-400'
-    },
-    lotus: {
-      gradient: 'bg-gradient-to-br from-green-500/10 to-teal-500/10',
-      color: 'text-green-400'
-    }
-  };
-  
-  return styles[specialistId] || styles.nova;
-};
-
-export const getBlockTitle = (block: any): string => {
-  if (!block || !block.type) return 'Wonder';
-  
-  switch (block.type) {
-    case 'fact':
-      return block.content?.title || 'Fascinating Fact';
-    case 'funFact':
-      return 'Fun Fact';
-    case 'quiz':
-      return 'Knowledge Check';
-    case 'flashcard':
-      return 'Concept Card';
-    case 'creative':
-      return 'Creative Challenge';
-    case 'task':
-      return 'Learning Task';
-    case 'riddle':
-      return 'Wonder Riddle';
-    case 'news':
-      return 'Latest Discovery';
-    case 'activity':
-      return 'Learning Activity';
-    case 'mindfulness':
-      return 'Reflection Moment';
-    default:
-      return 'Wonder Block';
-  }
-};
-
-export const createWonderQuestions = (specialistId: string, blockType: string, blockContent: any): string[] => {
-  const baseQuestions = [
-    "What does this make you wonder about?",
-    "How does this connect to other things you've learned?",
-    "What's the most surprising thing about this?",
-    "How might this be different in the future?"
-  ];
-  
-  // Add more specific questions based on specialist and block type
-  let specificQuestions: string[] = [];
-  
   switch (specialistId) {
     case 'nova':
-      specificQuestions = [
-        "How does this compare to other discoveries throughout history?",
-        "What do you think we'll discover next about this topic?"
-      ];
-      break;
-    case 'prism':
-      specificQuestions = [
-        "How could you design an experiment to test this?",
-        "What patterns do you notice in this scientific information?"
-      ];
-      break;
+      return {
+        gradient: 'bg-gradient-to-r from-blue-900 to-purple-900',
+        textColor: 'text-blue-100',
+        borderColor: 'border-blue-500',
+        icon: '🚀'
+      };
     case 'spark':
-      specificQuestions = [
-        "How could you express this idea through art or storytelling?",
-        "What creative connections can you make to everyday life?"
-      ];
-      break;
+      return {
+        gradient: 'bg-gradient-to-r from-amber-900 to-pink-900',
+        textColor: 'text-amber-100',
+        borderColor: 'border-pink-500',
+        icon: '✨'
+      };
+    case 'prism':
+      return {
+        gradient: 'bg-gradient-to-r from-emerald-900 to-cyan-900',
+        textColor: 'text-emerald-100',
+        borderColor: 'border-emerald-500',
+        icon: '🔬'
+      };
+    case 'atlas':
+      return {
+        gradient: 'bg-gradient-to-r from-stone-900 to-amber-900',
+        textColor: 'text-stone-100',
+        borderColor: 'border-amber-500',
+        icon: '🗺️'
+      };
+    case 'pixel':
+      return {
+        gradient: 'bg-gradient-to-r from-slate-900 to-cyan-900',
+        textColor: 'text-slate-100',
+        borderColor: 'border-cyan-500',
+        icon: '💻'
+      };
+    case 'lotus':
+      return {
+        gradient: 'bg-gradient-to-r from-green-900 to-teal-900',
+        textColor: 'text-green-100',
+        borderColor: 'border-teal-500',
+        icon: '🌿'
+      };
     default:
-      specificQuestions = [
-        "What other questions do you have about this topic?",
-        "How might this knowledge be useful in the real world?"
-      ];
+      return {
+        gradient: 'bg-gradient-to-r from-indigo-900 to-purple-900',
+        textColor: 'text-indigo-100',
+        borderColor: 'border-indigo-500',
+        icon: '🔮'
+      };
   }
-  
-  // Combine and select 3-4 questions
-  const allQuestions = [...baseQuestions, ...specificQuestions];
-  const shuffled = [...allQuestions].sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, 4);
+};
+
+export const getSpecialistName = (specialistId: string) => {
+  switch (specialistId) {
+    case 'nova': return 'Nova';
+    case 'spark': return 'Spark';
+    case 'prism': return 'Prism';
+    case 'atlas': return 'Atlas';
+    case 'pixel': return 'Pixel';
+    case 'lotus': return 'Lotus';
+    default: return 'Wonder Specialist';
+  }
+};
+
+export const getSpecialistEmoji = (specialistId: string) => {
+  switch (specialistId) {
+    case 'nova': return '🚀';
+    case 'spark': return '✨';
+    case 'prism': return '🔬';
+    case 'atlas': return '🗺️';
+    case 'pixel': return '💻';
+    case 'lotus': return '🌿';
+    default: return '🔮';
+  }
+};
+
+export const getSpecialistTitle = (specialistId: string) => {
+  switch (specialistId) {
+    case 'nova': return 'Space Expert';
+    case 'spark': return 'Creative Genius';
+    case 'prism': return 'Science Whiz';
+    case 'atlas': return 'History Guide';
+    case 'pixel': return 'Technology Guru';
+    case 'lotus': return 'Nature Explorer';
+    default: return 'Wonder Specialist';
+  }
+};
+
+export const getSpecialistAvatarUrl = (specialistId: string) => {
+  return `/specialists/${specialistId}.png`;
+};
+
+export const getBlockTitle = (block: any) => {
+  switch (block.type) {
+    case 'fact': return block.content.title || 'Fascinating Fact';
+    case 'funFact': return 'Fun Fact';
+    case 'quiz': return 'Quick Quiz';
+    case 'creative': return block.content.title || 'Creative Challenge';
+    case 'flashcard': return 'Knowledge Card';
+    case 'task': return block.content.title || 'Wonder Task';
+    case 'riddle': return 'Brain Teaser';
+    case 'news': return block.content.headline || 'Wonder News';
+    case 'activity': return block.content.title || 'Hands-On Activity';
+    case 'mindfulness': return block.content.title || 'Mindfulness Moment';
+    default: return 'Wonder Block';
+  }
+};
+
+export const createWonderQuestions = (specialistId: string, blockType: string, blockContent: any) => {
+  // Generate 3 wonder questions based on specialist, block type and content
+  const defaultQuestions = [
+    "What's the most surprising thing about this?",
+    "How does this connect to everyday life?",
+    "What would happen if this changed dramatically?"
+  ];
+
+  // Generate more specific questions based on content if available
+  if (blockType === 'fact' && blockContent?.fact) {
+    const fact = blockContent.fact;
+    if (fact.includes("dinosaur") || fact.includes("extinct")) {
+      return [
+        "What other prehistoric creatures existed alongside dinosaurs?",
+        "How do scientists know what dinosaurs looked like?",
+        "What if dinosaurs never went extinct?"
+      ];
+    } else if (fact.includes("space") || fact.includes("planet") || fact.includes("star")) {
+      return [
+        "Are there other planets like Earth in our galaxy?",
+        "How do astronauts live in space?",
+        "What would it take to travel to another star system?"
+      ];
+    }
+  }
+
+  // Return default questions if no specific ones were generated
+  return defaultQuestions;
 };

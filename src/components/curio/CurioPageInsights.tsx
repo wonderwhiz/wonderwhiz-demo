@@ -7,12 +7,16 @@ interface CurioPageInsightsProps {
   difficulty: string;
   blockCount: number;
   learningSummary: string;
+  showInsights?: boolean;
+  handleToggleInsights?: () => void;
 }
 
 const CurioPageInsights: React.FC<CurioPageInsightsProps> = ({
   difficulty,
   blockCount,
-  learningSummary
+  learningSummary,
+  showInsights,
+  handleToggleInsights
 }) => {
   return (
     <motion.div
