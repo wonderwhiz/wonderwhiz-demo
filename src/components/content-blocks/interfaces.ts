@@ -20,7 +20,7 @@ export interface CreativeBlockProps extends BaseBlockProps {
     guidelines?: string;
     examples?: any[];
   };
-  onCreativeUpload?: (fileUrl: string) => void;
+  onCreativeUpload?: (fileUrl?: string) => void;
   uploadFeedback?: string | null;
   curioId?: string;
   onLike?: () => void;
