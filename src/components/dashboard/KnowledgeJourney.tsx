@@ -21,6 +21,34 @@ const KnowledgeJourney: React.FC<KnowledgeJourneyProps> = ({
 }) => {
   const { recentlyViewedTopics, strongestTopics, getPersonalizedSuggestions } = useChildLearningHistory(childId);
   
+  // Define a consistent color palette
+  const nodeColors = {
+    strength: {
+      bg: "bg-gradient-to-br from-amber-500/10 to-amber-600/10",
+      iconBg: "bg-gradient-to-br from-amber-500 to-amber-600",
+      icon: <Star className="h-4 w-4 text-amber-300" />,
+      hover: "hover:border-amber-500/30"
+    },
+    recent: {
+      bg: "bg-gradient-to-br from-blue-500/10 to-blue-600/10",
+      iconBg: "bg-gradient-to-br from-blue-500 to-blue-600",
+      icon: <Book className="h-4 w-4 text-blue-300" />,
+      hover: "hover:border-blue-500/30"
+    },
+    suggestion: {
+      bg: "bg-gradient-to-br from-green-500/10 to-green-600/10",
+      iconBg: "bg-gradient-to-br from-green-500 to-green-600",
+      icon: <Compass className="h-4 w-4 text-green-300" />,
+      hover: "hover:border-green-500/30"
+    },
+    interest: {
+      bg: "bg-gradient-to-br from-purple-500/10 to-purple-600/10",
+      iconBg: "bg-gradient-to-br from-purple-500 to-purple-600",
+      icon: <Sparkles className="h-4 w-4 text-purple-300" />,
+      hover: "hover:border-purple-500/30"
+    }
+  };
+  
   // Combine data sources for a rich journey visualization
   const generateJourneyNodes = () => {
     const nodes = [];
@@ -32,10 +60,7 @@ const KnowledgeJourney: React.FC<KnowledgeJourneyProps> = ({
           id: `strength-${topic.topic}`,
           type: 'strength',
           title: topic.topic,
-          subtitle: 'Your strength',
-          icon: <Star className="h-4 w-4 text-amber-400" />,
-          color: 'from-amber-500/20 to-orange-500/20',
-          iconBg: 'bg-gradient-to-br from-amber-500 to-orange-500'
+          subtitle: 'Your strength'
         });
       });
     }
@@ -47,10 +72,7 @@ const KnowledgeJourney: React.FC<KnowledgeJourneyProps> = ({
           id: `recent-${topic}`,
           type: 'recent',
           title: topic,
-          subtitle: index === 0 ? 'Recently explored' : 'Previously explored',
-          icon: <Book className="h-4 w-4 text-blue-400" />,
-          color: 'from-blue-500/20 to-indigo-500/20',
-          iconBg: 'bg-gradient-to-br from-blue-500 to-indigo-500'
+          subtitle: index === 0 ? 'Recently explored' : 'Previously explored'
         });
       });
     }
@@ -62,10 +84,7 @@ const KnowledgeJourney: React.FC<KnowledgeJourneyProps> = ({
         id: `suggestion-${suggestion}`,
         type: 'suggestion',
         title: suggestion,
-        subtitle: 'Recommended for you',
-        icon: <Compass className="h-4 w-4 text-green-400" />,
-        color: 'from-green-500/20 to-emerald-500/20',
-        iconBg: 'bg-gradient-to-br from-green-500 to-emerald-500'
+        subtitle: 'Recommended for you'
       });
     });
     
@@ -76,10 +95,7 @@ const KnowledgeJourney: React.FC<KnowledgeJourneyProps> = ({
           id: `interest-${interest}`,
           type: 'interest',
           title: interest,
-          subtitle: 'Based on your interests',
-          icon: <Sparkles className="h-4 w-4 text-purple-400" />,
-          color: 'from-purple-500/20 to-pink-500/20',
-          iconBg: 'bg-gradient-to-br from-purple-500 to-pink-500'
+          subtitle: 'Based on your interests'
         });
       });
     }
@@ -116,7 +132,7 @@ const KnowledgeJourney: React.FC<KnowledgeJourneyProps> = ({
       opacity: 1,
       transition: {
         when: "beforeChildren",
-        staggerChildren: 0.1
+        staggerChildren: 0.08
       }
     }
   };
@@ -139,11 +155,11 @@ const KnowledgeJourney: React.FC<KnowledgeJourneyProps> = ({
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="bg-gradient-to-br from-indigo-500/10 to-purple-600/10 backdrop-blur-sm rounded-xl border border-white/10 p-4"
+      className="bg-gradient-to-br from-indigo-600/10 to-indigo-800/10 backdrop-blur-sm rounded-xl border border-indigo-600/20 p-4"
     >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-500/30 to-purple-600/30 flex items-center justify-center mr-3">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-500/30 to-indigo-700/30 flex items-center justify-center mr-3">
             <Map className="h-5 w-5 text-white" />
           </div>
           <div>
@@ -174,17 +190,18 @@ const KnowledgeJourney: React.FC<KnowledgeJourneyProps> = ({
               >
                 <Card 
                   className={cn(
-                    "overflow-hidden border-white/10 bg-gradient-to-br", 
-                    node.color,
-                    "hover:border-white/20 transition-all cursor-pointer group"
+                    "overflow-hidden border-white/10",
+                    nodeColors[node.type as keyof typeof nodeColors].bg,
+                    nodeColors[node.type as keyof typeof nodeColors].hover,
+                    "transition-all cursor-pointer group"
                   )}
                   onClick={() => handleNodeClick(node)}
                 >
                   <CardContent className="p-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
-                        <div className={cn("p-2 rounded-full mr-3", node.iconBg)}>
-                          {node.icon}
+                        <div className={cn("p-2 rounded-full mr-3", nodeColors[node.type as keyof typeof nodeColors].iconBg)}>
+                          {nodeColors[node.type as keyof typeof nodeColors].icon}
                         </div>
                         
                         <div>

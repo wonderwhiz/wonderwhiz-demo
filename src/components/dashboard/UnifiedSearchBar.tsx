@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Sparkles, Clock, ArrowRight, Lightbulb, X, Star, Brain } from 'lucide-react';
+import { Search, Sparkles, Clock, ArrowRight, Lightbulb, X, Star, Brain, BrainCircuit } from 'lucide-react';
 import { Command, CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -123,7 +123,7 @@ const UnifiedSearchBar: React.FC<UnifiedSearchBarProps> = ({
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="relative w-full max-w-3xl mx-auto mb-8"
+      className="relative w-full max-w-xl mx-auto mb-8"
     >
       <form onSubmit={(e) => handleSubmit(e)} className="relative">
         <div className="relative z-10">
@@ -144,8 +144,8 @@ const UnifiedSearchBar: React.FC<UnifiedSearchBarProps> = ({
             className={cn(
               "h-14 pl-12 pr-24 w-full text-lg rounded-2xl border-white/20 backdrop-blur-lg",
               "bg-white/10 text-white placeholder:text-white/50",
-              "focus:ring-2 focus:ring-white/30 focus:bg-white/15 transition-all duration-300",
-              "shadow-lg shadow-purple-900/20"
+              "focus:ring-2 focus:ring-indigo-500/50 focus:bg-white/15 transition-all duration-300",
+              "shadow-lg shadow-indigo-900/20"
             )}
           />
           
@@ -170,7 +170,7 @@ const UnifiedSearchBar: React.FC<UnifiedSearchBarProps> = ({
             disabled={!query.trim() || isGenerating}
             className={cn(
               "absolute right-3 top-1/2 -translate-y-1/2 h-10 px-4 rounded-xl flex items-center gap-1.5",
-              "bg-gradient-to-r from-indigo-500 to-purple-600",
+              "bg-gradient-to-r from-indigo-500 to-indigo-600",
               "text-white font-medium transition-all"
             )}
           >
@@ -193,8 +193,11 @@ const UnifiedSearchBar: React.FC<UnifiedSearchBarProps> = ({
       
       {/* Enhanced search dialog */}
       <CommandDialog open={showCommandDialog} onOpenChange={setShowCommandDialog}>
-        <Command className="rounded-lg border-none">
-          <CommandInput placeholder={`Discover something amazing${childProfile?.name ? ', ' + childProfile.name : ''}...`} />
+        <Command className="rounded-lg border-none bg-gradient-to-b from-indigo-950 to-indigo-900">
+          <CommandInput 
+            placeholder={`Discover something amazing${childProfile?.name ? ', ' + childProfile.name : ''}...`}
+            className="border-b border-indigo-800"
+          />
           <CommandList>
             <CommandEmpty>No results found. Try something else?</CommandEmpty>
             
@@ -205,8 +208,9 @@ const UnifiedSearchBar: React.FC<UnifiedSearchBarProps> = ({
                   onSelect={() => {
                     handleSuggestionClick(suggestion);
                   }}
+                  className="hover:bg-indigo-800/30"
                 >
-                  <Sparkles className="mr-2 h-4 w-4 text-wonderwhiz-gold" />
+                  <BrainCircuit className="mr-2 h-4 w-4 text-amber-400" />
                   {suggestion}
                 </CommandItem>
               ))}
@@ -219,6 +223,7 @@ const UnifiedSearchBar: React.FC<UnifiedSearchBarProps> = ({
                   onSelect={() => {
                     handleSuggestionClick(`Tell me about ${topic}`);
                   }}
+                  className="hover:bg-indigo-800/30"
                 >
                   <Lightbulb className="mr-2 h-4 w-4 text-pink-400" />
                   {topic}
@@ -234,6 +239,7 @@ const UnifiedSearchBar: React.FC<UnifiedSearchBarProps> = ({
                     onSelect={() => {
                       handleSuggestionClick(query);
                     }}
+                    className="hover:bg-indigo-800/30"
                   >
                     <Clock className="mr-2 h-4 w-4 text-white/70" />
                     {query}
@@ -256,7 +262,7 @@ const UnifiedSearchBar: React.FC<UnifiedSearchBarProps> = ({
             whileHover={{ scale: 1.05, y: -2 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => handleSuggestionClick(`Tell me about ${topic}`)}
-            className="px-3 py-1.5 bg-white/10 hover:bg-white/15 rounded-full text-white/80 hover:text-white text-sm transition-all duration-200"
+            className="px-3 py-1.5 bg-indigo-500/20 hover:bg-indigo-500/30 rounded-full text-white/80 hover:text-white text-sm transition-all duration-200 border border-indigo-500/30"
           >
             {topic}
           </motion.button>

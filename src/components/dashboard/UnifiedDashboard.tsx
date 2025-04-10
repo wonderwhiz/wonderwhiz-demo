@@ -1,14 +1,15 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useChildLearningHistory } from '@/hooks/useChildLearningHistory';
 import { Badge } from '@/components/ui/badge';
-import { Rocket, Sparkles, Star } from 'lucide-react';
+import { Rocket, Sparkles, Star, Bell, MessageSquare } from 'lucide-react';
 import UnifiedSearchBar from './UnifiedSearchBar';
 import KnowledgeJourney from './KnowledgeJourney';
 import IntelligentTasks from './IntelligentTasks';
 import DailyChallenge from './DailyChallenge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 
 interface UnifiedDashboardProps {
   childId: string;
@@ -40,6 +41,20 @@ const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
     .map(curio => curio.query || curio.title)
     .filter(Boolean);
   
+  // Get task counts for notification badges
+  const [pendingTasksCount, setPendingTasksCount] = useState(0);
+  const [newChallengesCount, setNewChallengesCount] = useState(1); // Default to 1 for demo
+  
+  // Handle task count updates
+  const handleTaskCountUpdate = (count: number) => {
+    setPendingTasksCount(count);
+  };
+  
+  // Handle challenge count updates
+  const handleChallengeCountUpdate = (count: number) => {
+    setNewChallengesCount(count);
+  };
+  
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -47,7 +62,7 @@ const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
       opacity: 1,
       transition: {
         when: "beforeChildren",
-        staggerChildren: 0.2
+        staggerChildren: 0.15
       }
     }
   };
@@ -58,7 +73,7 @@ const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
       opacity: 1,
       y: 0,
       transition: {
-        duration: 0.6
+        duration: 0.5
       }
     }
   };
@@ -85,6 +100,19 @@ const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
     setTimeout(() => handleSubmitQuery(), 100);
   };
   
+  // Default to 'explore' tab
+  const [activeTab, setActiveTab] = useState("explore");
+  
+  // Handle tab change to clear notification counts
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    
+    // Clear notification counts when visiting the tab
+    if (value === "tasks") {
+      setPendingTasksCount(0);
+    }
+  };
+  
   return (
     <motion.div
       variants={containerVariants}
@@ -104,7 +132,7 @@ const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
         
         <div className="flex items-center space-x-4 mt-4 md:mt-0">
           <div className="flex items-center space-x-1.5 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/10">
-            <Sparkles className="h-4 w-4 text-wonderwhiz-gold" />
+            <Sparkles className="h-4 w-4 text-amber-400" />
             <span className="text-white font-medium text-sm">
               {childProfile?.sparks_balance || 0}
             </span>
@@ -113,7 +141,7 @@ const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
           {childProfile?.streak_days > 0 && (
             <div className="flex items-center bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/10">
               <Badge variant="outline" className="bg-transparent border-none text-white/90 flex items-center gap-1.5 p-0">
-                <Rocket className="h-4 w-4 text-wonderwhiz-gold" />
+                <Rocket className="h-4 w-4 text-amber-400" />
                 <span>{childProfile.streak_days} day streak</span>
               </Badge>
             </div>
@@ -134,21 +162,26 @@ const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
         />
       </motion.div>
       
-      {/* Main content area - Two clear tabs: Explore and Tasks */}
+      {/* Main content area with tabs */}
       <motion.div variants={sectionVariants}>
-        <Tabs defaultValue="explore" className="w-full">
-          <TabsList className="grid grid-cols-2 mb-6 w-full max-w-sm mx-auto bg-white/10 backdrop-blur-sm border border-white/10">
-            <TabsTrigger value="explore" className="data-[state=active]:bg-white/15">
+        <Tabs defaultValue="explore" value={activeTab} onValueChange={handleTabChange} className="w-full">
+          <TabsList className="grid grid-cols-2 mb-6 w-full max-w-md mx-auto bg-white/10 backdrop-blur-sm border border-white/10">
+            <TabsTrigger value="explore" className="data-[state=active]:bg-indigo-600/70 relative">
               Explore & Learn
             </TabsTrigger>
-            <TabsTrigger value="tasks" className="data-[state=active]:bg-white/15">
-              Tasks & Challenges
+            <TabsTrigger value="tasks" className="data-[state=active]:bg-indigo-600/70 relative">
+              <span>Tasks & Challenges</span>
+              {(pendingTasksCount > 0 || newChallengesCount > 0) && (
+                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] text-white">
+                  {pendingTasksCount + newChallengesCount}
+                </span>
+              )}
             </TabsTrigger>
           </TabsList>
           
           <TabsContent value="explore" className="mt-0">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Knowledge journey - spans two columns on larger screens */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              {/* Knowledge journey - spans two columns */}
               <div className="lg:col-span-2">
                 <KnowledgeJourney
                   childId={childId}
@@ -157,10 +190,11 @@ const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
                 />
               </div>
               
-              {/* Daily Challenges - one column */}
+              {/* Current tab only shows challenges if on explore tab */}
               <div>
                 <DailyChallenge 
                   childId={childId}
+                  onNewChallenges={handleChallengeCountUpdate} 
                 />
               </div>
             </div>
@@ -168,11 +202,12 @@ const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
           
           <TabsContent value="tasks" className="mt-0">
             <div className="grid grid-cols-1 gap-6">
-              {/* Parent-assigned tasks integrated right into the main experience */}
+              {/* Full-width tasks section when on tasks tab */}
               <IntelligentTasks
                 childId={childId}
                 childProfile={childProfile}
                 onTaskAction={handleTaskAction}
+                onPendingTasksCount={handleTaskCountUpdate}
               />
             </div>
           </TabsContent>

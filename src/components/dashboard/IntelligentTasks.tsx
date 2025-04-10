@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { CheckCircle, Star, Clock, Sparkles, Brain, Award, Zap, Lightbulb, BookOpen } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { CheckCircle, Star, Clock, Sparkles, Brain, Award, Zap, Lightbulb, BookOpen, Bell } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,17 +9,20 @@ import { toast } from 'sonner';
 import { useChildLearningHistory } from '@/hooks/useChildLearningHistory';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
+import DailyChallenge from './DailyChallenge';
 
 interface IntelligentTasksProps {
   childId: string;
   childProfile: any;
   onTaskAction: (task: string) => void;
+  onPendingTasksCount?: (count: number) => void;
 }
 
 const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
   childId,
   childProfile,
-  onTaskAction
+  onTaskAction,
+  onPendingTasksCount
 }) => {
   const { learningHistory, strongestTopics } = useChildLearningHistory(childId);
   
@@ -27,6 +30,7 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
   const [parentTasks, setParentTasks] = useState<any[]>([]);
   const [completedParentTasks, setCompletedParentTasks] = useState<any[]>([]);
   const [isLoadingTasks, setIsLoadingTasks] = useState(true);
+  const [hasNewNotifications, setHasNewNotifications] = useState(false);
   
   // Fetch parent-assigned tasks
   useEffect(() => {
@@ -56,6 +60,16 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
         
         setParentTasks(pendingTasks || []);
         setCompletedParentTasks(completedTasks || []);
+        
+        // Update notification status and count
+        const hasNew = (pendingTasks && pendingTasks.length > 0);
+        setHasNewNotifications(hasNew);
+        
+        // Send count to parent component if callback provided
+        if (onPendingTasksCount) {
+          onPendingTasksCount(pendingTasks ? pendingTasks.length : 0);
+        }
+        
       } catch (error) {
         console.error('Error fetching parent-assigned tasks:', error);
       } finally {
@@ -64,7 +78,28 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
     };
     
     fetchParentAssignedTasks();
-  }, [childId]);
+    
+    // Set up real-time subscription to task changes
+    const tasksSubscription = supabase
+      .channel('child-tasks-changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'child_tasks', filter: `child_profile_id=eq.${childId}` },
+        (payload) => {
+          fetchParentAssignedTasks();
+          if (payload.eventType === 'INSERT') {
+            toast.info("You have a new task from your parent!", {
+              description: "Check your tasks tab to see what's new!",
+              icon: <Bell className="h-5 w-5 text-indigo-400" />
+            });
+          }
+        }
+      )
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(tasksSubscription);
+    };
+  }, [childId, onPendingTasksCount]);
   
   // Calculate daily progress based on completed tasks
   useEffect(() => {
@@ -171,6 +206,20 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
     }
   };
   
+  const notificationVariants = {
+    initial: { scale: 0.8, opacity: 0 },
+    animate: { 
+      scale: 1, 
+      opacity: 1,
+      transition: {
+        type: "spring",
+        stiffness: 500,
+        damping: 30
+      }
+    },
+    exit: { scale: 0.8, opacity: 0 }
+  };
+  
   // Handle parent task completion
   const handleParentTaskCompletion = async (taskId: string) => {
     try {
@@ -186,6 +235,11 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
       if (completedTask) {
         setParentTasks(parentTasks.filter(task => task.id !== taskId));
         setCompletedParentTasks([{ ...completedTask, status: 'completed', completed_at: new Date().toISOString() }, ...completedParentTasks]);
+        
+        // Update notification counter
+        if (onPendingTasksCount) {
+          onPendingTasksCount(parentTasks.length - 1);
+        }
       }
       
       // Show success toast
@@ -248,7 +302,7 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
       case 'create':
         return <Zap className="h-5 w-5 text-green-400" />;
       case 'streak':
-        return <Award className="h-5 w-5 text-wonderwhiz-gold" />;
+        return <Award className="h-5 w-5 text-amber-400" />;
       default:
         return <CheckCircle className="h-5 w-5 text-blue-400" />;
     }
@@ -259,12 +313,23 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="bg-gradient-to-br from-indigo-500/10 to-purple-600/10 backdrop-blur-sm rounded-xl border border-white/10 p-5"
+      className="bg-gradient-to-br from-indigo-600/10 to-indigo-800/10 backdrop-blur-sm rounded-xl border border-indigo-600/20 p-5"
     >
-      <motion.div variants={itemVariants} className="flex items-center justify-between mb-4">
+      <motion.div variants={itemVariants} className="flex items-center justify-between mb-5">
         <div className="flex items-center">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500/30 to-pink-500/30 flex items-center justify-center mr-3">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500/30 to-indigo-600/30 flex items-center justify-center mr-3 relative">
             <CheckCircle className="h-5 w-5 text-white" />
+            <AnimatePresence>
+              {hasNewNotifications && (
+                <motion.div
+                  variants={notificationVariants}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500"
+                />
+              )}
+            </AnimatePresence>
           </div>
           <div>
             <h3 className="text-lg font-medium text-white">Your Tasks</h3>
@@ -276,16 +341,31 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
         </div>
         
         <Badge variant="outline" className="bg-white/10 text-white border-white/20 flex items-center gap-1">
-          <Sparkles className="h-3.5 w-3.5 text-wonderwhiz-gold" />
+          <Sparkles className="h-3.5 w-3.5 text-amber-400" />
           <span>{childProfile?.sparks_balance || 0} sparks</span>
         </Badge>
       </motion.div>
       
       <Tabs defaultValue="all" className="mt-2">
         <TabsList className="w-full grid grid-cols-3 bg-white/5 border border-white/10">
-          <TabsTrigger value="all" className="text-sm">All Tasks</TabsTrigger>
-          <TabsTrigger value="parent" className="text-sm">From Parents</TabsTrigger>
-          <TabsTrigger value="system" className="text-sm">Learning</TabsTrigger>
+          <TabsTrigger value="all" className="text-sm data-[state=active]:bg-indigo-600/20">All Tasks</TabsTrigger>
+          <TabsTrigger value="parent" className="text-sm data-[state=active]:bg-indigo-600/20 relative">
+            From Parents
+            <AnimatePresence>
+              {parentTasks.length > 0 && (
+                <motion.div
+                  variants={notificationVariants}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 flex items-center justify-center text-[10px] text-white"
+                >
+                  {parentTasks.length}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </TabsTrigger>
+          <TabsTrigger value="system" className="text-sm data-[state=active]:bg-indigo-600/20">Learning</TabsTrigger>
         </TabsList>
         
         <TabsContent value="all" className="mt-3">
@@ -301,8 +381,18 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
                 className="p-3 rounded-lg cursor-pointer transition-all relative overflow-hidden group bg-pink-500/20 border border-pink-500/30 hover:border-pink-500/50"
               >
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center bg-pink-500/30">
+                  <div className="relative w-8 h-8 rounded-full flex items-center justify-center bg-pink-500/30">
                     <Star className="h-4 w-4 text-white" />
+                    <motion.div 
+                      initial={{ scale: 0.5, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ 
+                        repeat: Infinity, 
+                        repeatType: "reverse", 
+                        duration: 1.5 
+                      }}
+                      className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500"
+                    />
                   </div>
                   
                   <div className="flex-grow">
@@ -414,8 +504,18 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
                   className="p-3 rounded-lg cursor-pointer transition-all relative overflow-hidden group bg-pink-500/20 border border-pink-500/30 hover:border-pink-500/50"
                 >
                   <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center bg-pink-500/30">
+                    <div className="relative w-8 h-8 rounded-full flex items-center justify-center bg-pink-500/30">
                       <Star className="h-4 w-4 text-white" />
+                      <motion.div 
+                        initial={{ scale: 0.5, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ 
+                          repeat: Infinity, 
+                          repeatType: "reverse", 
+                          duration: 1.5 
+                        }}
+                        className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500"
+                      />
                     </div>
                     
                     <div className="flex-grow">
@@ -489,61 +589,69 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
         </TabsContent>
         
         <TabsContent value="system" className="mt-3">
-          <div className="space-y-3">
-            {systemTasks.length > 0 ? (
-              systemTasks.map((task) => (
-                <motion.div
-                  key={`system-tab-${task.id}`}
-                  variants={itemVariants}
-                  whileHover={{ scale: 1.02, x: 2 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => handleSystemTaskClick(task)}
-                  className={cn(
-                    "p-3 rounded-lg cursor-pointer transition-all relative overflow-hidden group",
-                    task.completed 
-                      ? "bg-green-500/20 border border-green-500/30"
-                      : "bg-white/5 border border-white/10 hover:border-white/20"
-                  )}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className={cn(
-                      "w-8 h-8 rounded-full flex items-center justify-center",
-                      task.completed ? "bg-green-500/50" : "bg-white/10"
-                    )}>
-                      {task.completed ? (
-                        <CheckCircle className="h-4 w-4 text-white" />
-                      ) : (
-                        getTaskIcon(task)
-                      )}
-                    </div>
-                    
-                    <div className="flex-grow">
-                      <p className={cn("font-medium text-sm", task.completed ? "text-green-300" : "text-white")}>
-                        {task.title}
-                      </p>
-                      <div className="flex items-center mt-1">
-                        <Clock className="h-3 w-3 text-white/60 mr-1" />
-                        <span className="text-white/60 text-xs">{task.timeEstimate}</span>
-                        
-                        <div className="ml-3 flex items-center">
-                          <Sparkles className="h-3 w-3 text-amber-300 mr-1" />
-                          <span className="text-amber-300 text-xs">+{task.reward}</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <h4 className="text-white/90 text-sm font-medium">Learning Tasks</h4>
+              {systemTasks.length > 0 ? (
+                systemTasks.map((task) => (
+                  <motion.div
+                    key={`system-tab-${task.id}`}
+                    variants={itemVariants}
+                    whileHover={{ scale: 1.02, x: 2 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => handleSystemTaskClick(task)}
+                    className={cn(
+                      "p-3 rounded-lg cursor-pointer transition-all relative overflow-hidden group",
+                      task.completed 
+                        ? "bg-green-500/20 border border-green-500/30"
+                        : "bg-white/5 border border-white/10 hover:border-white/20"
+                    )}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={cn(
+                        "w-8 h-8 rounded-full flex items-center justify-center",
+                        task.completed ? "bg-green-500/50" : "bg-white/10"
+                      )}>
+                        {task.completed ? (
+                          <CheckCircle className="h-4 w-4 text-white" />
+                        ) : (
+                          getTaskIcon(task)
+                        )}
+                      </div>
+                      
+                      <div className="flex-grow">
+                        <p className={cn("font-medium text-sm", task.completed ? "text-green-300" : "text-white")}>
+                          {task.title}
+                        </p>
+                        <div className="flex items-center mt-1">
+                          <Clock className="h-3 w-3 text-white/60 mr-1" />
+                          <span className="text-white/60 text-xs">{task.timeEstimate}</span>
+                          
+                          <div className="ml-3 flex items-center">
+                            <Sparkles className="h-3 w-3 text-amber-300 mr-1" />
+                            <span className="text-amber-300 text-xs">+{task.reward}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                  
-                  {/* Progress indicator for the task (if applicable) */}
-                  {task.completed && (
-                    <div className="absolute bottom-0 left-0 h-0.5 w-full bg-green-400/30" />
-                  )}
-                </motion.div>
-              ))
-            ) : (
-              <div className="text-center py-8 text-white/60">
-                <p>No learning tasks available right now.</p>
-              </div>
-            )}
+                    
+                    {/* Progress indicator for the task (if applicable) */}
+                    {task.completed && (
+                      <div className="absolute bottom-0 left-0 h-0.5 w-full bg-green-400/30" />
+                    )}
+                  </motion.div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-white/60">
+                  <p>No learning tasks available right now.</p>
+                </div>
+              )}
+            </div>
+            
+            {/* Daily challenges in the tasks tab too */}
+            <div>
+              <DailyChallenge childId={childId} />
+            </div>
           </div>
         </TabsContent>
       </Tabs>
