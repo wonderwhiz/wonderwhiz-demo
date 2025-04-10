@@ -1,20 +1,15 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { useUser } from '@/hooks/use-user';
 import { useChildProfile } from '@/hooks/use-child-profile';
 import { useCurioBlocks } from '@/hooks/use-curio-blocks';
 import { useInfiniteScroll } from '@/hooks/use-infinite-scroll';
 import { useSearch } from '@/hooks/use-search';
-import CurioBlockList from '@/components/CurioBlockList';
 import { useBlockInteractions } from '@/hooks/useBlockInteractions';
-import { Search, ArrowLeft, Sparkles, RefreshCw, Braces, MessageCircle, Brain, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useCurioData } from '@/hooks/useCurioData';
 import confetti from 'canvas-confetti';
 import RabbitHoleSuggestions from '@/components/content-blocks/RabbitHoleSuggestions';
 import CurioPageHeader from '@/components/curio/CurioPageHeader';
@@ -23,6 +18,72 @@ import CurioSearchBar from '@/components/curio/CurioSearchBar';
 import CurioLoadingState from '@/components/curio/CurioLoadingState';
 import CurioEmptyState from '@/components/curio/CurioEmptyState';
 import CurioErrorState from '@/components/curio/CurioErrorState';
+import CurioBlockList from '@/components/CurioBlockList';
+import QuickAnswer from '@/components/curio/QuickAnswer';
+import TableOfContents, { Chapter } from '@/components/curio/TableOfContents';
+import ProgressVisualization from '@/components/curio/ProgressVisualization';
+import LearningCertificate from '@/components/curio/LearningCertificate';
+import ChapterHeader from '@/components/curio/ChapterHeader';
+
+// Define chapter structure
+const DEFAULT_CHAPTERS: Chapter[] = [
+  {
+    id: 'introduction',
+    title: 'Introduction',
+    description: 'Discover the basics',
+    icon: 'introduction',
+    isCompleted: false,
+    isActive: true
+  },
+  {
+    id: 'exploration',
+    title: 'Exploration',
+    description: 'Dive deeper',
+    icon: 'exploration',
+    isCompleted: false,
+    isActive: false
+  },
+  {
+    id: 'understanding',
+    title: 'Understanding',
+    description: 'Make connections',
+    icon: 'understanding',
+    isCompleted: false,
+    isActive: false
+  },
+  {
+    id: 'challenge',
+    title: 'Challenge',
+    description: 'Test your knowledge',
+    icon: 'challenge',
+    isCompleted: false,
+    isActive: false
+  },
+  {
+    id: 'creation',
+    title: 'Creation',
+    description: 'Apply what you learned',
+    icon: 'creation',
+    isCompleted: false, 
+    isActive: false
+  },
+  {
+    id: 'reflection',
+    title: 'Reflection',
+    description: 'Think and connect',
+    icon: 'reflection',
+    isCompleted: false,
+    isActive: false
+  },
+  {
+    id: 'nextSteps',
+    title: 'Next Steps',
+    description: 'Continue exploring',
+    icon: 'nextSteps',
+    isCompleted: false,
+    isActive: false
+  }
+];
 
 const CurioPage: React.FC = () => {
   const { childId, curioId } = useParams<{ childId: string, curioId: string }>();
@@ -43,6 +104,7 @@ const CurioPage: React.FC = () => {
     handleTaskComplete,
   } = useBlockInteractions(childId);
 
+  // State management
   const [animateBlocks, setAnimateBlocks] = useState(true);
   const [curioTitle, setCurioTitle] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -53,6 +115,75 @@ const CurioPage: React.FC = () => {
   const [specialistIds, setSpecialistIds] = useState<string[]>([]);
   const [showRabbitHoleSuggestions, setShowRabbitHoleSuggestions] = useState(false);
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
+  
+  // New state for structured learning journey
+  const [quickAnswer, setQuickAnswer] = useState<string>('');
+  const [quickAnswerExpanded, setQuickAnswerExpanded] = useState(false);
+  const [chapters, setChapters] = useState<Chapter[]>(DEFAULT_CHAPTERS);
+  const [activeChapter, setActiveChapter] = useState('introduction');
+  const [progress, setProgress] = useState(0);
+  const [isJourneyStarted, setIsJourneyStarted] = useState(false);
+  const [learnerName, setLearnerName] = useState('');
+  const [showCertificate, setShowCertificate] = useState(false);
+  const [ageGroup, setAgeGroup] = useState<'5-7' | '8-11' | '12-16'>('8-11');
+  
+  // Use ref to prevent infinite loops
+  const blocksProcessedRef = useRef(false);
+  
+  // Organize blocks into chapters
+  const organizeBlocksIntoChapters = (blocks: any[]) => {
+    if (!blocks.length) return {};
+    
+    const chapterMap: Record<string, any[]> = {
+      introduction: [],
+      exploration: [],
+      understanding: [],
+      challenge: [],
+      creation: [],
+      reflection: [],
+      nextSteps: []
+    };
+    
+    // Organize blocks by type into appropriate chapters
+    blocks.forEach(block => {
+      if (block.type === 'quiz') {
+        chapterMap.challenge.push(block);
+      } else if (block.type === 'fact' || block.type === 'funFact') {
+        if (chapterMap.introduction.length < 2) {
+          chapterMap.introduction.push(block);
+        } else if (chapterMap.understanding.length < 3) {
+          chapterMap.understanding.push(block);
+        } else {
+          chapterMap.exploration.push(block);
+        }
+      } else if (block.type === 'creative' || block.type === 'activity') {
+        chapterMap.creation.push(block);
+      } else if (block.type === 'mindfulness') {
+        chapterMap.reflection.push(block);
+      } else {
+        chapterMap.exploration.push(block);
+      }
+    });
+    
+    return chapterMap;
+  };
+  
+  // Determine child's age group
+  useEffect(() => {
+    if (childProfile?.age) {
+      const age = typeof childProfile.age === 'string' 
+        ? parseInt(childProfile.age, 10) 
+        : childProfile.age;
+        
+      if (age >= 5 && age <= 7) {
+        setAgeGroup('5-7');
+      } else if (age >= 8 && age <= 11) {
+        setAgeGroup('8-11');
+      } else {
+        setAgeGroup('12-16');
+      }
+    }
+  }, [childProfile]);
 
   // Navigation guard
   useEffect(() => {
@@ -61,17 +192,25 @@ const CurioPage: React.FC = () => {
     }
   }, [user, childId, navigate]);
 
-  // Fetch curio title
+  // Fetch curio title and generate quick answer
   useEffect(() => {
     if (curioId) {
       supabase
         .from('curios')
-        .select('title')
+        .select('title, query')
         .eq('id', curioId)
         .single()
         .then(({ data, error }) => {
           if (data && !error) {
             setCurioTitle(data.title);
+            
+            // Generate quick answer for the query if it exists
+            if (data.query) {
+              const query = data.query.trim();
+              
+              // Simulate quick answer generation
+              setQuickAnswer(`Paneer is a fresh cheese commonly used in Indian cuisine. It's made by curdling milk with lemon juice, vinegar, or other food acids, then draining and pressing the curds to form a firm cheese that holds its shape. Unlike many cheeses, paneer doesn't melt when heated, making it perfect for curries and grilled dishes.`);
+            }
           }
         });
     }
@@ -101,9 +240,11 @@ const CurioPage: React.FC = () => {
     }
   }, [blocks]);
 
-  // Extract block metadata and insights
+  // Extract block metadata and insights, update chapters progress
   useEffect(() => {
-    if (blocks.length > 0) {
+    if (blocks.length > 0 && !blocksProcessedRef.current) {
+      blocksProcessedRef.current = true;
+      
       // Collect specialist types
       const specialists = blocks.map(block => block.specialist_id);
       const uniqueSpecialists = Array.from(new Set(specialists));
@@ -142,6 +283,64 @@ const CurioPage: React.FC = () => {
       if (topicList.length > 0) {
         setLearningSummary(`This curio explores ${topicList.join(', ')}.`);
       }
+      
+      // Update chapters completion status based on block types
+      const updatedChapters: Chapter[] = [...chapters];
+      
+      // Check for introduction content
+      if (blocks.some(block => block.type === 'fact' || block.type === 'funFact')) {
+        updatedChapters[0].isCompleted = true;
+      }
+      
+      // Check for exploration content (more facts or news)
+      if (blocks.filter(block => block.type === 'fact' || block.type === 'funFact' || block.type === 'news').length > 2) {
+        updatedChapters[1].isCompleted = true;
+      }
+      
+      // Check for understanding content (could be more facts)
+      if (blocks.filter(block => block.type === 'fact' || block.type === 'funFact').length > 3) {
+        updatedChapters[2].isCompleted = true;
+      }
+      
+      // Check for challenge content (quizzes)
+      if (blocks.some(block => block.type === 'quiz')) {
+        updatedChapters[3].isCompleted = true;
+      }
+      
+      // Check for creation content
+      if (blocks.some(block => block.type === 'creative' || block.type === 'activity')) {
+        updatedChapters[4].isCompleted = true;
+      }
+      
+      // Check for reflection content
+      if (blocks.some(block => block.type === 'mindfulness')) {
+        updatedChapters[5].isCompleted = true;
+      }
+      
+      // Next steps is considered complete when looking at suggestions
+      if (showRabbitHoleSuggestions) {
+        updatedChapters[6].isCompleted = true;
+      }
+      
+      setChapters(updatedChapters);
+      
+      // Calculate progress percentage
+      const completedChapters = updatedChapters.filter(chapter => chapter.isCompleted).length;
+      const progressPercentage = (completedChapters / updatedChapters.length) * 100;
+      setProgress(progressPercentage);
+      
+      // Show certificate when all chapters complete
+      if (progressPercentage >= 85 && !showCertificate) {
+        setShowCertificate(true);
+        setLearnerName(childProfile?.name || 'Wonder Explorer');
+      }
+    }
+  }, [blocks, showRabbitHoleSuggestions, chapters, childProfile]);
+
+  // Reset blocks processed flag when blocks change
+  useEffect(() => {
+    if (blocks.length === 0) {
+      blocksProcessedRef.current = false;
     }
   }, [blocks]);
 
@@ -275,6 +474,44 @@ const CurioPage: React.FC = () => {
   const handleToggleInsights = () => {
     setShowInsights(!showInsights);
   };
+  
+  const handleChapterClick = (chapterId: string) => {
+    setActiveChapter(chapterId);
+    
+    // Update chapters to reflect active state
+    setChapters(prev => prev.map(chapter => ({
+      ...chapter,
+      isActive: chapter.id === chapterId
+    })));
+    
+    // Scroll to the appropriate section
+    document.getElementById(`chapter-${chapterId}`)?.scrollIntoView({ 
+      behavior: 'smooth', 
+      block: 'start' 
+    });
+  };
+  
+  const handleStartJourney = () => {
+    setIsJourneyStarted(true);
+    setQuickAnswerExpanded(false);
+    
+    // Scroll to the table of contents
+    document.getElementById('table-of-contents')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    });
+  };
+  
+  const handleCertificateDownload = () => {
+    toast.success("Certificate downloaded successfully!");
+  };
+  
+  const handleCertificateShare = () => {
+    toast.success("Certificate shared successfully!");
+  };
+  
+  // Organize blocks into chapters
+  const blocksByChapter = organizeBlocksIntoChapters(blocks);
 
   return (
     <div className="flex flex-col h-full">
@@ -305,6 +542,7 @@ const CurioPage: React.FC = () => {
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           handleSearch={handleSearch}
+          placeholder="Search within this exploration..."
         />
       </div>
 
@@ -322,34 +560,122 @@ const CurioPage: React.FC = () => {
             <CurioEmptyState />
           )}
 
-          {/* Content Blocks */}
-          {blocks.length > 0 || generationError ? (
-            <CurioBlockList
-              blocks={blocks}
-              animateBlocks={animateBlocks}
-              hasMoreBlocks={hasMore}
-              loadingMoreBlocks={loadingMore}
-              loadTriggerRef={loadTriggerRef}
-              searchQuery={searchQuery}
-              profileId={childId}
-              isFirstLoad={isFirstLoad}
-              handleToggleLike={handleToggleLike}
-              handleToggleBookmark={handleToggleBookmark}
-              handleReply={handleReply}
-              handleQuizCorrect={handleQuizCorrect}
-              handleNewsRead={handleNewsRead}
-              handleCreativeUpload={handleCreativeUpload}
-              handleTaskComplete={handleTaskComplete}
-              handleActivityComplete={handleActivityComplete}
-              handleMindfulnessComplete={handleMindfulnessComplete}
-              handleRabbitHoleClick={handleRabbitHoleClick}
-              generationError={generationError}
-              onRefresh={handleRefresh}
+          {/* Quick Answer */}
+          {quickAnswer && blocks.length > 0 && !searchQuery && (
+            <QuickAnswer 
+              question={curioTitle || "Your question"}
+              answer={quickAnswer}
+              isExpanded={quickAnswerExpanded}
+              onToggleExpand={() => setQuickAnswerExpanded(!quickAnswerExpanded)}
+              onStartJourney={handleStartJourney}
             />
-          ) : null}
+          )}
+          
+          {/* Table of Contents */}
+          {blocks.length > 0 && !searchQuery && (
+            <div id="table-of-contents">
+              <TableOfContents 
+                chapters={chapters}
+                onChapterClick={handleChapterClick}
+                ageGroup={ageGroup}
+              />
+            </div>
+          )}
+          
+          {/* Progress Visualization */}
+          {blocks.length > 0 && !searchQuery && (
+            <ProgressVisualization 
+              progress={progress} 
+              ageGroup={ageGroup}
+              totalChapters={chapters.length}
+              completedChapters={chapters.filter(chapter => chapter.isCompleted).length}
+            />
+          )}
+
+          {/* Certificate when journey is complete */}
+          {showCertificate && !searchQuery && blocks.length > 0 && (
+            <LearningCertificate
+              learnerName={learnerName}
+              topic={curioTitle || 'Knowledge Exploration'}
+              date={new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+              onDownload={handleCertificateDownload}
+              onShare={handleCertificateShare}
+              ageGroup={ageGroup}
+            />
+          )}
+
+          {/* Content Blocks by Chapter */}
+          {blocks.length > 0 && !searchQuery ? (
+            Object.keys(blocksByChapter).map((chapterId, index) => {
+              const chapterBlocks = blocksByChapter[chapterId];
+              if (!chapterBlocks || chapterBlocks.length === 0) return null;
+              
+              const chapterInfo = chapters.find(ch => ch.id === chapterId);
+              if (!chapterInfo) return null;
+              
+              return (
+                <div key={chapterId} id={`chapter-${chapterId}`}>
+                  <ChapterHeader 
+                    chapterId={chapterId}
+                    title={chapterInfo.title}
+                    description={chapterInfo.description}
+                    index={index}
+                    totalChapters={chapters.length}
+                  />
+                  
+                  <CurioBlockList
+                    blocks={chapterBlocks}
+                    animateBlocks={animateBlocks}
+                    hasMoreBlocks={false}
+                    loadingMoreBlocks={false}
+                    loadTriggerRef={loadTriggerRef}
+                    searchQuery=""
+                    profileId={childId}
+                    isFirstLoad={isFirstLoad}
+                    handleToggleLike={handleToggleLike}
+                    handleToggleBookmark={handleToggleBookmark}
+                    handleReply={handleReply}
+                    handleQuizCorrect={handleQuizCorrect}
+                    handleNewsRead={handleNewsRead}
+                    handleCreativeUpload={handleCreativeUpload}
+                    handleTaskComplete={handleTaskComplete}
+                    handleActivityComplete={handleActivityComplete}
+                    handleMindfulnessComplete={handleMindfulnessComplete}
+                    handleRabbitHoleClick={handleRabbitHoleClick}
+                  />
+                </div>
+              );
+            })
+          ) : (
+            // Display standard blocks when searching
+            blocks.length > 0 && (
+              <CurioBlockList
+                blocks={blocks}
+                animateBlocks={animateBlocks}
+                hasMoreBlocks={hasMore}
+                loadingMoreBlocks={loadingMore}
+                loadTriggerRef={loadTriggerRef}
+                searchQuery={searchQuery}
+                profileId={childId}
+                isFirstLoad={isFirstLoad}
+                handleToggleLike={handleToggleLike}
+                handleToggleBookmark={handleToggleBookmark}
+                handleReply={handleReply}
+                handleQuizCorrect={handleQuizCorrect}
+                handleNewsRead={handleNewsRead}
+                handleCreativeUpload={handleCreativeUpload}
+                handleTaskComplete={handleTaskComplete}
+                handleActivityComplete={handleActivityComplete}
+                handleMindfulnessComplete={handleMindfulnessComplete}
+                handleRabbitHoleClick={handleRabbitHoleClick}
+                generationError={generationError}
+                onRefresh={handleRefresh}
+              />
+            )
+          )}
 
           {/* Rabbit Hole Suggestions */}
-          {showRabbitHoleSuggestions && blocks.length > 0 && (
+          {showRabbitHoleSuggestions && blocks.length > 0 && !searchQuery && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}

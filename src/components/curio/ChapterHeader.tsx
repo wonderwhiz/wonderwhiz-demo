@@ -50,7 +50,7 @@ const ChapterHeader: React.FC<ChapterHeaderProps> = ({
       <div className="absolute left-0 top-0 h-full w-1">
         <div className="h-full w-full rounded-full bg-white/10"></div>
         <div 
-          className={`absolute top-0 h-${Math.ceil((index + 1) / totalChapters * 100)}% w-full rounded-full bg-gradient-to-b ${getColor()}`} 
+          className={`absolute top-0 w-full rounded-full bg-gradient-to-b ${getColor()}`} 
           style={{ height: `${Math.ceil((index + 1) / totalChapters * 100)}%` }}
         ></div>
       </div>
