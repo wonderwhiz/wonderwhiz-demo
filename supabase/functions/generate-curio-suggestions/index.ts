@@ -1,143 +1,169 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')!;
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-interface ChildProfile {
-  id: string;
-  name: string;
-  avatar_url: string;
-  interests: string[];
-  age: number;
-  language: string;
 }
 
-interface Curio {
-  query: string;
-  created_at: string;
-}
+// API key from environment variable
+const groqApiKey = Deno.env.get('GROQ_API_KEY') || '';
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    const { childProfile, pastCurios = [] } = await req.json();
-    
-    if (!childProfile) {
-      throw new Error('Child profile is required');
+    const { topic, specialistIds = [] } = await req.json();
+
+    if (!topic) {
+      return new Response(
+        JSON.stringify({ error: 'No topic provided' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    const interests = childProfile.interests || [];
-    const recentQueries = pastCurios.slice(0, 5).map((c: Curio) => c.query);
-    const language = childProfile.language || 'English';
+    // Create a system prompt for generating curio suggestions
+    const systemPrompt = `You are a highly intelligent educational assistant for a children's learning platform. 
+    Your task is to generate engaging, educational, and age-appropriate follow-up questions related to the topic.
+    Make the questions curious, educational, and inspiring for children age 7-13.
+    Each question should open up new areas of exploration, and help children develop a love for learning.`;
 
-    // Updated prompt to generate shorter, more engaging suggestions in the child's preferred language
-    const systemMessage = `Generate 4 fun, exciting curiosity prompts for a ${childProfile.age} year old child who has interests in: ${interests.join(', ')}. These should be questions that spark curiosity and wonder. The suggestions MUST be in ${language} language.`;
+    // Create a user prompt with the topic
+    const userPrompt = `Generate 4 intriguing follow-up questions for children related to the topic: "${topic}".
+    For each question, also provide a brief description of what the child will learn.
     
-    const userMessage = `
-    I need 4 short, fun question suggestions for a child to explore.
+    Also, generate 2 specialist insights where experts would provide unique perspectives. 
+    Format your response as a JSON object with:
+    {
+      "suggestions": [
+        {"question": "Question text here", "description": "Brief description of what they'll learn"},
+        ...
+      ],
+      "specialistInsights": [
+        {"question": "Expert question here", "description": "Brief description", "specialist": "SPECIALIST_ID"},
+        ...
+      ]
+    }
     
-    Their recent searches were: ${recentQueries.length ? recentQueries.join(', ') : 'None yet'}.
+    Available specialist IDs: ${specialistIds.join(', ') || "nova, spark, prism, pixel, atlas, lotus"}
     
-    Please make each question:
-    - SHORT (max 5-6 words)
-    - Exciting and engaging
-    - Age-appropriate for a ${childProfile.age} year old
-    - Diverse across different topics
-    - Educational but fun
-    - Avoid repeating the past searches
-    
-    Return your response as a simple JSON array of strings:
-    ["Short question 1?", "Short question 2?", "Short question 3?", "Short question 4?"]
-    `;
+    Make all questions genuinely interesting and intriguing for children.`;
 
-    console.log("Sending request to OpenAI API for curio suggestions");
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Call the Groq API to generate suggestions
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENAI_API_KEY}`
+        'Authorization': `Bearer ${groqApiKey}`,
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'llama3-8b-8192',
         messages: [
-          { role: 'system', content: systemMessage },
-          { role: 'user', content: userMessage }
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
         ],
-        response_format: { type: "json_object" },
-        max_tokens: 500,
-        temperature: 0.7
-      })
+        temperature: 0.7,
+        max_tokens: 1024,
+      }),
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("OpenAI API error:", errorText);
-      throw new Error(`OpenAI API error: ${response.status} ${errorText}`);
+      const errorData = await response.json();
+      console.error('Error from Groq API:', errorData);
+      throw new Error('Failed to generate suggestions from Groq API');
     }
 
     const data = await response.json();
     
-    if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
-      throw new Error("Invalid response format from OpenAI API");
-    }
-    
-    const content = data.choices[0].message.content;
-    
-    // Extract the JSON array from OpenAI's response
-    let suggestionsJSON;
+    let suggestions;
     try {
-      const parsedData = JSON.parse(content);
+      // Try to parse the content as JSON
+      suggestions = JSON.parse(data.choices[0].message.content);
+    } catch (parseError) {
+      // If parsing fails, try to extract JSON with regex
+      console.error('Error parsing Groq response as JSON:', parseError);
       
-      // Look for any array property that might contain our suggestions
-      if (Array.isArray(parsedData)) {
-        suggestionsJSON = parsedData;
-      } else {
-        const arrayProps = Object.keys(parsedData).filter(key => Array.isArray(parsedData[key]));
-        if (arrayProps.length > 0) {
-          suggestionsJSON = parsedData[arrayProps[0]];
-        } else {
-          throw new Error("Could not find suggestions array in response");
+      const jsonMatch = data.choices[0].message.content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          suggestions = JSON.parse(jsonMatch[0]);
+        } catch (nestedParseError) {
+          console.error('Error parsing extracted JSON:', nestedParseError);
+          // Fall back to default suggestions
+          suggestions = generateDefaultSuggestions(topic, specialistIds);
         }
+      } else {
+        // Fall back to default suggestions
+        suggestions = generateDefaultSuggestions(topic, specialistIds);
       }
-    } catch (error) {
-      console.error("Error parsing OpenAI's response:", error);
-      console.log("Raw response:", content);
-      
-      // Fallback to default short suggestions if parsing fails
-      suggestionsJSON = [
-        "How do volcanoes work?",
-        "Coolest dinosaur ever?",
-        "Space aliens?",
-        "Ocean mysteries?"
-      ];
     }
-    
-    return new Response(JSON.stringify(suggestionsJSON), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+
+    return new Response(
+      JSON.stringify(suggestions),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
   } catch (error) {
-    console.error('Error generating curio suggestions:', error);
-    return new Response(JSON.stringify({ 
-      error: error.message,
-      fallbackSuggestions: [
-        "How do volcanoes work?",
-        "Coolest dinosaur ever?",
-        "Space aliens?",
-        "Ocean mysteries?"
-      ] 
-    }), {
-      status: 200, // Return 200 even on error for client resilience
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+    console.error('Error in generate-curio-suggestions function:', error);
+    
+    // Generate default suggestions as fallback
+    const defaultSuggestions = generateDefaultSuggestions(
+      (req.json?.topic || "this topic") as string, 
+      (req.json?.specialistIds || []) as string[]
+    );
+    
+    return new Response(
+      JSON.stringify(defaultSuggestions),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+    );
   }
 });
+
+// Function to generate default suggestions when API fails
+function generateDefaultSuggestions(topic: string, specialistIds: string[] = []) {
+  const simpleTopic = topic.toLowerCase().replace(/[?.,!]/g, '').trim();
+  
+  // Default suggestions
+  const suggestions = [
+    {
+      question: `What's the most surprising fact about ${simpleTopic}?`,
+      description: "Uncover deeper mysteries and fascinating details through scientific inquiry"
+    },
+    {
+      question: `Why is ${simpleTopic} important to understand?`,
+      description: "Discover the real-world significance and impact on our daily lives"
+    },
+    {
+      question: `How ${simpleTopic} connects to creativity`,
+      description: "Explore fascinating interdisciplinary connections across different fields of knowledge"
+    },
+    {
+      question: `${simpleTopic} in the natural world`,
+      description: "Examine how this concept manifests and influences our understanding"
+    }
+  ];
+  
+  // Default specialist insights
+  const specialists = specialistIds.length > 0 ? specialistIds : ['nova', 'spark'];
+  const specialistInsights = [
+    {
+      question: `What creative projects are inspired by ${simpleTopic}?`,
+      description: "Discover how this topic influences creative thinking and problem-solving",
+      specialist: specialists[0] || 'spark'
+    },
+    {
+      question: `How does ${simpleTopic} connect to the natural world?`,
+      description: "Explore the fascinating connections between this topic and nature",
+      specialist: specialists[1] || 'nova'
+    }
+  ];
+  
+  return {
+    suggestions,
+    specialistInsights
+  };
+}

@@ -1,47 +1,53 @@
-import React, { useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import ContentBlock from '@/components/ContentBlock';
-import { ContentBlock as ContentBlockType } from '@/types/curio';
-import { AlertCircle, Lightbulb, RefreshCw, Sparkles, Brain, BookOpen, Flame, Zap } from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { ContentBlock } from '@/types/curio';
+import FactBlock from '@/components/content-blocks/FactBlock';
+import FunFactBlock from '@/components/content-blocks/FunFactBlock';
+import QuizBlock from '@/components/content-blocks/QuizBlock';
+import CreativeBlock from '@/components/content-blocks/CreativeBlock';
+import ActivityBlock from '@/components/content-blocks/ActivityBlock';
+import MindfulnessBlock from '@/components/content-blocks/MindfulnessBlock';
+import NewsBlock from '@/components/content-blocks/NewsBlock';
+import FlashcardBlock from '@/components/content-blocks/FlashcardBlock';
+import GeneratingBlock from '@/components/content-blocks/GeneratingBlock';
+import ErrorBlock from '@/components/content-blocks/ErrorBlock';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import CurioBlockListLoadMore from './CurioBlockListLoadMore';
-import confetti from 'canvas-confetti';
-import { getNarrativeTheme } from './content-blocks/utils/narrativeUtils';
-import NarrativeProgress from './NarrativeProgress';
 
 interface CurioBlockListProps {
-  blocks: ContentBlockType[];
-  animateBlocks: boolean;
-  hasMoreBlocks: boolean;
-  loadingMoreBlocks: boolean;
-  loadTriggerRef: React.RefObject<HTMLDivElement>;
-  searchQuery: string;
+  blocks: ContentBlock[];
+  animateBlocks?: boolean;
+  hasMoreBlocks?: boolean;
+  loadingMoreBlocks?: boolean;
+  loadTriggerRef?: React.RefObject<HTMLDivElement>;
+  searchQuery?: string;
   profileId?: string;
-  isFirstLoad: boolean;
-  handleToggleLike: (blockId: string) => void;
-  handleToggleBookmark: (blockId: string) => void;
-  handleReply: (blockId: string, message: string) => void;
-  handleQuizCorrect: (blockId: string) => void;
-  handleNewsRead: (blockId: string) => void;
-  handleCreativeUpload: (blockId: string) => void;
-  handleTaskComplete: () => void;
-  handleActivityComplete: () => void;
-  handleMindfulnessComplete: () => void;
-  handleRabbitHoleClick: (question: string) => void;
+  isFirstLoad?: boolean;
+  handleToggleLike?: (blockId: string) => void;
+  handleToggleBookmark?: (blockId: string) => void;
+  handleReply?: (blockId: string, message: string) => void;
+  handleQuizCorrect?: (blockId: string) => void;
+  handleNewsRead?: (blockId: string) => void;
+  handleCreativeUpload?: (blockId: string, content: any) => void;
+  handleTaskComplete?: (blockId: string) => void;
+  handleActivityComplete?: (blockId: string) => void;
+  handleMindfulnessComplete?: (blockId: string) => void;
+  handleRabbitHoleClick?: (question: string) => void;
   generationError?: string | null;
   onRefresh?: () => void;
 }
 
 const CurioBlockList: React.FC<CurioBlockListProps> = ({
-  blocks = [], 
-  animateBlocks,
-  hasMoreBlocks,
-  loadingMoreBlocks,
+  blocks,
+  animateBlocks = true,
+  hasMoreBlocks = false,
+  loadingMoreBlocks = false,
   loadTriggerRef,
-  searchQuery = '', 
+  searchQuery = '',
   profileId,
-  isFirstLoad,
+  isFirstLoad = false,
   handleToggleLike,
   handleToggleBookmark,
   handleReply,
@@ -55,305 +61,210 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
   generationError,
   onRefresh
 }) => {
-  const isMobile = useIsMobile();
-
-  useEffect(() => {
-    // Show initial confetti when blocks load for the first time
-    if (blocks.length > 0 && isFirstLoad) {
-      setTimeout(() => {
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#8b5cf6', '#10b981', '#3b82f6', '#ec4899', '#f59e0b'],
-          disableForReducedMotion: true
-        });
-      }, 800);
-    }
-  }, [blocks.length, isFirstLoad]);
-
-  // Safety check for blocks array
-  const safeBlocks = Array.isArray(blocks) ? blocks : [];
+  const [blockHeights, setBlockHeights] = useState<{[key: string]: number}>({});
   
-  // Get the narrative theme for this content sequence
-  const narrativeTheme = getNarrativeTheme(safeBlocks);
+  const updateBlockHeight = (blockId: string, height: number) => {
+    setBlockHeights(prev => ({
+      ...prev,
+      [blockId]: height
+    }));
+  };
+
+  // Filter for generating blocks
+  const generatingBlocks = blocks.filter(block => 
+    block.id.startsWith('generating-')
+  );
   
-  // Display error if there is one
-  if (generationError) {
-    return (
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="mb-6 p-4 rounded-lg bg-red-500/20 border border-red-500/40"
-      >
-        <div className="flex flex-col sm:flex-row items-center gap-3 text-white">
-          <AlertCircle className="w-6 h-6 flex-shrink-0" />
-          <p className="text-center sm:text-left flex-grow">{generationError}</p>
-          {onRefresh && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={onRefresh}
-              className="border-white/20 hover:bg-white/10 flex items-center"
-            >
-              <RefreshCw className="mr-2 h-4 w-4" />
-              <span>Try Again</span>
-            </Button>
-          )}
-        </div>
-      </motion.div>
-    );
-  }
-  
-  if (safeBlocks.length === 0 && !searchQuery) {
-    return (
-      <div className="text-center py-8 sm:py-12 text-white/80">
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ 
-            type: "spring", 
-            stiffness: 260, 
-            damping: 20, 
-            delay: 0.2 
-          }}
-          className="relative mx-auto w-16 h-16 sm:w-24 sm:h-24 mb-4"
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-vibrant-yellow rounded-full opacity-20 blur-xl animate-pulse-gentle"></div>
-          <div className="relative flex items-center justify-center w-full h-full">
-            <Lightbulb className="h-10 w-10 sm:h-16 sm:w-16 text-wonderwhiz-vibrant-yellow animate-float-gentle" />
-          </div>
-        </motion.div>
-        <motion.h3 
-          className="text-xl sm:text-2xl font-semibold mb-2 sm:mb-3 font-nunito bg-clip-text text-transparent bg-gradient-to-r from-wonderwhiz-vibrant-yellow to-wonderwhiz-bright-pink"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          Creating your learning journey...
-        </motion.h3>
-        <motion.p 
-          className="text-white/70 max-w-md mx-auto font-inter text-sm sm:text-base"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-        >
-          Your personalized discovery is being crafted just for you. Get ready to expand your knowledge!
-        </motion.p>
-      </div>
-    );
-  }
-
-  if (safeBlocks.length === 0 && searchQuery) {
-    return (
-      <div className="text-center py-8 sm:py-12 text-white/80">
-        <motion.div 
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ 
-            type: "spring", 
-            stiffness: 260, 
-            damping: 20 
-          }}
-          className="relative mx-auto w-16 h-16 sm:w-24 sm:h-24 mb-4"
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-wonderwhiz-cyan to-wonderwhiz-blue-accent rounded-full opacity-20 blur-xl"></div>
-          <div className="relative flex items-center justify-center w-full h-full">
-            <Lightbulb className="h-10 w-10 sm:h-16 sm:h-16 text-wonderwhiz-cyan" />
-          </div>
-        </motion.div>
-        <motion.h3 
-          className="text-xl sm:text-2xl font-semibold mb-2 sm:mb-3 font-nunito"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          No results found
-        </motion.h3>
-        <motion.p 
-          className="text-white/70 max-w-md mx-auto font-inter text-sm sm:text-base"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-        >
-          Try a different search term or clear the search to see all content.
-        </motion.p>
-      </div>
-    );
-  }
-
-  // Organize blocks for narrative flow - keeping our cognitive progression
-  const organizeBlocksForNarrative = (blocks: ContentBlockType[]) => {
-    // We'll keep the existing organization but enhance it with narrative sequencing
-    
-    // First, ensure the first block is a fact/funFact that directly answers the question
-    const firstFactIndex = blocks.findIndex(block => block.type === 'fact' || block.type === 'funFact');
-    if (firstFactIndex > 0) {
-      const firstFact = blocks[firstFactIndex];
-      blocks.splice(firstFactIndex, 1);
-      blocks.unshift(firstFact);
-    }
-    
-    // Ensure narrative flow: introduction → exploration → reflection
-    const sortedBlocks = [...blocks];
-    
-    // Make sure mindfulness/reflection blocks appear near the end
-    const mindfulnessIndex = sortedBlocks.findIndex(block => block.type === 'mindfulness');
-    if (mindfulnessIndex > -1 && mindfulnessIndex < sortedBlocks.length - 3) {
-      const mindfulnessBlock = sortedBlocks[mindfulnessIndex];
-      sortedBlocks.splice(mindfulnessIndex, 1);
-      
-      // Place near the end but not the very last
-      const insertPosition = Math.max(sortedBlocks.length - 2, 2);
-      sortedBlocks.splice(insertPosition, 0, mindfulnessBlock);
-    }
-    
-    // Make sure creative blocks appear in the middle for application
-    const creativeIndices = sortedBlocks.reduce((indices, block, index) => {
-      if (block.type === 'creative') indices.push(index);
-      return indices;
-    }, [] as number[]);
-    
-    if (creativeIndices.length > 1) {
-      // Keep only one creative block in the first half, move others to middle
-      const firstCreative = sortedBlocks[creativeIndices[0]];
-      const otherCreatives = creativeIndices.slice(1).map(idx => sortedBlocks[idx]);
-      
-      // Remove all but first creative
-      for (let i = creativeIndices.length - 1; i > 0; i--) {
-        sortedBlocks.splice(creativeIndices[i], 1);
-      }
-      
-      // Place others in the middle
-      const middlePosition = Math.floor(sortedBlocks.length / 2);
-      otherCreatives.forEach((block, idx) => {
-        sortedBlocks.splice(middlePosition + idx, 0, block);
-      });
-    }
-    
-    return sortedBlocks;
-  };
-  
-  const narrativeBlocks = organizeBlocksForNarrative(safeBlocks);
-
-  const container = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.3
-      }
-    }
-  };
-
-  const item = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 }
-  };
-
-  // Get appropriate icon for block type with better visual cues
-  const getBlockIcon = (type: string) => {
-    switch(type) {
-      case 'fact': 
-      case 'funFact': return <Lightbulb className="w-4 h-4 text-wonderwhiz-vibrant-yellow" />;
-      case 'quiz': return <Brain className="w-4 h-4 text-emerald-400" />;
-      case 'activity': return <Zap className="w-4 h-4 text-wonderwhiz-cyan" />;
-      case 'creative': return <Sparkles className="w-4 h-4 text-wonderwhiz-bright-pink" />;
-      case 'mindfulness': return <Flame className="w-4 h-4 text-wonderwhiz-gold" />;
-      default: return <BookOpen className="w-4 h-4 text-wonderwhiz-gold" />;
-    }
-  };
-
-  // Add meta-learning badge to help children understand their learning path
-  const getBlockTypeName = (type: string) => {
-    switch(type) {
-      case 'fact': 
-      case 'funFact': return "Amazing Discovery";
-      case 'quiz': return "Brain Challenge";
-      case 'activity': return "Hands-on Learning";
-      case 'creative': return "Creative Thinking";
-      case 'mindfulness': return "Mindful Reflection";
-      case 'task': return "Learning Task";
-      default: return "Knowledge Block";
-    }
-  };
+  // Filter for real content blocks
+  const contentBlocks = blocks.filter(block => 
+    !block.id.startsWith('generating-')
+  );
 
   return (
-    <motion.div 
-      className="space-y-4 sm:space-y-5 px-2 sm:px-0"
-      variants={container}
-      initial={animateBlocks ? "hidden" : false}
-      animate={animateBlocks ? "show" : false}
-    >
-      {/* Narrative progress indicator */}
-      {narrativeBlocks.length > 2 && (
-        <NarrativeProgress 
-          totalBlocks={narrativeBlocks.length} 
-          theme={narrativeTheme} 
-        />
-      )}
-      
-      {narrativeBlocks.map((block, index) => (
-        <motion.div
-          key={block.id}
-          className="relative group"
-          variants={item}
-          transition={{
-            duration: 0.5,
-            type: "spring",
-            stiffness: 100
-          }}
-        >
-          {/* Learning type indicator for meta-learning */}
-          {!isMobile && (
-            <AnimatePresence>
-              <motion.div
-                className="absolute -left-6 sm:-left-10 top-1/2 transform -translate-y-1/2 hidden md:flex flex-col items-center"
-                initial={{ opacity: 0, x: -10 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                transition={{ duration: 0.3 }}
+    <div className="space-y-6">
+      {generationError && (
+        <Alert variant="destructive" className="mb-6 bg-destructive/10 border-destructive/30 text-destructive">
+          <AlertTitle>Content Generation Error</AlertTitle>
+          <AlertDescription className="flex flex-col gap-4">
+            <p>{generationError}</p>
+            {onRefresh && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={onRefresh}
+                className="w-fit"
               >
-                {getBlockIcon(block.type)}
-                <span className="text-white/50 text-[10px] mt-1 writing-mode-vertical whitespace-nowrap transform -rotate-90 origin-center translate-y-6">
-                  {getBlockTypeName(block.type)}
-                </span>
-              </motion.div>
-            </AnimatePresence>
-          )}
-          
-          <ContentBlock
-            block={block}
-            onToggleLike={() => handleToggleLike(block.id)}
-            onToggleBookmark={() => handleToggleBookmark(block.id)}
-            onReply={(message) => handleReply(block.id, message)}
-            onQuizCorrect={() => handleQuizCorrect(block.id)}
-            onNewsRead={() => handleNewsRead(block.id)}
-            onCreativeUpload={() => handleCreativeUpload(block.id)}
-            onTaskComplete={handleTaskComplete}
-            onActivityComplete={handleActivityComplete}
-            onMindfulnessComplete={handleMindfulnessComplete}
-            onRabbitHoleFollow={handleRabbitHoleClick}
-            isFirstBlock={index === 0}
-            colorVariant={index % 5}
-            userId={profileId}
-            childProfileId={profileId}
-            totalBlocks={narrativeBlocks.length}
-            sequencePosition={index}
-            previousBlock={index > 0 ? narrativeBlocks[index - 1] : undefined}
-            nextBlock={index < narrativeBlocks.length - 1 ? narrativeBlocks[index + 1] : undefined}
-          />
-        </motion.div>
-      ))}
-
-      {hasMoreBlocks && (
-        <CurioBlockListLoadMore 
-          loadTriggerRef={loadTriggerRef} 
-          loadingMore={loadingMoreBlocks} 
-        />
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Try Again
+              </Button>
+            )}
+          </AlertDescription>
+        </Alert>
       )}
-    </motion.div>
+
+      {generatingBlocks.length > 0 && (
+        <div className="space-y-6 mb-8">
+          {generatingBlocks.map((block, index) => (
+            <AnimatePresence key={block.id} mode="wait">
+              <GeneratingBlock 
+                isFirstBlock={index === 0} 
+                animate={animateBlocks}
+              />
+            </AnimatePresence>
+          ))}
+        </div>
+      )}
+
+      {contentBlocks.map((block, index) => {
+        const delay = Math.min(index * 0.1, 0.5);
+        const blockHeight = blockHeights[block.id] || 'auto';
+        
+        let BlockComponent;
+        
+        switch(block.type) {
+          case 'fact':
+            BlockComponent = (
+              <FactBlock 
+                block={block} 
+                onToggleLike={handleToggleLike} 
+                onToggleBookmark={handleToggleBookmark}
+                onReply={handleReply}
+                onTaskComplete={handleTaskComplete}
+                onRabbitHoleClick={handleRabbitHoleClick}
+                updateHeight={(height) => updateBlockHeight(block.id, height)}
+              />
+            );
+            break;
+          case 'funFact':
+            BlockComponent = (
+              <FunFactBlock 
+                block={block} 
+                onToggleLike={handleToggleLike} 
+                onToggleBookmark={handleToggleBookmark}
+                onReply={handleReply}
+                onTaskComplete={handleTaskComplete}
+                onRabbitHoleClick={handleRabbitHoleClick}
+                updateHeight={(height) => updateBlockHeight(block.id, height)}
+              />
+            );
+            break;
+          case 'quiz':
+            BlockComponent = (
+              <QuizBlock 
+                block={block} 
+                onToggleLike={handleToggleLike} 
+                onToggleBookmark={handleToggleBookmark}
+                onReply={handleReply}
+                onCorrectAnswer={handleQuizCorrect}
+                onRabbitHoleClick={handleRabbitHoleClick}
+                updateHeight={(height) => updateBlockHeight(block.id, height)}
+              />
+            );
+            break;
+          case 'creative':
+            BlockComponent = (
+              <CreativeBlock 
+                block={block} 
+                onToggleLike={handleToggleLike} 
+                onToggleBookmark={handleToggleBookmark}
+                onReply={handleReply}
+                onUpload={handleCreativeUpload ? 
+                  (content) => handleCreativeUpload(block.id, content) : 
+                  undefined
+                }
+                onRabbitHoleClick={handleRabbitHoleClick}
+                updateHeight={(height) => updateBlockHeight(block.id, height)}
+              />
+            );
+            break;
+          case 'activity':
+            BlockComponent = (
+              <ActivityBlock 
+                block={block} 
+                onToggleLike={handleToggleLike} 
+                onToggleBookmark={handleToggleBookmark}
+                onReply={handleReply}
+                onComplete={handleActivityComplete ? 
+                  () => handleActivityComplete(block.id) : 
+                  undefined
+                }
+                onRabbitHoleClick={handleRabbitHoleClick}
+                updateHeight={(height) => updateBlockHeight(block.id, height)}
+              />
+            );
+            break;
+          case 'mindfulness':
+            BlockComponent = (
+              <MindfulnessBlock 
+                block={block} 
+                onToggleLike={handleToggleLike} 
+                onToggleBookmark={handleToggleBookmark}
+                onReply={handleReply}
+                onComplete={handleMindfulnessComplete ? 
+                  () => handleMindfulnessComplete(block.id) : 
+                  undefined
+                }
+                onRabbitHoleClick={handleRabbitHoleClick}
+                updateHeight={(height) => updateBlockHeight(block.id, height)}
+              />
+            );
+            break;
+          case 'news':
+            BlockComponent = (
+              <NewsBlock 
+                block={block} 
+                onToggleLike={handleToggleLike} 
+                onToggleBookmark={handleToggleBookmark}
+                onReply={handleReply}
+                onRead={handleNewsRead ? 
+                  () => handleNewsRead(block.id) : 
+                  undefined
+                }
+                onRabbitHoleClick={handleRabbitHoleClick}
+                updateHeight={(height) => updateBlockHeight(block.id, height)}
+              />
+            );
+            break;
+          case 'flashcard':
+            BlockComponent = (
+              <FlashcardBlock 
+                block={block} 
+                onToggleLike={handleToggleLike} 
+                onToggleBookmark={handleToggleBookmark}
+                onReply={handleReply}
+                onTaskComplete={handleTaskComplete}
+                onRabbitHoleClick={handleRabbitHoleClick}
+                updateHeight={(height) => updateBlockHeight(block.id, height)}
+              />
+            );
+            break;
+          default:
+            BlockComponent = (
+              <ErrorBlock 
+                message={`Unknown block type: ${block.type}`} 
+                updateHeight={(height) => updateBlockHeight(block.id, height)}
+              />
+            );
+        }
+        
+        return (
+          <motion.div
+            key={block.id}
+            initial={animateBlocks ? { opacity: 0, y: 20 } : false}
+            animate={animateBlocks ? { opacity: 1, y: 0 } : false}
+            transition={{ duration: 0.4, delay }}
+            style={{ height: blockHeight }}
+            className="transition-all duration-300"
+          >
+            {BlockComponent}
+          </motion.div>
+        );
+      })}
+      
+      {loadTriggerRef && (
+        <div ref={loadTriggerRef} className="h-10" />
+      )}
+    </div>
   );
 };
 
