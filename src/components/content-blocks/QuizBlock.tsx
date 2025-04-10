@@ -22,7 +22,7 @@ export interface QuizBlockProps {
 
 const QuizBlock: React.FC<QuizBlockProps> = ({
   question,
-  options,
+  options = [], // Provide default empty array
   correctIndex,
   explanation,
   specialistId,
@@ -92,32 +92,39 @@ const QuizBlock: React.FC<QuizBlockProps> = ({
       />
       
       <div className="p-4">
-        <p className="text-white/90 text-lg font-medium mb-4">{question}</p>
+        <p className="text-white/90 text-lg font-medium mb-4">{question || "Quiz Question"}</p>
         
         <div className="space-y-3 mb-4">
-          {options.map((option, index) => (
-            <motion.button
-              key={index}
-              whileHover={selectedIndex === null ? { scale: 1.01 } : {}}
-              whileTap={selectedIndex === null ? { scale: 0.99 } : {}}
-              className={getOptionClassName(index)}
-              onClick={() => handleOptionSelect(index)}
-              disabled={selectedIndex !== null}
-            >
-              {selectedIndex !== null && (
-                <span className="mr-2">
-                  {index === correctIndex ? (
-                    <CheckCircle className="h-5 w-5 text-green-400" />
-                  ) : index === selectedIndex ? (
-                    <XCircle className="h-5 w-5 text-red-400" />
-                  ) : (
-                    <div className="w-5" />
-                  )}
-                </span>
-              )}
-              <span>{option}</span>
-            </motion.button>
-          ))}
+          {/* Add null check for options before mapping */}
+          {Array.isArray(options) && options.length > 0 ? (
+            options.map((option, index) => (
+              <motion.button
+                key={index}
+                whileHover={selectedIndex === null ? { scale: 1.01 } : {}}
+                whileTap={selectedIndex === null ? { scale: 0.99 } : {}}
+                className={getOptionClassName(index)}
+                onClick={() => handleOptionSelect(index)}
+                disabled={selectedIndex !== null}
+              >
+                {selectedIndex !== null && (
+                  <span className="mr-2">
+                    {index === correctIndex ? (
+                      <CheckCircle className="h-5 w-5 text-green-400" />
+                    ) : index === selectedIndex ? (
+                      <XCircle className="h-5 w-5 text-red-400" />
+                    ) : (
+                      <div className="w-5" />
+                    )}
+                  </span>
+                )}
+                <span>{option}</span>
+              </motion.button>
+            ))
+          ) : (
+            <div className="p-3 bg-white/5 rounded-lg text-white/60">
+              No options available for this quiz
+            </div>
+          )}
         </div>
         
         {showExplanation && explanation && (

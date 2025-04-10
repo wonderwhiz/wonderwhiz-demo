@@ -12,8 +12,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import RabbitHoleSuggestions from '@/components/content-blocks/RabbitHoleSuggestions';
 import CurioPageHeader from '@/components/curio/CurioPageHeader';
-import CurioPageSearch from '@/components/curio/CurioPageSearch';
 import CurioPageInsights from '@/components/curio/CurioPageInsights';
+import CurioSearchBar from '@/components/curio/CurioSearchBar';
 import CurioLoadingState from '@/components/curio/CurioLoadingState';
 import CurioEmptyState from '@/components/curio/CurioEmptyState';
 import CurioErrorState from '@/components/curio/CurioErrorState';
@@ -25,9 +25,6 @@ import LearningCertificate from '@/components/curio/LearningCertificate';
 import ChapterHeader from '@/components/curio/ChapterHeader';
 import IllustratedContentBlock from '@/components/content-blocks/IllustratedContentBlock';
 import { Chapter } from '@/types/Chapter';
-import { ArrowLeft, Search } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 
 const DEFAULT_CHAPTERS: Chapter[] = [
   {
@@ -509,18 +506,6 @@ const CurioPage: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="fixed top-4 left-4 z-50">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleBackToDashboard}
-          className="bg-white/10 hover:bg-white/20 text-white border-white/20 flex items-center gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          <span className="hidden sm:inline">Back to Dashboard</span>
-        </Button>
-      </div>
-
       <CurioPageHeader 
         curioTitle={curioTitle} 
         handleBackToDashboard={handleBackToDashboard}
@@ -530,27 +515,14 @@ const CurioPage: React.FC = () => {
         showInsights={showInsights}
       />
 
-      <div className="sticky top-0 z-40 bg-gradient-to-r from-indigo-950/95 to-purple-950/95 backdrop-blur-sm py-3 px-4 border-b border-white/10">
-        <div className="max-w-3xl mx-auto">
-          <form onSubmit={handleSearch} className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/50" />
-            <Input
-              type="text"
-              placeholder="Search within this exploration..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4 py-2 bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30 focus:ring-1 focus:ring-purple-500/50"
-            />
-          </form>
-        </div>
-      </div>
-
       <AnimatePresence>
         {showInsights && (
           <CurioPageInsights
             difficulty={difficulty}
             blockCount={blockCount}
             learningSummary={learningSummary}
+            showInsights={showInsights}
+            handleToggleInsights={handleToggleInsights}
           />
         )}
       </AnimatePresence>
@@ -638,7 +610,6 @@ const CurioPage: React.FC = () => {
                   animateBlocks={animateBlocks}
                   hasMoreBlocks={false}
                   loadingMoreBlocks={false}
-                  loadTriggerRef={loadTriggerRef}
                   searchQuery=""
                   profileId={childId}
                   isFirstLoad={isFirstLoad}
