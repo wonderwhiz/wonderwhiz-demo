@@ -12,6 +12,7 @@ interface QuickAnswerProps {
   onToggleExpand: () => void;
   onStartJourney: () => void;
   childId?: string;
+  answer?: string; // Make this optional so we can provide it directly or generate it
 }
 
 const QuickAnswer: React.FC<QuickAnswerProps> = ({
@@ -19,14 +20,22 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
   isExpanded,
   onToggleExpand,
   onStartJourney,
-  childId
+  childId,
+  answer: providedAnswer
 }) => {
-  const [answer, setAnswer] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(true);
+  const [answer, setAnswer] = useState<string>(providedAnswer || '');
+  const [isLoading, setIsLoading] = useState(!providedAnswer);
   const { generateQuickAnswer } = useGroqGeneration();
   const { childProfile } = useChildProfile(childId);
 
   useEffect(() => {
+    // If answer is already provided, don't generate a new one
+    if (providedAnswer) {
+      setAnswer(providedAnswer);
+      setIsLoading(false);
+      return;
+    }
+    
     async function loadQuickAnswer() {
       if (!question) return;
       
@@ -44,7 +53,7 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
     }
     
     loadQuickAnswer();
-  }, [question, childProfile]);
+  }, [question, childProfile, providedAnswer, generateQuickAnswer]);
 
   return (
     <motion.div

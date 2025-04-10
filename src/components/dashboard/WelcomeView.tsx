@@ -17,6 +17,8 @@ interface WelcomeViewProps {
   handleSubmitQuery: () => void;
   isGenerating: boolean;
   onCurioSuggestionClick: (suggestion: string) => void;
+  onRefreshSuggestions?: () => void; // Make this optional
+  isLoadingSuggestions?: boolean; // Make this optional
 }
 
 const WelcomeView: React.FC<WelcomeViewProps> = ({
@@ -28,7 +30,9 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
   setQuery,
   handleSubmitQuery,
   isGenerating,
-  onCurioSuggestionClick
+  onCurioSuggestionClick,
+  onRefreshSuggestions,
+  isLoadingSuggestions = false, // Provide default value
 }) => {
   const [pendingTasksCount, setPendingTasksCount] = useState(0);
   
@@ -140,9 +144,16 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
               variant="ghost"
               size="sm"
               className="text-white/70 hover:text-white hover:bg-white/10"
-              onClick={() => onCurioSuggestionClick(curioSuggestions[Math.floor(Math.random() * curioSuggestions.length)])}
+              onClick={() => {
+                if (onRefreshSuggestions) {
+                  onRefreshSuggestions();
+                } else {
+                  onCurioSuggestionClick(curioSuggestions[Math.floor(Math.random() * curioSuggestions.length)]);
+                }
+              }}
+              disabled={isLoadingSuggestions}
             >
-              <RefreshCw className="h-4 w-4 mr-2" />
+              <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingSuggestions ? 'animate-spin' : ''}`} />
               Surprise Me
             </Button>
           </div>
