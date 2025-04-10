@@ -131,22 +131,22 @@ const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
         className="mb-6 flex flex-col md:flex-row md:items-center justify-between"
       >
         <div>
-          <h1 className="text-3xl font-bold text-white">{getGreeting()}</h1>
-          <p className="text-white/70 mt-1">What will you discover today?</p>
+          <h1 className="text-3xl font-nunito font-bold text-white">{getGreeting()}</h1>
+          <p className="text-white/70 mt-1 font-inter">What will you discover today?</p>
         </div>
         
         <div className="flex items-center space-x-4 mt-4 md:mt-0">
-          <div className="flex items-center space-x-1.5 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/10">
-            <Sparkles className="h-4 w-4 text-amber-400" />
-            <span className="text-white font-medium text-sm">
+          <div className="flex items-center space-x-1.5 bg-gradient-to-r from-wonderwhiz-deep-purple/30 to-wonderwhiz-bright-pink/20 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/10">
+            <Sparkles className="h-4 w-4 text-wonderwhiz-vibrant-yellow" />
+            <span className="text-white font-nunito font-medium text-sm">
               {childProfile?.sparks_balance || 0}
             </span>
           </div>
           
           {childProfile?.streak_days > 0 && (
-            <div className="flex items-center bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/10">
-              <Badge variant="outline" className="bg-transparent border-none text-white/90 flex items-center gap-1.5 p-0">
-                <Rocket className="h-4 w-4 text-amber-400" />
+            <div className="flex items-center bg-gradient-to-r from-wonderwhiz-deep-purple/30 to-wonderwhiz-light-purple/20 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/10">
+              <Badge variant="outline" className="bg-transparent border-none text-white/90 flex items-center gap-1.5 p-0 font-nunito">
+                <Rocket className="h-4 w-4 text-wonderwhiz-vibrant-yellow" />
                 <span>{childProfile.streak_days} day streak</span>
               </Badge>
             </div>
@@ -170,14 +170,20 @@ const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
       {/* Main content area with tabs */}
       <motion.div variants={sectionVariants}>
         <Tabs defaultValue="explore" value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="grid grid-cols-2 mb-6 w-full max-w-md mx-auto bg-indigo-950/50 backdrop-blur-sm border border-indigo-500/20">
-            <TabsTrigger value="explore" className="data-[state=active]:bg-indigo-600/70 relative">
+          <TabsList className="grid grid-cols-2 mb-6 w-full max-w-md mx-auto bg-wonderwhiz-deep-purple/50 backdrop-blur-sm border border-white/10">
+            <TabsTrigger 
+              value="explore" 
+              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-wonderwhiz-bright-pink/60 data-[state=active]:to-wonderwhiz-bright-pink/40 relative font-nunito"
+            >
               Explore & Learn
             </TabsTrigger>
-            <TabsTrigger value="tasks" className="data-[state=active]:bg-indigo-600/70 relative">
+            <TabsTrigger 
+              value="tasks" 
+              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-wonderwhiz-vibrant-yellow/60 data-[state=active]:to-wonderwhiz-vibrant-yellow/40 relative font-nunito"
+            >
               <span>Tasks & Challenges</span>
               {(pendingTasksCount > 0 || newChallengesCount > 0) && (
-                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] text-white">
+                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-wonderwhiz-bright-pink text-[10px] text-white font-nunito font-medium animate-pulse">
                   {pendingTasksCount + newChallengesCount}
                 </span>
               )}
@@ -185,8 +191,8 @@ const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
           </TabsList>
           
           <TabsContent value="explore" className="mt-0">
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-1">
-              {/* Knowledge journey - spans full width for cleaner design */}
+            <div className="grid grid-cols-1 gap-6">
+              {/* Knowledge journey - full width for cleaner design */}
               <KnowledgeJourney
                 childId={childId}
                 childProfile={childProfile}
