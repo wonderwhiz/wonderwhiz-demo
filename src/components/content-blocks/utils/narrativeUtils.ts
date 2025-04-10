@@ -59,8 +59,8 @@ export const getPersonalizedMessage = (childName: string, interest: string): str
   return messages[Math.floor(Math.random() * messages.length)];
 };
 
-// New functions to handle sequence position and wonder prompts
-export const getSequencePosition = (position: number, total: number): string => {
+// Updated to use a specific type for the return value
+export const getSequencePosition = (position: number, total: number): 'beginning' | 'middle' | 'end' => {
   if (position === 0 || position === 1) {
     return 'beginning';
   } else if (position >= total - 1) {
@@ -72,7 +72,7 @@ export const getSequencePosition = (position: number, total: number): string => 
 
 export const shouldShowWonderPrompt = (
   blockType: string, 
-  narrativePosition: string, 
+  narrativePosition: 'beginning' | 'middle' | 'end', 
   specialistId: string, 
   sequencePosition: number
 ): boolean => {

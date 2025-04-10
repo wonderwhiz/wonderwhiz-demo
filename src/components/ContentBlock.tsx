@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
@@ -8,7 +7,6 @@ import { supabase } from '@/integrations/supabase/client';
 import BlockReplyForm from './BlockReplyForm';
 import { getBackgroundColor, getBorderColor, getTextColor, getTextSize, getContextualImageStyle } from './BlockStyleUtils';
 
-// Block content components
 import FactBlock from './content-blocks/FactBlock';
 import QuizBlock from './content-blocks/QuizBlock';
 import FlashcardBlock from './content-blocks/FlashcardBlock';
@@ -19,7 +17,6 @@ import NewsBlock from './content-blocks/NewsBlock';
 import ActivityBlock from './content-blocks/ActivityBlock';
 import MindfulnessBlock from './content-blocks/MindfulnessBlock';
 
-// Refactored components
 import BlockHeader from './content-blocks/BlockHeader';
 import BlockInteractions from './content-blocks/BlockInteractions';
 import BlockReplies from './content-blocks/BlockReplies';
@@ -28,12 +25,10 @@ import WonderPrompt from './content-blocks/WonderPrompt';
 import NarrativeGuide from './content-blocks/NarrativeGuide';
 import ConnectionsPanel from './content-blocks/ConnectionsPanel';
 
-// Utils
 import { getSpecialistStyle, getBlockTitle } from './content-blocks/utils/specialistUtils';
 import { getContextualImage, checkImageCache } from './content-blocks/utils/imageUtils';
 import { getSequencePosition, shouldShowWonderPrompt } from './content-blocks/utils/narrativeUtils';
 
-// Import all our interfaces
 import {
   FlashcardBlockProps,
   CreativeBlockProps,
@@ -126,7 +121,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   const specialistStyle = getSpecialistStyle(block.specialist_id);
   const blockTitle = getBlockTitle(block);
   
-  const narrativePosition = getSequencePosition(sequencePosition, totalBlocks);
+  const narrativePosition: 'beginning' | 'middle' | 'end' = getSequencePosition(sequencePosition, totalBlocks);
   
   const showWonderPromptHere = shouldShowWonderPrompt(
     block.type, 
