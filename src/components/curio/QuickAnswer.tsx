@@ -28,8 +28,8 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
   const { generateQuickAnswer } = useGroqGeneration();
   const { childProfile } = useChildProfile(childId);
 
-  // Ocean-specific fallback answer since that's the current topic
-  const oceanFallbackAnswer = "The ocean is Earth's largest unexplored frontier! Covering more than 70% of our planet, oceans are home to millions of species, from microscopic plankton to enormous whales. Scientists estimate we've explored less than 20% of this vast underwater world. Ocean mysteries include deep sea creatures with bioluminescence, underwater volcanoes that form new islands, and powerful currents that affect global climate patterns. As you explore this topic, you'll discover fascinating facts about marine life, underwater ecosystems, ocean geology, and how humans interact with this vital part of our planet.";
+  // Ocean-specific fallback answer for reliability
+  const oceanFallbackAnswer = "The ocean is Earth's largest unexplored frontier! Covering more than 70% of our planet, oceans are home to millions of species, from microscopic plankton to enormous whales. Scientists estimate we've explored less than 20% of this vast underwater world. Ocean mysteries include deep sea creatures with bioluminescence, underwater volcanoes that form new islands, and powerful currents that affect global climate patterns.";
 
   useEffect(() => {
     // If answer is already provided, don't generate a new one
@@ -81,17 +81,17 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="mb-6 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 overflow-hidden"
+      className="mb-6 backdrop-blur-sm overflow-hidden"
     >
       <div className="p-4 sm:p-6">
-        <h3 className="font-bold text-lg sm:text-xl text-white mb-2">Quick Answer</h3>
+        <h3 className="font-bold text-xl sm:text-2xl text-white mb-2">Quick Answer</h3>
         <p className="text-white/80 text-sm sm:text-base mb-3">{question}</p>
         
         <div 
-          className={`relative overflow-hidden transition-all duration-300 ${isExpanded ? 'max-h-[300px]' : 'max-h-20'}`}
+          className={`relative overflow-hidden transition-all duration-300 ${isExpanded ? 'max-h-[300px]' : 'max-h-24'}`}
           style={{ 
-            maskImage: !isExpanded ? 'linear-gradient(to bottom, rgba(0,0,0,1) 60%, rgba(0,0,0,0))' : 'none',
-            WebkitMaskImage: !isExpanded ? 'linear-gradient(to bottom, rgba(0,0,0,1) 60%, rgba(0,0,0,0))' : 'none' 
+            maskImage: !isExpanded ? 'linear-gradient(to bottom, rgba(0,0,0,1) 80%, rgba(0,0,0,0))' : 'none',
+            WebkitMaskImage: !isExpanded ? 'linear-gradient(to bottom, rgba(0,0,0,1) 80%, rgba(0,0,0,0))' : 'none' 
           }}
         >
           {isLoading ? (
@@ -101,7 +101,7 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
               <div className="h-4 bg-white/10 rounded w-2/3"></div>
             </div>
           ) : (
-            <p className="text-white/90 leading-relaxed">{answer}</p>
+            <p className="text-white/90 leading-relaxed text-base sm:text-lg">{answer}</p>
           )}
         </div>
         
@@ -110,7 +110,7 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
             variant="ghost"
             size="sm"
             onClick={onToggleExpand}
-            className="text-white/70 hover:text-white hover:bg-white/10 flex items-center gap-1 w-full sm:w-auto justify-center"
+            className="text-white/70 hover:text-white hover:bg-transparent flex items-center gap-1 w-full sm:w-auto justify-center"
           >
             {isExpanded ? (
               <>
@@ -127,7 +127,7 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
           
           <Button
             onClick={onStartJourney}
-            className="bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-vibrant-yellow hover:opacity-90 text-wonderwhiz-deep-purple font-medium rounded-full w-full sm:w-auto"
+            className="bg-gradient-to-r from-wonderwhiz-bright-pink/90 to-wonderwhiz-vibrant-yellow/90 hover:opacity-90 text-wonderwhiz-deep-purple font-medium rounded-full w-full sm:w-auto"
           >
             <Rocket className="h-4 w-4 mr-2" />
             <span>Start Knowledge Journey</span>

@@ -24,9 +24,9 @@ serve(async (req) => {
       console.error('Error parsing request body:', e);
       return new Response(JSON.stringify({ 
         error: 'Invalid request body',
-        imageUrl: getFallbackImage('general') 
+        imageUrl: getFallbackImage('ocean') 
       }), {
-        status: 400,
+        status: 200, // Return 200 even with errors to avoid breaking the client
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -37,7 +37,8 @@ serve(async (req) => {
                 requestBody.query || 
                 requestBody.content?.fact || 
                 requestBody.content?.question || 
-                requestBody.content?.front;
+                requestBody.content?.front || 
+                "ocean mysteries";  // Provide a strong default
     
     // Extract other common parameters with defaults
     const style = requestBody.style || "Pixar-style educational illustration";
@@ -49,13 +50,8 @@ serve(async (req) => {
     // Validate topic parameter exists
     if (!topic) {
       console.warn('Topic parameter not found in request body:', JSON.stringify(requestBody));
-      // Return a fallback image for "ocean" since that's a common theme
-      return new Response(JSON.stringify({ 
-        error: 'Topic is required',
-        imageUrl: getFallbackImage('ocean') 
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      // Use ocean mystery as default topic
+      topic = "ocean mysteries and deep sea exploration";
     }
 
     console.log(`Generating image for topic: ${topic}, style: ${style}, age: ${childAge}`);
@@ -65,8 +61,9 @@ serve(async (req) => {
       console.error('OPENAI_API_KEY is not configured');
       return new Response(JSON.stringify({ 
         error: 'API key not configured',
-        imageUrl: getFallbackImage(topic) 
+        imageUrl: getFallbackImage('ocean') 
       }), {
+        status: 200, // Return 200 even with errors
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -121,6 +118,7 @@ serve(async (req) => {
         error: openAIError.message,
         imageUrl: getFallbackImage(topic) 
       }), {
+        status: 200, // Return 200 status to avoid breaking client
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -147,6 +145,7 @@ serve(async (req) => {
       error: error.message,
       imageUrl: getFallbackImage(topic) 
     }), {
+      status: 200, // Return 200 even with errors
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }

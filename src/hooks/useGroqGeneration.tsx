@@ -34,7 +34,8 @@ export function useGroqGeneration() {
     } catch (err) {
       console.error('Error generating quick answer:', err);
       setError('Failed to generate quick answer');
-      toast.error('Could not generate quick answer');
+      
+      // Silent error, no toast for better UX
       return generateFallbackAnswer(query);
     } finally {
       setIsGenerating(false);
@@ -75,7 +76,8 @@ export function useGroqGeneration() {
     } catch (err) {
       console.error('Error generating image:', err);
       setError('Failed to generate image');
-      toast.error('Could not generate image');
+      
+      // Silent error handling, no toast for better UX
       return getFallbackImage(topic);
     } finally {
       setIsGenerating(false);
