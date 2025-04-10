@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useParams } from 'react-router-dom';
@@ -11,7 +12,7 @@ import { useCurioCreation } from '@/hooks/useCurioCreation';
 import { useCurioData } from '@/hooks/useCurioData';
 import { useBlockInteractionHandlers } from '@/hooks/useBlockInteractionHandlers';
 import WelcomeSection from '@/components/dashboard/WelcomeSection';
-import { ContentBlock as CurioContentBlock } from '@/types/curio';
+import { ContentBlock as CurioContentBlock, ContentBlockType } from '@/types/curio';
 
 interface Curio {
   id: string;
@@ -22,7 +23,7 @@ interface Curio {
 
 interface ContentBlock {
   id: string;
-  type: 'fact' | 'quiz' | 'flashcard' | 'creative' | 'task' | 'riddle' | 'funFact' | 'activity' | 'news' | 'mindfulness' | 'illustrated';
+  type: ContentBlockType;
   specialist_id: string;
   content: any;
   liked: boolean;
@@ -80,7 +81,7 @@ const DashboardContainer = () => {
 
   const contentBlocks: ContentBlock[] = curioBlocks.map((block: CurioContentBlock) => ({
     ...block,
-    type: block.type as ContentBlock['type'],
+    type: block.type as ContentBlockType,
   }));
 
   const {

@@ -23,6 +23,9 @@ export interface CreativeBlockProps extends BaseBlockProps {
   onCreativeUpload?: (fileUrl: string) => void;
   uploadFeedback?: string | null;
   curioId?: string;
+  onLike?: () => void;
+  onBookmark?: () => void;
+  onReply?: (message: string) => void;
 }
 
 export interface TaskBlockProps extends BaseBlockProps {
@@ -34,6 +37,9 @@ export interface TaskBlockProps extends BaseBlockProps {
     steps?: string[];
   };
   onTaskComplete?: () => void;
+  onLike?: () => void;
+  onBookmark?: () => void;
+  onReply?: (message: string) => void;
 }
 
 export interface RiddleBlockProps extends BaseBlockProps {
@@ -43,6 +49,9 @@ export interface RiddleBlockProps extends BaseBlockProps {
     question?: string;
     hint?: string;
   };
+  onLike?: () => void;
+  onBookmark?: () => void;
+  onReply?: (message: string) => void;
 }
 
 export interface NewsBlockProps extends BaseBlockProps {
@@ -55,6 +64,9 @@ export interface NewsBlockProps extends BaseBlockProps {
     imageUrl?: string;
   };
   onNewsRead?: () => void;
+  onLike?: () => void;
+  onBookmark?: () => void;
+  onReply?: (message: string) => void;
 }
 
 export interface ActivityBlockProps extends BaseBlockProps {
@@ -66,6 +78,9 @@ export interface ActivityBlockProps extends BaseBlockProps {
     materials?: string[];
   };
   onActivityComplete?: () => void;
+  onLike?: () => void;
+  onBookmark?: () => void;
+  onReply?: (message: string) => void;
 }
 
 export interface MindfulnessBlockProps extends BaseBlockProps {
@@ -77,6 +92,9 @@ export interface MindfulnessBlockProps extends BaseBlockProps {
     audioUrl?: string;
   };
   onMindfulnessComplete?: () => void;
+  onLike?: () => void;
+  onBookmark?: () => void;
+  onReply?: (message: string) => void;
 }
 
 export interface BlockInteractionsProps {

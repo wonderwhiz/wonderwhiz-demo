@@ -183,9 +183,10 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
             <ActivityBlock
               content={{
                 activity: block.content.title || "",
+                title: block.content.title,
                 instructions: block.content.description,
                 steps: block.content.steps || [],
-                materials: block.content.materials
+                materials: block.content.materials || []
               }}
               specialistId={block.specialist_id}
               onActivityComplete={() => handleActivityComplete(block.id)}

@@ -9,11 +9,11 @@ import QuickAnswer from '@/components/curio/QuickAnswer';
 import { TableOfContents } from '@/components/curio/TableOfContents';
 import ProgressVisualization from '@/components/curio/ProgressVisualization';
 import IllustratedContentBlock from '@/components/content-blocks/IllustratedContentBlock';
-import { ContentBlock as CurioContentBlock } from '@/types/curio';
+import { ContentBlock as CurioContentBlock, ContentBlockType } from '@/types/curio';
 
 interface ContentBlock {
   id: string;
-  type: 'fact' | 'quiz' | 'flashcard' | 'creative' | 'task' | 'riddle' | 'funFact' | 'activity' | 'news' | 'mindfulness' | 'illustrated';
+  type: ContentBlockType;
   specialist_id: string;
   content: any;
   liked: boolean;
