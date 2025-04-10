@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle, Star, Clock, Sparkles, Brain, Award, Zap, Lightbulb, BookOpen, Bell, ChevronDown } from 'lucide-react';
+import { CheckCircle, Star, Clock, Sparkles, Brain, Award, Zap, Lightbulb, BookOpen, Bell, ChevronDown, Rocket } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -35,12 +34,10 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
   const [showAllCompleted, setShowAllCompleted] = useState(false);
   const [completingTaskId, setCompletingTaskId] = useState<string | null>(null);
   
-  // Fetch parent-assigned tasks
   useEffect(() => {
     const fetchParentAssignedTasks = async () => {
       setIsLoadingTasks(true);
       try {
-        // Fetch pending tasks
         const { data: pendingTasks, error: pendingError } = await supabase
           .from('child_tasks')
           .select('*, tasks:task_id(title, description, sparks_reward)')
@@ -50,7 +47,6 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
           
         if (pendingError) throw pendingError;
         
-        // Fetch completed tasks
         const { data: completedTasks, error: completedError } = await supabase
           .from('child_tasks')
           .select('*, tasks:task_id(title, description, sparks_reward)')
@@ -64,11 +60,9 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
         setParentTasks(pendingTasks || []);
         setCompletedParentTasks(completedTasks || []);
         
-        // Update notification status and count
         const hasNew = (pendingTasks && pendingTasks.length > 0);
         setHasNewNotifications(hasNew);
         
-        // Send count to parent component if callback provided
         if (onPendingTasksCount) {
           onPendingTasksCount(pendingTasks ? pendingTasks.length : 0);
         }
@@ -82,7 +76,6 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
     
     fetchParentAssignedTasks();
     
-    // Set up real-time subscription to task changes
     const tasksSubscription = supabase
       .channel('child-tasks-changes')
       .on('postgres_changes', 
@@ -104,20 +97,15 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
     };
   }, [childId, onPendingTasksCount]);
   
-  // Calculate daily progress based on completed tasks
   useEffect(() => {
-    // This would normally come from the backend
-    // For now, simulate based on time of day
     const hour = new Date().getHours();
     const simulatedProgress = Math.min(Math.max(hour - 6, 0) * 10, 100);
     setDailyProgress(simulatedProgress);
   }, []);
   
-  // Generate intelligent tasks based on learning history and interests
   const generateTasks = () => {
     const tasks = [];
     
-    // Basic daily tasks
     tasks.push({
       id: 'daily-quiz',
       title: 'Complete Today\'s Wonder Quiz',
@@ -138,7 +126,6 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
       priority: 'high',
     });
     
-    // Create task based on strongest interest
     if (strongestTopics.length > 0) {
       const strongestTopic = strongestTopics[0].topic;
       tasks.push({
@@ -152,7 +139,6 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
       });
     }
     
-    // Create task based on personal interests
     const interests = childProfile?.interests || [];
     if (interests.length > 0) {
       const randomInterest = interests[Math.floor(Math.random() * interests.length)];
@@ -167,7 +153,6 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
       });
     }
     
-    // Add streak maintenance task if they have a streak
     if (childProfile?.streak_days > 0) {
       tasks.push({
         id: 'maintain-streak',
@@ -185,7 +170,6 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
   
   const systemTasks = generateTasks();
   
-  // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -232,20 +216,16 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
     exit: { scale: 0.8, opacity: 0 }
   };
   
-  // Handle parent task completion with visual feedback
   const handleParentTaskCompletion = async (taskId: string) => {
-    // Set the completing task ID for animation
     setCompletingTaskId(taskId);
     
     try {
-      // Call the edge function to complete the task
       const { data, error } = await supabase.functions.invoke('complete-task', {
         body: { taskId, childId }
       });
       
       if (error) throw error;
       
-      // Trigger confetti effect for visual feedback
       confetti({
         particleCount: 80,
         spread: 60,
@@ -254,19 +234,16 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
         disableForReducedMotion: true
       });
       
-      // Update local state
       const completedTask = parentTasks.find(task => task.id === taskId);
       if (completedTask) {
         setParentTasks(parentTasks.filter(task => task.id !== taskId));
         setCompletedParentTasks([{ ...completedTask, status: 'completed', completed_at: new Date().toISOString() }, ...completedParentTasks]);
         
-        // Update notification counter
         if (onPendingTasksCount) {
           onPendingTasksCount(parentTasks.length - 1);
         }
       }
       
-      // Show success toast
       toast.success("Task completed!", {
         description: `Great job! You've earned ${completedTask?.tasks?.sparks_reward || 0} sparks!`,
         icon: <CheckCircle className="h-5 w-5 text-wonderwhiz-green" />
@@ -276,16 +253,13 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
       console.error('Error completing task:', error);
       toast.error("Failed to complete task");
     } finally {
-      // Reset animation state after delay
       setTimeout(() => {
         setCompletingTaskId(null);
       }, 1000);
     }
   };
   
-  // Handle system task click with visual feedback
   const handleSystemTaskClick = (task: any) => {
-    // If already completed, just show a message
     if (task.completed) {
       toast.success("You've already completed this task!", {
         description: "Great job keeping up with your learning journey!",
@@ -294,10 +268,8 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
       return;
     }
     
-    // Set completing task for animation
     setCompletingTaskId(task.id);
     
-    // Execute appropriate action based on task type
     switch (task.type) {
       case 'quiz':
         onTaskAction("Start today's quiz");
@@ -318,19 +290,16 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
         onTaskAction(task.title);
     }
     
-    // Show success toast
     toast.success("Task started!", {
       description: `You're on your way to earning ${task.reward} sparks!`,
       icon: <Rocket className="h-5 w-5 text-wonderwhiz-vibrant-yellow" />
     });
     
-    // Reset animation state after delay
     setTimeout(() => {
       setCompletingTaskId(null);
     }, 1000);
   };
   
-  // Get task icon based on type
   const getTaskIcon = (task: any) => {
     switch (task.type) {
       case 'quiz':
@@ -409,7 +378,6 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
         
         <TabsContent value="all" className="mt-3">
           <div className="space-y-3">
-            {/* Parent-assigned tasks first */}
             {!isLoadingTasks && parentTasks.map((task) => (
               <motion.div
                 key={`parent-${task.id}`}
@@ -417,7 +385,7 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
                 whileHover={{ scale: 1.02, x: 2 }}
                 whileTap={{ scale: 0.98 }}
                 animate={completingTaskId === task.id ? "animate" : "initial"}
-                variants={completingTaskId === task.id ? completionVariants : itemVariants}
+                variants={completingTaskId === task.id ? completionVariants : undefined}
                 onClick={() => handleParentTaskCompletion(task.id)}
                 className="p-3 rounded-lg cursor-pointer transition-all relative overflow-hidden group bg-gradient-to-r from-wonderwhiz-bright-pink/10 to-wonderwhiz-bright-pink/5 border border-wonderwhiz-bright-pink/30 hover:border-wonderwhiz-bright-pink/50"
               >
@@ -461,7 +429,6 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
               </motion.div>
             ))}
           
-            {/* Then system-generated tasks */}
             {systemTasks.map((task) => (
               <motion.div
                 key={task.id}
@@ -469,7 +436,7 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
                 whileHover={{ scale: 1.02, x: 2 }}
                 whileTap={{ scale: 0.98 }}
                 animate={completingTaskId === task.id ? "animate" : "initial"}
-                variants={completingTaskId === task.id ? completionVariants : itemVariants}
+                variants={completingTaskId === task.id ? completionVariants : undefined}
                 onClick={() => handleSystemTaskClick(task)}
                 className={cn(
                   "p-3 rounded-lg cursor-pointer transition-all relative overflow-hidden group border",
@@ -520,13 +487,12 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
                   )}
                 </div>
                 
-                {/* Progress indicator for the task (if applicable) */}
                 {task.completed && (
                   <div className="absolute bottom-0 left-0 h-0.5 w-full bg-wonderwhiz-green/30" />
                 )}
               </motion.div>
             ))}
-
+            
             {isLoadingTasks && (
               <div className="text-center py-4 text-white/60">
                 <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-white/30 mx-auto mb-2"></div>
@@ -552,7 +518,7 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
                   whileHover={{ scale: 1.02, x: 2 }}
                   whileTap={{ scale: 0.98 }}
                   animate={completingTaskId === task.id ? "animate" : "initial"}
-                  variants={completingTaskId === task.id ? completionVariants : itemVariants}
+                  variants={completingTaskId === task.id ? completionVariants : undefined}
                   onClick={() => handleParentTaskCompletion(task.id)}
                   className="p-3 rounded-lg cursor-pointer transition-all relative overflow-hidden group bg-gradient-to-r from-wonderwhiz-bright-pink/10 to-wonderwhiz-bright-pink/5 border border-wonderwhiz-bright-pink/30 hover:border-wonderwhiz-bright-pink/50"
                 >

@@ -178,7 +178,7 @@ const DailyChallenge: React.FC<DailyChallengeProps> = ({
             variants={itemVariants}
             whileHover={{ scale: 1.02, y: -1 }}
             animate={completionAnimation === challenge.id ? "animate" : "initial"}
-            variants={completionAnimation === challenge.id ? completionVariants : itemVariants}
+            variants={completionAnimation === challenge.id ? completionVariants : undefined}
             onClick={() => challenge.progress < 100 && handleChallengeComplete(challenge.id)}
             className={cn(
               "p-4 rounded-lg transition-all overflow-hidden group border cursor-pointer",
