@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -65,7 +64,6 @@ interface CurioContentProps {
   generationError?: string | null;
 }
 
-// Define the ChapterIconType here instead of importing it
 export type ChapterIconType = 
   | 'introduction' 
   | 'exploration' 
@@ -75,7 +73,6 @@ export type ChapterIconType =
   | 'reflection' 
   | 'nextSteps';
 
-// Define a local Chapter interface
 interface Chapter {
   id: string;
   title: string;
@@ -107,7 +104,6 @@ const CurioContent: React.FC<CurioContentProps> = ({
   onRefresh,
   generationError
 }) => {
-  // Convert ContentBlock[] to CurioContentBlock[] by adding curio_id if missing
   const convertedBlocks: CurioContentBlock[] = contentBlocks.map(block => ({
     ...block,
     curio_id: block.curio_id || currentCurio?.id || ''
@@ -124,6 +120,7 @@ const CurioContent: React.FC<CurioContentProps> = ({
         animateBlocks={true}
         hasMoreBlocks={hasMoreBlocks}
         loadingMoreBlocks={loadingBlocks}
+        loadTriggerRef={undefined}
         searchQuery={""}
         profileId={profileId}
         isFirstLoad={true}
@@ -133,6 +130,9 @@ const CurioContent: React.FC<CurioContentProps> = ({
         handleQuizCorrect={onQuizCorrect}
         handleNewsRead={onNewsRead}
         handleCreativeUpload={onCreativeUpload}
+        handleTaskComplete={() => {}} 
+        handleActivityComplete={() => {}}
+        handleMindfulnessComplete={() => {}}
         handleRabbitHoleClick={onRabbitHoleFollow}
         generationError={generationError}
         onRefresh={onRefresh}

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import FactBlock from './content-blocks/FactBlock';
@@ -8,8 +9,8 @@ import ActivityBlock from './content-blocks/ActivityBlock';
 import MindfulnessBlock from './content-blocks/MindfulnessBlock';
 import IllustratedContentBlock from './content-blocks/IllustratedContentBlock';
 import ContextualRecommendations from './content-blocks/ContextualRecommendations';
-import { ContentBlock } from '@/types/curio';
-import { Refresh } from 'lucide-react';
+import { ContentBlock, isValidContentBlockType } from '@/types/curio';
+import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
@@ -18,7 +19,7 @@ interface CurioBlockListProps {
   animateBlocks: boolean;
   hasMoreBlocks: boolean;
   loadingMoreBlocks: boolean;
-  loadTriggerRef: React.RefObject<HTMLDivElement>;
+  loadTriggerRef?: React.RefObject<HTMLDivElement>;
   searchQuery: string;
   profileId?: string;
   isFirstLoad: boolean;
@@ -32,8 +33,8 @@ interface CurioBlockListProps {
   handleActivityComplete: (blockId: string) => void;
   handleMindfulnessComplete: (blockId: string) => void;
   handleRabbitHoleClick: (question: string) => void;
-  generationError: string | null;
-  onRefresh: () => void;
+  generationError?: string | null;
+  onRefresh?: () => void;
 }
 
 const CurioBlockList: React.FC<CurioBlockListProps> = ({
@@ -81,7 +82,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
               <>
                 <p>{generationError}</p>
                 <Button onClick={onRefresh} variant="secondary" size="sm" className="mt-2">
-                  <Refresh className="w-4 h-4 mr-2" />
+                  <RefreshCw className="w-4 h-4 mr-2" />
                   Try Again
                 </Button>
               </>
@@ -95,7 +96,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
   }
   
   return (
-    <>
+    <div>
       {blocks.map((block, index) => (
         <motion.div
           key={block.id}
@@ -134,10 +135,10 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
             <QuizBlock
               question={block.content.question}
               options={block.content.options}
-              correctAnswer={block.content.correctAnswer}
+              correctIndex={block.content.correctIndex || 0}
               explanation={block.content.explanation}
               specialistId={block.specialist_id}
-              onCorrect={(isCorrect) => handleQuizCorrect(block.id, isCorrect)}
+              onCorrectAnswer={(isCorrect) => handleQuizCorrect(block.id, isCorrect)}
               onLike={() => handleToggleLike(block.id)}
               onBookmark={() => handleToggleBookmark(block.id)}
               onReply={(message) => handleReply(block.id, message)}
@@ -146,9 +147,14 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
           
           {block.type === 'creative' && (
             <CreativeBlock
-              prompt={block.content.prompt}
+              content={{
+                prompt: block.content.prompt,
+                description: block.content.description,
+                guidelines: block.content.guidelines,
+                examples: block.content.examples || []
+              }}
               specialistId={block.specialist_id}
-              onUpload={(fileUrl) => handleCreativeUpload(block.id, fileUrl)}
+              onCreativeUpload={(fileUrl) => handleCreativeUpload(block.id, fileUrl)}
               onLike={() => handleToggleLike(block.id)}
               onBookmark={() => handleToggleBookmark(block.id)}
               onReply={(message) => handleReply(block.id, message)}
@@ -157,12 +163,16 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
           
           {block.type === 'news' && (
             <NewsBlock
-              title={block.content.title}
-              content={block.content.content}
-              source={block.content.source}
-              imageUrl={block.content.imageUrl}
+              content={{
+                headline: block.content.title,
+                summary: block.content.content,
+                body: block.content.content,
+                source: block.content.source,
+                date: block.content.date,
+                imageUrl: block.content.imageUrl
+              }}
               specialistId={block.specialist_id}
-              onRead={() => handleNewsRead(block.id)}
+              onNewsRead={() => handleNewsRead(block.id)}
               onLike={() => handleToggleLike(block.id)}
               onBookmark={() => handleToggleBookmark(block.id)}
               onReply={(message) => handleReply(block.id, message)}
@@ -171,12 +181,14 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
           
           {block.type === 'activity' && (
             <ActivityBlock
-              title={block.content.title}
-              description={block.content.description}
-              steps={block.content.steps}
-              materials={block.content.materials}
+              content={{
+                activity: block.content.title || "",
+                instructions: block.content.description,
+                steps: block.content.steps || [],
+                materials: block.content.materials
+              }}
               specialistId={block.specialist_id}
-              onComplete={() => handleActivityComplete(block.id)}
+              onActivityComplete={() => handleActivityComplete(block.id)}
               onLike={() => handleToggleLike(block.id)}
               onBookmark={() => handleToggleBookmark(block.id)}
               onReply={(message) => handleReply(block.id, message)}
@@ -185,23 +197,27 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
           
           {block.type === 'mindfulness' && (
             <MindfulnessBlock
-              title={block.content.title}
-              description={block.content.description}
-              audioUrl={block.content.audioUrl}
+              content={{
+                exercise: block.content.title || "",
+                duration: block.content.duration || 60,
+                instruction: block.content.description,
+                audioUrl: block.content.audioUrl
+              }}
               specialistId={block.specialist_id}
-              onComplete={() => handleMindfulnessComplete(block.id)}
+              onMindfulnessComplete={() => handleMindfulnessComplete(block.id)}
               onLike={() => handleToggleLike(block.id)}
               onBookmark={() => handleToggleBookmark(block.id)}
               onReply={(message) => handleReply(block.id, message)}
             />
           )}
           
-          {block.type === 'illustrated' && (
+          {isValidContentBlockType(block.type) && block.type === 'illustrated' && (
             <IllustratedContentBlock
               topic={block.content.topic}
-              specialistId={block.specialist_id}
+              childId={profileId}
               onLike={() => handleToggleLike(block.id)}
-              onBookmark={() => handleToggleBookmark(block.id)}
+              onSave={() => handleToggleBookmark(block.id)}
+              onShare={() => {}}
               onReply={(message) => handleReply(block.id, message)}
             />
           )}
@@ -221,7 +237,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
         />
       )}
 
-      {hasMoreBlocks && (
+      {hasMoreBlocks && loadTriggerRef && (
         <div ref={loadTriggerRef} className="py-6 text-center text-white/60">
           {loadingMoreBlocks ? (
             <p>Loading more content...</p>
@@ -230,7 +246,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
           )}
         </div>
       )}
-    </>
+    </div>
   );
 };
 

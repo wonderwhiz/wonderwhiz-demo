@@ -50,12 +50,13 @@ const FactBlock: React.FC<FactBlockProps> = ({
       if (!initialMeasurementDone || (prevHeight !== null && prevHeight !== currentHeight)) {
         setPrevHeight(currentHeight);
         updateHeight(currentHeight);
+        
         if (!initialMeasurementDone) {
           setInitialMeasurementDone(true);
         }
       }
     }
-  }, [fact, expanded, updateHeight, prevHeight, rabbitHoles?.length, initialMeasurementDone]);
+  }, [fact, expanded, updateHeight, prevHeight, initialMeasurementDone, rabbitHoles]);
   
   const handleRabbitHoleClick = (question: string) => {
     if (onRabbitHoleClick && typeof onRabbitHoleClick === 'function') {
