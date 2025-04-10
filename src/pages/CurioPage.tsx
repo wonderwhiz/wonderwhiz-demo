@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,65 +26,7 @@ import LearningCertificate from '@/components/curio/LearningCertificate';
 import ChapterHeader from '@/components/curio/ChapterHeader';
 import IllustratedContentBlock from '@/components/content-blocks/IllustratedContentBlock';
 import { Chapter } from '@/types/Chapter';
-
-const DEFAULT_CHAPTERS: Chapter[] = [
-  {
-    id: 'introduction',
-    title: 'Introduction',
-    description: 'Discover the basics',
-    icon: 'introduction',
-    isCompleted: false,
-    isActive: true
-  },
-  {
-    id: 'exploration',
-    title: 'Exploration',
-    description: 'Dive deeper',
-    icon: 'exploration',
-    isCompleted: false,
-    isActive: false
-  },
-  {
-    id: 'understanding',
-    title: 'Understanding',
-    description: 'Make connections',
-    icon: 'understanding',
-    isCompleted: false,
-    isActive: false
-  },
-  {
-    id: 'challenge',
-    title: 'Challenge',
-    description: 'Test your knowledge',
-    icon: 'challenge',
-    isCompleted: false,
-    isActive: false
-  },
-  {
-    id: 'creation',
-    title: 'Creation',
-    description: 'Apply what you learned',
-    icon: 'creation',
-    isCompleted: false, 
-    isActive: false
-  },
-  {
-    id: 'reflection',
-    title: 'Reflection',
-    description: 'Think and connect',
-    icon: 'reflection',
-    isCompleted: false,
-    isActive: false
-  },
-  {
-    id: 'nextSteps',
-    title: 'Next Steps',
-    description: 'Continue exploring',
-    icon: 'nextSteps',
-    isCompleted: false,
-    isActive: false
-  }
-];
+import { useCurioChapters } from '@/hooks/useCurioChapters';
 
 const CurioPage: React.FC = () => {
   const { childId, curioId } = useParams<{ childId: string, curioId: string }>();
@@ -120,7 +63,7 @@ const CurioPage: React.FC = () => {
   
   const [quickAnswer, setQuickAnswer] = useState<string>('');
   const [quickAnswerExpanded, setQuickAnswerExpanded] = useState(false);
-  const [chapters, setChapters] = useState<Chapter[]>(DEFAULT_CHAPTERS);
+  const [chapters, setChapters] = useState<Chapter[]>(useCurioChapters());
   const [activeChapter, setActiveChapter] = useState('introduction');
   const [progress, setProgress] = useState(0);
   const [isJourneyStarted, setIsJourneyStarted] = useState(false);
@@ -130,42 +73,6 @@ const CurioPage: React.FC = () => {
   
   const blocksProcessedRef = useRef(false);
   const chaptersUpdatedRef = useRef(false);
-
-  const handleOrganizeBlocksIntoChapters = (blocks: any[]) => {
-    if (!blocks.length) return {};
-    
-    const chapterMap: Record<string, any[]> = {
-      introduction: [],
-      exploration: [],
-      understanding: [],
-      challenge: [],
-      creation: [],
-      reflection: [],
-      nextSteps: []
-    };
-    
-    blocks.forEach(block => {
-      if (block.type === 'quiz') {
-        chapterMap.challenge.push(block);
-      } else if (block.type === 'fact' || block.type === 'funFact') {
-        if (chapterMap.introduction.length < 2) {
-          chapterMap.introduction.push(block);
-        } else if (chapterMap.understanding.length < 3) {
-          chapterMap.understanding.push(block);
-        } else {
-          chapterMap.exploration.push(block);
-        }
-      } else if (block.type === 'creative' || block.type === 'activity') {
-        chapterMap.creation.push(block);
-      } else if (block.type === 'mindfulness') {
-        chapterMap.reflection.push(block);
-      } else {
-        chapterMap.exploration.push(block);
-      }
-    });
-    
-    return chapterMap;
-  };
 
   useEffect(() => {
     if (childProfile?.age) {
@@ -438,14 +345,6 @@ const CurioPage: React.FC = () => {
     toast.success("Certificate shared successfully!");
   };
   
-  const handleToggleLike = (blockId: string) => {
-    handleToggleLike(blockId);
-  };
-
-  const handleToggleBookmark = (blockId: string) => {
-    handleToggleBookmark(blockId);
-  };
-
   const handleRabbitHoleClick = async (question: string) => {
     if (!childId) return;
     
