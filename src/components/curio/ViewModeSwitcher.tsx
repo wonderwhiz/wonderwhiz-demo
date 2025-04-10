@@ -2,8 +2,9 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Sparkles, Layout, Layers } from 'lucide-react';
+import { ArrowLeft, Sparkles, Layout, Layers, BookOpen } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 
 interface ViewModeSwitcherProps {
   currentMode: 'standard' | 'enhanced' | 'simplified';
@@ -16,12 +17,18 @@ const ViewModeSwitcher: React.FC<ViewModeSwitcherProps> = ({ currentMode }) => {
   const handleModeChange = (mode: 'standard' | 'enhanced' | 'simplified') => {
     if (!childId || !curioId) return;
     
+    // Don't navigate if we're already on the selected mode
+    if (mode === currentMode) {
+      toast.info(`Already in ${mode} mode`);
+      return;
+    }
+    
     switch (mode) {
       case 'standard':
         navigate(`/curio/${childId}/${curioId}`);
         break;
       case 'enhanced':
-        navigate(`/curio/${childId}/${curioId}`); // Currently the enhanced is the default
+        navigate(`/curio/${childId}/${curioId}`);
         break;
       case 'simplified':
         navigate(`/simple-curio/${childId}/${curioId}`);
@@ -54,8 +61,9 @@ const ViewModeSwitcher: React.FC<ViewModeSwitcherProps> = ({ currentMode }) => {
             size="sm"
             onClick={() => handleModeChange('standard')}
             className={currentMode === 'standard' ? 'bg-primary text-primary-foreground' : 'text-white/70 hover:text-white'}
+            title="Standard learning journey with detailed content"
           >
-            <Layout className="w-4 h-4 mr-1.5" />
+            <BookOpen className="w-4 h-4 mr-1.5" />
             <span className="hidden sm:inline">Standard</span>
           </Button>
         </motion.div>
@@ -66,6 +74,7 @@ const ViewModeSwitcher: React.FC<ViewModeSwitcherProps> = ({ currentMode }) => {
             size="sm"
             onClick={() => handleModeChange('enhanced')}
             className={currentMode === 'enhanced' ? 'bg-primary text-primary-foreground' : 'text-white/70 hover:text-white'}
+            title="Enhanced experience with interactive elements"
           >
             <Layers className="w-4 h-4 mr-1.5" />
             <span className="hidden sm:inline">Enhanced</span>
@@ -78,6 +87,7 @@ const ViewModeSwitcher: React.FC<ViewModeSwitcherProps> = ({ currentMode }) => {
             size="sm"
             onClick={() => handleModeChange('simplified')}
             className={currentMode === 'simplified' ? 'bg-gradient-to-r from-pink-500 to-orange-500 text-white' : 'text-white/70 hover:text-white'}
+            title="Simplified view with focus on core content"
           >
             <Sparkles className="w-4 h-4 mr-1.5" />
             <span className="hidden sm:inline">Simplified</span>

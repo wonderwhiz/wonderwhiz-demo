@@ -1,224 +1,237 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-export const useBlockInteractions = (childProfileId?: string) => {
-  const [loadingStates, setLoadingStates] = useState({
-    reply: false,
-    quiz: false,
-    news: false,
-    creative: false,
-    task: false,
-    activity: false,
-    mindfulness: false,
-    like: false,
-    bookmark: false
-  });
+export const useBlockInteractions = (childId?: string) => {
+  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
+
+  const setLoading = (blockId: string, isLoading: boolean) => {
+    setLoadingStates(prev => ({
+      ...prev,
+      [blockId]: isLoading
+    }));
+  };
 
   const handleReply = async (blockId: string, message: string) => {
-    if (!childProfileId) return;
+    if (!childId) return;
     
-    setLoadingStates(prev => ({ ...prev, reply: true }));
+    setLoading(blockId, true);
     
     try {
-      await supabase
-        .from('block_replies')
-        .insert({
-          block_id: blockId,
-          content: message,
-          from_user: true,
-          user_id: childProfileId
-        });
-        
-      console.log('Reply sent successfully');
+      await supabase.functions.invoke('record-user-reply', {
+        body: {
+          blockId,
+          childId,
+          message
+        }
+      });
+      
+      toast.success('Your message was sent!');
     } catch (error) {
       console.error('Error sending reply:', error);
-      toast.error('Could not send reply. Please try again.');
+      toast.error('Could not send your message. Please try again.');
     } finally {
-      setLoadingStates(prev => ({ ...prev, reply: false }));
+      setLoading(blockId, false);
     }
   };
 
   const handleQuizCorrect = async (blockId: string) => {
-    if (!childProfileId) return;
+    if (!childId) return;
     
-    setLoadingStates(prev => ({ ...prev, quiz: true }));
+    setLoading(blockId, true);
     
     try {
-      await supabase.functions.invoke('handle-interaction', {
-        body: { 
-          type: 'quiz',
+      await supabase.functions.invoke('record-quiz-correct', {
+        body: {
           blockId,
-          childId: childProfileId
+          childId
         }
       });
       
-      console.log('Quiz completed successfully');
+      const { error } = await supabase.from('sparks_transactions').insert({
+        child_id: childId,
+        amount: 1,
+        reason: 'Quiz answered correctly'
+      });
       
-      toast.success("Correct answer! +5 sparks");
+      if (error) throw error;
+      
+      toast.success('You earned a spark!', {
+        icon: '✨'
+      });
     } catch (error) {
-      console.error('Error handling quiz completion:', error);
+      console.error('Error recording quiz completion:', error);
     } finally {
-      setLoadingStates(prev => ({ ...prev, quiz: false }));
+      setLoading(blockId, false);
     }
   };
 
   const handleNewsRead = async (blockId: string) => {
-    if (!childProfileId) return;
-    
-    setLoadingStates(prev => ({ ...prev, news: true }));
+    if (!childId) return;
     
     try {
-      await supabase.functions.invoke('handle-interaction', {
-        body: { 
-          type: 'news',
+      await supabase.functions.invoke('record-content-read', {
+        body: {
           blockId,
-          childId: childProfileId
+          childId,
+          contentType: 'news'
         }
       });
-      
-      console.log('News read successfully');
     } catch (error) {
-      console.error('Error handling news read:', error);
-    } finally {
-      setLoadingStates(prev => ({ ...prev, news: false }));
+      console.error('Error recording news read:', error);
     }
   };
 
-  const handleCreativeUpload = async (blockId: string) => {
-    if (!childProfileId) return;
+  const handleCreativeUpload = async (blockId: string, content: any) => {
+    if (!childId) return;
     
-    setLoadingStates(prev => ({ ...prev, creative: true }));
+    setLoading(blockId, true);
     
     try {
-      await supabase.functions.invoke('handle-interaction', {
-        body: { 
-          type: 'creative',
+      await supabase.functions.invoke('save-creative-content', {
+        body: {
           blockId,
-          childId: childProfileId
+          childId,
+          content
         }
       });
       
-      console.log('Creative content uploaded successfully');
+      const { error } = await supabase.from('sparks_transactions').insert({
+        child_id: childId,
+        amount: 2,
+        reason: 'Creative content created'
+      });
+      
+      if (error) throw error;
+      
+      toast.success('Creative content saved! You earned 2 sparks!', {
+        icon: '✨'
+      });
     } catch (error) {
-      console.error('Error handling creative upload:', error);
+      console.error('Error saving creative content:', error);
+      toast.error('Could not save your creation. Please try again.');
     } finally {
-      setLoadingStates(prev => ({ ...prev, creative: false }));
+      setLoading(blockId, false);
     }
   };
 
-  const handleActivityComplete = async () => {
-    if (!childProfileId) return;
+  const handleActivityComplete = async (blockId: string) => {
+    if (!childId) return;
     
-    setLoadingStates(prev => ({ ...prev, activity: true }));
+    setLoading(blockId, true);
     
     try {
-      await supabase.functions.invoke('handle-interaction', {
-        body: { 
-          type: 'activity',
-          childId: childProfileId
+      await supabase.functions.invoke('record-activity-complete', {
+        body: {
+          blockId,
+          childId
         }
       });
       
-      console.log('Activity completed successfully');
+      const { error } = await supabase.from('sparks_transactions').insert({
+        child_id: childId,
+        amount: 1,
+        reason: 'Activity completed'
+      });
       
-      toast.success("Activity completed! +3 sparks");
+      if (error) throw error;
+      
+      toast.success('Activity completed! You earned a spark!', {
+        icon: '✨'
+      });
     } catch (error) {
-      console.error('Error handling activity completion:', error);
+      console.error('Error recording activity completion:', error);
     } finally {
-      setLoadingStates(prev => ({ ...prev, activity: false }));
+      setLoading(blockId, false);
     }
   };
 
-  const handleMindfulnessComplete = async () => {
-    if (!childProfileId) return;
+  const handleMindfulnessComplete = async (blockId: string) => {
+    if (!childId) return;
     
-    setLoadingStates(prev => ({ ...prev, mindfulness: true }));
+    setLoading(blockId, true);
     
     try {
-      await supabase.functions.invoke('handle-interaction', {
-        body: { 
-          type: 'mindfulness',
-          childId: childProfileId
+      await supabase.functions.invoke('record-mindfulness-complete', {
+        body: {
+          blockId,
+          childId
         }
       });
       
-      console.log('Mindfulness exercise completed successfully');
-      
-      toast.success("Mindfulness exercise completed! +5 sparks");
+      toast.success('Mindfulness moment completed!');
     } catch (error) {
-      console.error('Error handling mindfulness completion:', error);
+      console.error('Error recording mindfulness completion:', error);
     } finally {
-      setLoadingStates(prev => ({ ...prev, mindfulness: false }));
+      setLoading(blockId, false);
     }
   };
 
-  const handleTaskComplete = async () => {
-    if (!childProfileId) return;
+  const handleTaskComplete = async (blockId: string) => {
+    if (!childId) return;
     
-    setLoadingStates(prev => ({ ...prev, task: true }));
+    setLoading(blockId, true);
     
     try {
-      await supabase.functions.invoke('handle-interaction', {
-        body: { 
-          type: 'task',
-          childId: childProfileId
+      await supabase.functions.invoke('record-task-complete', {
+        body: {
+          blockId,
+          childId
         }
       });
       
-      console.log('Task completed successfully');
-      
-      toast.success("Task completed! +8 sparks");
+      toast.success('Task completed!');
     } catch (error) {
-      console.error('Error handling task completion:', error);
+      console.error('Error recording task completion:', error);
     } finally {
-      setLoadingStates(prev => ({ ...prev, task: false }));
+      setLoading(blockId, false);
     }
   };
 
+  // Add toggle like functionality
   const handleToggleLike = async (blockId: string) => {
-    if (!childProfileId) return;
-    
-    setLoadingStates(prev => ({ ...prev, like: true }));
+    if (!childId || !blockId) return;
     
     try {
       await supabase.functions.invoke('handle-interaction', {
         body: { 
           type: 'like',
           blockId,
-          childId: childProfileId
+          childId
         }
       });
       
-      console.log('Like toggled successfully');
+      toast.success('Content liked!', { 
+        icon: '❤️',
+        duration: 2000
+      });
     } catch (error) {
       console.error('Error toggling like:', error);
-      toast.error('Could not like this content. Please try again.');
-    } finally {
-      setLoadingStates(prev => ({ ...prev, like: false }));
+      toast.error("Could not like this wonder. Please try again later.");
     }
   };
 
+  // Add toggle bookmark functionality
   const handleToggleBookmark = async (blockId: string) => {
-    if (!childProfileId) return;
-    
-    setLoadingStates(prev => ({ ...prev, bookmark: true }));
+    if (!childId || !blockId) return;
     
     try {
       await supabase.functions.invoke('handle-interaction', {
         body: { 
           type: 'bookmark',
           blockId,
-          childId: childProfileId
+          childId
         }
       });
       
-      console.log('Bookmark toggled successfully');
+      toast.success('Content bookmarked!', {
+        icon: '🔖',
+        duration: 2000
+      });
     } catch (error) {
       console.error('Error toggling bookmark:', error);
-      toast.error('Could not bookmark this content. Please try again.');
-    } finally {
-      setLoadingStates(prev => ({ ...prev, bookmark: false }));
+      toast.error("Could not bookmark this wonder. Please try again later.");
     }
   };
 

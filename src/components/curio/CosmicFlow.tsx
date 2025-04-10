@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Star, Compass, Map } from 'lucide-react';
+import { Sparkles, Star, Compass, Map, Rocket, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface CosmicFlowProps {
@@ -77,9 +77,21 @@ const CosmicFlow: React.FC<CosmicFlowProps> = ({
     setFlowPoints(points);
   }, [blocks]);
   
+  // Get icon for younger kids based on content type
+  const getWonderIcon = (type: string) => {
+    switch(type) {
+      case 'quiz': return <Rocket className="h-4 w-4" />;
+      case 'fact': return <Star className="h-4 w-4" />;
+      case 'funFact': return <Sparkles className="h-4 w-4" />;
+      case 'creative': return <Sun className="h-4 w-4" />;
+      default: return <Star className="h-4 w-4" />;
+    }
+  };
+  
   // Each age group gets a different visual representation
   const renderFlowByAge = () => {
     switch(ageGroup) {
+      // Simplified cosmic journey for youngest kids (5-7)
       case '5-7':
         return (
           <div className={`flex items-center justify-center gap-2 transition-all duration-300 ${isCompact ? 'scale-75' : 'scale-100'}`}>
@@ -93,29 +105,29 @@ const CosmicFlow: React.FC<CosmicFlowProps> = ({
                   opacity: currentBlockIndex === index ? 1 : 0.7
                 }}
                 whileHover={{ scale: 1.2, opacity: 1 }}
-                className={`relative rounded-full p-1 ${
+                className={`relative rounded-full p-2 ${
                   currentBlockIndex === index 
                     ? 'bg-gradient-to-r from-yellow-400 to-orange-400 animate-pulse' 
                     : 'bg-white/20'
                 }`}
               >
-                <Star 
-                  className={`h-4 w-4 ${
-                    currentBlockIndex === index 
-                      ? 'text-white' 
-                      : 'text-white/60'
-                  }`} 
-                />
+                {getWonderIcon(point.type)}
+                
                 {currentBlockIndex === index && (
-                  <span className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs font-medium text-white/90">
+                  <motion.div
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 text-xs font-bold text-white py-1 px-2 rounded-full bg-gradient-to-r from-pink-500 to-purple-500"
+                  >
                     Now
-                  </span>
+                  </motion.div>
                 )}
               </motion.button>
             ))}
           </div>
         );
         
+      // Interactive journey with connected nodes for middle kids (8-11)  
       case '8-11':
         return (
           <div className={`flex items-center overflow-x-auto hide-scrollbar py-2 transition-all duration-300 ${isCompact ? 'max-w-[80vw] mx-auto' : 'max-w-full'}`}>
@@ -130,10 +142,10 @@ const CosmicFlow: React.FC<CosmicFlowProps> = ({
                     opacity: currentBlockIndex === index ? 1 : 0.7
                   }}
                   whileHover={{ scale: 1.1, opacity: 1 }}
-                  className={`relative flex-shrink-0 rounded-full w-6 h-6 flex items-center justify-center ${
+                  className={`relative flex-shrink-0 rounded-full w-8 h-8 flex items-center justify-center ${
                     currentBlockIndex === index 
                       ? `bg-gradient-to-r ${cosmicColors[point.section as keyof typeof cosmicColors] || cosmicColors.exploration}` 
-                      : 'bg-white/10'
+                      : index < currentBlockIndex ? 'bg-white/30' : 'bg-white/10'
                   }`}
                 >
                   {currentBlockIndex === index && (
@@ -148,7 +160,7 @@ const CosmicFlow: React.FC<CosmicFlowProps> = ({
                   </span>
                 </motion.button>
                 {index < flowPoints.length - 1 && (
-                  <div className="h-0.5 w-4 bg-white/10 flex-shrink-0" />
+                  <div className={`h-0.5 w-6 ${index < currentBlockIndex ? 'bg-white/30' : 'bg-white/10'} flex-shrink-0`} />
                 )}
               </React.Fragment>
             ))}
@@ -156,6 +168,7 @@ const CosmicFlow: React.FC<CosmicFlowProps> = ({
           </div>
         );
         
+      // Sophisticated progress bar for older kids (12-16)
       case '12-16':
       default:
         return (
@@ -221,32 +234,39 @@ const CosmicFlow: React.FC<CosmicFlowProps> = ({
             exit={{ opacity: 0, y: -10 }}
             className="flex justify-between items-center mb-2"
           >
-            <h3 className="text-white/80 text-sm font-medium">Knowledge Flow</h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowMap(!showMap)}
-              className="text-white/60 hover:text-white hover:bg-white/5"
-            >
-              {showMap ? (
-                <>
-                  <Compass className="h-4 w-4 mr-1.5" />
-                  <span className="text-xs">Hide Map</span>
-                </>
-              ) : (
-                <>
-                  <Map className="h-4 w-4 mr-1.5" />
-                  <span className="text-xs">Show Map</span>
-                </>
-              )}
-            </Button>
+            <h3 className="text-white/80 text-sm font-medium">
+              {ageGroup === '5-7' ? 'Your Wonder Journey' : 
+               ageGroup === '8-11' ? 'Knowledge Flow' : 
+               'Learning Progress'}
+            </h3>
+            
+            {ageGroup !== '5-7' && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowMap(!showMap)}
+                className="text-white/60 hover:text-white hover:bg-white/5"
+              >
+                {showMap ? (
+                  <>
+                    <Compass className="h-4 w-4 mr-1.5" />
+                    <span className="text-xs">Hide Map</span>
+                  </>
+                ) : (
+                  <>
+                    <Map className="h-4 w-4 mr-1.5" />
+                    <span className="text-xs">Show Map</span>
+                  </>
+                )}
+              </Button>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
       
-      <div className={`bg-white/5 backdrop-blur-sm rounded-lg ${isCompact ? 'py-2 px-3' : 'p-3'} sticky top-0 z-30 transition-all duration-300`}>
+      <div className={`bg-white/5 backdrop-blur-sm rounded-lg ${isCompact ? 'py-2 px-3' : 'p-3'} sticky top-16 z-30 transition-all duration-300`}>
         <AnimatePresence mode="wait">
-          {showMap && !isCompact ? (
+          {showMap && !isCompact && ageGroup !== '5-7' ? (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
@@ -274,7 +294,8 @@ const CosmicFlow: React.FC<CosmicFlowProps> = ({
                     return (
                       <div key={section} className="text-xs text-white/60">
                         <span className="capitalize">{section}</span>:{' '}
-                        <span>{sectionPoints.map((p, i) => i + 1).join(', ')}</span>
+                        <span>{sectionPoints.map((p, i) => 
+                          blocks.findIndex(b => b.id === p.id) + 1).join(', ')}</span>
                       </div>
                     );
                   })}
