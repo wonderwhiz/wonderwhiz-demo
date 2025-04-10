@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import MagicalSearchBar from '@/components/dashboard/MagicalSearchBar';
 
@@ -28,12 +28,12 @@ const SimplifiedCurioHeader: React.FC<SimplifiedCurioHeaderProps> = ({
 }) => {
   return (
     <motion.div
-      className="mb-8"
+      className="mb-6"
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
         <h1 className="text-2xl sm:text-3xl font-bold text-center sm:text-left text-white font-nunito">
           {title}
         </h1>
