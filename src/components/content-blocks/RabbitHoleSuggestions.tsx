@@ -5,6 +5,8 @@ import { Sparkle, ArrowRight, Sparkles, Brain, Zap, Compass, Lightbulb, BookOpen
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import confetti from 'canvas-confetti';
+import { useNavigate } from 'react-router-dom';
 
 interface RabbitHoleSuggestionsProps {
   curioTitle: string;
@@ -33,6 +35,7 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [suggestions, setSuggestions] = useState<{ question: string; description: string }[]>([]);
   const [specialistSuggestions, setSpecialistSuggestions] = useState<{ question: string; description: string; specialist: string }[]>([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Only generate if we have a title and profile ID
@@ -129,16 +132,106 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
     setSpecialistSuggestions(fallbackSpecialistSuggestions);
   };
 
-  // Function to handle suggestion clicks safely
-  const handleSuggestionClick = (question: string) => {
-    if (onSuggestionClick && typeof onSuggestionClick === 'function') {
-      onSuggestionClick(question);
-    } else {
-      console.error("onSuggestionClick is not a function or not provided");
-      toast.error("Could not process this suggestion. Please try again.");
+  // Function to handle suggestion clicks and create a new curio
+  const handleSuggestionClick = async (question: string) => {
+    try {
+      if (!profileId) {
+        // Fallback to just setting the query if no profileId
+        if (onSuggestionClick && typeof onSuggestionClick === 'function') {
+          onSuggestionClick(question);
+        }
+        return;
+      }
+      
+      toast.loading("Creating your wonder journey...", {
+        id: "create-curio",
+        duration: 3000
+      });
+      
+      // Create a new curio based on the suggestion
+      const { data: newCurio, error } = await supabase
+        .from('curios')
+        .insert({
+          child_id: profileId,
+          title: question,
+          query: question,
+        })
+        .select('id')
+        .single();
+        
+      if (error) {
+        console.error('Error creating curio from suggestion:', error);
+        toast.error("Oops! Couldn't start your journey", {
+          id: "create-curio"
+        });
+        // Fallback to just setting the query
+        if (onSuggestionClick && typeof onSuggestionClick === 'function') {
+          onSuggestionClick(question);
+        }
+        return;
+      }
+      
+      if (newCurio && newCurio.id) {
+        // Celebration with confetti
+        confetti({
+          particleCount: 150,
+          spread: 80,
+          origin: { y: 0.6 },
+          colors: ['#FF5733', '#33FF57', '#3357FF', '#F3FF33', '#FF33F3'],
+          disableForReducedMotion: true
+        });
+        
+        toast.success("Your adventure begins!", {
+          id: "create-curio"
+        });
+        
+        // Award sparks for curiosity
+        try {
+          await supabase.functions.invoke('increment-sparks-balance', {
+            body: JSON.stringify({
+              profileId: profileId,
+              amount: 3
+            })
+          });
+          
+          await supabase.from('sparks_transactions').insert({
+            child_id: profileId,
+            amount: 3,
+            reason: 'Starting a new adventure with curiosity'
+          });
+          
+          toast.success('You earned 3 sparks for exploring!', {
+            icon: '✨',
+            position: 'bottom-right',
+            duration: 3000
+          });
+        } catch (err) {
+          console.error('Error awarding sparks:', err);
+        }
+        
+        // Navigate to the curio page with the correct path
+        navigate(`/curio/${profileId}/${newCurio.id}`);
+      } else {
+        console.error('No curio ID returned after creation');
+        toast.error("Couldn't create your journey", {
+          id: "create-curio"
+        });
+        if (onSuggestionClick && typeof onSuggestionClick === 'function') {
+          onSuggestionClick(question);
+        }
+      }
+    } catch (error) {
+      console.error('Error creating curio from suggestion:', error);
+      toast.error("Couldn't create your journey", {
+        id: "create-curio"
+      });
+      // Fallback to just setting the query
+      if (onSuggestionClick && typeof onSuggestionClick === 'function') {
+        onSuggestionClick(question);
+      }
     }
   };
-
+  
   if (isLoading) {
     return (
       <div className="p-6 rounded-xl bg-gradient-to-br from-indigo-900/50 to-fuchsia-900/50 backdrop-blur-sm border border-white/10 my-8">
