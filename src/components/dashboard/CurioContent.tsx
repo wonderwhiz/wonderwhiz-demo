@@ -1,12 +1,17 @@
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ContentBlock from '@/components/ContentBlock';
 import CurioLoading from '@/components/CurioLoading';
-import CurioLoadMore from '@/components/CurioLoadMore';
-import RabbitHoleSuggestions from '@/components/content-blocks/RabbitHoleSuggestions';
-import { AlertCircle, RefreshCw, Sparkles, Brain, BookOpen, Lightbulb } from 'lucide-react';
+import { AlertCircle, RefreshCw, Sparkles, Brain, BookOpen, Lightbulb, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import RabbitHoleSuggestions from '@/components/content-blocks/RabbitHoleSuggestions';
+import TableOfContents from '@/components/curio/TableOfContents';
+import ChapterHeader from '@/components/curio/ChapterHeader';
+import QuickAnswer from '@/components/curio/QuickAnswer';
+import LearningCertificate from '@/components/curio/LearningCertificate';
+import { ChapterIconType } from '@/components/curio/TableOfContents';
 
 interface ContentBlock {
   id: string;
@@ -61,6 +66,16 @@ interface CurioContentProps {
   generationError?: string | null;
 }
 
+interface Chapter {
+  id: string;
+  title: string;
+  description: string;
+  icon: ChapterIconType;
+  blocks: ContentBlock[];
+  isCompleted: boolean;
+  isActive: boolean;
+}
+
 const CurioContent: React.FC<CurioContentProps> = ({
   currentCurio,
   contentBlocks,
@@ -83,6 +98,13 @@ const CurioContent: React.FC<CurioContentProps> = ({
   generationError
 }) => {
   const [showLearningPath, setShowLearningPath] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [quickAnswerExpanded, setQuickAnswerExpanded] = useState(false);
+  const [chapters, setChapters] = useState<Chapter[]>([]);
+  const [activeChapter, setActiveChapter] = useState('');
+  const [ageGroup, setAgeGroup] = useState<'5-7' | '8-11' | '12-16'>('8-11');
+  const [completedJourney, setCompletedJourney] = useState(false);
+  const [journeyStarted, setJourneyStarted] = useState(false);
   
   // Use memoization to avoid unnecessary re-renders
   const visibleBlocks = useMemo(() => {
@@ -96,32 +118,228 @@ const CurioContent: React.FC<CurioContentProps> = ({
     return [...new Set(specialists)];
   }, [contentBlocks]);
 
-  // Determine if user has scrolled to the end
+  // Determine age group based on profile data
+  useEffect(() => {
+    const getAgeGroup = async () => {
+      if (!profileId) return;
+      
+      try {
+        // This is a simplified approach. In a real implementation, you would fetch the profile data
+        // and determine the age group based on the child's age.
+        setAgeGroup('8-11');
+      } catch (error) {
+        console.error('Error fetching age group:', error);
+      }
+    };
+    
+    getAgeGroup();
+  }, [profileId]);
+
+  // Organize blocks into chapters
+  useEffect(() => {
+    if (visibleBlocks.length === 0) return;
+    
+    // Define default chapters
+    const defaultChapters: Chapter[] = [
+      {
+        id: 'introduction',
+        title: 'Introduction',
+        description: 'Discover the basics',
+        icon: 'introduction',
+        blocks: [],
+        isCompleted: false,
+        isActive: true
+      },
+      {
+        id: 'exploration',
+        title: 'Exploration',
+        description: 'Dive deeper',
+        icon: 'exploration',
+        blocks: [],
+        isCompleted: false,
+        isActive: false
+      },
+      {
+        id: 'understanding',
+        title: 'Understanding',
+        description: 'Make connections',
+        icon: 'understanding',
+        blocks: [],
+        isCompleted: false,
+        isActive: false
+      },
+      {
+        id: 'challenge',
+        title: 'Challenge',
+        description: 'Test your knowledge',
+        icon: 'challenge',
+        blocks: [],
+        isCompleted: false,
+        isActive: false
+      },
+      {
+        id: 'creation',
+        title: 'Creation',
+        description: 'Apply what you learned',
+        icon: 'creation',
+        blocks: [],
+        isCompleted: false,
+        isActive: false
+      },
+      {
+        id: 'reflection',
+        title: 'Reflection',
+        description: 'Think and connect',
+        icon: 'reflection',
+        blocks: [],
+        isCompleted: false,
+        isActive: false
+      },
+      {
+        id: 'nextSteps',
+        title: 'Next Steps',
+        description: 'Continue exploring',
+        icon: 'nextSteps',
+        blocks: [],
+        isCompleted: false,
+        isActive: false
+      }
+    ];
+    
+    // Assign blocks to chapters based on type
+    visibleBlocks.forEach(block => {
+      if (block.type === 'fact' || block.type === 'funFact') {
+        // First few facts go to introduction
+        if (defaultChapters[0].blocks.length < 2) {
+          defaultChapters[0].blocks.push(block);
+        }
+        // Next few facts go to understanding
+        else if (defaultChapters[2].blocks.length < 2) {
+          defaultChapters[2].blocks.push(block);
+        }
+        // Rest go to exploration
+        else {
+          defaultChapters[1].blocks.push(block);
+        }
+      } else if (block.type === 'quiz') {
+        defaultChapters[3].blocks.push(block);
+      } else if (block.type === 'creative' || block.type === 'activity') {
+        defaultChapters[4].blocks.push(block);
+      } else if (block.type === 'mindfulness') {
+        defaultChapters[5].blocks.push(block);
+      } else {
+        // Default to exploration for other types
+        defaultChapters[1].blocks.push(block);
+      }
+    });
+    
+    // Filter out empty chapters
+    const nonEmptyChapters = defaultChapters.filter(chapter => chapter.blocks.length > 0);
+    
+    // Always include next steps if we have content
+    if (nonEmptyChapters.length > 0) {
+      const nextStepsChapter = defaultChapters.find(c => c.id === 'nextSteps');
+      if (nextStepsChapter && !nonEmptyChapters.includes(nextStepsChapter)) {
+        nonEmptyChapters.push(nextStepsChapter);
+      }
+    }
+    
+    // Set active chapter to the first one if none is set
+    if (!activeChapter && nonEmptyChapters.length > 0) {
+      setActiveChapter(nonEmptyChapters[0].id);
+      nonEmptyChapters[0].isActive = true;
+    } else {
+      // Update active state based on activeChapter
+      nonEmptyChapters.forEach(chapter => {
+        chapter.isActive = chapter.id === activeChapter;
+      });
+    }
+    
+    setChapters(nonEmptyChapters);
+  }, [visibleBlocks, activeChapter]);
+
+  // Mark chapter as completed when all blocks in it have been interacted with
+  // In a real implementation, you would track interactions with blocks
+  useEffect(() => {
+    if (chapters.length === 0) return;
+    
+    // Simulate completed chapters - in a real implementation this would be based on user interactions
+    const updatedChapters = chapters.map((chapter, index) => {
+      // Mark all chapters before the active one as completed
+      return {
+        ...chapter,
+        isCompleted: chapters.findIndex(c => c.id === activeChapter) > index
+      };
+    });
+    
+    setChapters(updatedChapters);
+    
+    // Check if all chapters are completed except next steps
+    const allCompleted = updatedChapters
+      .filter(c => c.id !== 'nextSteps')
+      .every(c => c.isCompleted);
+      
+    setCompletedJourney(allCompleted && updatedChapters.length > 1);
+  }, [activeChapter, chapters]);
+
+  // Determine if user has reached the end
   const hasReachedEnd = !isGenerating && !hasMoreBlocks && visibleBlocks.length > 0;
   
-  // Get the narrative arc and learning path
-  const learningPath = useMemo(() => {
-    if (!visibleBlocks || visibleBlocks.length === 0) return [];
+  // Generate quick answer
+  const quickAnswer = useMemo(() => {
+    if (!currentCurio?.query) return "";
+    return `${currentCurio.title} involves fascinating concepts you'll explore in this journey. You'll discover key facts, understand the principles, and engage with fun activities to deepen your knowledge.`;
+  }, [currentCurio]);
+
+  // Handle chapter selection
+  const handleChapterClick = (chapterId: string) => {
+    setActiveChapter(chapterId);
     
-    // Extract a simplified learning path from the blocks
-    return visibleBlocks.map((block, index) => ({
-      position: index + 1,
-      type: block.type,
-      specialist: block.specialist_id,
-      cognitiveLevel: block.learningContext?.cognitiveLevel || 
-                     (index === 0 ? "introductory" : 
-                      index === visibleBlocks.length - 1 ? "reflective" : "developmental"),
-      title: block.type === 'quiz' ? 
-             'Brain Teaser' : 
-             block.type === 'fact' || block.type === 'funFact' ? 
-             'Amazing Fact' :
-             block.type === 'creative' ? 
-             'Creative Challenge' :
-             block.type === 'mindfulness' ? 
-             'Mindful Moment' :
-             'Learning Activity'
-    }));
-  }, [visibleBlocks]);
+    // Find the first block in this chapter and scroll to it
+    const chapter = chapters.find(c => c.id === chapterId);
+    if (chapter && chapter.blocks.length > 0) {
+      const firstBlockId = chapter.blocks[0].id;
+      const element = document.getElementById(`block-${firstBlockId}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
+
+  // Handle search
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    
+    // Use the existing onSetQuery function to perform the search
+    onSetQuery(searchQuery);
+    setSearchQuery('');
+  };
+
+  // Start learning journey
+  const handleStartJourney = () => {
+    setJourneyStarted(true);
+    setQuickAnswerExpanded(false);
+    
+    // Scroll to the table of contents
+    setTimeout(() => {
+      const element = document.getElementById('table-of-contents');
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 100);
+  };
+
+  // Certificate handlers
+  const handleCertificateDownload = () => {
+    // In a real implementation, this would download the certificate
+    console.log('Downloading certificate...');
+  };
+
+  const handleCertificateShare = () => {
+    // In a real implementation, this would share the certificate
+    console.log('Sharing certificate...');
+  };
 
   if (!currentCurio) {
     return null;
@@ -158,6 +376,59 @@ const CurioContent: React.FC<CurioContentProps> = ({
               </Button>
             </motion.div>
             
+            {/* Search Bar */}
+            <motion.form
+              onSubmit={handleSearch}
+              className="mb-6"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1, duration: 0.3 }}
+            >
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
+                <Input
+                  type="text"
+                  placeholder="Ask another question or search within this topic..."
+                  className="pl-9 pr-12 py-6 rounded-full bg-white/10 border-white/20 text-white placeholder:text-white/40 font-inter transition-all duration-300 focus:bg-white/15"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                {searchQuery && (
+                  <button 
+                    type="button" 
+                    className="absolute right-16 top-1/2 -translate-y-1/2 text-white/60 hover:text-white/90"
+                    onClick={() => setSearchQuery('')}
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+                <Button 
+                  type="submit" 
+                  className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-vibrant-yellow text-wonderwhiz-deep-purple"
+                  size="sm"
+                >
+                  Search
+                </Button>
+              </div>
+            </motion.form>
+            
+            {/* Quick Answer */}
+            {quickAnswer && !journeyStarted && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2, duration: 0.4 }}
+              >
+                <QuickAnswer
+                  question={currentCurio.title}
+                  answer={quickAnswer}
+                  isExpanded={quickAnswerExpanded}
+                  onToggleExpand={() => setQuickAnswerExpanded(!quickAnswerExpanded)}
+                  onStartJourney={handleStartJourney}
+                />
+              </motion.div>
+            )}
+            
             {/* Learning Path Visualization */}
             <AnimatePresence>
               {showLearningPath && (
@@ -165,6 +436,7 @@ const CurioContent: React.FC<CurioContentProps> = ({
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3 }}
                   className="mb-6 overflow-hidden"
                 >
                   <div className="bg-white/5 backdrop-blur-sm rounded-lg p-4 border border-white/10">
@@ -179,9 +451,9 @@ const CurioContent: React.FC<CurioContentProps> = ({
                       
                       {/* Learning steps */}
                       <div className="space-y-3 pl-12 relative">
-                        {learningPath.map((step, index) => (
+                        {chapters.map((chapter, index) => (
                           <motion.div
-                            key={index}
+                            key={chapter.id}
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: index * 0.1 }}
@@ -189,30 +461,23 @@ const CurioContent: React.FC<CurioContentProps> = ({
                           >
                             {/* Step marker */}
                             <div className="absolute left-[-24px] w-8 h-8 rounded-full bg-white/10 flex items-center justify-center border-2 border-white/30">
-                              <span className="text-white text-xs font-bold">{step.position}</span>
+                              <span className="text-white text-xs font-bold">{index + 1}</span>
                             </div>
                             
                             {/* Step content */}
                             <div className="flex items-center">
                               <div 
                                 className={`px-3 py-1 rounded-full text-xs ${
-                                  step.cognitiveLevel === "introductory" ? "bg-emerald-500/20 text-emerald-200" :
-                                  step.cognitiveLevel === "reflective" ? "bg-purple-500/20 text-purple-200" :
-                                  "bg-blue-500/20 text-blue-200"
+                                  chapter.isCompleted ? "bg-wonderwhiz-bright-pink/20 text-wonderwhiz-bright-pink" :
+                                  chapter.isActive ? "bg-wonderwhiz-vibrant-yellow/20 text-wonderwhiz-vibrant-yellow" :
+                                  "bg-white/10 text-white/60"
                                 }`}
                               >
-                                {step.cognitiveLevel === "introductory" ? "Foundation" :
-                                 step.cognitiveLevel === "reflective" ? "Reflection" :
-                                 "Exploration"}
+                                {chapter.title}
                               </div>
-                              <span className="ml-2 text-white/90 text-sm">{step.title}</span>
+                              <span className="ml-2 text-white/90 text-sm">{chapter.description}</span>
                               <span className="ml-auto text-white/60 text-xs">
-                                {step.specialist === "nova" ? "Discovery Expert" :
-                                 step.specialist === "spark" ? "Science Whiz" :
-                                 step.specialist === "prism" ? "Creative Genius" :
-                                 step.specialist === "pixel" ? "Tech Guru" :
-                                 step.specialist === "atlas" ? "History Buff" :
-                                 "Wellbeing Guide"}
+                                {chapter.blocks.length} blocks
                               </span>
                             </div>
                           </motion.div>
@@ -249,6 +514,17 @@ const CurioContent: React.FC<CurioContentProps> = ({
               </motion.div>
             )}
 
+            {/* Table of Contents */}
+            {journeyStarted && chapters.length > 0 && (
+              <div id="table-of-contents" className="mb-8">
+                <TableOfContents 
+                  chapters={chapters} 
+                  onChapterClick={handleChapterClick}
+                  ageGroup={ageGroup}
+                />
+              </div>
+            )}
+
             {/* Curio content blocks */}
             <div className="space-y-6 sm:space-y-8">
               {/* Show loading state when no blocks and generating */}
@@ -279,9 +555,69 @@ const CurioContent: React.FC<CurioContentProps> = ({
                 </motion.div>
               )}
 
-              {/* Render visible blocks */}
-              <AnimatePresence initial={false}>
-                {visibleBlocks.map((block, index) => (
+              {/* Render content by chapters if journeyStarted */}
+              {journeyStarted && chapters.length > 0 ? (
+                chapters.map((chapter, chapterIndex) => (
+                  <div key={chapter.id} id={`chapter-${chapter.id}`} className="mb-10">
+                    {chapter.blocks.length > 0 && (
+                      <>
+                        <ChapterHeader
+                          chapterId={chapter.id}
+                          title={chapter.title}
+                          description={chapter.description}
+                          index={chapterIndex}
+                          totalChapters={chapters.length}
+                        />
+                        
+                        <div className="space-y-6 pl-3 border-l-2 border-white/10">
+                          {chapter.blocks.map((block, blockIndex) => (
+                            <motion.div
+                              key={block.id}
+                              id={`block-${block.id}`}
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{
+                                duration: 0.4,
+                                delay: 0.1 + (blockIndex * 0.05)
+                              }}
+                            >
+                              <ContentBlock
+                                block={block}
+                                onToggleLike={() => onToggleLike(block.id)}
+                                onToggleBookmark={() => onToggleBookmark(block.id)}
+                                onReply={(message) => onReply(block.id, message)}
+                                onSetQuery={onSetQuery}
+                                onRabbitHoleFollow={onRabbitHoleFollow}
+                                onQuizCorrect={() => onQuizCorrect(block.id)}
+                                onNewsRead={() => onNewsRead(block.id)}
+                                onCreativeUpload={() => onCreativeUpload(block.id)}
+                                userId={profileId}
+                                childProfileId={profileId}
+                                isFirstBlock={blockIndex === 0 && chapterIndex === 0}
+                                colorVariant={chapterIndex % 5}
+                              />
+                            </motion.div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                    
+                    {/* Next Steps chapter - show rabbit hole suggestions */}
+                    {chapter.id === 'nextSteps' && chapter.isActive && hasReachedEnd && (
+                      <div className="mt-6">
+                        <RabbitHoleSuggestions
+                          curioTitle={currentCurio.title}
+                          profileId={profileId}
+                          onSuggestionClick={onRabbitHoleFollow}
+                          specialistIds={specialistIds}
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                // Original rendering when journey not started
+                visibleBlocks.map((block, index) => (
                   <motion.div
                     key={block.id}
                     initial={{ opacity: 0, y: 30 }}
@@ -308,8 +644,26 @@ const CurioContent: React.FC<CurioContentProps> = ({
                       isFirstBlock={index === 0}
                     />
                   </motion.div>
-                ))}
-              </AnimatePresence>
+                ))
+              )}
+              
+              {/* Learning Certificate */}
+              {completedJourney && journeyStarted && hasReachedEnd && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.5, duration: 0.5 }}
+                >
+                  <LearningCertificate
+                    learnerName={profileId ? "Wonder Explorer" : "Wonder Explorer"}
+                    topic={currentCurio.title}
+                    date={new Date().toLocaleDateString()}
+                    onDownload={handleCertificateDownload}
+                    onShare={handleCertificateShare}
+                    ageGroup={ageGroup}
+                  />
+                </motion.div>
+              )}
 
               {/* Show "still generating" message */}
               {visibleBlocks.length > 0 && isGenerating && !generationError && (
@@ -329,21 +683,28 @@ const CurioContent: React.FC<CurioContentProps> = ({
               )}
 
               {/* Load more button - Only show when not initially loading and there are more blocks */}
-              {!isGenerating && hasMoreBlocks && visibleBlocks.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                >
-                  <CurioLoadMore 
-                    loadingMoreBlocks={loadingBlocks} 
-                    loadTriggerRef={null}
-                  />
-                </motion.div>
+              {!isGenerating && hasMoreBlocks && visibleBlocks.length > 0 && !journeyStarted && (
+                <div className="flex justify-center py-4">
+                  <Button 
+                    onClick={onLoadMore} 
+                    variant="outline" 
+                    className="border-white/20 text-white hover:bg-white/10"
+                    disabled={loadingBlocks}
+                  >
+                    {loadingBlocks ? (
+                      <>
+                        <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                        <span>Loading...</span>
+                      </>
+                    ) : (
+                      <span>Load More</span>
+                    )}
+                  </Button>
+                </div>
               )}
               
-              {/* Show rabbit hole suggestions when user reaches the end */}
-              {hasReachedEnd && (
+              {/* Show rabbit hole suggestions when user reaches the end and journey not started */}
+              {hasReachedEnd && !journeyStarted && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -359,7 +720,7 @@ const CurioContent: React.FC<CurioContentProps> = ({
               )}
               
               {/* End of curio indicator */}
-              {hasReachedEnd && (
+              {hasReachedEnd && !journeyStarted && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}

@@ -3,6 +3,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Brain, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import CurioSearchBar from './CurioSearchBar';
 
 interface CurioPageHeaderProps {
   curioTitle: string | null;
@@ -11,6 +12,9 @@ interface CurioPageHeaderProps {
   handleRefresh: () => void;
   refreshing: boolean;
   showInsights: boolean;
+  searchQuery?: string;
+  setSearchQuery?: (query: string) => void;
+  handleSearch?: (e: React.FormEvent) => void;
 }
 
 const CurioPageHeader: React.FC<CurioPageHeaderProps> = ({
@@ -19,7 +23,10 @@ const CurioPageHeader: React.FC<CurioPageHeaderProps> = ({
   handleToggleInsights,
   handleRefresh,
   refreshing,
-  showInsights
+  showInsights,
+  searchQuery = "",
+  setSearchQuery = () => {},
+  handleSearch = () => {}
 }) => {
   return (
     <motion.div 
@@ -57,7 +64,7 @@ const CurioPageHeader: React.FC<CurioPageHeaderProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={handleToggleInsights}
-                className={`text-white/90 border-white/20 hover:bg-white/10 bg-white/5 flex items-center backdrop-blur-md ${showInsights ? 'bg-white/15' : ''}`}
+                className="text-white/90 border-white/20 hover:bg-white/10 bg-white/5 flex items-center backdrop-blur-md"
               >
                 <Brain className="w-4 h-4 mr-1.5 text-wonderwhiz-bright-pink" />
                 <span>Learning Insights</span>
@@ -81,6 +88,18 @@ const CurioPageHeader: React.FC<CurioPageHeaderProps> = ({
             </motion.div>
           </div>
         </div>
+        
+        {/* Search Bar */}
+        {setSearchQuery && handleSearch && (
+          <div className="mt-4">
+            <CurioSearchBar
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              handleSearch={handleSearch}
+              placeholder="Search within this exploration..."
+            />
+          </div>
+        )}
       </div>
     </motion.div>
   );

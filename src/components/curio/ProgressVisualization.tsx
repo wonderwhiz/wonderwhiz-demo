@@ -1,172 +1,110 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Rocket, Star, Award } from 'lucide-react';
+import { Rocket, Star, Medal } from 'lucide-react';
 
 interface ProgressVisualizationProps {
-  progress: number;
+  progress: number; // 0-100
   ageGroup: '5-7' | '8-11' | '12-16';
+  totalChapters: number;
+  completedChapters: number;
 }
 
-const ProgressVisualization: React.FC<ProgressVisualizationProps> = ({ 
+const ProgressVisualization: React.FC<ProgressVisualizationProps> = ({
   progress,
-  ageGroup 
+  ageGroup,
+  totalChapters,
+  completedChapters
 }) => {
-  // Different visualizations based on age group
-  const renderAgeAppropriateVisualization = () => {
+  // Different styles based on age group
+  const getProgressStyles = () => {
     if (ageGroup === '5-7') {
-      // Simplified, more visual progress for younger children
-      return (
-        <div className="relative h-24 mb-2">
-          <div className="absolute inset-0">
-            <div className="h-full relative overflow-hidden rounded-xl bg-gradient-to-r from-wonderwhiz-deep-purple/30 to-wonderwhiz-deep-purple/50">
-              {/* Stars in background */}
-              {Array.from({ length: 10 }).map((_, i) => (
-                <motion.div
-                  key={i}
-                  className="absolute h-1.5 w-1.5 bg-white rounded-full opacity-60"
-                  style={{
-                    top: `${Math.random() * 100}%`,
-                    left: `${Math.random() * 100}%`,
-                  }}
-                  animate={{
-                    opacity: [0.3, 0.8, 0.3],
-                    scale: [1, 1.2, 1],
-                  }}
-                  transition={{
-                    duration: 2 + Math.random() * 2,
-                    repeat: Infinity,
-                    repeatType: "reverse",
-                    delay: Math.random() * 2,
-                  }}
-                />
-              ))}
-              
-              {/* Path */}
-              <div className="absolute left-0 right-0 top-1/2 h-4 -translate-y-1/2 bg-gradient-to-r from-wonderwhiz-vibrant-yellow/20 via-wonderwhiz-bright-pink/20 to-wonderwhiz-cyan/20 rounded-full overflow-hidden">
-                <motion.div 
-                  className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-wonderwhiz-vibrant-yellow via-wonderwhiz-bright-pink to-wonderwhiz-cyan rounded-full"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${progress}%` }}
-                  transition={{ duration: 1, ease: "easeOut" }}
-                />
-              </div>
-              
-              {/* Rocket */}
-              <motion.div 
-                className="absolute top-1/2 -translate-y-1/2"
-                initial={{ left: "2%" }}
-                animate={{ left: `${Math.max(2, Math.min(progress - 2, 95))}%` }}
-                transition={{ duration: 1, ease: "easeOut" }}
-              >
-                <Rocket className="h-8 w-8 text-wonderwhiz-bright-pink transform -rotate-90" />
-              </motion.div>
-            </div>
-          </div>
-        </div>
-      );
-    } else if (ageGroup === '8-11') {
-      // Standard visualization with more information
-      return (
-        <div className="relative h-16 mb-2">
-          <div className="absolute inset-0">
-            <div className="h-full relative overflow-hidden rounded-xl bg-gradient-to-r from-wonderwhiz-deep-purple/30 to-wonderwhiz-deep-purple/50">
-              {/* Path with milestones */}
-              <div className="absolute left-0 right-0 top-1/2 h-2 -translate-y-1/2 bg-white/10 rounded-full overflow-hidden">
-                <motion.div 
-                  className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-wonderwhiz-vibrant-yellow via-wonderwhiz-bright-pink to-wonderwhiz-cyan rounded-full"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${progress}%` }}
-                  transition={{ duration: 1, ease: "easeOut" }}
-                />
-                
-                {/* Milestone markers */}
-                {[20, 40, 60, 80, 100].map(milestone => (
-                  <div 
-                    key={milestone} 
-                    className={`absolute top-1/2 -translate-y-1/2 h-3 w-3 rounded-full ${
-                      progress >= milestone ? "bg-wonderwhiz-bright-pink" : "bg-white/20"
-                    }`}
-                    style={{ left: `${milestone}%`, transform: "translate(-50%, -50%)" }}
-                  />
-                ))}
-              </div>
-              
-              {/* Rocket */}
-              <motion.div 
-                className="absolute top-1/2 -translate-y-1/2"
-                initial={{ left: "2%" }}
-                animate={{ left: `${Math.max(2, Math.min(progress - 2, 95))}%` }}
-                transition={{ duration: 1, ease: "easeOut" }}
-              >
-                <Rocket className="h-6 w-6 text-wonderwhiz-bright-pink transform -rotate-90" />
-              </motion.div>
-            </div>
-          </div>
-        </div>
-      );
+      return {
+        mainColor: 'text-wonderwhiz-vibrant-yellow',
+        bgColor: 'bg-wonderwhiz-vibrant-yellow/20',
+        icon: <Star className="h-5 w-5 text-wonderwhiz-vibrant-yellow" />,
+        size: 'h-4',
+        pathStyle: 'dotted'
+      };
+    } else if (ageGroup === '12-16') {
+      return {
+        mainColor: 'text-wonderwhiz-cyan',
+        bgColor: 'bg-wonderwhiz-cyan/20',
+        icon: <Medal className="h-5 w-5 text-wonderwhiz-cyan" />,
+        size: 'h-3',
+        pathStyle: 'solid'
+      };
     } else {
-      // More sophisticated for older children
-      return (
-        <div className="relative h-10 mb-2">
-          <div className="absolute inset-0">
-            <div className="h-full relative overflow-hidden rounded-xl bg-wonderwhiz-deep-purple/40 backdrop-blur-sm">
-              {/* Path with labeled milestones */}
-              <div className="absolute left-0 right-0 top-1/2 h-1.5 -translate-y-1/2 bg-white/10 rounded-full overflow-hidden">
-                <motion.div 
-                  className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-wonderwhiz-cyan via-wonderwhiz-bright-pink to-wonderwhiz-gold rounded-full"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${progress}%` }}
-                  transition={{ duration: 1, ease: "easeOut" }}
-                />
-              </div>
-              
-              {/* Position indicator */}
-              <motion.div 
-                className="absolute top-1/2 -translate-y-1/2 z-10"
-                initial={{ left: "2%" }}
-                animate={{ left: `${Math.max(2, Math.min(progress - 1, 98))}%` }}
-                transition={{ duration: 1, ease: "easeOut" }}
-              >
-                <div className="h-3 w-3 bg-white rounded-full shadow-glow-brand-pink" />
-              </motion.div>
-            </div>
-          </div>
-        </div>
-      );
+      return {
+        mainColor: 'text-wonderwhiz-bright-pink',
+        bgColor: 'bg-wonderwhiz-bright-pink/20',
+        icon: <Rocket className="h-5 w-5 text-wonderwhiz-bright-pink" />,
+        size: 'h-3.5',
+        pathStyle: 'dashed'
+      };
     }
   };
   
-  // Different text based on progress level
-  const getProgressText = () => {
-    if (progress < 20) {
-      return "Just getting started!";
-    } else if (progress < 40) {
-      return "Building foundational knowledge";
-    } else if (progress < 60) {
-      return "Making good progress";
-    } else if (progress < 80) {
-      return "Advanced understanding";
-    } else {
-      return "Journey nearly complete!";
+  const styles = getProgressStyles();
+  
+  // Generate stars or milestone markers
+  const generateMilestones = () => {
+    const milestones = [];
+    const totalSteps = totalChapters > 0 ? totalChapters : 5;
+    
+    for (let i = 0; i < totalSteps; i++) {
+      const isCompleted = i < completedChapters;
+      milestones.push(
+        <motion.div
+          key={i}
+          className={`absolute ${styles.bgColor} rounded-full w-6 h-6 flex items-center justify-center
+            ${isCompleted ? 'border-2 border-wonderwhiz-bright-pink' : 'border border-white/20'}
+          `}
+          style={{ left: `${(i / (totalSteps - 1)) * 100}%` }}
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: i * 0.1, duration: 0.3 }}
+        >
+          {styles.icon}
+        </motion.div>
+      );
     }
+    
+    return milestones;
   };
-
+  
   return (
-    <div className="mb-8">
-      {renderAgeAppropriateVisualization()}
-      
-      <div className="flex justify-between items-center text-xs">
-        <div className="text-white/70">
-          {progress < 100 ? getProgressText() : (
-            <span className="flex items-center text-wonderwhiz-vibrant-yellow">
-              <Award className="h-3 w-3 mr-1" /> Journey Complete!
-            </span>
-          )}
-        </div>
-        <div className="text-white font-medium">{Math.round(progress)}% complete</div>
+    <motion.div
+      className="py-4 px-6 rounded-lg mb-6 bg-white/5 backdrop-blur-sm border border-white/10"
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+    >
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-white text-sm font-medium">Your Learning Adventure</h3>
+        <span className={`text-sm font-medium ${styles.mainColor}`}>
+          {completedChapters} of {totalChapters} chapters
+        </span>
       </div>
-    </div>
+      
+      <div className="relative pt-6 pb-8">
+        {/* Background track */}
+        <div className={`w-full ${styles.size} ${styles.pathStyle === 'dotted' ? 'border-dotted' : styles.pathStyle === 'dashed' ? 'border-dashed' : ''} bg-white/10 rounded-full`}></div>
+        
+        {/* Progress bar */}
+        <motion.div
+          className={`absolute top-6 left-0 ${styles.size} ${styles.bgColor} rounded-full`}
+          initial={{ width: 0 }}
+          animate={{ width: `${progress}%` }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+        ></motion.div>
+        
+        {/* Milestones */}
+        <div className="absolute top-4 left-0 right-0">
+          {generateMilestones()}
+        </div>
+      </div>
+    </motion.div>
   );
 };
 

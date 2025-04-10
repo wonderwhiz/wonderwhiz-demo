@@ -1,17 +1,14 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Sparkles, Clock, ArrowRight, Lightbulb, X, Star, Brain, BrainCircuit } from 'lucide-react';
-import { Command, CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { useChildLearningHistory } from '@/hooks/useChildLearningHistory';
-import { cn } from '@/lib/utils';
+import { Search, X, Sparkles, History, TrendingUp } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 interface UnifiedSearchBarProps {
   query: string;
   setQuery: (query: string) => void;
-  handleSubmitQuery: (e?: React.FormEvent) => void;
+  handleSubmitQuery: () => void;
   isGenerating: boolean;
   recentQueries: string[];
   childId: string;
@@ -23,281 +20,177 @@ const UnifiedSearchBar: React.FC<UnifiedSearchBarProps> = ({
   setQuery,
   handleSubmitQuery,
   isGenerating,
-  recentQueries = [],
+  recentQueries,
   childId,
   childProfile
 }) => {
-  const [isFocused, setIsFocused] = useState(false);
-  const [showCommandDialog, setShowCommandDialog] = useState(false);
-  const [activeTimeOfDay, setActiveTimeOfDay] = useState<string>('');
-  const inputRef = useRef<HTMLInputElement>(null);
-  
-  const {
-    recentlyViewedTopics,
-    strongestTopics,
-    getPersonalizedSuggestions,
-    isLoading
-  } = useChildLearningHistory(childId);
-  
-  // Get time-appropriate suggestions
-  useEffect(() => {
-    const hour = new Date().getHours();
-    if (hour < 12) setActiveTimeOfDay('morning');
-    else if (hour < 18) setActiveTimeOfDay('afternoon');
-    else setActiveTimeOfDay('evening');
-  }, []);
-  
-  // Intelligent suggestions based on learning history, time of day, and interests
-  const getIntelligentSuggestions = () => {
-    // Start with personalized suggestions from learning history
-    const suggestions = getPersonalizedSuggestions();
-    
-    // Add time of day context
-    const timeBasedSuggestions = [];
-    if (activeTimeOfDay === 'morning') {
-      timeBasedSuggestions.push("What's something new I could learn today?");
-      timeBasedSuggestions.push("How do our brains work in the morning?");
-    } else if (activeTimeOfDay === 'afternoon') {
-      timeBasedSuggestions.push("What's the most fascinating discovery in science recently?");
-      timeBasedSuggestions.push("How do plants make their own food?");
-    } else {
-      timeBasedSuggestions.push("What mysteries of space are scientists still trying to solve?");
-      timeBasedSuggestions.push("Why do we see stars at night?");
-    }
-    
-    // Add interest-based suggestions if available
-    const interests = childProfile?.interests || [];
-    const interestSuggestions = interests.slice(0, 2).map(interest => 
-      `Tell me something amazing about ${interest.toLowerCase()}`
-    );
-    
-    // Combine all suggestions and remove duplicates
-    const allSuggestions = [...suggestions, ...timeBasedSuggestions, ...interestSuggestions];
-    const uniqueSuggestions = Array.from(new Set(allSuggestions));
-    
-    return uniqueSuggestions.slice(0, 5);
-  };
-  
-  const intelligentSuggestions = getIntelligentSuggestions();
-  
-  const handleSubmit = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (query.trim() && !isGenerating) {
-      handleSubmitQuery(e);
-      setShowCommandDialog(false);
+  const [focused, setFocused] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Sample trending topics - in a real implementation, these would come from an API
+  const trendingTopics = [
+    "Why is the sky blue?",
+    "How do planes fly?",
+    "What makes rainbows?",
+    "How do volcanoes work?",
+    "Why do seasons change?"
+  ];
+
+  // Handle form submission
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (query.trim()) {
+      handleSubmitQuery();
+      setShowSuggestions(false);
     }
   };
 
-  const clearInput = () => {
-    setQuery('');
-    inputRef.current?.focus();
+  // Handle input focus
+  const handleFocus = () => {
+    setFocused(true);
+    if (query.length === 0 && (recentQueries.length > 0 || trendingTopics.length > 0)) {
+      setShowSuggestions(true);
+    }
   };
 
+  // Handle input blur
+  const handleBlur = () => {
+    // Delay hiding suggestions to allow clicking on them
+    setTimeout(() => {
+      setFocused(false);
+      setShowSuggestions(false);
+    }, 200);
+  };
+
+  // Handle input change
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setQuery(value);
+    setShowSuggestions(value.length === 0 && (recentQueries.length > 0 || trendingTopics.length > 0));
+  };
+
+  // Handle suggestion click
   const handleSuggestionClick = (suggestion: string) => {
     setQuery(suggestion);
-    setTimeout(() => handleSubmit(), 100);
-    setShowCommandDialog(false);
+    setTimeout(() => {
+      handleSubmitQuery();
+      setShowSuggestions(false);
+    }, 100);
   };
-  
-  // Popular topics based on strongest topics and interests
-  const popularTopics = strongestTopics.map(item => item.topic).concat(
-    (childProfile?.interests || []).map((interest: string) => interest.toLowerCase())
-  ).slice(0, 5);
-  
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0, y: -20 },
-    visible: { 
-      opacity: 1, 
-      y: 0,
-      transition: { 
-        type: "spring",
-        stiffness: 300,
-        damping: 25
-      }
-    }
-  };
-  
+
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="relative w-full max-w-xl mx-auto mb-8"
-    >
-      <form onSubmit={(e) => handleSubmit(e)} className="relative">
-        <div className="relative z-10">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-wonderwhiz-bright-pink/70">
-            <Search className="h-5 w-5" />
+    <div className="relative z-10">
+      <motion.form
+        className="relative"
+        onSubmit={handleSubmit}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
+        <div className="relative">
+          <div className="absolute left-0 inset-y-0 pl-4 flex items-center pointer-events-none">
+            <Search className="h-5 w-5 text-white/40" />
           </div>
           
           <Input
-            ref={inputRef}
             type="text"
+            placeholder="What are you curious about today?"
+            className={`pl-12 pr-32 py-7 w-full rounded-xl backdrop-blur-sm border 
+              ${focused 
+                ? "border-wonderwhiz-bright-pink/60 bg-white/10 shadow-glow-sm shadow-wonderwhiz-bright-pink/20" 
+                : "border-white/20 bg-white/5"} 
+              text-white placeholder:text-white/50 transition-all duration-300`}
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onFocus={() => {
-              setIsFocused(true);
-              setShowCommandDialog(true);
-            }}
-            placeholder={`What are you curious about${childProfile?.name ? ', ' + childProfile.name : ''}?`}
-            className={cn(
-              "h-14 pl-12 pr-24 w-full text-lg rounded-2xl border-wonderwhiz-bright-pink/20 backdrop-blur-lg",
-              "bg-white/10 text-white placeholder:text-white/50",
-              "focus:ring-2 focus:ring-wonderwhiz-bright-pink/50 focus:bg-white/15 transition-all duration-300",
-              "shadow-glow-brand-pink"
-            )}
+            onChange={handleInputChange}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
           />
           
-          <AnimatePresence>
-            {query && (
-              <motion.button
-                initial={{ opacity: 0, scale: 0 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0 }}
-                transition={{ duration: 0.2 }}
-                type="button"
-                onClick={clearInput}
-                className="absolute right-20 top-1/2 -translate-y-1/2 h-6 w-6 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-colors"
-              >
-                <X className="h-3.5 w-3.5 text-white" />
-              </motion.button>
-            )}
-          </AnimatePresence>
+          {query && (
+            <button
+              type="button"
+              className="absolute right-24 inset-y-0 flex items-center text-white/60 hover:text-white/80 pr-2"
+              onClick={() => setQuery('')}
+            >
+              <X className="h-5 w-5" />
+            </button>
+          )}
           
-          <Button 
-            type="submit"
-            disabled={!query.trim() || isGenerating}
-            className={cn(
-              "absolute right-3 top-1/2 -translate-y-1/2 h-10 px-4 rounded-xl flex items-center gap-1.5",
-              "bg-gradient-to-r from-wonderwhiz-vibrant-yellow to-wonderwhiz-bright-pink",
-              "text-wonderwhiz-deep-purple font-medium transition-all shadow-glow-brand-pink"
-            )}
-          >
-            {isGenerating ? (
-              <motion.div 
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-              >
-                <Sparkles className="h-4 w-4" />
-              </motion.div>
-            ) : (
-              <>
-                <span className="text-sm font-medium">Explore</span>
-                <ArrowRight className="h-3.5 w-3.5" />
-              </>
-            )}
-          </Button>
+          <div className="absolute right-3 inset-y-0 flex items-center">
+            <Button 
+              type="submit" 
+              disabled={isGenerating || !query.trim()}
+              className="bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-vibrant-yellow hover:opacity-90 text-wonderwhiz-deep-purple font-medium"
+            >
+              {isGenerating ? (
+                <>
+                  <div className="animate-spin mr-2 h-4 w-4 border-2 border-wonderwhiz-deep-purple border-t-transparent rounded-full"></div>
+                  <span>Exploring...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  <span>Explore</span>
+                </>
+              )}
+            </Button>
+          </div>
         </div>
-      </form>
+      </motion.form>
       
-      {/* Enhanced search dialog - now with direct search option */}
-      <CommandDialog open={showCommandDialog} onOpenChange={setShowCommandDialog}>
-        <Command className="rounded-lg border-none bg-gradient-to-b from-wonderwhiz-deep-purple to-wonderwhiz-deep-purple/90">
-          <CommandInput 
-            placeholder={`Discover something amazing${childProfile?.name ? ', ' + childProfile.name : ''}...`}
-            className="border-b border-wonderwhiz-bright-pink/20"
-            value={query}
-            onValueChange={setQuery}
-          />
-          <CommandList>
-            <CommandEmpty>
-              <div className="py-3 px-4 text-center">
-                <p className="text-white/70">No results found.</p>
-                <Button 
-                  className="mt-2 bg-wonderwhiz-bright-pink/20 text-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/30"
-                  onClick={() => {
-                    setShowCommandDialog(false);
-                    setTimeout(() => handleSubmit(), 100);
-                  }}
-                >
-                  Search for "{query}"
-                </Button>
-              </div>
-            </CommandEmpty>
-            
-            <CommandGroup heading="Personalized for You">
-              {intelligentSuggestions.map((suggestion, index) => (
-                <CommandItem
-                  key={`smart-${index}`}
-                  onSelect={() => {
-                    handleSuggestionClick(suggestion);
-                  }}
-                  className="hover:bg-wonderwhiz-bright-pink/20"
-                >
-                  <BrainCircuit className="mr-2 h-4 w-4 text-wonderwhiz-gold" />
-                  {suggestion}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-            
-            <CommandGroup heading="Your Interests">
-              {popularTopics.map((topic) => (
-                <CommandItem
-                  key={topic}
-                  onSelect={() => {
-                    handleSuggestionClick(`Tell me about ${topic}`);
-                  }}
-                  className="hover:bg-wonderwhiz-bright-pink/20"
-                >
-                  <Lightbulb className="mr-2 h-4 w-4 text-wonderwhiz-bright-pink" />
-                  {topic}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-            
+      {/* Suggestions dropdown */}
+      <AnimatePresence>
+        {showSuggestions && (focused || showSuggestions) && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="absolute mt-2 w-full bg-wonderwhiz-deep-purple/80 backdrop-blur-md border border-white/10 rounded-lg shadow-lg overflow-hidden z-50"
+          >
             {recentQueries.length > 0 && (
-              <CommandGroup heading="Recent Wonders">
-                {recentQueries.slice(0, 3).map((query, index) => (
-                  <CommandItem
-                    key={`recent-${index}`}
-                    onSelect={() => {
-                      handleSuggestionClick(query);
-                    }}
-                    className="hover:bg-wonderwhiz-bright-pink/20"
-                  >
-                    <Clock className="mr-2 h-4 w-4 text-white/70" />
-                    {query}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
+              <div className="p-3">
+                <div className="flex items-center mb-2 text-white/60 text-xs">
+                  <History className="h-3.5 w-3.5 mr-1.5" />
+                  <span>Recent Searches</span>
+                </div>
+                <div className="space-y-1">
+                  {recentQueries.map((item, index) => (
+                    <button
+                      key={`recent-${index}`}
+                      className="w-full text-left px-3 py-2 rounded-md text-white hover:bg-white/10 transition-colors text-sm"
+                      onClick={() => handleSuggestionClick(item)}
+                    >
+                      {item}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
             
-            {/* Important: Added direct search capability without forcing selection */}
-            <div className="p-2 border-t border-white/10">
-              <Button
-                onClick={() => {
-                  setShowCommandDialog(false);
-                  setTimeout(() => handleSubmit(), 100);
-                }}
-                className="w-full justify-start bg-wonderwhiz-bright-pink/20 hover:bg-wonderwhiz-bright-pink/30 text-wonderwhiz-bright-pink"
-              >
-                <ArrowRight className="mr-2 h-4 w-4" />
-                {query ? `Search for "${query}"` : "Enter your own question"}
-              </Button>
-            </div>
-          </CommandList>
-        </Command>
-      </CommandDialog>
-      
-      {/* Quick suggestion chips */}
-      <div className="flex flex-wrap gap-2 justify-center mt-3">
-        {popularTopics.slice(0, 3).map((topic, index) => (
-          <motion.button
-            key={`chip-${index}`}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            whileHover={{ scale: 1.05, y: -2 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => handleSuggestionClick(`Tell me about ${topic}`)}
-            className="px-3 py-1.5 bg-wonderwhiz-bright-pink/20 hover:bg-wonderwhiz-bright-pink/30 rounded-full text-white/80 hover:text-white text-sm transition-all duration-200 border border-wonderwhiz-bright-pink/30"
-          >
-            {topic}
-          </motion.button>
-        ))}
-      </div>
-    </motion.div>
+            {trendingTopics.length > 0 && (
+              <div className="p-3 border-t border-white/10">
+                <div className="flex items-center mb-2 text-white/60 text-xs">
+                  <TrendingUp className="h-3.5 w-3.5 mr-1.5" />
+                  <span>Trending Topics</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {trendingTopics.map((topic, index) => (
+                    <button
+                      key={`trend-${index}`}
+                      className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-white text-xs"
+                      onClick={() => handleSuggestionClick(topic)}
+                    >
+                      {topic}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 };
 
