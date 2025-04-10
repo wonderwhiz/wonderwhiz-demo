@@ -61,7 +61,7 @@ const CurioSearch: React.FC<CurioSearchProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={isMobile ? "Search..." : "Search through your journey of curiosity..."}
-            className={`pr-10 ${isFocused ? 'ring-2 ring-wonderwhiz-bright-pink' : ''} text-white bg-white/20 border-white/20 placeholder:text-white/70`}
+            className={`pr-10 ${isFocused ? 'ring-2 ring-wonderwhiz-bright-pink' : ''} text-white bg-white/20 border-wonderwhiz-bright-pink/20 placeholder:text-white/70`}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
           />

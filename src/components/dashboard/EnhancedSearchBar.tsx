@@ -23,12 +23,14 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   trendingTopics = []
 }) => {
   const [isFocused, setIsFocused] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim() && !isGenerating) {
       handleSubmitQuery();
+      setShowSuggestions(false);
     }
   };
 
@@ -39,7 +41,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   const handleTopicClick = (topic: string) => {
     setQuery(`Tell me about ${topic}`);
-    setTimeout(() => handleSubmitQuery(), 100);
+    setTimeout(() => {
+      handleSubmitQuery();
+      setShowSuggestions(false);
+    }, 100);
   };
 
   return (
@@ -47,17 +52,23 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       <div className="relative flex w-full">
         <form onSubmit={handleSubmit} className="relative w-full">
           <div className="relative flex w-full items-center">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/50" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-wonderwhiz-bright-pink/70" />
             
             <Input
               ref={inputRef}
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setTimeout(() => setIsFocused(false), 100)}
+              onFocus={() => {
+                setIsFocused(true);
+                setShowSuggestions(true);
+              }}
+              onBlur={() => setTimeout(() => {
+                setIsFocused(false);
+                setShowSuggestions(false);
+              }, 200)}
               placeholder="What would you like to learn about today?"
-              className="h-12 pl-10 pr-10 w-full bg-white/10 border-white/10 text-white placeholder:text-white/50 focus:bg-white/15 focus:border-white/20 transition-all duration-300 rounded-2xl"
+              className="h-12 pl-10 pr-10 w-full bg-white/10 border-wonderwhiz-bright-pink/20 text-white placeholder:text-white/50 focus:bg-white/15 focus:border-wonderwhiz-bright-pink/30 transition-all duration-300 rounded-2xl"
             />
             
             <AnimatePresence>
@@ -79,7 +90,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             <Button 
               type="submit"
               disabled={!query.trim() || isGenerating}
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/90 text-white h-9 px-4 rounded-xl flex items-center gap-1.5 transition-all"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/90 text-white h-9 px-4 rounded-xl flex items-center gap-1.5 transition-all shadow-glow-brand-pink"
             >
               {isGenerating ? (
                 <motion.div 
@@ -108,7 +119,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
             onClick={() => handleTopicClick(topic)}
-            className="px-3 py-1 rounded-full bg-white/10 hover:bg-white/15 text-white/80 hover:text-white text-xs flex items-center gap-1 transition-all"
+            className="px-3 py-1 rounded-full bg-wonderwhiz-bright-pink/20 hover:bg-wonderwhiz-bright-pink/30 text-white/80 hover:text-white text-xs flex items-center gap-1 transition-all border border-wonderwhiz-bright-pink/30"
           >
             <span># {topic}</span>
           </motion.button>
@@ -117,33 +128,58 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       
       {/* Suggestions */}
       <AnimatePresence>
-        {isFocused && recentQueries.length > 0 && (
+        {isFocused && showSuggestions && recentQueries.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
-            className="absolute z-10 left-0 right-0 mt-2 p-2 bg-wonderwhiz-deep-purple/90 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg"
+            className="absolute z-10 left-0 right-0 mt-2 p-2 bg-wonderwhiz-deep-purple/90 backdrop-blur-sm border border-wonderwhiz-bright-pink/20 rounded-xl shadow-lg"
           >
             <div className="text-xs text-white/60 px-2 mb-1.5">Recent questions</div>
-            {recentQueries.map((query, index) => (
+            {recentQueries.map((queryText, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, x: -5 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.05 }}
                 whileHover={{ x: 2 }}
-                className="px-3 py-2 hover:bg-white/10 rounded-lg cursor-pointer transition-colors group"
+                className="px-3 py-2 hover:bg-wonderwhiz-bright-pink/20 rounded-lg cursor-pointer transition-colors group"
                 onClick={() => {
-                  setQuery(query);
-                  setTimeout(() => handleSubmitQuery(), 100);
+                  setQuery(queryText);
+                  setTimeout(() => {
+                    handleSubmitQuery();
+                    setShowSuggestions(false);
+                  }, 100);
                 }}
               >
                 <div className="flex items-center">
-                  <Search className="h-3 w-3 mr-2 text-white/50 group-hover:text-wonderwhiz-gold transition-colors" />
-                  <span className="text-sm text-white/90 group-hover:text-white">{query}</span>
+                  <Search className="h-3 w-3 mr-2 text-white/50 group-hover:text-wonderwhiz-bright-pink transition-colors" />
+                  <span className="text-sm text-white/90 group-hover:text-white">{queryText}</span>
                 </div>
               </motion.div>
             ))}
+            
+            {/* Search with exactly what's typed option */}
+            {query && (
+              <motion.div
+                initial={{ opacity: 0, x: -5 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3 }}
+                whileHover={{ x: 2 }}
+                className="px-3 py-2 mt-1 border-t border-white/10 hover:bg-wonderwhiz-bright-pink/20 rounded-lg cursor-pointer transition-colors group"
+                onClick={() => {
+                  setTimeout(() => {
+                    handleSubmitQuery();
+                    setShowSuggestions(false);
+                  }, 100);
+                }}
+              >
+                <div className="flex items-center">
+                  <ArrowRight className="h-3 w-3 mr-2 text-wonderwhiz-bright-pink group-hover:translate-x-1 transition-transform" />
+                  <span className="text-sm text-wonderwhiz-bright-pink">Search for "{query}"</span>
+                </div>
+              </motion.div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

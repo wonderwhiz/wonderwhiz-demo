@@ -127,7 +127,7 @@ const UnifiedSearchBar: React.FC<UnifiedSearchBarProps> = ({
     >
       <form onSubmit={(e) => handleSubmit(e)} className="relative">
         <div className="relative z-10">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/60">
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-wonderwhiz-bright-pink/70">
             <Search className="h-5 w-5" />
           </div>
           
@@ -142,10 +142,10 @@ const UnifiedSearchBar: React.FC<UnifiedSearchBarProps> = ({
             }}
             placeholder={`What are you curious about${childProfile?.name ? ', ' + childProfile.name : ''}?`}
             className={cn(
-              "h-14 pl-12 pr-24 w-full text-lg rounded-2xl border-white/20 backdrop-blur-lg",
+              "h-14 pl-12 pr-24 w-full text-lg rounded-2xl border-wonderwhiz-bright-pink/20 backdrop-blur-lg",
               "bg-white/10 text-white placeholder:text-white/50",
-              "focus:ring-2 focus:ring-indigo-500/50 focus:bg-white/15 transition-all duration-300",
-              "shadow-lg shadow-indigo-900/20"
+              "focus:ring-2 focus:ring-wonderwhiz-bright-pink/50 focus:bg-white/15 transition-all duration-300",
+              "shadow-glow-brand-pink"
             )}
           />
           
@@ -170,8 +170,8 @@ const UnifiedSearchBar: React.FC<UnifiedSearchBarProps> = ({
             disabled={!query.trim() || isGenerating}
             className={cn(
               "absolute right-3 top-1/2 -translate-y-1/2 h-10 px-4 rounded-xl flex items-center gap-1.5",
-              "bg-gradient-to-r from-indigo-500 to-indigo-600",
-              "text-white font-medium transition-all"
+              "bg-gradient-to-r from-wonderwhiz-vibrant-yellow to-wonderwhiz-bright-pink",
+              "text-wonderwhiz-deep-purple font-medium transition-all shadow-glow-brand-pink"
             )}
           >
             {isGenerating ? (
@@ -193,13 +193,26 @@ const UnifiedSearchBar: React.FC<UnifiedSearchBarProps> = ({
       
       {/* Enhanced search dialog */}
       <CommandDialog open={showCommandDialog} onOpenChange={setShowCommandDialog}>
-        <Command className="rounded-lg border-none bg-gradient-to-b from-indigo-950 to-indigo-900">
+        <Command className="rounded-lg border-none bg-gradient-to-b from-wonderwhiz-deep-purple to-wonderwhiz-deep-purple/90">
           <CommandInput 
             placeholder={`Discover something amazing${childProfile?.name ? ', ' + childProfile.name : ''}...`}
-            className="border-b border-indigo-800"
+            className="border-b border-wonderwhiz-bright-pink/20"
           />
           <CommandList>
-            <CommandEmpty>No results found. Try something else?</CommandEmpty>
+            <CommandEmpty>
+              <div className="py-3 px-4 text-center">
+                <p className="text-white/70">No results found.</p>
+                <Button 
+                  className="mt-2 bg-wonderwhiz-bright-pink/20 text-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/30"
+                  onClick={() => {
+                    setShowCommandDialog(false);
+                    setTimeout(() => handleSubmit(), 100);
+                  }}
+                >
+                  Search for "{query}"
+                </Button>
+              </div>
+            </CommandEmpty>
             
             <CommandGroup heading="Personalized for You">
               {intelligentSuggestions.map((suggestion, index) => (
@@ -208,9 +221,9 @@ const UnifiedSearchBar: React.FC<UnifiedSearchBarProps> = ({
                   onSelect={() => {
                     handleSuggestionClick(suggestion);
                   }}
-                  className="hover:bg-indigo-800/30"
+                  className="hover:bg-wonderwhiz-bright-pink/20"
                 >
-                  <BrainCircuit className="mr-2 h-4 w-4 text-amber-400" />
+                  <BrainCircuit className="mr-2 h-4 w-4 text-wonderwhiz-gold" />
                   {suggestion}
                 </CommandItem>
               ))}
@@ -223,9 +236,9 @@ const UnifiedSearchBar: React.FC<UnifiedSearchBarProps> = ({
                   onSelect={() => {
                     handleSuggestionClick(`Tell me about ${topic}`);
                   }}
-                  className="hover:bg-indigo-800/30"
+                  className="hover:bg-wonderwhiz-bright-pink/20"
                 >
-                  <Lightbulb className="mr-2 h-4 w-4 text-pink-400" />
+                  <Lightbulb className="mr-2 h-4 w-4 text-wonderwhiz-bright-pink" />
                   {topic}
                 </CommandItem>
               ))}
@@ -239,7 +252,7 @@ const UnifiedSearchBar: React.FC<UnifiedSearchBarProps> = ({
                     onSelect={() => {
                       handleSuggestionClick(query);
                     }}
-                    className="hover:bg-indigo-800/30"
+                    className="hover:bg-wonderwhiz-bright-pink/20"
                   >
                     <Clock className="mr-2 h-4 w-4 text-white/70" />
                     {query}
@@ -247,6 +260,20 @@ const UnifiedSearchBar: React.FC<UnifiedSearchBarProps> = ({
                 ))}
               </CommandGroup>
             )}
+            
+            {/* Important: Add option to use exactly what the user typed */}
+            <div className="p-2 border-t border-white/10">
+              <Button
+                onClick={() => {
+                  setShowCommandDialog(false);
+                  setTimeout(() => handleSubmit(), 100);
+                }}
+                className="w-full justify-start bg-wonderwhiz-bright-pink/20 hover:bg-wonderwhiz-bright-pink/30 text-wonderwhiz-bright-pink"
+              >
+                <ArrowRight className="mr-2 h-4 w-4" />
+                {query ? `Search for "${query}"` : "Enter your own question"}
+              </Button>
+            </div>
           </CommandList>
         </Command>
       </CommandDialog>
@@ -262,7 +289,7 @@ const UnifiedSearchBar: React.FC<UnifiedSearchBarProps> = ({
             whileHover={{ scale: 1.05, y: -2 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => handleSuggestionClick(`Tell me about ${topic}`)}
-            className="px-3 py-1.5 bg-indigo-500/20 hover:bg-indigo-500/30 rounded-full text-white/80 hover:text-white text-sm transition-all duration-200 border border-indigo-500/30"
+            className="px-3 py-1.5 bg-wonderwhiz-bright-pink/20 hover:bg-wonderwhiz-bright-pink/30 rounded-full text-white/80 hover:text-white text-sm transition-all duration-200 border border-wonderwhiz-bright-pink/30"
           >
             {topic}
           </motion.button>

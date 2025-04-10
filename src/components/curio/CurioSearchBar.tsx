@@ -111,19 +111,19 @@ const CurioSearchBar: React.FC<CurioSearchBarProps> = ({
       <form onSubmit={handleSearch} className="flex items-center gap-2">
         <div className={cn(
           "relative flex-grow group",
-          isFocused ? "ring-2 ring-white/20 rounded-full" : "",
+          isFocused ? "ring-2 ring-wonderwhiz-bright-pink/50 rounded-full" : "",
         )}>
           <Search className={cn(
             "absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4",
-            isFocused ? "text-white" : "text-white/40",
+            isFocused ? "text-wonderwhiz-bright-pink" : "text-white/40",
             "group-hover:text-white/60 transition-colors"
           )} />
           <Input
             type="text"
             placeholder="What would you like to explore next?"
             className={cn(
-              "pl-9 rounded-full bg-white/10 border-white/20 text-white placeholder:text-white/40 font-inter",
-              "transition-all duration-300 focus:bg-white/15 focus:border-white/30 focus:ring-white/20"
+              "pl-9 rounded-full bg-white/10 border-wonderwhiz-bright-pink/20 text-white placeholder:text-white/40 font-inter",
+              "transition-all duration-300 focus:bg-white/15 focus:border-wonderwhiz-bright-pink/30 focus:ring-wonderwhiz-bright-pink/20"
             )}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -153,7 +153,7 @@ const CurioSearchBar: React.FC<CurioSearchBarProps> = ({
             type="submit" 
             className={cn(
               "bg-gradient-to-r from-wonderwhiz-vibrant-yellow to-wonderwhiz-bright-pink",
-              "text-wonderwhiz-deep-purple font-medium rounded-full px-5"
+              "text-wonderwhiz-deep-purple font-medium rounded-full px-5 shadow-glow-brand-pink"
             )}
           >
             <span className="mr-1">Explore</span>
@@ -169,7 +169,7 @@ const CurioSearchBar: React.FC<CurioSearchBarProps> = ({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
-            className="absolute top-full left-0 right-0 mt-2 bg-wonderwhiz-deep-purple/90 backdrop-blur-md border border-white/10 rounded-lg shadow-lg z-10 overflow-hidden"
+            className="absolute top-full left-0 right-0 mt-2 bg-wonderwhiz-deep-purple/90 backdrop-blur-md border border-wonderwhiz-bright-pink/20 rounded-lg shadow-lg z-10 overflow-hidden"
             variants={containerVariants}
           >
             <div className="p-2">
@@ -185,6 +185,23 @@ const CurioSearchBar: React.FC<CurioSearchBarProps> = ({
                   {suggestion}
                 </motion.button>
               ))}
+              
+              {/* Important: Add option to use exactly what the user typed */}
+              <motion.button
+                className="w-full text-left px-3 py-2 mt-1 border-t border-white/10 rounded-md hover:bg-wonderwhiz-bright-pink/20 text-wonderwhiz-bright-pink flex items-center group transition-colors"
+                onClick={() => {
+                  setShowSuggestions(false);
+                  setTimeout(() => {
+                    const form = document.querySelector('form');
+                    if (form) form.dispatchEvent(new Event('submit', { cancelable: true }));
+                  }, 100);
+                }}
+                variants={itemVariants}
+                whileHover={{ x: 3 }}
+              >
+                <ArrowRight className="h-3.5 w-3.5 mr-2 group-hover:translate-x-1 transition-transform" />
+                {searchQuery ? `Search for "${searchQuery}"` : "Use your own search"}
+              </motion.button>
             </div>
           </motion.div>
         )}
