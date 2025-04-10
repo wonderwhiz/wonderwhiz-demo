@@ -1,12 +1,13 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Compass, Star, ArrowRight, Sparkles, Book, Map, Zap } from 'lucide-react';
+import { Compass, Star, ArrowRight, Sparkles, Book, Map, Zap, ChevronDown } from 'lucide-react';
 import { useChildLearningHistory } from '@/hooks/useChildLearningHistory';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface KnowledgeJourneyProps {
   childId: string;
@@ -20,36 +21,37 @@ const KnowledgeJourney: React.FC<KnowledgeJourneyProps> = ({
   onTopicClick
 }) => {
   const { recentlyViewedTopics, strongestTopics, getPersonalizedSuggestions } = useChildLearningHistory(childId);
+  const [showAll, setShowAll] = useState(false);
   
   // Create a consistent color palette based on brand guidelines
   const nodeColors = {
     strength: {
-      bg: "bg-gradient-to-br from-wonderwhiz-deep-purple/10 to-wonderwhiz-light-purple/20",
-      border: "border-wonderwhiz-light-purple/30",
-      hover: "hover:border-wonderwhiz-light-purple/50 hover:bg-wonderwhiz-light-purple/10",
+      bg: "bg-wonderwhiz-deep-purple/20",
+      border: "border-wonderwhiz-vibrant-yellow/30",
+      hover: "hover:border-wonderwhiz-vibrant-yellow/50 hover:bg-wonderwhiz-deep-purple/30",
       icon: <Star className="h-4 w-4 text-wonderwhiz-vibrant-yellow" />,
-      iconBg: "bg-wonderwhiz-deep-purple/70"
+      iconBg: "bg-wonderwhiz-deep-purple/50"
     },
     recent: {
-      bg: "bg-gradient-to-br from-wonderwhiz-deep-purple/10 to-wonderwhiz-bright-pink/10",
+      bg: "bg-wonderwhiz-deep-purple/20",
       border: "border-wonderwhiz-bright-pink/30",
-      hover: "hover:border-wonderwhiz-bright-pink/50 hover:bg-wonderwhiz-bright-pink/10",
+      hover: "hover:border-wonderwhiz-bright-pink/50 hover:bg-wonderwhiz-deep-purple/30",
       icon: <Book className="h-4 w-4 text-wonderwhiz-bright-pink" />,
-      iconBg: "bg-wonderwhiz-deep-purple/70"
+      iconBg: "bg-wonderwhiz-deep-purple/50"
     },
     suggestion: {
-      bg: "bg-gradient-to-br from-wonderwhiz-deep-purple/10 to-wonderwhiz-cyan/10",
+      bg: "bg-wonderwhiz-deep-purple/20",
       border: "border-wonderwhiz-cyan/30",
-      hover: "hover:border-wonderwhiz-cyan/50 hover:bg-wonderwhiz-cyan/10",
+      hover: "hover:border-wonderwhiz-cyan/50 hover:bg-wonderwhiz-deep-purple/30",
       icon: <Compass className="h-4 w-4 text-wonderwhiz-cyan" />,
-      iconBg: "bg-wonderwhiz-deep-purple/70"
+      iconBg: "bg-wonderwhiz-deep-purple/50"
     },
     interest: {
-      bg: "bg-gradient-to-br from-wonderwhiz-deep-purple/10 to-wonderwhiz-blue-accent/10",
+      bg: "bg-wonderwhiz-deep-purple/20",
       border: "border-wonderwhiz-blue-accent/30",
-      hover: "hover:border-wonderwhiz-blue-accent/50 hover:bg-wonderwhiz-blue-accent/10",
+      hover: "hover:border-wonderwhiz-blue-accent/50 hover:bg-wonderwhiz-deep-purple/30",
       icon: <Sparkles className="h-4 w-4 text-wonderwhiz-blue-accent" />,
-      iconBg: "bg-wonderwhiz-deep-purple/70"
+      iconBg: "bg-wonderwhiz-deep-purple/50"
     }
   };
   
@@ -108,6 +110,8 @@ const KnowledgeJourney: React.FC<KnowledgeJourneyProps> = ({
   };
   
   const journeyNodes = generateJourneyNodes();
+  // Show only 3 nodes initially, show all if showAll is true
+  const displayedNodes = showAll ? journeyNodes : journeyNodes.slice(0, 3);
 
   const handleNodeClick = (node: any) => {
     // Handle clicks differently based on node type
@@ -159,7 +163,7 @@ const KnowledgeJourney: React.FC<KnowledgeJourneyProps> = ({
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="bg-gradient-to-br from-wonderwhiz-deep-purple/30 to-wonderwhiz-light-purple/20 backdrop-blur-sm rounded-2xl border border-white/10 p-5 shadow-lg"
+      className="bg-gradient-to-br from-wonderwhiz-deep-purple/40 to-indigo-950/70 backdrop-blur-sm rounded-2xl border border-wonderwhiz-light-purple/30 p-5 shadow-lg"
     >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center">
@@ -185,7 +189,7 @@ const KnowledgeJourney: React.FC<KnowledgeJourneyProps> = ({
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3">
-            {journeyNodes.map((node) => (
+            {displayedNodes.map((node) => (
               <motion.div 
                 key={node.id}
                 variants={itemVariants}
@@ -205,7 +209,7 @@ const KnowledgeJourney: React.FC<KnowledgeJourneyProps> = ({
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
                         <div className={cn(
-                          "p-2 rounded-full mr-3 border border-white/10", 
+                          "p-2 rounded-full mr-3 border border-white/20", 
                           nodeColors[node.type as keyof typeof nodeColors].iconBg
                         )}>
                           {nodeColors[node.type as keyof typeof nodeColors].icon}
@@ -217,12 +221,25 @@ const KnowledgeJourney: React.FC<KnowledgeJourneyProps> = ({
                         </div>
                       </div>
                       
-                      <ArrowRight className="h-4 w-4 text-white/40 group-hover:text-white/70 group-hover:translate-x-0.5 transition-all" />
+                      <ArrowRight className="h-4 w-4 text-white/60 group-hover:text-white/90 group-hover:translate-x-0.5 transition-all" />
                     </div>
                   </CardContent>
                 </Card>
               </motion.div>
             ))}
+            
+            {journeyNodes.length > 3 && (
+              <motion.div variants={itemVariants}>
+                <Button 
+                  variant="ghost" 
+                  className="w-full text-white/70 font-nunito hover:text-white hover:bg-wonderwhiz-deep-purple/30 flex items-center justify-center"
+                  onClick={() => setShowAll(!showAll)}
+                >
+                  <ChevronDown className={`mr-2 h-4 w-4 transition-transform ${showAll ? 'rotate-180' : ''}`} />
+                  <span>{showAll ? 'Show less' : `Show ${journeyNodes.length - 3} more pathways`}</span>
+                </Button>
+              </motion.div>
+            )}
           </div>
         )}
       </div>

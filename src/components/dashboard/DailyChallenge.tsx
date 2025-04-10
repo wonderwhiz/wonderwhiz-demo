@@ -1,11 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Trophy, Star, Clock, Brain, BookOpen, Zap, Rocket, Sparkles } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Trophy, Star, Clock, Brain, BookOpen, Zap, Rocket, Sparkles, CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+import confetti from 'canvas-confetti';
 
 interface DailyChallengeProps {
   childId: string;
@@ -19,6 +21,7 @@ const DailyChallenge: React.FC<DailyChallengeProps> = ({
   onComplete
 }) => {
   const [challenges, setChallenges] = useState<any[]>([]);
+  const [completionAnimation, setCompletionAnimation] = useState<string | null>(null);
   
   useEffect(() => {
     // Generate daily challenges - this would normally come from the backend
@@ -67,8 +70,12 @@ const DailyChallenge: React.FC<DailyChallengeProps> = ({
     generateChallenges();
   }, [childId, onNewChallenges]);
   
-  // Handle challenge completion
+  // Handle challenge completion with visual feedback
   const handleChallengeComplete = (challengeId: string) => {
+    // Set the challenge ID for completion animation
+    setCompletionAnimation(challengeId);
+    
+    // Update the challenge progress
     setChallenges(prevChallenges => 
       prevChallenges.map(challenge => 
         challenge.id === challengeId 
@@ -77,10 +84,30 @@ const DailyChallenge: React.FC<DailyChallengeProps> = ({
       )
     );
     
-    // Notify parent component if needed
-    if (onComplete) {
-      onComplete();
-    }
+    // Trigger confetti effect for visual feedback
+    confetti({
+      particleCount: 80,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#00E2FF', '#FF5BA3', '#FFD54F', '#00D68F'],
+      disableForReducedMotion: true
+    });
+    
+    // Show success toast
+    toast.success("Challenge completed!", {
+      description: `Great job! You've earned ${challenges.find(c => c.id === challengeId)?.reward || 0} sparks!`,
+      icon: <CheckCircle className="h-5 w-5 text-wonderwhiz-green" />
+    });
+    
+    // Reset animation state after animation completes
+    setTimeout(() => {
+      setCompletionAnimation(null);
+      
+      // Notify parent component if needed
+      if (onComplete) {
+        onComplete();
+      }
+    }, 1000);
   };
   
   // Animation variants
@@ -108,12 +135,20 @@ const DailyChallenge: React.FC<DailyChallengeProps> = ({
     }
   };
   
+  const completionVariants = {
+    initial: { scale: 1 },
+    animate: { 
+      scale: [1, 1.1, 1],
+      transition: { duration: 0.5 }
+    }
+  };
+  
   return (
     <motion.div
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="bg-gradient-to-br from-wonderwhiz-vibrant-yellow/10 to-wonderwhiz-orange/10 backdrop-blur-sm rounded-2xl border border-white/10 p-5 shadow-lg"
+      className="bg-gradient-to-br from-wonderwhiz-deep-purple/40 to-indigo-950/70 backdrop-blur-sm rounded-2xl border border-wonderwhiz-light-purple/30 p-5 shadow-lg"
     >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center">
@@ -142,12 +177,14 @@ const DailyChallenge: React.FC<DailyChallengeProps> = ({
             key={challenge.id}
             variants={itemVariants}
             whileHover={{ scale: 1.02, y: -1 }}
+            animate={completionAnimation === challenge.id ? "animate" : "initial"}
+            variants={completionAnimation === challenge.id ? completionVariants : itemVariants}
             onClick={() => challenge.progress < 100 && handleChallengeComplete(challenge.id)}
             className={cn(
               "p-4 rounded-lg transition-all overflow-hidden group border cursor-pointer",
               challenge.progress === 100 
-                ? "bg-gradient-to-r from-wonderwhiz-green/10 to-wonderwhiz-green/5 border-white/10" 
-                : "bg-gradient-to-r from-wonderwhiz-deep-purple/10 to-wonderwhiz-vibrant-yellow/5 border-white/10 hover:border-white/20"
+                ? "bg-gradient-to-r from-wonderwhiz-green/15 to-wonderwhiz-green/5 border-wonderwhiz-green/30" 
+                : "bg-gradient-to-r from-wonderwhiz-deep-purple/20 to-wonderwhiz-deep-purple/10 border-white/10 hover:border-white/20"
             )}
           >
             <div className="flex justify-between items-start">
@@ -156,9 +193,13 @@ const DailyChallenge: React.FC<DailyChallengeProps> = ({
                   "w-8 h-8 rounded-full flex items-center justify-center border border-white/10",
                   challenge.progress === 100 
                     ? "bg-gradient-to-br from-wonderwhiz-green/30 to-wonderwhiz-green/20" 
-                    : "bg-gradient-to-br from-wonderwhiz-vibrant-yellow/20 to-wonderwhiz-orange/20"
+                    : "bg-gradient-to-br from-wonderwhiz-deep-purple/50 to-wonderwhiz-deep-purple/30"
                 )}>
-                  {challenge.icon}
+                  {challenge.progress === 100 ? (
+                    <CheckCircle className="h-5 w-5 text-wonderwhiz-green" />
+                  ) : (
+                    challenge.icon
+                  )}
                 </div>
                 
                 <div>
@@ -186,14 +227,17 @@ const DailyChallenge: React.FC<DailyChallengeProps> = ({
             
             {/* Progress indicator */}
             <div className="mt-3 w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
-              <div 
+              <motion.div 
                 className={cn(
                   "h-full rounded-full",
                   challenge.progress === 100 
                     ? "bg-gradient-to-r from-wonderwhiz-green to-wonderwhiz-cyan"
-                    : "bg-gradient-to-r from-wonderwhiz-vibrant-yellow to-wonderwhiz-orange"
+                    : "bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-vibrant-yellow"
                 )} 
                 style={{ width: `${challenge.progress}%` }}
+                initial={{ width: "0%" }}
+                animate={{ width: `${challenge.progress}%` }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
               />
             </div>
           </motion.div>
