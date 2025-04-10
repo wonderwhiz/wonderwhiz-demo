@@ -44,21 +44,21 @@ const ChapterHeader: React.FC<ChapterHeaderProps> = ({
   const getChapterColors = () => {
     switch(chapterId) {
       case 'introduction':
-        return 'from-yellow-500/20 to-amber-600/20 border-yellow-500/30';
+        return 'from-yellow-500/10 to-amber-600/10 border-yellow-500/20';
       case 'exploration':
-        return 'from-emerald-500/20 to-green-600/20 border-emerald-500/30';
+        return 'from-emerald-500/10 to-green-600/10 border-emerald-500/20';
       case 'understanding':
-        return 'from-cyan-500/20 to-blue-600/20 border-cyan-500/30';
+        return 'from-cyan-500/10 to-blue-600/10 border-cyan-500/20';
       case 'challenge':
-        return 'from-pink-500/20 to-rose-600/20 border-pink-500/30';
+        return 'from-pink-500/10 to-rose-600/10 border-pink-500/20';
       case 'creation':
-        return 'from-purple-500/20 to-violet-600/20 border-purple-500/30';
+        return 'from-purple-500/10 to-violet-600/10 border-purple-500/20';
       case 'reflection':
-        return 'from-amber-500/20 to-orange-600/20 border-amber-500/30';
+        return 'from-amber-500/10 to-orange-600/10 border-amber-500/20';
       case 'nextSteps':
-        return 'from-indigo-500/20 to-blue-600/20 border-indigo-500/30';
+        return 'from-indigo-500/10 to-blue-600/10 border-indigo-500/20';
       default:
-        return 'from-wonderwhiz-bright-pink/20 to-wonderwhiz-vibrant-yellow/20 border-wonderwhiz-bright-pink/30';
+        return 'from-wonderwhiz-bright-pink/10 to-wonderwhiz-vibrant-yellow/10 border-wonderwhiz-bright-pink/20';
     }
   };
 
@@ -66,23 +66,23 @@ const ChapterHeader: React.FC<ChapterHeaderProps> = ({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.1 }}
-      className={`relative my-6 bg-gradient-to-r ${colors} backdrop-blur-sm border border-l-4 rounded-lg overflow-hidden`}
+      transition={{ duration: 0.3, delay: 0.1 }}
+      className={`relative my-5 bg-gradient-to-r ${colors} backdrop-blur-sm border border-l-[3px] rounded-lg overflow-hidden`}
     >
       <div className="p-3 sm:p-4">
         <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
-          <div className="bg-white/10 p-2 sm:p-3 rounded-full">
+          <div className="bg-white/10 p-2.5 rounded-full flex items-center justify-center">
             {getChapterIcon()}
           </div>
           
           <div>
-            <h3 className="text-white font-bold text-base sm:text-lg font-nunito">{title}</h3>
-            <p className="text-white/70 text-xs sm:text-sm font-inter">{description}</p>
+            <h3 className="text-white font-bold text-sm sm:text-base font-nunito">{title}</h3>
+            <p className="text-white/60 text-xs font-inter">{description}</p>
           </div>
           
-          <div className="absolute top-0 right-0 sm:top-auto sm:right-0 text-white/40 text-xs">
+          <div className="absolute top-0 right-0 sm:top-auto sm:right-0 text-white/30 text-xs font-medium">
             {index + 1} / {totalChapters}
           </div>
         </div>
