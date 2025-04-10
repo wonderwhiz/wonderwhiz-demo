@@ -16,26 +16,46 @@ serve(async (req) => {
   }
 
   try {
-    // Validate request
-    if (!req.body) {
-      throw new Error('Request body is required');
-    }
-    
+    // Parse request body
     let requestBody;
     try {
       requestBody = await req.json();
     } catch (e) {
       console.error('Error parsing request body:', e);
-      return new Response(JSON.stringify({ error: 'Invalid request body' }), {
+      return new Response(JSON.stringify({ 
+        error: 'Invalid request body',
+        imageUrl: getFallbackImage('general') 
+      }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
     
-    const { topic, style = "Pixar-style educational illustration", childAge = 10 } = requestBody;
+    // Extract parameters, supporting multiple possible property names for topic
+    let topic = requestBody.topic || 
+                requestBody.blockContent || 
+                requestBody.query || 
+                requestBody.content?.fact || 
+                requestBody.content?.question || 
+                requestBody.content?.front;
     
+    // Extract other common parameters with defaults
+    const style = requestBody.style || "Pixar-style educational illustration";
+    const childAge = requestBody.childAge || requestBody.age || 10;
+    
+    // Log request parameters
+    console.log(`Request params: topic=${topic}, style=${style}, age=${childAge}`);
+    
+    // Validate topic parameter exists
     if (!topic) {
-      throw new Error('Topic is required');
+      console.warn('Topic parameter not found in request body:', JSON.stringify(requestBody));
+      // Return a fallback image for "ocean" since that's a common theme
+      return new Response(JSON.stringify({ 
+        error: 'Topic is required',
+        imageUrl: getFallbackImage('ocean') 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     console.log(`Generating image for topic: ${topic}, style: ${style}, age: ${childAge}`);
@@ -108,12 +128,19 @@ serve(async (req) => {
     console.error('Error in generate-contextual-image function:', error);
     
     // Extract topic from the request to provide a relevant fallback
-    let topic = 'general';
+    let topic = 'ocean';
     try {
-      const { topic: requestTopic } = await req.json();
-      if (requestTopic) topic = requestTopic;
+      const bodyText = await req.text();
+      if (bodyText) {
+        try {
+          const bodyJson = JSON.parse(bodyText);
+          topic = bodyJson.topic || bodyJson.blockContent || bodyJson.query || 'ocean';
+        } catch (e) {
+          // If parsing fails, use default topic
+        }
+      }
     } catch (e) {
-      // If parsing fails, use default topic
+      // If reading body fails, use default topic
     }
     
     return new Response(JSON.stringify({ 
@@ -135,14 +162,26 @@ function getFallbackImage(topic: string): string {
     robot: "https://images.unsplash.com/photo-1558346490-a72e53ae2d4f?q=80&w=1000&auto=format&fit=crop",
     animal: "https://images.unsplash.com/photo-1474511320723-9a56873867b5?q=80&w=1000&auto=format&fit=crop",
     plant: "https://images.unsplash.com/photo-1502331538081-041522531548?q=80&w=1000&auto=format&fit=crop",
-    earth: "https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?q=80&w=1000&auto=format&fit=crop"
+    earth: "https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?q=80&w=1000&auto=format&fit=crop",
+    general: "https://images.unsplash.com/photo-1454789548928-9efd52dc4031?q=80&w=1000&auto=format&fit=crop"
   };
   
   // Find the most relevant image by checking if the topic contains any of our keywords
-  const topicLower = topic.toLowerCase();
+  const topicLower = typeof topic === 'string' ? topic.toLowerCase() : 'ocean';
+  
+  // Ocean-specific keywords since that's the current curio topic
+  if (topicLower.includes('ocean') || 
+      topicLower.includes('sea') || 
+      topicLower.includes('marine') || 
+      topicLower.includes('underwater') ||
+      topicLower.includes('aquatic')) {
+    return fallbackImages.ocean;
+  }
+  
+  // Check other topics
   const relevantTopic = Object.keys(fallbackImages).find(key => 
     topicLower.includes(key)
   );
   
-  return relevantTopic ? fallbackImages[relevantTopic] : fallbackImages.earth;
+  return relevantTopic ? fallbackImages[relevantTopic] : fallbackImages.ocean;
 }

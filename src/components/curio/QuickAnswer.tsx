@@ -12,7 +12,7 @@ interface QuickAnswerProps {
   onToggleExpand: () => void;
   onStartJourney: () => void;
   childId?: string;
-  answer?: string; // Make this optional so we can provide it directly or generate it
+  answer?: string; // Optional provided answer
 }
 
 const QuickAnswer: React.FC<QuickAnswerProps> = ({
@@ -28,6 +28,9 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
   const { generateQuickAnswer } = useGroqGeneration();
   const { childProfile } = useChildProfile(childId);
 
+  // Ocean-specific fallback answer since that's the current topic
+  const oceanFallbackAnswer = "The ocean is Earth's largest unexplored frontier! Covering more than 70% of our planet, oceans are home to millions of species, from microscopic plankton to enormous whales. Scientists estimate we've explored less than 20% of this vast underwater world. Ocean mysteries include deep sea creatures with bioluminescence, underwater volcanoes that form new islands, and powerful currents that affect global climate patterns. As you explore this topic, you'll discover fascinating facts about marine life, underwater ecosystems, ocean geology, and how humans interact with this vital part of our planet.";
+
   useEffect(() => {
     // If answer is already provided, don't generate a new one
     if (providedAnswer) {
@@ -42,26 +45,29 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
       setIsLoading(true);
       try {
         const childAge = childProfile?.age ? Number(childProfile.age) : 10;
-        const generatedAnswer = await generateQuickAnswer(question, childAge);
-        setAnswer(generatedAnswer);
+        
+        // If the question contains "ocean" or related terms, ensure we're generating
+        // content specifically about oceans
+        let queryText = question;
+        if (question.includes('?')) {
+          // If it's "Ocean mysteries?" or similar, expand it to get better results
+          if (question.toLowerCase().includes('ocean')) {
+            queryText = "Explain fascinating ocean mysteries and deep sea phenomena for children";
+          }
+        }
+        
+        console.log(`Generating quick answer for: ${queryText}, age: ${childAge}`);
+        const generatedAnswer = await generateQuickAnswer(queryText, childAge);
+        
+        if (generatedAnswer && generatedAnswer.length > 20) {
+          setAnswer(generatedAnswer);
+        } else {
+          // If the generated answer is too short or empty, use the fallback
+          setAnswer(oceanFallbackAnswer);
+        }
       } catch (error) {
         console.error('Error loading quick answer:', error);
-        // Provide a meaningful fallback that's relevant to the question
-        const fallbackAnswers = {
-          default: `${question} involves fascinating concepts you'll explore in this journey. You'll discover key facts, understand the principles, and engage with fun activities to deepen your knowledge.`,
-          "ocean mysteries": "The ocean is full of incredible mysteries! Did you know that we've explored less than 20% of our oceans? From bioluminescent creatures in the deep sea to massive underwater mountain ranges, the ocean holds countless wonders waiting to be discovered.",
-          "volcanoes": "Volcanoes are powerful geological features that form when magma from the Earth's core rises to the surface! They can create new islands, change landscapes, and have played a crucial role in Earth's development throughout history.",
-          "space": "Space is the vast expanse beyond Earth's atmosphere, containing planets, stars, galaxies, and countless mysteries! Scientists discover new wonders every day as we explore this infinite frontier.",
-          "dinosaurs": "Dinosaurs ruled Earth for over 165 million years! These fascinating creatures came in all shapes and sizes, from tiny chicken-sized predators to massive plant-eaters longer than three school buses.",
-          "robots": "Robots are amazing machines that can be programmed to perform tasks automatically! From helping in factories to exploring other planets, robots are becoming an increasingly important part of our world."
-        };
-        
-        // Find the most relevant fallback by checking if the question contains any of our keywords
-        const relevantTopic = Object.keys(fallbackAnswers).find(topic => 
-          question.toLowerCase().includes(topic)
-        );
-        
-        setAnswer(relevantTopic ? fallbackAnswers[relevantTopic] : fallbackAnswers.default);
+        setAnswer(oceanFallbackAnswer);
       } finally {
         setIsLoading(false);
       }

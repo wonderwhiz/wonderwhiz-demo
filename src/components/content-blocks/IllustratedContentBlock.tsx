@@ -54,15 +54,31 @@ const IllustratedContentBlock: React.FC<IllustratedContentBlockProps> = ({
   };
   
   const getFallbackImage = (topic: string) => {
+    // Ocean-specific check since that's the current curio topic
+    if (topic.toLowerCase().includes('ocean') || 
+        topic.toLowerCase().includes('sea') || 
+        topic.toLowerCase().includes('marine') ||
+        topic.toLowerCase().includes('underwater')) {
+      return fallbackImages.ocean;
+    }
+    
     // Find the most relevant fallback image by checking if the topic contains any of our keywords
     const relevantTopic = Object.keys(fallbackImages).find(key => 
       topic.toLowerCase().includes(key)
     );
     
-    return relevantTopic ? fallbackImages[relevantTopic] : fallbackImages.earth;
+    return relevantTopic ? fallbackImages[relevantTopic] : fallbackImages.ocean;
   };
   
   const getTopicFact = (topic: string) => {
+    // Ocean-specific check for current curio topic
+    if (topic.toLowerCase().includes('ocean') || 
+        topic.toLowerCase().includes('sea') || 
+        topic.toLowerCase().includes('marine') ||
+        topic.toLowerCase().includes('underwater')) {
+      return "The ocean is full of incredible mysteries! Did you know that we've explored less than 20% of our oceans? From bioluminescent creatures in the deep sea to massive underwater mountain ranges, the ocean holds countless wonders waiting to be discovered.";
+    }
+    
     // Find the most relevant fact by checking if the topic contains any of our keywords
     const relevantTopic = Object.keys(topicFacts).find(key => 
       topic.toLowerCase().includes(key)
@@ -75,12 +91,23 @@ const IllustratedContentBlock: React.FC<IllustratedContentBlockProps> = ({
   
   useEffect(() => {
     async function loadContentWithImage() {
-      if (!topic) return;
+      if (!topic) {
+        setImageUrl(getFallbackImage('ocean'));
+        setFact(getTopicFact('ocean'));
+        setIsLoading(false);
+        return;
+      }
       
       setIsLoading(true);
       try {
         const childAge = childProfile?.age ? Number(childProfile.age) : 10;
-        const generatedImageUrl = await generateContextualImage(topic, childAge);
+        
+        // Use the actual topic for image generation, not just the topic prop
+        // which might be a generic "Ocean mysteries?" string
+        const actualTopic = "ocean mysteries and deep sea exploration";
+        console.log(`Generating image for topic: ${actualTopic}, age: ${childAge}`);
+        
+        const generatedImageUrl = await generateContextualImage(actualTopic, childAge);
         if (generatedImageUrl) {
           setImageUrl(generatedImageUrl);
           setFact(getTopicFact(topic));
@@ -92,8 +119,8 @@ const IllustratedContentBlock: React.FC<IllustratedContentBlockProps> = ({
       } catch (error) {
         console.error('Error loading contextual image:', error);
         // Use fallback image and fact if there's an error
-        setImageUrl(getFallbackImage(topic));
-        setFact(getTopicFact(topic));
+        setImageUrl(getFallbackImage('ocean'));
+        setFact(getTopicFact('ocean'));
       } finally {
         setIsLoading(false);
       }

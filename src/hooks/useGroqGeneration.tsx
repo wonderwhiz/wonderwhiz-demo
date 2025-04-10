@@ -42,10 +42,17 @@ export function useGroqGeneration() {
   };
 
   const generateContextualImage = async (topic: string, childAge: number = 10): Promise<string> => {
+    if (!topic) {
+      console.error('Topic is required for image generation');
+      return getFallbackImage('ocean');
+    }
+    
     setIsGenerating(true);
     setError(null);
     
     try {
+      console.log(`Generating image for topic: ${topic}, childAge: ${childAge}`);
+      
       const { data, error } = await supabase.functions.invoke('generate-contextual-image', {
         body: { 
           topic,
@@ -54,9 +61,17 @@ export function useGroqGeneration() {
         }
       });
       
-      if (error) throw new Error(error.message);
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw new Error(error.message);
+      }
       
-      return data?.imageUrl || getFallbackImage(topic);
+      if (!data || !data.imageUrl) {
+        console.error('No image URL returned');
+        throw new Error('No image URL returned');
+      }
+      
+      return data.imageUrl || getFallbackImage(topic);
     } catch (err) {
       console.error('Error generating image:', err);
       setError('Failed to generate image');
@@ -69,6 +84,16 @@ export function useGroqGeneration() {
   
   // Helper function to generate fallback answers based on the topic
   const generateFallbackAnswer = (query: string): string => {
+    // Determine if the query is related to oceans
+    const isOceanTopic = query.toLowerCase().includes('ocean') || 
+                         query.toLowerCase().includes('sea') || 
+                         query.toLowerCase().includes('marine') ||
+                         query.toLowerCase().includes('underwater');
+                         
+    if (isOceanTopic) {
+      return "The ocean is Earth's last great frontier! Covering over 70% of our planet, oceans are home to millions of species, from microscopic plankton to enormous whales. Scientists estimate we've explored less than 20% of this vast underwater world. Ocean mysteries include deep sea creatures with bioluminescence, underwater volcanoes, and complex current systems that regulate our climate.";
+    }
+    
     // Common topics with fallback responses
     const fallbacks = {
       ocean: "The ocean is Earth's last great frontier! Covering over 70% of our planet, oceans are home to millions of species, from microscopic plankton to enormous whales. Scientists estimate we've explored less than 20% of this vast underwater world.",
@@ -108,6 +133,16 @@ export function useGroqGeneration() {
       plant: "https://images.unsplash.com/photo-1502331538081-041522531548?q=80&w=1000&auto=format&fit=crop",
       earth: "https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?q=80&w=1000&auto=format&fit=crop"
     };
+    
+    // Determine if the topic is related to oceans
+    const isOceanTopic = topic.toLowerCase().includes('ocean') || 
+                         topic.toLowerCase().includes('sea') || 
+                         topic.toLowerCase().includes('marine') ||
+                         topic.toLowerCase().includes('underwater');
+                         
+    if (isOceanTopic) {
+      return fallbackImages.ocean;
+    }
     
     // Find the most relevant image by checking if the topic contains any of our keywords
     const topicLower = topic.toLowerCase();
