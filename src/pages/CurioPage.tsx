@@ -99,15 +99,15 @@ const CurioPage: React.FC = () => {
   const { loadingMore, loadTriggerRef } = useInfiniteScroll(loadMore, hasMore);
   
   const { 
+    handleToggleLike,
+    handleToggleBookmark,
     handleReply,
     handleQuizCorrect,
     handleNewsRead,
     handleCreativeUpload,
     handleActivityComplete,
     handleMindfulnessComplete,
-    handleTaskComplete,
-    handleToggleLike: handleLike,
-    handleToggleBookmark: handleBookmark
+    handleTaskComplete
   } = useBlockInteractions(childId);
 
   const [animateBlocks, setAnimateBlocks] = useState(true);
@@ -442,16 +442,73 @@ const CurioPage: React.FC = () => {
   };
   
   const handleToggleLike = (blockId: string) => {
-    handleLike(blockId);
+    handleToggleLike(blockId);
   };
 
   const handleToggleBookmark = (blockId: string) => {
-    handleBookmark(blockId);
+    handleToggleBookmark(blockId);
+  };
+
+  const handleRabbitHoleClick = async (question: string) => {
+    if (!childId) return;
+    
+    try {
+      toast.loading("Creating new exploration...");
+      
+      const { data: newCurio, error } = await supabase
+        .from('curios')
+        .insert({
+          child_id: childId,
+          title: question,
+          query: question,
+        })
+        .select('id')
+        .single();
+        
+      if (error) throw error;
+      
+      if (newCurio) {
+        toast.success("New exploration created!");
+        
+        try {
+          await supabase.functions.invoke('increment-sparks-balance', {
+            body: JSON.stringify({
+              profileId: childId,
+              amount: 2
+            })
+          });
+          
+          await supabase.from('sparks_transactions').insert({
+            child_id: childId,
+            amount: 2,
+            reason: 'Following curiosity'
+          });
+          
+          toast.success('You earned 2 sparks for exploring your curiosity!', {
+            icon: '✨',
+            position: 'bottom-right',
+            duration: 3000
+          });
+        } catch (err) {
+          console.error('Error awarding sparks:', err);
+        }
+        
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+        
+        navigate(`/curio/${childId}/${newCurio.id}`);
+      }
+    } catch (error) {
+      console.error('Error creating rabbit hole curio:', error);
+      toast.error("Could not create new exploration. Please try again later.");
+    }
   };
 
   return (
     <div className="flex flex-col h-full">
-      {/* New Back to Dashboard Button */}
       <div className="fixed top-4 left-4 z-50">
         <Button
           variant="outline"
@@ -473,7 +530,6 @@ const CurioPage: React.FC = () => {
         showInsights={showInsights}
       />
 
-      {/* New Search Bar Component */}
       <div className="sticky top-0 z-40 bg-gradient-to-r from-indigo-950/95 to-purple-950/95 backdrop-blur-sm py-3 px-4 border-b border-white/10">
         <div className="max-w-3xl mx-auto">
           <form onSubmit={handleSearch} className="relative">

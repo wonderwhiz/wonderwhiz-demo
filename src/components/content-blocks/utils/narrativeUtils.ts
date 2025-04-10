@@ -1,4 +1,3 @@
-
 // Helper functions for narrative content
 
 export const getRandomPrompt = (type: string, specialistId: string): string => {
@@ -58,4 +57,43 @@ export const getPersonalizedMessage = (childName: string, interest: string): str
   ];
   
   return messages[Math.floor(Math.random() * messages.length)];
+};
+
+// New functions to handle sequence position and wonder prompts
+export const getSequencePosition = (position: number, total: number): string => {
+  if (position === 0 || position === 1) {
+    return 'beginning';
+  } else if (position >= total - 1) {
+    return 'end';
+  } else {
+    return 'middle';
+  }
+};
+
+export const shouldShowWonderPrompt = (
+  blockType: string, 
+  narrativePosition: string, 
+  specialistId: string, 
+  sequencePosition: number
+): boolean => {
+  // Show wonder prompts based on different conditions
+  if (narrativePosition === 'end') {
+    return true; // Always show at the end of a sequence
+  }
+  
+  if (['fact', 'funFact', 'quiz'].includes(blockType) && 
+      ['prism', 'nova', 'atlas'].includes(specialistId)) {
+    return true; // Show for fact-based blocks from knowledge specialists
+  }
+  
+  if (blockType === 'creative' && specialistId === 'spark') {
+    return true; // Show for creative blocks from the creativity specialist
+  }
+  
+  // Show occasionally in the middle of the journey
+  if (narrativePosition === 'middle' && sequencePosition % 3 === 0) {
+    return true;
+  }
+  
+  return false;
 };
