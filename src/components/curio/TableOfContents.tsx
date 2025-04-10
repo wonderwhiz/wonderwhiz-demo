@@ -6,11 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
-interface Chapter {
+export type ChapterIconType = 'introduction' | 'exploration' | 'understanding' | 'challenge' | 'creation' | 'reflection' | 'nextSteps';
+
+export interface Chapter {
   id: string;
   title: string;
   description: string;
-  icon: keyof typeof chapterIcons;
+  icon: ChapterIconType;
   isCompleted: boolean;
   isActive: boolean;
 }

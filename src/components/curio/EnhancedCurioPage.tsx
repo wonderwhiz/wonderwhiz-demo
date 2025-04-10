@@ -24,13 +24,13 @@ import CurioBlockList from '@/components/CurioBlockList';
 
 // New components
 import QuickAnswer from '@/components/curio/QuickAnswer';
-import TableOfContents from '@/components/curio/TableOfContents';
+import TableOfContents, { Chapter, ChapterIconType } from '@/components/curio/TableOfContents';
 import ProgressVisualization from '@/components/curio/ProgressVisualization';
 import LearningCertificate from '@/components/curio/LearningCertificate';
 import ChapterHeader from '@/components/curio/ChapterHeader';
 
 // Define chapter structure
-const DEFAULT_CHAPTERS = [
+const DEFAULT_CHAPTERS: Chapter[] = [
   {
     id: 'introduction',
     title: 'Introduction',
@@ -123,7 +123,7 @@ const EnhancedCurioPage: React.FC = () => {
   // New state for structured learning journey
   const [quickAnswer, setQuickAnswer] = useState<string>('');
   const [quickAnswerExpanded, setQuickAnswerExpanded] = useState(false);
-  const [chapters, setChapters] = useState(DEFAULT_CHAPTERS);
+  const [chapters, setChapters] = useState<Chapter[]>(DEFAULT_CHAPTERS);
   const [activeChapter, setActiveChapter] = useState('introduction');
   const [progress, setProgress] = useState(0);
   const [isJourneyStarted, setIsJourneyStarted] = useState(false);
@@ -172,7 +172,7 @@ const EnhancedCurioPage: React.FC = () => {
   // Determine child's age group
   useEffect(() => {
     if (childProfile?.age) {
-      const age = parseInt(childProfile.age);
+      const age = parseInt(childProfile.age as string);
       if (age >= 5 && age <= 7) {
         setAgeGroup('5-7');
       } else if (age >= 8 && age <= 11) {
@@ -286,7 +286,7 @@ const EnhancedCurioPage: React.FC = () => {
       }
       
       // Update chapters completion status based on block types
-      const updatedChapters = [...chapters];
+      const updatedChapters: Chapter[] = [...chapters];
       
       // Check for introduction content
       if (blocks.some(block => block.type === 'fact' || block.type === 'funFact')) {
@@ -336,7 +336,7 @@ const EnhancedCurioPage: React.FC = () => {
         setLearnerName(childProfile?.name || 'Wonder Explorer');
       }
     }
-  }, [blocks, showRabbitHoleSuggestions]);
+  }, [blocks, showRabbitHoleSuggestions, chapters, childProfile]);
 
   // Detect scroll position for showing rabbit hole suggestions
   useEffect(() => {
