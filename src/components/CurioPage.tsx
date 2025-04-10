@@ -24,6 +24,9 @@ import ProgressVisualization from '@/components/curio/ProgressVisualization';
 import LearningCertificate from '@/components/curio/LearningCertificate';
 import ChapterHeader from '@/components/curio/ChapterHeader';
 import IllustratedContentBlock from '@/components/content-blocks/IllustratedContentBlock';
+import CurioSearchNoMore from '@/components/curio/CurioSearchNoMore';
+import CurioNoMore from '@/components/curio/CurioNoMore';
+import CurioLoadMore from '@/components/curio/CurioLoadMore';
 import { Chapter } from '@/types/Chapter';
 
 const DEFAULT_CHAPTERS: Chapter[] = [
@@ -96,8 +99,8 @@ const CurioPage: React.FC = () => {
   const { loadingMore, loadTriggerRef } = useInfiniteScroll(loadMore, hasMore);
   
   const { 
-    handleToggleLike: likeHandler,
-    handleToggleBookmark: bookmarkHandler,
+    handleToggleLike,
+    handleToggleBookmark,
     handleReply,
     handleQuizCorrect,
     handleNewsRead,
@@ -130,34 +133,6 @@ const CurioPage: React.FC = () => {
   
   const blocksProcessedRef = useRef(false);
   const chaptersUpdatedRef = useRef(false);
-
-  const handleReply = (blockId: string, message: string) => {
-    handleMessageReply(blockId, message);
-  };
-  
-  const handleQuizCorrect = (blockId: string) => {
-    handleQuizSuccess(blockId);
-  };
-  
-  const handleNewsRead = (blockId: string) => {
-    handleNewsWasRead(blockId);
-  };
-  
-  const handleCreativeUpload = (blockId: string, content: any) => {
-    handleCreativeSubmission(blockId, content);
-  };
-  
-  const handleActivityComplete = (blockId: string) => {
-    handleActivityFinished(blockId);
-  };
-  
-  const handleMindfulnessComplete = (blockId: string) => {
-    handleMindfulnessFinished(blockId);
-  };
-  
-  const handleTaskComplete = (blockId: string) => {
-    handleTaskFinished(blockId);
-  };
 
   const organizeBlocksIntoChapters = (blocks: any[]) => {
     if (!blocks.length) return {};
@@ -438,17 +413,20 @@ const CurioPage: React.FC = () => {
       >
         <div className="max-w-3xl mx-auto">
           <CurioPageHeader
-            childProfile={childProfile}
             curioTitle={curioTitle}
             handleBackToDashboard={handleBackToDashboard}
+            handleToggleInsights={handleToggleInsights}
+            handleRefresh={handleRefresh}
+            refreshing={refreshing}
+            showInsights={showInsights}
           />
           
           <CurioPageInsights
-            showInsights={showInsights}
-            handleToggleInsights={handleToggleInsights}
             difficulty={difficulty}
             blockCount={blockCount}
             learningSummary={learningSummary}
+            showInsights={showInsights}
+            handleToggleInsights={handleToggleInsights}
           />
           
           <CurioSearchBar
