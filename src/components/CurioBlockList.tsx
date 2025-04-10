@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ContentBlock } from '@/types/curio';
@@ -70,12 +69,10 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
     }));
   };
 
-  // Filter for generating blocks
   const generatingBlocks = blocks.filter(block => 
     block.id?.startsWith('generating-')
   );
   
-  // Filter for real content blocks
   const contentBlocks = blocks.filter(block => 
     !block.id?.startsWith('generating-')
   );
@@ -171,18 +168,13 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
           case 'creative':
             BlockComponent = (
               <CreativeBlock 
-                prompt={block.content.prompt}
-                description={block.content.description}
-                examples={block.content.examples || []}
+                content={{
+                  prompt: block.content.prompt,
+                  description: block.content.description,
+                  examples: block.content.examples || []
+                }}
                 specialistId={block.specialist_id}
-                onLike={handleToggleLike ? () => handleToggleLike(block.id) : undefined}
-                onBookmark={handleToggleBookmark ? () => handleToggleBookmark(block.id) : undefined}
-                onReply={handleReply ? (message) => handleReply(block.id, message) : undefined}
-                onCreativeUpload={handleCreativeUpload ? 
-                  () => handleCreativeUpload(block.id, {}) : 
-                  undefined
-                }
-                onRabbitHoleClick={handleRabbitHoleClick}
+                onCreativeUpload={handleCreativeUpload ? () => handleCreativeUpload(block.id, {}) : undefined}
                 updateHeight={(height) => updateBlockHeight(block.id, height)}
               />
             );
@@ -190,18 +182,13 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
           case 'activity':
             BlockComponent = (
               <ActivityBlock 
-                title={block.content.title}
-                instructions={block.content.instructions}
-                steps={block.content.steps || []}
+                content={{
+                  title: block.content.title,
+                  instructions: block.content.instructions,
+                  steps: block.content.steps || []
+                }}
                 specialistId={block.specialist_id}
-                onLike={handleToggleLike ? () => handleToggleLike(block.id) : undefined}
-                onBookmark={handleToggleBookmark ? () => handleToggleBookmark(block.id) : undefined}
-                onReply={handleReply ? (message) => handleReply(block.id, message) : undefined}
-                onActivityComplete={handleActivityComplete ? 
-                  () => handleActivityComplete(block.id) : 
-                  undefined
-                }
-                onRabbitHoleClick={handleRabbitHoleClick}
+                onActivityComplete={handleActivityComplete ? () => handleActivityComplete(block.id) : undefined}
                 updateHeight={(height) => updateBlockHeight(block.id, height)}
               />
             );
@@ -209,18 +196,13 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
           case 'mindfulness':
             BlockComponent = (
               <MindfulnessBlock 
-                title={block.content.title}
-                instruction={block.content.instruction}
-                duration={block.content.duration}
+                content={{
+                  title: block.content.title,
+                  instruction: block.content.instruction,
+                  duration: block.content.duration
+                }}
                 specialistId={block.specialist_id}
-                onLike={handleToggleLike ? () => handleToggleLike(block.id) : undefined}
-                onBookmark={handleToggleBookmark ? () => handleToggleBookmark(block.id) : undefined}
-                onReply={handleReply ? (message) => handleReply(block.id, message) : undefined}
-                onMindfulnessComplete={handleMindfulnessComplete ? 
-                  () => handleMindfulnessComplete(block.id) : 
-                  undefined
-                }
-                onRabbitHoleClick={handleRabbitHoleClick}
+                onMindfulnessComplete={handleMindfulnessComplete ? () => handleMindfulnessComplete(block.id) : undefined}
                 updateHeight={(height) => updateBlockHeight(block.id, height)}
               />
             );
@@ -228,20 +210,15 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
           case 'news':
             BlockComponent = (
               <NewsBlock 
-                headline={block.content.headline}
-                summary={block.content.summary}
-                body={block.content.body}
-                source={block.content.source}
-                date={block.content.date}
+                content={{
+                  headline: block.content.headline,
+                  summary: block.content.summary,
+                  body: block.content.body,
+                  source: block.content.source,
+                  date: block.content.date
+                }}
                 specialistId={block.specialist_id}
-                onLike={handleToggleLike ? () => handleToggleLike(block.id) : undefined}
-                onBookmark={handleToggleBookmark ? () => handleToggleBookmark(block.id) : undefined}
-                onReply={handleReply ? (message) => handleReply(block.id, message) : undefined}
-                onNewsRead={handleNewsRead ? 
-                  () => handleNewsRead(block.id) : 
-                  undefined
-                }
-                onRabbitHoleClick={handleRabbitHoleClick}
+                onNewsRead={handleNewsRead ? () => handleNewsRead(block.id) : undefined}
                 updateHeight={(height) => updateBlockHeight(block.id, height)}
               />
             );
@@ -249,15 +226,12 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
           case 'flashcard':
             BlockComponent = (
               <FlashcardBlock 
-                front={block.content.front}
-                back={block.content.back}
-                hint={block.content.hint}
+                content={{
+                  front: block.content.front,
+                  back: block.content.back,
+                  hint: block.content.hint
+                }}
                 specialistId={block.specialist_id}
-                onLike={handleToggleLike ? () => handleToggleLike(block.id) : undefined}
-                onBookmark={handleToggleBookmark ? () => handleToggleBookmark(block.id) : undefined}
-                onReply={handleReply ? (message) => handleReply(block.id, message) : undefined}
-                onTaskComplete={handleTaskComplete ? () => handleTaskComplete(block.id) : undefined}
-                onRabbitHoleClick={handleRabbitHoleClick}
                 updateHeight={(height) => updateBlockHeight(block.id, height)}
               />
             );

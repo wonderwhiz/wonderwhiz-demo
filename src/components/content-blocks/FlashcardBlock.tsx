@@ -1,15 +1,9 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { FlashcardBlockProps } from './interfaces';
 
-interface FlashcardBlockProps {
-  content: {
-    front: string;
-    back: string;
-  };
-}
-
-const FlashcardBlock: React.FC<FlashcardBlockProps> = ({ content }) => {
+const FlashcardBlock: React.FC<FlashcardBlockProps> = ({ content, specialistId, updateHeight }) => {
   const [flipCard, setFlipCard] = useState(false);
   
   return (

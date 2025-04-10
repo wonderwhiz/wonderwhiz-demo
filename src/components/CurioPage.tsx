@@ -2,31 +2,28 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { useUser } from '@/hooks/use-user';
 import { useChildProfile } from '@/hooks/use-child-profile';
 import { useCurioBlocks } from '@/hooks/use-curio-blocks';
 import { useInfiniteScroll } from '@/hooks/use-infinite-scroll';
 import { useSearch } from '@/hooks/use-search';
-import { getBackgroundColor } from '@/components/BlockStyleUtils';
-import CurioBlockList from '@/components/CurioBlockList';
-import CurioBlockListLoading from '@/components/CurioBlockListLoading';
-import CurioBlockListEmpty from '@/components/CurioBlockListEmpty';
-import CurioBlockListError from '@/components/CurioBlockListError';
-import CurioBlockListLoadMore from '@/components/CurioBlockListLoadMore';
-import CurioBlockListNoMore from '@/components/CurioBlockListNoMore';
-import CurioBlockListSearchEmpty from '@/components/CurioBlockListSearchEmpty';
-import CurioBlockListSearchError from '@/components/CurioBlockListSearchError';
-import CurioBlockListSearchLoading from '@/components/CurioBlockListSearchLoading';
-import CurioBlockListSearchNoMore from '@/components/CurioBlockListSearchNoMore';
-import CurioBlockListWelcome from '@/components/CurioBlockListWelcome';
 import { useBlockInteractions } from '@/hooks/useBlockInteractions';
-import { Search, ArrowLeft, Sparkles, RefreshCw, Braces, MessageCircle, Brain, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useCurioData } from '@/hooks/useCurioData';
 import confetti from 'canvas-confetti';
 import RabbitHoleSuggestions from '@/components/content-blocks/RabbitHoleSuggestions';
+import CurioPageHeader from '@/components/curio/CurioPageHeader';
+import CurioPageInsights from '@/components/curio/CurioPageInsights';
+import CurioSearchBar from '@/components/curio/CurioSearchBar';
+import CurioLoadingState from '@/components/curio/CurioLoadingState';
+import CurioEmptyState from '@/components/curio/CurioEmptyState';
+import CurioErrorState from '@/components/curio/CurioErrorState';
+import CurioBlockList from '@/components/CurioBlockList';
+import QuickAnswer from '@/components/curio/QuickAnswer';
+import { TableOfContents } from '@/components/curio/TableOfContents';
+import ProgressVisualization from '@/components/curio/ProgressVisualization';
+import LearningCertificate from '@/components/curio/LearningCertificate';
+import ChapterHeader from '@/components/curio/ChapterHeader';
+import IllustratedContentBlock from '@/components/content-blocks/IllustratedContentBlock';
 import { Chapter } from '@/types/Chapter';
 
 const DEFAULT_CHAPTERS: Chapter[] = [
@@ -98,17 +95,16 @@ const CurioPage: React.FC = () => {
   const { blocks, isLoading: isLoadingBlocks, error: blocksError, hasMore, loadMore, isFirstLoad, generationError } = useCurioBlocks(childId, curioId, searchQuery);
   const { loadingMore, loadTriggerRef } = useInfiniteScroll(loadMore, hasMore);
   
-  // Destructure the interaction handlers from useBlockInteractions
   const { 
-    handleToggleLike,
-    handleToggleBookmark,
-    handleReply: handleMessageReply,
-    handleQuizCorrect: handleQuizSuccess,
-    handleNewsRead: handleNewsWasRead,
-    handleCreativeUpload: handleCreativeSubmission,
-    handleActivityComplete: handleActivityFinished,
-    handleMindfulnessComplete: handleMindfulnessFinished,
-    handleTaskComplete: handleTaskFinished
+    handleToggleLike: likeHandler,
+    handleToggleBookmark: bookmarkHandler,
+    handleReply,
+    handleQuizCorrect,
+    handleNewsRead,
+    handleCreativeUpload,
+    handleActivityComplete,
+    handleMindfulnessComplete,
+    handleTaskComplete,
   } = useBlockInteractions(childId);
 
   const [animateBlocks, setAnimateBlocks] = useState(true);
@@ -135,7 +131,6 @@ const CurioPage: React.FC = () => {
   const blocksProcessedRef = useRef(false);
   const chaptersUpdatedRef = useRef(false);
 
-  // Wrapper functions to prevent redeclaration errors
   const handleReply = (blockId: string, message: string) => {
     handleMessageReply(blockId, message);
   };
@@ -442,171 +437,56 @@ const CurioPage: React.FC = () => {
         transition={{ duration: 0.4 }}
       >
         <div className="max-w-3xl mx-auto">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={handleBackToDashboard}
-                className="mb-2 text-white/70 hover:text-white -ml-2 group transition-colors"
-              >
-                <ArrowLeft className="w-4 h-4 mr-1 group-hover:-translate-x-1 transition-transform duration-200" />
-                <span>Back to Dashboard</span>
-              </Button>
-              
-              {curioTitle && (
-                <h1 className="text-xl sm:text-2xl font-bold text-white leading-tight">
-                  {curioTitle}
-                </h1>
-              )}
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <motion.div 
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleToggleInsights}
-                  className="text-white/90 border-white/20 hover:bg-white/10 bg-white/5 flex items-center backdrop-blur-md"
-                >
-                  <Brain className="w-4 h-4 mr-1.5 text-wonderwhiz-bright-pink" />
-                  <span>Learning Insights</span>
-                </Button>
-              </motion.div>
-              
-              <motion.div 
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={handleRefresh}
-                  disabled={refreshing}
-                  className="text-white/70 hover:text-white hover:bg-white/10"
-                  title="Refresh content"
-                >
-                  <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-                </Button>
-              </motion.div>
-            </div>
-          </div>
+          <CurioPageHeader
+            childProfile={childProfile}
+            curioTitle={curioTitle}
+            handleBackToDashboard={handleBackToDashboard}
+          />
           
-          <AnimatePresence>
-            {showInsights && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.3 }}
-                className="mt-4 bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 p-3 sm:p-4"
-              >
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="bg-white/5 rounded-md p-2 sm:p-3 flex flex-col items-center justify-center">
-                    <div className="text-xs text-white/60 mb-1">Learning Level</div>
-                    <div className="text-white font-medium capitalize flex items-center">
-                      <Brain className="h-4 w-4 mr-1.5 text-wonderwhiz-bright-pink" />
-                      {difficulty}
-                    </div>
-                  </div>
-                  
-                  <div className="bg-white/5 rounded-md p-2 sm:p-3 flex flex-col items-center justify-center">
-                    <div className="text-xs text-white/60 mb-1">Content Blocks</div>
-                    <div className="text-white font-medium flex items-center">
-                      <Braces className="h-4 w-4 mr-1.5 text-wonderwhiz-cyan" />
-                      {blockCount} blocks
-                    </div>
-                  </div>
-                  
-                  <div className="bg-white/5 rounded-md p-2 sm:p-3 flex flex-col items-center justify-center">
-                    <div className="text-xs text-white/60 mb-1">Questions</div>
-                    <div className="text-white font-medium flex items-center">
-                      <MessageCircle className="h-4 w-4 mr-1.5 text-wonderwhiz-vibrant-yellow" />
-                      Unlimited
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="mt-3 text-white/80 text-xs bg-white/5 p-2 rounded-md">
-                  {learningSummary || "Learning summary will appear once content is generated."}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <CurioPageInsights
+            showInsights={showInsights}
+            handleToggleInsights={handleToggleInsights}
+            difficulty={difficulty}
+            blockCount={blockCount}
+            learningSummary={learningSummary}
+          />
           
-          <div className="mt-4">
-            <form onSubmit={handleSearch} className="flex items-center gap-2">
-              <div className="relative flex-grow group">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40 group-hover:text-white/60 transition-colors" />
-                <Input
-                  type="text"
-                  placeholder="Search within this exploration..."
-                  className="pl-9 rounded-full bg-white/10 border-white/20 text-white placeholder:text-white/40 font-inter transition-all duration-300 focus:bg-white/15 focus:border-white/30 focus:ring-white/20"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <AnimatePresence>
-                  {searchQuery && (
-                    <motion.button
-                      initial={{ opacity: 0, scale: 0 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0 }}
-                      type="button"
-                      onClick={() => setSearchQuery('')}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white/90"
-                    >
-                      <X className="h-4 w-4" />
-                    </motion.button>
-                  )}
-                </AnimatePresence>
-              </div>
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Button 
-                  type="submit" 
-                  className="bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-vibrant-yellow hover:opacity-90 text-wonderwhiz-deep-purple font-medium rounded-full"
-                >
-                  Search
-                </Button>
-              </motion.div>
-            </form>
-          </div>
+          <CurioSearchBar
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            handleSearch={handleSearch}
+          />
         </div>
       </motion.div>
 
       <div className="flex-grow overflow-y-auto relative">
         <div className="max-w-3xl mx-auto py-6 sm:py-8 px-2 sm:px-0">
           {isFirstLoad && !searchQuery && !isLoadingBlocks && blocks.length === 0 && (
-            <CurioBlockListWelcome childProfile={childProfile} />
+            <CurioLoadingState />
           )}
 
           {searchQuery && isLoadingBlocks && (
-            <CurioBlockListSearchLoading />
+            <CurioLoadingState />
           )}
 
           {searchQuery && blocksError && (
-            <CurioBlockListSearchError />
+            <CurioErrorState />
           )}
 
           {searchQuery && blocks.length === 0 && !isLoadingBlocks && !blocksError && (
-            <CurioBlockListSearchEmpty />
+            <CurioEmptyState />
           )}
 
           {!searchQuery && isLoadingBlocks && (
-            <CurioBlockListLoading />
+            <CurioLoadingState />
           )}
 
           {!searchQuery && blocksError && (
-            <CurioBlockListError />
+            <CurioErrorState />
           )}
 
           {!searchQuery && blocks.length === 0 && !isLoadingBlocks && !blocksError && !isFirstLoad && (
-            <CurioBlockListEmpty />
+            <CurioEmptyState />
           )}
 
           {blocks.length > 0 || generationError ? (
@@ -635,15 +515,15 @@ const CurioPage: React.FC = () => {
           ) : null}
 
           {blocks.length > 0 && searchQuery && !hasMore && blocks.length > 0 && (
-            <CurioBlockListSearchNoMore />
+            <CurioSearchNoMore />
           )}
 
           {blocks.length > 0 && !searchQuery && !hasMore && blocks.length > 0 && (
-            <CurioBlockListNoMore />
+            <CurioNoMore />
           )}
 
           {hasMore && blocks.length > 0 && (
-            <CurioBlockListLoadMore loadTriggerRef={loadTriggerRef} loadingMore={loadingMore} />
+            <CurioLoadMore loadTriggerRef={loadTriggerRef} loadingMore={loadingMore} />
           )}
 
           {showRabbitHoleSuggestions && blocks.length > 0 && !searchQuery && !hasMore && (

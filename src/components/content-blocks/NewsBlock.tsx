@@ -3,17 +3,9 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { Check, Newspaper, ExternalLink } from 'lucide-react';
+import { NewsBlockProps } from './interfaces';
 
-interface NewsBlockProps {
-  content: {
-    headline: string;
-    summary: string;
-    source: string;
-  };
-  onNewsRead: () => void;
-}
-
-const NewsBlock: React.FC<NewsBlockProps> = ({ content, onNewsRead }) => {
+const NewsBlock: React.FC<NewsBlockProps> = ({ content, onNewsRead, specialistId }) => {
   const [newsRead, setNewsRead] = useState(false);
   const [animateReward, setAnimateReward] = useState(false);
 
@@ -21,7 +13,7 @@ const NewsBlock: React.FC<NewsBlockProps> = ({ content, onNewsRead }) => {
     if (!newsRead) {
       setNewsRead(true);
       setTimeout(() => setAnimateReward(true), 300);
-      onNewsRead();
+      if (onNewsRead) onNewsRead();
     }
   };
   

@@ -2,16 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Heart, Bookmark, MessageCircle } from 'lucide-react';
-
-export interface BlockInteractionsProps {
-  id: string;
-  liked: boolean;
-  bookmarked: boolean;
-  type: string;
-  onToggleLike: () => void;
-  onToggleBookmark: () => void;
-  setShowReplyForm: React.Dispatch<React.SetStateAction<boolean>>;
-}
+import { BlockInteractionsProps } from './interfaces';
 
 const BlockInteractions: React.FC<BlockInteractionsProps> = ({
   id,
@@ -20,7 +11,9 @@ const BlockInteractions: React.FC<BlockInteractionsProps> = ({
   type,
   onToggleLike,
   onToggleBookmark,
-  setShowReplyForm
+  setShowReplyForm,
+  onRabbitHoleClick,
+  relatedQuestions
 }) => {
   return (
     <div className="border-t border-white/10 p-2 flex items-center justify-between">

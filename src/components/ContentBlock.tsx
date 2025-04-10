@@ -32,6 +32,17 @@ import { getSpecialistStyle, getBlockTitle } from './content-blocks/utils/specia
 import { getContextualImage, checkImageCache } from './content-blocks/utils/imageUtils';
 import { getSequencePosition, shouldShowWonderPrompt } from './content-blocks/utils/narrativeUtils';
 
+// Import all our interfaces
+import {
+  FlashcardBlockProps,
+  CreativeBlockProps,
+  TaskBlockProps,
+  RiddleBlockProps,
+  NewsBlockProps,
+  ActivityBlockProps,
+  MindfulnessBlockProps
+} from './content-blocks/interfaces';
+
 interface ContentBlockProps {
   block: any;
   onToggleLike: (id: string) => void;
@@ -453,58 +464,72 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         />;
       case 'flashcard':
         return <FlashcardBlock 
-          front={block.content?.front}
-          back={block.content?.back}
-          hint={block.content?.hint}
+          content={{
+            front: block.content?.front,
+            back: block.content?.back,
+            hint: block.content?.hint
+          }}
           specialistId={block.specialist_id}
         />;
       case 'creative':
         return <CreativeBlock 
-          prompt={block.content?.prompt}
-          description={block.content?.description}
-          examples={block.content?.examples || []}
+          content={{
+            prompt: block.content?.prompt,
+            description: block.content?.description,
+            examples: block.content?.examples || []
+          }}
           specialistId={block.specialist_id}
-          onCreativeUpload={() => handleCreativeUploadSuccess(uploadFeedback || "Your artwork is amazing! I love the colors and creativity you've shown. You're a wonderful artist!")} 
+          onCreativeUpload={onCreativeUpload} 
           uploadFeedback={uploadFeedback}
         />;
       case 'task':
         return <TaskBlock 
-          title={block.content?.title}
-          description={block.content?.description}
-          steps={block.content?.steps || []}
+          content={{
+            title: block.content?.title,
+            description: block.content?.description,
+            steps: block.content?.steps || []
+          }}
           specialistId={block.specialist_id}
           onTaskComplete={onTaskComplete || (() => {})}
         />;
       case 'riddle':
         return <RiddleBlock 
-          question={block.content?.question}
-          answer={block.content?.answer}
-          hint={block.content?.hint}
+          content={{
+            question: block.content?.question,
+            answer: block.content?.answer,
+            hint: block.content?.hint
+          }}
           specialistId={block.specialist_id}
         />;
       case 'news':
         return <NewsBlock 
-          headline={block.content?.headline}
-          summary={block.content?.summary}
-          body={block.content?.body}
-          source={block.content?.source}
-          date={block.content?.date}
+          content={{
+            headline: block.content?.headline,
+            summary: block.content?.summary,
+            body: block.content?.body,
+            source: block.content?.source,
+            date: block.content?.date
+          }}
           specialistId={block.specialist_id}
           onNewsRead={onNewsRead || (() => {})}
         />;
       case 'activity':
         return <ActivityBlock 
-          title={block.content?.title}
-          instructions={block.content?.instructions}
-          steps={block.content?.steps || []}
+          content={{
+            title: block.content?.title,
+            instructions: block.content?.instructions,
+            steps: block.content?.steps || []
+          }}
           specialistId={block.specialist_id}
           onActivityComplete={onActivityComplete || (() => {})}
         />;
       case 'mindfulness':
         return <MindfulnessBlock 
-          title={block.content?.title}
-          instruction={block.content?.instruction}
-          duration={block.content?.duration}
+          content={{
+            title: block.content?.title,
+            instruction: block.content?.instruction,
+            duration: block.content?.duration
+          }}
           specialistId={block.specialist_id}
           onMindfulnessComplete={onMindfulnessComplete || (() => {})}
         />;

@@ -9,6 +9,7 @@ import QuickAnswer from '@/components/curio/QuickAnswer';
 import { TableOfContents } from '@/components/curio/TableOfContents';
 import ProgressVisualization from '@/components/curio/ProgressVisualization';
 import IllustratedContentBlock from '@/components/content-blocks/IllustratedContentBlock';
+import { ContentBlock as CurioContentBlock } from '@/types/curio';
 
 interface ContentBlock {
   id: string;
@@ -17,6 +18,7 @@ interface ContentBlock {
   content: any;
   liked: boolean;
   bookmarked: boolean;
+  curio_id?: string;
   learningContext?: {
     sequencePosition: number;
     totalBlocks: number;
@@ -105,7 +107,12 @@ const CurioContent: React.FC<CurioContentProps> = ({
   onRefresh,
   generationError
 }) => {
-  // Just return a simple placeholder until we implement this component fully
+  // Convert ContentBlock[] to CurioContentBlock[] by adding curio_id if missing
+  const convertedBlocks: CurioContentBlock[] = contentBlocks.map(block => ({
+    ...block,
+    curio_id: block.curio_id || currentCurio?.id || ''
+  }));
+
   return (
     <div className="space-y-6">
       {currentCurio && (
@@ -113,7 +120,7 @@ const CurioContent: React.FC<CurioContentProps> = ({
       )}
       
       <CurioBlockList
-        blocks={contentBlocks}
+        blocks={convertedBlocks}
         animateBlocks={true}
         hasMoreBlocks={hasMoreBlocks}
         loadingMoreBlocks={loadingBlocks}

@@ -24,6 +24,7 @@ const FunFactBlock: React.FC<FunFactBlockProps> = ({
   updateHeight
 }) => {
   const blockRef = useRef<HTMLDivElement>(null);
+  const [showReplyForm, setShowReplyForm] = useState(false);
   
   useEffect(() => {
     if (blockRef.current && updateHeight) {
@@ -40,9 +41,13 @@ const FunFactBlock: React.FC<FunFactBlockProps> = ({
       </div>
       
       <BlockInteractions 
-        onLike={onLike}
-        onBookmark={onBookmark}
-        onReply={onReply}
+        id={`funfact-${Date.now()}`}
+        liked={false}
+        bookmarked={false}
+        type="funfact"
+        onToggleLike={onLike || (() => {})}
+        onToggleBookmark={onBookmark || (() => {})}
+        setShowReplyForm={setShowReplyForm}
         onRabbitHoleClick={onRabbitHoleClick}
         relatedQuestions={[]}
       />
