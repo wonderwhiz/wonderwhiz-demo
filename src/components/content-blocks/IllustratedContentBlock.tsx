@@ -29,6 +29,50 @@ const IllustratedContentBlock: React.FC<IllustratedContentBlockProps> = ({
   const { generateContextualImage } = useGroqGeneration();
   const { childProfile } = useChildProfile(childId);
   
+  // Fallback images based on topics
+  const fallbackImages = {
+    ocean: "https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?q=80&w=1000&auto=format&fit=crop",
+    volcano: "https://images.unsplash.com/photo-1562117532-14a6c72858c9?q=80&w=1000&auto=format&fit=crop",
+    space: "https://images.unsplash.com/photo-1543722530-d2c3201371e7?q=80&w=1000&auto=format&fit=crop",
+    dinosaur: "https://images.unsplash.com/photo-1615243029542-4fcced64c70e?q=80&w=1000&auto=format&fit=crop",
+    robot: "https://images.unsplash.com/photo-1558346490-a72e53ae2d4f?q=80&w=1000&auto=format&fit=crop",
+    animal: "https://images.unsplash.com/photo-1474511320723-9a56873867b5?q=80&w=1000&auto=format&fit=crop",
+    plant: "https://images.unsplash.com/photo-1502331538081-041522531548?q=80&w=1000&auto=format&fit=crop",
+    earth: "https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?q=80&w=1000&auto=format&fit=crop",
+  };
+  
+  // Relevant facts based on topics
+  const topicFacts = {
+    ocean: "The ocean contains 97% of Earth's water and covers more than 70% of the planet's surface. Scientists believe we've explored less than 20% of our oceans, making them one of Earth's last great frontiers!",
+    volcano: "Volcanoes aren't just on Earth - they exist on other planets too! Venus has more volcanoes than any other planet in our solar system, with over 1,600 major ones covering its surface.",
+    space: "Space is completely silent because there is no air or atmosphere for sound waves to travel through. Any explosion you might see in space would be completely silent!",
+    dinosaur: "Scientists have discovered over 700 different species of dinosaurs, but believe there are many more to find. Some estimates suggest we may have only found 25% of all dinosaur species that ever lived!",
+    robot: "The word 'robot' comes from the Czech word 'robota' which means forced labor or work. It was first used in a 1920 play called 'R.U.R.' by Karel Čapek about artificial people who rebelled against their human creators.",
+    animal: "There are over 8.7 million species of animals on Earth, but scientists believe that up to 86% of land species and 91% of sea species have yet to be discovered and cataloged!",
+    plant: "Plants communicate with each other through an underground network of fungi called mycelium, sometimes called the 'Wood Wide Web.' They can share nutrients and even warn each other about threats!",
+    earth: "Earth is the only planet not named after a god. All other planets in our solar system are named after Roman gods or goddesses."
+  };
+  
+  const getFallbackImage = (topic: string) => {
+    // Find the most relevant fallback image by checking if the topic contains any of our keywords
+    const relevantTopic = Object.keys(fallbackImages).find(key => 
+      topic.toLowerCase().includes(key)
+    );
+    
+    return relevantTopic ? fallbackImages[relevantTopic] : fallbackImages.earth;
+  };
+  
+  const getTopicFact = (topic: string) => {
+    // Find the most relevant fact by checking if the topic contains any of our keywords
+    const relevantTopic = Object.keys(topicFacts).find(key => 
+      topic.toLowerCase().includes(key)
+    );
+    
+    return relevantTopic ? 
+      topicFacts[relevantTopic] : 
+      `Explorers and scientists have spent centuries trying to understand all the secrets of ${topic}! This journey of discovery continues today with new technologies helping us learn more every day.`;
+  };
+  
   useEffect(() => {
     async function loadContentWithImage() {
       if (!topic) return;
@@ -39,10 +83,17 @@ const IllustratedContentBlock: React.FC<IllustratedContentBlockProps> = ({
         const generatedImageUrl = await generateContextualImage(topic, childAge);
         if (generatedImageUrl) {
           setImageUrl(generatedImageUrl);
-          setFact(`Explorers and scientists have spent centuries trying to understand all the secrets of ${topic}!`);
+          setFact(getTopicFact(topic));
+        } else {
+          // If no image was generated, use a fallback
+          setImageUrl(getFallbackImage(topic));
+          setFact(getTopicFact(topic));
         }
       } catch (error) {
         console.error('Error loading contextual image:', error);
+        // Use fallback image and fact if there's an error
+        setImageUrl(getFallbackImage(topic));
+        setFact(getTopicFact(topic));
       } finally {
         setIsLoading(false);
       }
@@ -84,6 +135,10 @@ const IllustratedContentBlock: React.FC<IllustratedContentBlockProps> = ({
                   alt={`Illustration about ${topic}`}
                   className="w-full object-cover"
                   loading="lazy"
+                  onError={() => {
+                    console.log("Image failed to load, using fallback");
+                    setImageUrl(getFallbackImage(topic));
+                  }}
                 />
               </div>
             )}

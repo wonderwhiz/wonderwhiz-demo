@@ -30,12 +30,12 @@ export function useGroqGeneration() {
       
       if (error) throw new Error(error.message);
       
-      return data?.answer || `Here's a quick answer about "${query}". This would typically be generated using the Groq API.`;
+      return data?.answer || generateFallbackAnswer(query);
     } catch (err) {
       console.error('Error generating quick answer:', err);
       setError('Failed to generate quick answer');
       toast.error('Could not generate quick answer');
-      return `Here's what we know about "${query}". Let's explore this fascinating topic together!`;
+      return generateFallbackAnswer(query);
     } finally {
       setIsGenerating(false);
     }
@@ -56,15 +56,66 @@ export function useGroqGeneration() {
       
       if (error) throw new Error(error.message);
       
-      return data?.imageUrl || '';
+      return data?.imageUrl || getFallbackImage(topic);
     } catch (err) {
       console.error('Error generating image:', err);
       setError('Failed to generate image');
       toast.error('Could not generate image');
-      return '';
+      return getFallbackImage(topic);
     } finally {
       setIsGenerating(false);
     }
+  };
+  
+  // Helper function to generate fallback answers based on the topic
+  const generateFallbackAnswer = (query: string): string => {
+    // Common topics with fallback responses
+    const fallbacks = {
+      ocean: "The ocean is Earth's last great frontier! Covering over 70% of our planet, oceans are home to millions of species, from microscopic plankton to enormous whales. Scientists estimate we've explored less than 20% of this vast underwater world.",
+      volcano: "Volcanoes are Earth's natural pressure valves! They form when hot magma from deep underground rises to the surface. While they can be destructive, volcanoes create new land and release minerals that enrich the soil for plants.",
+      space: "Space is an endless frontier of discovery! From distant galaxies to mysterious black holes, our universe contains billions of stars and planets. The light we see from some stars has traveled for millions of years to reach Earth.",
+      dinosaur: "Dinosaurs ruled Earth for over 165 million years! These fascinating creatures came in all shapes and sizes, from tiny chicken-sized predators to massive plant-eaters longer than three school buses. Scientists learn about them through fossils preserved in rock.",
+      robot: "Robots are machines programmed to perform tasks automatically! They range from simple factory robots that assemble cars to advanced AI systems that can learn and make decisions. Engineers are constantly improving robot capabilities.",
+      weather: "Weather is the condition of the atmosphere at a specific time and place. It includes temperature, humidity, wind, clouds, and precipitation. Weather patterns are created by the interaction of the sun's energy with Earth's atmosphere and surface.",
+      animal: "Animals are incredible in their diversity! From tiny insects to massive whales, they've evolved amazing adaptations to survive in virtually every environment on Earth. Scientists estimate there may be up to 10 million animal species!",
+      plant: "Plants are essential for all life on Earth! They produce oxygen through photosynthesis, provide food and habitats for animals, and help regulate the climate. From tiny mosses to massive sequoia trees, plants have evolved incredible adaptations.",
+      human: "Humans are remarkable for their capacity to think, create, and adapt. Our unique abilities to use complex language, create art, develop technology, and work together in large societies have allowed us to thrive in environments across the planet."
+    };
+    
+    // Find the most relevant fallback by checking if the query contains any of our keywords
+    const queryLower = query.toLowerCase();
+    const relevantTopic = Object.keys(fallbacks).find(topic => 
+      queryLower.includes(topic)
+    );
+    
+    if (relevantTopic) {
+      return fallbacks[relevantTopic];
+    }
+    
+    // Default fallback for any topic
+    return `${query} is a fascinating topic to explore! As you journey through this exploration, you'll discover key facts, understand important concepts, and engage with fun activities that will deepen your knowledge.`;
+  };
+  
+  // Helper function to get fallback images based on topic
+  const getFallbackImage = (topic: string): string => {
+    const fallbackImages = {
+      ocean: "https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?q=80&w=1000&auto=format&fit=crop",
+      volcano: "https://images.unsplash.com/photo-1562117532-14a6c72858c9?q=80&w=1000&auto=format&fit=crop",
+      space: "https://images.unsplash.com/photo-1543722530-d2c3201371e7?q=80&w=1000&auto=format&fit=crop",
+      dinosaur: "https://images.unsplash.com/photo-1615243029542-4fcced64c70e?q=80&w=1000&auto=format&fit=crop",
+      robot: "https://images.unsplash.com/photo-1558346490-a72e53ae2d4f?q=80&w=1000&auto=format&fit=crop",
+      animal: "https://images.unsplash.com/photo-1474511320723-9a56873867b5?q=80&w=1000&auto=format&fit=crop",
+      plant: "https://images.unsplash.com/photo-1502331538081-041522531548?q=80&w=1000&auto=format&fit=crop",
+      earth: "https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?q=80&w=1000&auto=format&fit=crop"
+    };
+    
+    // Find the most relevant image by checking if the topic contains any of our keywords
+    const topicLower = topic.toLowerCase();
+    const relevantTopic = Object.keys(fallbackImages).find(key => 
+      topicLower.includes(key)
+    );
+    
+    return relevantTopic ? fallbackImages[relevantTopic] : fallbackImages.earth;
   };
 
   return {
