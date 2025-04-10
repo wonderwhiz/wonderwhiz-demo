@@ -1,16 +1,15 @@
 
 import React from 'react';
-import { motion } from 'framer-motion';
 import { 
   BookOpen, 
   Compass, 
   Brain, 
-  Puzzle, 
+  Sparkles, 
   Palette, 
-  Feather, 
-  ArrowRight,
-  ChevronDown
+  Lightbulb, 
+  ArrowRight 
 } from 'lucide-react';
+import { Card } from '@/components/ui/card';
 
 interface ChapterHeaderProps {
   chapterId: string;
@@ -27,51 +26,38 @@ const ChapterHeader: React.FC<ChapterHeaderProps> = ({
   index,
   totalChapters
 }) => {
-  const getIconForChapter = (id: string) => {
+  const getChapterIcon = (id: string) => {
     switch(id) {
-      case 'introduction': return <BookOpen className="h-6 w-6" />;
-      case 'exploration': return <Compass className="h-6 w-6" />;
-      case 'understanding': return <Brain className="h-6 w-6" />;
-      case 'challenge': return <Puzzle className="h-6 w-6" />; // Changed from PuzzlePiece to Puzzle
-      case 'creation': return <Palette className="h-6 w-6" />;
-      case 'reflection': return <Feather className="h-6 w-6" />;
-      case 'nextSteps': return <ArrowRight className="h-6 w-6" />;
-      default: return <BookOpen className="h-6 w-6" />;
+      case 'introduction': return <BookOpen className="h-5 w-5" />;
+      case 'exploration': return <Compass className="h-5 w-5" />;
+      case 'understanding': return <Brain className="h-5 w-5" />;
+      case 'challenge': return <Sparkles className="h-5 w-5" />; 
+      case 'creation': return <Palette className="h-5 w-5" />;
+      case 'reflection': return <Lightbulb className="h-5 w-5" />;
+      case 'nextSteps': return <ArrowRight className="h-5 w-5" />;
+      default: return <BookOpen className="h-5 w-5" />;
     }
   };
-  
+
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5, delay: index * 0.1 }}
-      className="mb-6 mt-10 first:mt-2"
-    >
-      <div className="flex items-center space-x-3 mb-2">
-        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-3 rounded-lg">
-          {getIconForChapter(chapterId)}
+    <div className="mt-10 mb-6">
+      <Card className="bg-gradient-to-r from-indigo-900/80 to-violet-900/80 border-none p-4 shadow-lg">
+        <div className="flex items-center">
+          <div className="bg-white/10 p-2 rounded-lg mr-4">
+            {getChapterIcon(chapterId)}
+          </div>
+          
+          <div className="flex-1">
+            <h2 className="text-xl font-semibold text-white">{title}</h2>
+            <p className="text-white/70 text-sm">{description}</p>
+          </div>
+          
+          <div className="text-white/50 text-sm font-medium">
+            {index + 1} / {totalChapters}
+          </div>
         </div>
-        <div>
-          <h2 className="text-xl font-bold text-white">
-            {title}
-          </h2>
-          <p className="text-white/70">{description}</p>
-        </div>
-      </div>
-      
-      <div className="h-0.5 w-full bg-gradient-to-r from-indigo-500/30 via-purple-500/30 to-transparent mb-6" />
-      
-      {index < totalChapters - 1 && (
-        <motion.div 
-          className="flex justify-center mt-6 mb-10"
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.5 }}
-        >
-          <ChevronDown className="h-6 w-6 text-white/30" />
-        </motion.div>
-      )}
-    </motion.div>
+      </Card>
+    </div>
   );
 };
 

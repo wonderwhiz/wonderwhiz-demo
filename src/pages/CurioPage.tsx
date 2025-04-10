@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -94,6 +95,8 @@ const CurioPage: React.FC = () => {
   const { searchQuery, setSearchQuery, handleSearch } = useSearch();
   const { blocks, isLoading: isLoadingBlocks, error: blocksError, hasMore, loadMore, isFirstLoad, generationError } = useCurioBlocks(childId, curioId, searchQuery);
   const { loadingMore, loadTriggerRef } = useInfiniteScroll(loadMore, hasMore);
+  
+  // Get block interaction handlers from the hook
   const { 
     handleReply,
     handleQuizCorrect,
@@ -102,6 +105,8 @@ const CurioPage: React.FC = () => {
     handleActivityComplete,
     handleMindfulnessComplete,
     handleTaskComplete,
+    handleToggleLike,
+    handleToggleBookmark
   } = useBlockInteractions(childId);
 
   const [animateBlocks, setAnimateBlocks] = useState(true);
@@ -352,36 +357,6 @@ const CurioPage: React.FC = () => {
     return <CurioLoadingState message="Loading profile..." />;
   }
 
-  const handleToggleLike = async (blockId: string) => {
-    try {
-      await supabase.functions.invoke('handle-interaction', {
-        body: { 
-          type: 'like',
-          blockId,
-          childId
-        }
-      });
-    } catch (error) {
-      console.error('Error toggling like:', error);
-      toast.error("Could not like this wonder. Please try again later.");
-    }
-  };
-
-  const handleToggleBookmark = async (blockId: string) => {
-    try {
-      await supabase.functions.invoke('handle-interaction', {
-        body: { 
-          type: 'bookmark',
-          blockId,
-          childId
-        }
-      });
-    } catch (error) {
-      console.error('Error toggling bookmark:', error);
-      toast.error("Could not bookmark this wonder. Please try again later.");
-    }
-  };
-
   const handleRabbitHoleClick = async (question: string) => {
     if (!childId) return;
     
@@ -483,6 +458,42 @@ const CurioPage: React.FC = () => {
   
   const handleCertificateShare = () => {
     toast.success("Certificate shared successfully!");
+  };
+  
+  const organizeBlocksIntoChapters = (blocks: any[]) => {
+    if (!blocks.length) return {};
+    
+    const chapterMap: Record<string, any[]> = {
+      introduction: [],
+      exploration: [],
+      understanding: [],
+      challenge: [],
+      creation: [],
+      reflection: [],
+      nextSteps: []
+    };
+    
+    blocks.forEach(block => {
+      if (block.type === 'quiz') {
+        chapterMap.challenge.push(block);
+      } else if (block.type === 'fact' || block.type === 'funFact') {
+        if (chapterMap.introduction.length < 2) {
+          chapterMap.introduction.push(block);
+        } else if (chapterMap.understanding.length < 3) {
+          chapterMap.understanding.push(block);
+        } else {
+          chapterMap.exploration.push(block);
+        }
+      } else if (block.type === 'creative' || block.type === 'activity') {
+        chapterMap.creation.push(block);
+      } else if (block.type === 'mindfulness') {
+        chapterMap.reflection.push(block);
+      } else {
+        chapterMap.exploration.push(block);
+      }
+    });
+    
+    return chapterMap;
   };
   
   const blocksByChapter = organizeBlocksIntoChapters(blocks);

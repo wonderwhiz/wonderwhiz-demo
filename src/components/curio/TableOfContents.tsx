@@ -1,105 +1,116 @@
 
 import React from 'react';
-import { motion } from 'framer-motion';
+import { Card } from '@/components/ui/card';
 import { 
   BookOpen, 
   Compass, 
   Brain, 
-  Puzzle, 
+  Sparkles, 
   Palette, 
-  Feather, 
-  ArrowRight
+  Lightbulb, 
+  ArrowRight 
 } from 'lucide-react';
-import { Chapter, ChapterIconType } from '@/types/Chapter';
+import { Chapter } from '@/types/Chapter';
+import { motion } from 'framer-motion';
 
-export interface TableOfContentsProps {
+export type ChapterIconType = 
+  | 'introduction' 
+  | 'exploration' 
+  | 'understanding' 
+  | 'challenge' 
+  | 'creation' 
+  | 'reflection' 
+  | 'nextSteps';
+
+interface TableOfContentsProps {
   chapters: Chapter[];
   onChapterClick: (chapterId: string) => void;
   ageGroup: '5-7' | '8-11' | '12-16';
 }
 
-export const TableOfContents: React.FC<TableOfContentsProps> = ({
-  chapters,
+export const TableOfContents: React.FC<TableOfContentsProps> = ({ 
+  chapters, 
   onChapterClick,
-  ageGroup
+  ageGroup 
 }) => {
-  const getIconForChapter = (iconType: string) => {
+  const getAgeSpecificStyles = () => {
+    switch(ageGroup) {
+      case '5-7':
+        return {
+          title: 'Our Learning Adventure',
+          subtitle: 'Let\'s explore these fun places!',
+          cardStyle: 'bg-gradient-to-r from-cyan-500 to-blue-500 border-none shadow-xl',
+          iconStyle: 'bg-white/20 p-2 rounded-full'
+        };
+      case '8-11':
+        return {
+          title: 'Learning Journey',
+          subtitle: 'Your path through this topic',
+          cardStyle: 'bg-gradient-to-r from-violet-600 to-indigo-600 border-none shadow-lg',
+          iconStyle: 'bg-white/20 p-2 rounded-lg'
+        };
+      case '12-16':
+        return {
+          title: 'Course Outline',
+          subtitle: 'Topics covered in this exploration',
+          cardStyle: 'bg-gradient-to-r from-slate-800 to-slate-700 border-none shadow-md',
+          iconStyle: 'bg-white/10 p-2 rounded-md'
+        };
+    }
+  };
+
+  const styles = getAgeSpecificStyles();
+
+  const getChapterIcon = (iconType: string) => {
     switch(iconType) {
       case 'introduction': return <BookOpen className="h-5 w-5" />;
       case 'exploration': return <Compass className="h-5 w-5" />;
       case 'understanding': return <Brain className="h-5 w-5" />;
-      case 'challenge': return <Puzzle className="h-5 w-5" />; // Changed from PuzzlePiece to Puzzle
+      case 'challenge': return <Sparkles className="h-5 w-5" />; 
       case 'creation': return <Palette className="h-5 w-5" />;
-      case 'reflection': return <Feather className="h-5 w-5" />;
+      case 'reflection': return <Lightbulb className="h-5 w-5" />;
       case 'nextSteps': return <ArrowRight className="h-5 w-5" />;
       default: return <BookOpen className="h-5 w-5" />;
     }
   };
-  
-  const getChapterStyle = (ageGroup: string, isActive: boolean, isCompleted: boolean) => {
-    if (ageGroup === '5-7') {
-      return {
-        container: `border-2 ${isActive ? 'border-wonderwhiz-vibrant-yellow' : isCompleted ? 'border-green-500/50' : 'border-white/20'} rounded-lg p-3 transition-all hover:border-white/50 cursor-pointer`,
-        title: 'text-base font-bold',
-        description: 'text-xs'
-      };
-    } else if (ageGroup === '8-11') {
-      return {
-        container: `border ${isActive ? 'border-wonderwhiz-bright-pink' : isCompleted ? 'border-green-500/50' : 'border-white/20'} rounded-md p-2 transition-all hover:border-white/50 cursor-pointer`,
-        title: 'text-sm font-semibold',
-        description: 'text-xs'
-      };
-    } else {
-      return {
-        container: `border-b ${isActive ? 'border-wonderwhiz-cyan' : isCompleted ? 'border-green-500/50' : 'border-white/20'} p-2 transition-all hover:border-white/50 cursor-pointer`,
-        title: 'text-sm font-medium',
-        description: 'text-xs'
-      };
-    }
-  };
-  
+
   return (
-    <div id="table-of-contents" className="mb-8 px-1">
-      <motion.h2 
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-xl font-bold text-white mb-4"
-      >
-        Your Learning Journey
-      </motion.h2>
-      
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {chapters.map((chapter, index) => {
-          const style = getChapterStyle(ageGroup, chapter.isActive, chapter.isCompleted);
-          
-          return (
-            <motion.div
+    <Card className={`mb-8 overflow-hidden ${styles.cardStyle}`}>
+      <div className="p-4">
+        <h2 className="text-xl font-semibold text-white mb-1">{styles.title}</h2>
+        <p className="text-white/70 text-sm mb-4">{styles.subtitle}</p>
+        
+        <div className="space-y-2">
+          {chapters.map((chapter) => (
+            <motion.button
               key={chapter.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className={style.container}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className={`w-full flex items-center p-2.5 rounded-lg transition-all ${
+                chapter.isActive
+                  ? 'bg-white/20 shadow-md'
+                  : 'bg-white/10 hover:bg-white/15'
+              }`}
               onClick={() => onChapterClick(chapter.id)}
             >
-              <div className="flex items-center">
-                <div className={`p-2 rounded-full mr-3 ${chapter.isCompleted ? 'bg-green-500/20' : chapter.isActive ? 'bg-wonderwhiz-purple/30' : 'bg-gray-500/20'}`}>
-                  {getIconForChapter(chapter.icon)}
-                </div>
-                
-                <div>
-                  <h3 className={`${style.title} text-white`}>
-                    {chapter.title}
-                    {chapter.isCompleted && <span className="ml-2 text-green-400 text-xs">✓</span>}
-                  </h3>
-                  <p className={`${style.description} text-white/60`}>{chapter.description}</p>
-                </div>
+              <div className={styles.iconStyle}>
+                {getChapterIcon(chapter.icon)}
               </div>
-            </motion.div>
-          );
-        })}
+              
+              <div className="ml-3 text-left flex-1">
+                <div className="text-white font-medium">{chapter.title}</div>
+                <div className="text-white/60 text-xs">{chapter.description}</div>
+              </div>
+              
+              {chapter.isCompleted && (
+                <div className="bg-green-500/20 text-green-300 text-xs px-2 py-1 rounded">
+                  {ageGroup === '5-7' ? '✓ Done' : 'Completed'}
+                </div>
+              )}
+            </motion.button>
+          ))}
+        </div>
       </div>
-    </div>
+    </Card>
   );
 };
-
-export default TableOfContents;
