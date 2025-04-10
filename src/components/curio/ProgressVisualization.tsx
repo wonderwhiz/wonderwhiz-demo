@@ -1,124 +1,100 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Sparkles,
-  Trophy,
-  Award
-} from 'lucide-react';
+import { Sparkles, Award, Trophy } from 'lucide-react';
 
 interface ProgressVisualizationProps {
   progress: number;
-  ageGroup?: '5-7' | '8-11' | '12-16';
+  ageGroup: '5-7' | '8-11' | '12-16';
   totalChapters: number;
   completedChapters: number;
 }
 
-const ProgressVisualization: React.FC<ProgressVisualizationProps> = ({
+export const ProgressVisualization: React.FC<ProgressVisualizationProps> = ({
   progress,
-  ageGroup = '8-11',
+  ageGroup,
   totalChapters,
   completedChapters
 }) => {
-  const progressLabel = 
-    progress < 25 ? 'Just beginning' :
-    progress < 50 ? 'Making progress' :
-    progress < 75 ? 'Well on your way' :
-    progress < 100 ? 'Almost complete' :
-    'Complete!';
-
-  const progressEmoji = 
-    progress < 25 ? '🌱' :
-    progress < 50 ? '🌿' :
-    progress < 75 ? '🌳' :
-    progress < 100 ? '🌟' :
-    '🎉';
+  const getProgressText = () => {
+    if (progress < 25) return "Just getting started!";
+    if (progress < 50) return "Making good progress!";
+    if (progress < 75) return "Well on your way!";
+    if (progress < 100) return "Almost there!";
+    return "Journey complete!";
+  };
+  
+  const getProgressIcon = () => {
+    if (progress < 50) return <Sparkles className="h-5 w-5 text-wonderwhiz-vibrant-yellow" />;
+    if (progress < 100) return <Award className="h-5 w-5 text-wonderwhiz-bright-pink" />;
+    return <Trophy className="h-5 w-5 text-wonderwhiz-gold" />;
+  };
+  
+  const getProgressStyle = () => {
+    if (ageGroup === '5-7') {
+      return {
+        container: "p-4 rounded-xl bg-gradient-to-r from-indigo-900/30 to-purple-900/30 border border-indigo-500/20",
+        progressBar: "h-6 rounded-full overflow-hidden bg-white/10",
+        progressFill: "h-full rounded-full bg-gradient-to-r from-wonderwhiz-vibrant-yellow to-wonderwhiz-bright-pink"
+      };
+    } else if (ageGroup === '8-11') {
+      return {
+        container: "p-3 rounded-lg bg-gradient-to-r from-indigo-900/20 to-purple-900/20 border border-indigo-500/10",
+        progressBar: "h-4 rounded-full overflow-hidden bg-white/10",
+        progressFill: "h-full rounded-full bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-cyan"
+      };
+    } else {
+      return {
+        container: "p-2 rounded-md bg-gradient-to-r from-indigo-900/10 to-purple-900/10 border border-indigo-500/10",
+        progressBar: "h-3 rounded-full overflow-hidden bg-white/10",
+        progressFill: "h-full rounded-full bg-gradient-to-r from-wonderwhiz-cyan to-wonderwhiz-vibrant-yellow"
+      };
+    }
+  };
+  
+  const style = getProgressStyle();
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }}
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.2 }}
-      className="mb-8 bg-white/5 backdrop-blur-sm p-4 rounded-lg border border-white/10"
+      transition={{ delay: 0.2 }}
+      className={`mb-8 ${style.container}`}
     >
-      <div className="flex items-center justify-between mb-3">
-        <h3 className={`font-bold text-white ${ageGroup === '5-7' ? 'text-lg' : 'text-base'}`}>
-          Your Wonder Progress
-        </h3>
-        <div className="flex items-center space-x-2">
-          {progress >= 100 && (
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ 
-                type: "spring", 
-                stiffness: 260, 
-                damping: 20, 
-                delay: 0.3 
-              }}
-            >
-              <Trophy className="h-5 w-5 text-yellow-400" />
-            </motion.div>
-          )}
-          {progress >= 75 && progress < 100 && (
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ 
-                type: "spring", 
-                stiffness: 260, 
-                damping: 20, 
-                delay: 0.3 
-              }}
-            >
-              <Award className="h-5 w-5 text-indigo-400" />
-            </motion.div>
-          )}
-          <div className={`${ageGroup === '5-7' ? 'text-base' : 'text-sm'} font-medium text-white/80`}>
-            {completedChapters} of {totalChapters} chapters
-          </div>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center">
+          {getProgressIcon()}
+          <span className="ml-2 text-white/90 font-medium">
+            {getProgressText()}
+          </span>
         </div>
+        <span className="text-white/80 text-sm">
+          {completedChapters} of {totalChapters} chapters
+        </span>
       </div>
       
-      <div className="relative h-4 bg-white/10 rounded-full overflow-hidden">
+      <div className={style.progressBar}>
         <motion.div 
-          className="absolute top-0 left-0 h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"
-          initial={{ width: '0%' }}
+          initial={{ width: 0 }}
           animate={{ width: `${progress}%` }}
-          transition={{ duration: 1, delay: 0.5 }}
+          transition={{ duration: 1, ease: "easeOut" }}
+          className={style.progressFill}
         />
-        
-        {progress > 25 && (
-          <motion.div 
-            className="absolute top-0 right-0 h-full"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 1 }}
-            style={{ right: `${100 - progress}%` }}
-          >
-            <Sparkles className="h-4 w-4 text-white transform -translate-x-1/2" />
-          </motion.div>
-        )}
       </div>
       
-      <div className="mt-2 flex justify-between items-center">
-        <div className={`${ageGroup === '5-7' ? 'text-sm' : 'text-xs'} text-white/60`}>
-          {progressLabel}
-        </div>
+      {completedChapters === totalChapters && (
         <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ 
-            type: "spring", 
-            stiffness: 260, 
-            damping: 20, 
-            delay: 0.8 
-          }}
-          className={`${ageGroup === '5-7' ? 'text-lg' : 'text-base'}`}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 1.2 }}
+          className="mt-3 text-center"
         >
-          {progressEmoji}
+          <span className="text-wonderwhiz-gold font-medium text-sm inline-flex items-center">
+            <Trophy className="h-4 w-4 mr-1" />
+            Learning journey complete! Well done!
+          </span>
         </motion.div>
-      </div>
+      )}
     </motion.div>
   );
 };

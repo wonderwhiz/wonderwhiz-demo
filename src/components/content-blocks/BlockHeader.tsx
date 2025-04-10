@@ -15,18 +15,37 @@ interface BlockHeaderProps {
   type: string;
   specialistId: string;
   tag?: string;
+  blockTitle?: string;
+  blockType?: any;
+  narrativePosition?: "end" | "middle" | "beginning";
 }
 
-const BlockHeader: React.FC<BlockHeaderProps> = ({ type, specialistId, tag }) => {
+const BlockHeader: React.FC<BlockHeaderProps> = ({ 
+  type, 
+  specialistId, 
+  tag,
+  blockTitle,
+  blockType,
+  narrativePosition 
+}) => {
   const getIconForType = () => {
-    switch(type) {
-      case 'Fact': return <Globe className="h-4 w-4" />;
-      case 'Fun Fact': return <Star className="h-4 w-4" />;
-      case 'Quiz': return <Activity className="h-4 w-4" />;
-      case 'Creative': return <Sparkles className="h-4 w-4" />;
-      case 'Mindfulness': return <Sun className="h-4 w-4" />;
-      case 'News': return <Newspaper className="h-4 w-4" />;
-      case 'Flashcard': return <BookOpen className="h-4 w-4" />;
+    const typeToCheck = blockType || type;
+    
+    switch(typeToCheck) {
+      case 'Fact':
+      case 'fact': return <Globe className="h-4 w-4" />;
+      case 'Fun Fact':
+      case 'funFact': return <Star className="h-4 w-4" />;
+      case 'Quiz':
+      case 'quiz': return <Activity className="h-4 w-4" />;
+      case 'Creative':
+      case 'creative': return <Sparkles className="h-4 w-4" />;
+      case 'Mindfulness':
+      case 'mindfulness': return <Sun className="h-4 w-4" />;
+      case 'News':
+      case 'news': return <Newspaper className="h-4 w-4" />;
+      case 'Flashcard':
+      case 'flashcard': return <BookOpen className="h-4 w-4" />;
       default: return <Star className="h-4 w-4" />;
     }
   };
@@ -55,12 +74,15 @@ const BlockHeader: React.FC<BlockHeaderProps> = ({ type, specialistId, tag }) =>
     }
   };
   
+  // Use provided blockTitle or fall back to type
+  const displayTitle = blockTitle || type;
+  
   return (
     <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
       <div className="flex items-center space-x-2">
         <Badge variant="outline" className="bg-white/10 border-none text-white/80 hover:bg-white/20">
           <span className="mr-1">{getIconForType()}</span>
-          {type}
+          {displayTitle}
         </Badge>
         
         {tag && (

@@ -7,3 +7,12 @@ export interface Chapter {
   isCompleted: boolean;
   isActive: boolean;
 }
+
+export type ChapterIconType = 
+  | 'introduction' 
+  | 'exploration' 
+  | 'understanding' 
+  | 'challenge' 
+  | 'creation' 
+  | 'reflection' 
+  | 'nextSteps';

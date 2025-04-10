@@ -5,7 +5,7 @@ import {
   BookOpen, 
   Compass, 
   Brain, 
-  PuzzlePiece, 
+  Puzzle, 
   Palette, 
   Feather, 
   ArrowRight,
@@ -32,7 +32,7 @@ const ChapterHeader: React.FC<ChapterHeaderProps> = ({
       case 'introduction': return <BookOpen className="h-6 w-6" />;
       case 'exploration': return <Compass className="h-6 w-6" />;
       case 'understanding': return <Brain className="h-6 w-6" />;
-      case 'challenge': return <PuzzlePiece className="h-6 w-6" />;
+      case 'challenge': return <Puzzle className="h-6 w-6" />; // Changed from PuzzlePiece to Puzzle
       case 'creation': return <Palette className="h-6 w-6" />;
       case 'reflection': return <Feather className="h-6 w-6" />;
       case 'nextSteps': return <ArrowRight className="h-6 w-6" />;

@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ContentBlock from '@/components/ContentBlock';
@@ -5,11 +6,11 @@ import CurioLoading from '@/components/CurioLoading';
 import { AlertCircle, RefreshCw, Sparkles, Brain, Lightbulb } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import RabbitHoleSuggestions from '@/components/content-blocks/RabbitHoleSuggestions';
-import TableOfContents from '@/components/curio/TableOfContents';
+import { TableOfContents } from '@/components/curio/TableOfContents';
 import ChapterHeader from '@/components/curio/ChapterHeader';
 import QuickAnswer from '@/components/curio/QuickAnswer';
 import LearningCertificate from '@/components/curio/LearningCertificate';
-import { ChapterIconType } from '@/components/curio/TableOfContents';
+import { ChapterIconType } from '@/types/Chapter';
 import SimplifiedCurioHeader from '@/components/curio/SimplifiedCurioHeader';
 
 interface ContentBlock {

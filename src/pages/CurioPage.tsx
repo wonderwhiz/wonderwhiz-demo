@@ -19,13 +19,13 @@ import CurioEmptyState from '@/components/curio/CurioEmptyState';
 import CurioErrorState from '@/components/curio/CurioErrorState';
 import CurioBlockList from '@/components/CurioBlockList';
 import QuickAnswer from '@/components/curio/QuickAnswer';
-import TableOfContents, { Chapter } from '@/components/curio/TableOfContents';
+import { TableOfContents } from '@/components/curio/TableOfContents';
 import ProgressVisualization from '@/components/curio/ProgressVisualization';
 import LearningCertificate from '@/components/curio/LearningCertificate';
 import ChapterHeader from '@/components/curio/ChapterHeader';
 import IllustratedContentBlock from '@/components/content-blocks/IllustratedContentBlock';
+import { Chapter } from '@/types/Chapter';
 
-// Define chapter structure
 const DEFAULT_CHAPTERS: Chapter[] = [
   {
     id: 'introduction',
@@ -104,7 +104,6 @@ const CurioPage: React.FC = () => {
     handleTaskComplete,
   } = useBlockInteractions(childId);
 
-  // State management
   const [animateBlocks, setAnimateBlocks] = useState(true);
   const [curioTitle, setCurioTitle] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -116,7 +115,6 @@ const CurioPage: React.FC = () => {
   const [showRabbitHoleSuggestions, setShowRabbitHoleSuggestions] = useState(false);
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
   
-  // New state for structured learning journey
   const [quickAnswer, setQuickAnswer] = useState<string>('');
   const [quickAnswerExpanded, setQuickAnswerExpanded] = useState(false);
   const [chapters, setChapters] = useState<Chapter[]>(DEFAULT_CHAPTERS);
@@ -127,11 +125,9 @@ const CurioPage: React.FC = () => {
   const [showCertificate, setShowCertificate] = useState(false);
   const [ageGroup, setAgeGroup] = useState<'5-7' | '8-11' | '12-16'>('8-11');
   
-  // Use refs to prevent infinite loops
   const blocksProcessedRef = useRef(false);
   const chaptersUpdatedRef = useRef(false);
-  
-  // Organize blocks into chapters
+
   const organizeBlocksIntoChapters = (blocks: any[]) => {
     if (!blocks.length) return {};
     
@@ -145,7 +141,6 @@ const CurioPage: React.FC = () => {
       nextSteps: []
     };
     
-    // Organize blocks by type into appropriate chapters
     blocks.forEach(block => {
       if (block.type === 'quiz') {
         chapterMap.challenge.push(block);
@@ -168,8 +163,7 @@ const CurioPage: React.FC = () => {
     
     return chapterMap;
   };
-  
-  // Determine child's age group
+
   useEffect(() => {
     if (childProfile?.age) {
       const age = typeof childProfile.age === 'string' 
@@ -186,14 +180,12 @@ const CurioPage: React.FC = () => {
     }
   }, [childProfile]);
 
-  // Navigation guard
   useEffect(() => {
     if (user && !childId) {
       navigate('/profiles');
     }
   }, [user, childId, navigate]);
 
-  // Fetch curio title and generate quick answer
   useEffect(() => {
     if (curioId) {
       supabase
@@ -205,10 +197,7 @@ const CurioPage: React.FC = () => {
           if (data && !error) {
             setCurioTitle(data.title);
             
-            // Generate quick answer for the query if it exists
             if (data.query) {
-              // In a real implementation, this would call an API for a quick answer
-              // For demonstration, we'll use a predefined answer about paneer
               if (data.query.toLowerCase().includes('paneer')) {
                 setQuickAnswer("Paneer is a fresh cheese commonly used in Indian cuisine. It's made by curdling milk with lemon juice, vinegar, or other food acids, then draining and pressing the curds to form a firm cheese that holds its shape. Unlike many cheeses, paneer doesn't melt when heated, making it perfect for curries and grilled dishes.");
               } else {
@@ -220,7 +209,6 @@ const CurioPage: React.FC = () => {
     }
   }, [curioId]);
 
-  // Celebration effect when content loads
   useEffect(() => {
     if (blocks.length > 0 && isFirstLoad) {
       setTimeout(() => {
@@ -235,7 +223,6 @@ const CurioPage: React.FC = () => {
     }
   }, [blocks.length, isFirstLoad]);
 
-  // Turn off animations after initial load
   useEffect(() => {
     if (blocks.length > 0) {
       setTimeout(() => {
@@ -244,20 +231,16 @@ const CurioPage: React.FC = () => {
     }
   }, [blocks]);
 
-  // Extract block metadata and insights, update chapters progress
   useEffect(() => {
     if (blocks.length > 0 && !blocksProcessedRef.current) {
       blocksProcessedRef.current = true;
       
-      // Collect specialist types
       const specialists = blocks.map(block => block.specialist_id);
       const uniqueSpecialists = Array.from(new Set(specialists));
       setSpecialistIds(uniqueSpecialists);
       
-      // Count blocks
       setBlockCount(blocks.length);
       
-      // Determine difficulty level
       const hasQuiz = blocks.some(block => block.type === 'quiz');
       const hasCreative = blocks.some(block => block.type === 'creative');
       const hasMindfulness = blocks.some(block => block.type === 'mindfulness');
@@ -270,7 +253,6 @@ const CurioPage: React.FC = () => {
         setDifficulty('beginner');
       }
       
-      // Generate topic summary
       const topics = new Set(blocks.map(block => block.specialist_id));
       const topicList = Array.from(topics).map(topic => {
         switch(topic) {
@@ -290,57 +272,46 @@ const CurioPage: React.FC = () => {
     }
   }, [blocks]);
 
-  // Update chapter completion status
   useEffect(() => {
     if (blocks.length > 0 && !chaptersUpdatedRef.current) {
       chaptersUpdatedRef.current = true;
       
-      // Update chapters completion status based on block types
       const updatedChapters: Chapter[] = [...chapters];
       
-      // Check for introduction content
       if (blocks.some(block => block.type === 'fact' || block.type === 'funFact')) {
         updatedChapters[0].isCompleted = true;
       }
       
-      // Check for exploration content (more facts or news)
       if (blocks.filter(block => block.type === 'fact' || block.type === 'funFact' || block.type === 'news').length > 2) {
         updatedChapters[1].isCompleted = true;
       }
       
-      // Check for understanding content (could be more facts)
       if (blocks.filter(block => block.type === 'fact' || block.type === 'funFact').length > 3) {
         updatedChapters[2].isCompleted = true;
       }
       
-      // Check for challenge content (quizzes)
       if (blocks.some(block => block.type === 'quiz')) {
         updatedChapters[3].isCompleted = true;
       }
       
-      // Check for creation content
       if (blocks.some(block => block.type === 'creative' || block.type === 'activity')) {
         updatedChapters[4].isCompleted = true;
       }
       
-      // Check for reflection content
       if (blocks.some(block => block.type === 'mindfulness')) {
         updatedChapters[5].isCompleted = true;
       }
       
-      // Next steps is considered complete when looking at suggestions
       if (showRabbitHoleSuggestions) {
         updatedChapters[6].isCompleted = true;
       }
       
       setChapters(updatedChapters);
       
-      // Calculate progress percentage
       const completedChapters = updatedChapters.filter(chapter => chapter.isCompleted).length;
       const progressPercentage = (completedChapters / updatedChapters.length) * 100;
       setProgress(progressPercentage);
       
-      // Show certificate when all chapters complete
       if (progressPercentage >= 85 && !showCertificate) {
         setShowCertificate(true);
         setLearnerName(childProfile?.name || 'Wonder Explorer');
@@ -348,7 +319,6 @@ const CurioPage: React.FC = () => {
     }
   }, [blocks, showRabbitHoleSuggestions, chapters, childProfile]);
 
-  // Reset blocks processed flag when blocks change
   useEffect(() => {
     if (blocks.length === 0) {
       blocksProcessedRef.current = false;
@@ -356,7 +326,6 @@ const CurioPage: React.FC = () => {
     }
   }, [blocks]);
 
-  // Detect scroll position for showing rabbit hole suggestions
   useEffect(() => {
     const handleScroll = () => {
       const scrollPosition = window.scrollY;
@@ -375,17 +344,14 @@ const CurioPage: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [blocks.length, hasScrolledToBottom]);
 
-  // Handle profile loading error
   if (profileError) {
     return <CurioErrorState message="Failed to load profile." />;
   }
 
-  // Handle loading state
   if (isLoadingProfile) {
     return <CurioLoadingState message="Loading profile..." />;
   }
 
-  // Handle user interactions
   const handleToggleLike = async (blockId: string) => {
     try {
       await supabase.functions.invoke('handle-interaction', {
@@ -473,7 +439,7 @@ const CurioPage: React.FC = () => {
       toast.error("Could not create new exploration. Please try again later.");
     }
   };
-  
+
   const handleBackToDashboard = () => {
     navigate(`/dashboard/${childId}`);
   };
@@ -490,13 +456,11 @@ const CurioPage: React.FC = () => {
   const handleChapterClick = (chapterId: string) => {
     setActiveChapter(chapterId);
     
-    // Update chapters to reflect active state
     setChapters(prev => prev.map(chapter => ({
       ...chapter,
       isActive: chapter.id === chapterId
     })));
     
-    // Scroll to the appropriate section
     document.getElementById(`chapter-${chapterId}`)?.scrollIntoView({ 
       behavior: 'smooth', 
       block: 'start' 
@@ -507,7 +471,6 @@ const CurioPage: React.FC = () => {
     setIsJourneyStarted(true);
     setQuickAnswerExpanded(false);
     
-    // Scroll to the table of contents
     document.getElementById('table-of-contents')?.scrollIntoView({
       behavior: 'smooth',
       block: 'start'
@@ -522,12 +485,10 @@ const CurioPage: React.FC = () => {
     toast.success("Certificate shared successfully!");
   };
   
-  // Organize blocks into chapters
   const blocksByChapter = organizeBlocksIntoChapters(blocks);
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
       <CurioPageHeader 
         curioTitle={curioTitle} 
         handleBackToDashboard={handleBackToDashboard}
@@ -537,7 +498,6 @@ const CurioPage: React.FC = () => {
         showInsights={showInsights}
       />
 
-      {/* Insights Panel */}
       <AnimatePresence>
         {showInsights && (
           <CurioPageInsights
@@ -548,172 +508,148 @@ const CurioPage: React.FC = () => {
         )}
       </AnimatePresence>
       
-      {/* Search Bar */}
       <div className="mt-4 px-4 sm:px-6 max-w-3xl mx-auto w-full">
-        <CurioSearchBar
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          handleSearch={handleSearch}
-          placeholder="Search within this exploration..."
-        />
-      </div>
+        {isLoadingBlocks && <CurioLoadingState />}
+        
+        {blocksError && <CurioErrorState message="Failed to load content." />}
+        
+        {!isLoadingBlocks && !blocksError && blocks.length === 0 && !isFirstLoad && (
+          <CurioEmptyState />
+        )}
 
-      {/* Main Content Area */}
-      <div className="flex-grow overflow-y-auto relative">
-        <div className="max-w-3xl mx-auto py-4 sm:py-8 px-2 sm:px-0">
-          {/* Loading States */}
-          {isLoadingBlocks && <CurioLoadingState />}
-          
-          {/* Error State */}
-          {blocksError && <CurioErrorState message="Failed to load content." />}
-          
-          {/* Empty State */}
-          {!isLoadingBlocks && !blocksError && blocks.length === 0 && !isFirstLoad && (
-            <CurioEmptyState />
-          )}
+        {curioTitle && !isLoadingBlocks && !searchQuery && (
+          <QuickAnswer 
+            question={curioTitle}
+            isExpanded={quickAnswerExpanded}
+            onToggleExpand={() => setQuickAnswerExpanded(!quickAnswerExpanded)}
+            onStartJourney={handleStartJourney}
+            childId={childId}
+          />
+        )}
 
-          {/* Quick Answer - Using Groq for generation */}
-          {curioTitle && !isLoadingBlocks && !searchQuery && (
-            <QuickAnswer 
-              question={curioTitle}
-              isExpanded={quickAnswerExpanded}
-              onToggleExpand={() => setQuickAnswerExpanded(!quickAnswerExpanded)}
-              onStartJourney={handleStartJourney}
-              childId={childId}
-            />
-          )}
-
-          {/* Illustrated first content block - Using OpenAI DALL-E for image generation */}
-          {curioTitle && !isLoadingBlocks && !searchQuery && (
-            <IllustratedContentBlock
-              topic={curioTitle}
-              childId={childId}
-              onLike={() => {}}
-              onSave={() => {}}
-              onShare={() => {}}
-              onReply={(reply) => console.log('Reply:', reply)}
-            />
-          )}
-          
-          {/* Table of Contents */}
-          {blocks.length > 0 && !searchQuery && (
-            <div id="table-of-contents">
-              <TableOfContents 
-                chapters={chapters}
-                onChapterClick={handleChapterClick}
-                ageGroup={ageGroup}
-              />
-            </div>
-          )}
-          
-          {/* Progress Visualization */}
-          {blocks.length > 0 && !searchQuery && (
-            <ProgressVisualization 
-              progress={progress} 
-              ageGroup={ageGroup}
-              totalChapters={chapters.length}
-              completedChapters={chapters.filter(chapter => chapter.isCompleted).length}
-            />
-          )}
-
-          {/* Certificate when journey is complete */}
-          {showCertificate && !searchQuery && blocks.length > 0 && (
-            <LearningCertificate
-              learnerName={learnerName}
-              topic={curioTitle || 'Knowledge Exploration'}
-              date={new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-              onDownload={handleCertificateDownload}
-              onShare={handleCertificateShare}
+        {curioTitle && !isLoadingBlocks && !searchQuery && (
+          <IllustratedContentBlock
+            topic={curioTitle}
+            childId={childId}
+            onLike={() => {}}
+            onSave={() => {}}
+            onShare={() => {}}
+            onReply={(reply) => console.log('Reply:', reply)}
+          />
+        )}
+        
+        {blocks.length > 0 && !searchQuery && (
+          <div id="table-of-contents">
+            <TableOfContents 
+              chapters={chapters}
+              onChapterClick={handleChapterClick}
               ageGroup={ageGroup}
             />
-          )}
+          </div>
+        )}
+        
+        {blocks.length > 0 && !searchQuery && (
+          <ProgressVisualization 
+            progress={progress} 
+            ageGroup={ageGroup}
+            totalChapters={chapters.length}
+            completedChapters={chapters.filter(chapter => chapter.isCompleted).length}
+          />
+        )}
 
-          {/* Content Blocks by Chapter */}
-          {blocks.length > 0 && !searchQuery ? (
-            Object.keys(blocksByChapter).map((chapterId, index) => {
-              const chapterBlocks = blocksByChapter[chapterId];
-              if (!chapterBlocks || chapterBlocks.length === 0) return null;
-              
-              const chapterInfo = chapters.find(ch => ch.id === chapterId);
-              if (!chapterInfo) return null;
-              
-              return (
-                <div key={chapterId} id={`chapter-${chapterId}`}>
-                  <ChapterHeader 
-                    chapterId={chapterId}
-                    title={chapterInfo.title}
-                    description={chapterInfo.description}
-                    index={index}
-                    totalChapters={chapters.length}
-                  />
-                  
-                  <CurioBlockList
-                    blocks={chapterBlocks}
-                    animateBlocks={animateBlocks}
-                    hasMoreBlocks={false}
-                    loadingMoreBlocks={false}
-                    loadTriggerRef={loadTriggerRef}
-                    searchQuery=""
-                    profileId={childId}
-                    isFirstLoad={isFirstLoad}
-                    handleToggleLike={handleToggleLike}
-                    handleToggleBookmark={handleToggleBookmark}
-                    handleReply={handleReply}
-                    handleQuizCorrect={handleQuizCorrect}
-                    handleNewsRead={handleNewsRead}
-                    handleCreativeUpload={handleCreativeUpload}
-                    handleTaskComplete={handleTaskComplete}
-                    handleActivityComplete={handleActivityComplete}
-                    handleMindfulnessComplete={handleMindfulnessComplete}
-                    handleRabbitHoleClick={handleRabbitHoleClick}
-                  />
-                </div>
-              );
-            })
-          ) : (
-            // Display standard blocks when searching
-            blocks.length > 0 && (
-              <CurioBlockList
-                blocks={blocks}
-                animateBlocks={animateBlocks}
-                hasMoreBlocks={hasMore}
-                loadingMoreBlocks={loadingMore}
-                loadTriggerRef={loadTriggerRef}
-                searchQuery={searchQuery}
-                profileId={childId}
-                isFirstLoad={isFirstLoad}
-                handleToggleLike={handleToggleLike}
-                handleToggleBookmark={handleToggleBookmark}
-                handleReply={handleReply}
-                handleQuizCorrect={handleQuizCorrect}
-                handleNewsRead={handleNewsRead}
-                handleCreativeUpload={handleCreativeUpload}
-                handleTaskComplete={handleTaskComplete}
-                handleActivityComplete={handleActivityComplete}
-                handleMindfulnessComplete={handleMindfulnessComplete}
-                handleRabbitHoleClick={handleRabbitHoleClick}
-                generationError={generationError}
-                onRefresh={handleRefresh}
-              />
-            )
-          )}
+        {showCertificate && !searchQuery && blocks.length > 0 && (
+          <LearningCertificate
+            learnerName={learnerName}
+            topic={curioTitle || 'Knowledge Exploration'}
+            date={new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+            onDownload={handleCertificateDownload}
+            onShare={handleCertificateShare}
+            ageGroup={ageGroup}
+          />
+        )}
 
-          {/* Rabbit Hole Suggestions */}
-          {showRabbitHoleSuggestions && blocks.length > 0 && !searchQuery && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-8"
-            >
-              <RabbitHoleSuggestions
-                curioTitle={curioTitle || ''}
-                profileId={childId}
-                onSuggestionClick={handleRabbitHoleClick}
-                specialistIds={specialistIds}
-              />
-            </motion.div>
-          )}
-        </div>
+        {blocks.length > 0 && !searchQuery ? (
+          Object.keys(blocksByChapter).map((chapterId, index) => {
+            const chapterBlocks = blocksByChapter[chapterId];
+            if (!chapterBlocks || chapterBlocks.length === 0) return null;
+            
+            const chapterInfo = chapters.find(ch => ch.id === chapterId);
+            if (!chapterInfo) return null;
+            
+            return (
+              <div key={chapterId} id={`chapter-${chapterId}`}>
+                <ChapterHeader 
+                  chapterId={chapterId}
+                  title={chapterInfo.title}
+                  description={chapterInfo.description}
+                  index={index}
+                  totalChapters={chapters.length}
+                />
+                
+                <CurioBlockList
+                  blocks={chapterBlocks}
+                  animateBlocks={animateBlocks}
+                  hasMoreBlocks={false}
+                  loadingMoreBlocks={false}
+                  loadTriggerRef={loadTriggerRef}
+                  searchQuery=""
+                  profileId={childId}
+                  isFirstLoad={isFirstLoad}
+                  handleToggleLike={handleToggleLike}
+                  handleToggleBookmark={handleToggleBookmark}
+                  handleReply={handleReply}
+                  handleQuizCorrect={handleQuizCorrect}
+                  handleNewsRead={handleNewsRead}
+                  handleCreativeUpload={handleCreativeUpload}
+                  handleTaskComplete={handleTaskComplete}
+                  handleActivityComplete={handleActivityComplete}
+                  handleMindfulnessComplete={handleMindfulnessComplete}
+                  handleRabbitHoleClick={handleRabbitHoleClick}
+                />
+              </div>
+            );
+          })
+        ) : (
+          blocks.length > 0 && (
+            <CurioBlockList
+              blocks={blocks}
+              animateBlocks={animateBlocks}
+              hasMoreBlocks={hasMore}
+              loadingMoreBlocks={loadingMore}
+              loadTriggerRef={loadTriggerRef}
+              searchQuery={searchQuery}
+              profileId={childId}
+              isFirstLoad={isFirstLoad}
+              handleToggleLike={handleToggleLike}
+              handleToggleBookmark={handleToggleBookmark}
+              handleReply={handleReply}
+              handleQuizCorrect={handleQuizCorrect}
+              handleNewsRead={handleNewsRead}
+              handleCreativeUpload={handleCreativeUpload}
+              handleTaskComplete={handleTaskComplete}
+              handleActivityComplete={handleActivityComplete}
+              handleMindfulnessComplete={handleMindfulnessComplete}
+              handleRabbitHoleClick={handleRabbitHoleClick}
+              generationError={generationError}
+              onRefresh={handleRefresh}
+            />
+          )
+        )}
+
+        {showRabbitHoleSuggestions && blocks.length > 0 && !searchQuery && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-8"
+          >
+            <RabbitHoleSuggestions
+              curioTitle={curioTitle || ''}
+              profileId={childId}
+              onSuggestionClick={handleRabbitHoleClick}
+              specialistIds={specialistIds}
+            />
+          </motion.div>
+        )}
       </div>
     </div>
   );

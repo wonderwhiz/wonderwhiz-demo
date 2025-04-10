@@ -20,6 +20,12 @@ import CurioLoadingState from '@/components/curio/CurioLoadingState';
 import CurioEmptyState from '@/components/curio/CurioEmptyState';
 import CurioErrorState from '@/components/curio/CurioErrorState';
 import CurioBlockList from '@/components/CurioBlockList';
+import QuickAnswer from '@/components/curio/QuickAnswer';
+import { TableOfContents } from '@/components/curio/TableOfContents';
+import ProgressVisualization from '@/components/curio/ProgressVisualization';
+import ChapterHeader from '@/components/curio/ChapterHeader';
+import LearningCertificate from '@/components/curio/LearningCertificate';
+import { Chapter } from '@/types/Chapter';
 
 const DEFAULT_CHAPTERS: Chapter[] = [
   {
@@ -669,6 +675,64 @@ const EnhancedCurioPage: React.FC = () => {
     toast.success("Certificate shared successfully!");
   };
   
+  const handleRabbitHoleClick = async (question: string) => {
+    if (!childId) return;
+    
+    try {
+      toast.loading("Creating new exploration...");
+      
+      const { data: newCurio, error } = await supabase
+        .from('curios')
+        .insert({
+          child_id: childId,
+          title: question,
+          query: question,
+        })
+        .select('id')
+        .single();
+        
+      if (error) throw error;
+      
+      if (newCurio) {
+        toast.success("New exploration created!");
+        
+        try {
+          await supabase.functions.invoke('increment-sparks-balance', {
+            body: JSON.stringify({
+              profileId: childId,
+              amount: 2
+            })
+          });
+          
+          await supabase.from('sparks_transactions').insert({
+            child_id: childId,
+            amount: 2,
+            reason: 'Following curiosity'
+          });
+          
+          toast.success('You earned 2 sparks for exploring your curiosity!', {
+            icon: '✨',
+            position: 'bottom-right',
+            duration: 3000
+          });
+        } catch (err) {
+          console.error('Error awarding sparks:', err);
+        }
+        
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+        
+        navigate(`/curio/${childId}/${newCurio.id}`);
+      }
+    } catch (error) {
+      console.error('Error creating rabbit hole curio:', error);
+      toast.error("Could not create new exploration. Please try again later.");
+    }
+  };
+
   const blocksByChapter = organizeBlocksIntoChapters(blocks);
 
   return (
