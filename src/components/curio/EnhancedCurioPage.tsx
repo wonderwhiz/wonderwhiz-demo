@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -172,7 +171,10 @@ const EnhancedCurioPage: React.FC = () => {
   // Determine child's age group
   useEffect(() => {
     if (childProfile?.age) {
-      const age = parseInt(childProfile.age as string);
+      const age = typeof childProfile.age === 'string' 
+        ? parseInt(childProfile.age, 10) 
+        : childProfile.age;
+        
       if (age >= 5 && age <= 7) {
         setAgeGroup('5-7');
       } else if (age >= 8 && age <= 11) {
