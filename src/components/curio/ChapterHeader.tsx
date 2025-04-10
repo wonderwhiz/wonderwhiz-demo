@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
-import { LightbulbIcon, Brain, Book, Mountains, Palette, Sparkles, Map } from 'lucide-react';
+import { LightbulbIcon, Brain, Book, Mountain, Palette, Sparkles, Map } from 'lucide-react';
 
 interface ChapterHeaderProps {
   chapterId: string;
@@ -24,7 +23,7 @@ const ChapterHeader: React.FC<ChapterHeaderProps> = ({
       case 'introduction':
         return <LightbulbIcon className="w-5 h-5 text-wonderwhiz-vibrant-yellow" />;
       case 'exploration':
-        return <Mountains className="w-5 h-5 text-emerald-400" />;
+        return <Mountain className="w-5 h-5 text-emerald-400" />;
       case 'understanding':
         return <Book className="w-5 h-5 text-wonderwhiz-cyan" />;
       case 'challenge':

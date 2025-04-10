@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Brain, Book, Mountains, Palette, LightbulbIcon, Map } from 'lucide-react';
+import { Sparkles, Brain, Book, Mountain, Palette, LightbulbIcon, Map } from 'lucide-react';
 
 export type ChapterIconType = 'introduction' | 'exploration' | 'understanding' | 'challenge' | 'creation' | 'reflection' | 'nextSteps';
 
@@ -31,7 +30,7 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({
       case 'introduction':
         return <LightbulbIcon className="w-5 h-5 text-wonderwhiz-vibrant-yellow" />;
       case 'exploration':
-        return <Mountains className="w-5 h-5 text-emerald-400" />;
+        return <Mountain className="w-5 h-5 text-emerald-400" />;
       case 'understanding':
         return <Book className="w-5 h-5 text-wonderwhiz-cyan" />;
       case 'challenge':
