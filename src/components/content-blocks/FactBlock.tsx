@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import BlockHeader from './BlockHeader';
 import { motion } from 'framer-motion';
@@ -37,13 +37,21 @@ const FactBlock: React.FC<FactBlockProps> = ({
   onRabbitHoleClick,
   updateHeight
 }) => {
-  const blockRef = React.useRef<HTMLDivElement>(null);
+  const blockRef = useRef<HTMLDivElement>(null);
+  const [prevHeight, setPrevHeight] = useState<number | null>(null);
   
-  React.useEffect(() => {
+  // Only measure and update height when the component mounts or facts/expands change
+  useEffect(() => {
     if (blockRef.current && updateHeight) {
-      updateHeight(blockRef.current.offsetHeight);
+      const currentHeight = blockRef.current.offsetHeight;
+      
+      // Only update if height actually changed to prevent infinite loop
+      if (prevHeight === null || prevHeight !== currentHeight) {
+        setPrevHeight(currentHeight);
+        updateHeight(currentHeight);
+      }
     }
-  }, [fact, updateHeight, expanded]);
+  }, [fact, expanded, updateHeight, prevHeight, rabbitHoles?.length]);
   
   return (
     <Card 
@@ -57,7 +65,7 @@ const FactBlock: React.FC<FactBlockProps> = ({
       />
       
       <div className="p-4">
-        <p className="text-white/80 text-base leading-relaxed">{fact}</p>
+        <p className="text-white/80 text-base leading-relaxed">{fact || "No content available"}</p>
         
         {rabbitHoles && rabbitHoles.length > 0 && (
           <div className="mt-4 space-y-2">
@@ -70,7 +78,7 @@ const FactBlock: React.FC<FactBlockProps> = ({
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.99 }}
                   className="w-full text-left p-2.5 px-3 bg-white/5 hover:bg-white/10 rounded-lg text-white/80 text-sm transition-colors"
-                  onClick={() => onRabbitHoleClick?.(question)}
+                  onClick={() => onRabbitHoleClick && onRabbitHoleClick(question)}
                 >
                   {question}
                 </motion.button>

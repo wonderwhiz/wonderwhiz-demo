@@ -172,10 +172,10 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
           case 'fact':
             BlockComponent = (
               <FactBlock 
-                fact={block.content.fact}
-                title={block.content.title}
+                fact={block.content?.fact || ''}
+                title={block.content?.title || ''}
                 specialistId={block.specialist_id}
-                rabbitHoles={block.content.rabbitHoles || []}
+                rabbitHoles={block.content?.rabbitHoles || []}
                 onLike={handleToggleLike ? () => handleToggleLike(block.id) : undefined}
                 onBookmark={handleToggleBookmark ? () => handleToggleBookmark(block.id) : undefined}
                 onReply={handleReply ? (message) => handleReply(block.id, message) : undefined}
@@ -188,7 +188,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
           case 'funFact':
             BlockComponent = (
               <FunFactBlock 
-                fact={block.content.text}
+                fact={block.content?.text || ''}
                 specialistId={block.specialist_id}
                 onLike={handleToggleLike ? () => handleToggleLike(block.id) : undefined}
                 onBookmark={handleToggleBookmark ? () => handleToggleBookmark(block.id) : undefined}
@@ -201,10 +201,10 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
           case 'quiz':
             BlockComponent = (
               <QuizBlock 
-                question={block.content.question}
-                options={block.content.options}
-                correctIndex={block.content.correctIndex}
-                explanation={block.content.explanation}
+                question={block.content?.question || ''}
+                options={block.content?.options || []}
+                correctIndex={block.content?.correctIndex || 0}
+                explanation={block.content?.explanation || ''}
                 specialistId={block.specialist_id}
                 onLike={handleToggleLike ? () => handleToggleLike(block.id) : undefined}
                 onBookmark={handleToggleBookmark ? () => handleToggleBookmark(block.id) : undefined}
@@ -219,10 +219,10 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
             BlockComponent = (
               <CreativeBlock 
                 content={{
-                  prompt: block.content.prompt,
-                  description: block.content.description,
-                  guidelines: block.content.guidelines,
-                  examples: block.content.examples || []
+                  prompt: block.content?.prompt || '',
+                  description: block.content?.description || '',
+                  guidelines: block.content?.guidelines || '',
+                  examples: block.content?.examples || []
                 }}
                 specialistId={block.specialist_id}
                 onCreativeUpload={handleCreativeUpload ? () => handleCreativeUpload(block.id, {}) : undefined}
@@ -233,10 +233,10 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
             BlockComponent = (
               <ActivityBlock 
                 content={{
-                  activity: block.content.activity || block.content.title || "",
-                  title: block.content.title,
-                  instructions: block.content.instructions,
-                  steps: block.content.steps || []
+                  activity: block.content?.activity || block.content?.title || "",
+                  title: block.content?.title || '',
+                  instructions: block.content?.instructions || '',
+                  steps: block.content?.steps || []
                 }}
                 specialistId={block.specialist_id}
                 onActivityComplete={handleActivityComplete ? () => handleActivityComplete(block.id) : undefined}
@@ -247,10 +247,10 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
             BlockComponent = (
               <MindfulnessBlock 
                 content={{
-                  exercise: block.content.exercise || block.content.title || "",
-                  duration: block.content.duration || 60,
-                  title: block.content.title,
-                  instruction: block.content.instruction
+                  exercise: block.content?.exercise || block.content?.title || "",
+                  duration: block.content?.duration || 60,
+                  title: block.content?.title || '',
+                  instruction: block.content?.instruction || ''
                 }}
                 specialistId={block.specialist_id}
                 onMindfulnessComplete={handleMindfulnessComplete ? () => handleMindfulnessComplete(block.id) : undefined}
@@ -261,11 +261,11 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
             BlockComponent = (
               <NewsBlock 
                 content={{
-                  headline: block.content.headline,
-                  summary: block.content.summary,
-                  body: block.content.body,
-                  source: block.content.source,
-                  date: block.content.date
+                  headline: block.content?.headline || '',
+                  summary: block.content?.summary || '',
+                  body: block.content?.body || '',
+                  source: block.content?.source || '',
+                  date: block.content?.date || ''
                 }}
                 specialistId={block.specialist_id}
                 onNewsRead={handleNewsRead ? () => handleNewsRead(block.id) : undefined}
@@ -277,9 +277,9 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
             BlockComponent = (
               <FlashcardBlock 
                 content={{
-                  front: block.content.front,
-                  back: block.content.back,
-                  hint: block.content.hint
+                  front: block.content?.front || '',
+                  back: block.content?.back || '',
+                  hint: block.content?.hint || ''
                 }}
                 specialistId={block.specialist_id}
                 updateHeight={(height) => updateBlockHeight(block.id, height)}

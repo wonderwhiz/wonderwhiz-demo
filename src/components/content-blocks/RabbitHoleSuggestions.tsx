@@ -15,13 +15,13 @@ interface RabbitHoleSuggestionsProps {
 
 // Sample icons for different suggestion types
 const suggestionIcons = [
-  <Sparkles className="h-5 w-5 text-pink-400" />,
-  <Brain className="h-5 w-5 text-indigo-400" />,
-  <Zap className="h-5 w-5 text-yellow-400" />,
-  <Compass className="h-5 w-5 text-cyan-400" />,
-  <Lightbulb className="h-5 w-5 text-amber-400" />,
-  <BookOpen className="h-5 w-5 text-blue-400" />,
-  <Telescope className="h-5 w-5 text-violet-400" />
+  <Sparkles className="h-5 w-5 text-pink-400" key="sparkles" />,
+  <Brain className="h-5 w-5 text-indigo-400" key="brain" />,
+  <Zap className="h-5 w-5 text-yellow-400" key="zap" />,
+  <Compass className="h-5 w-5 text-cyan-400" key="compass" />,
+  <Lightbulb className="h-5 w-5 text-amber-400" key="lightbulb" />,
+  <BookOpen className="h-5 w-5 text-blue-400" key="bookopen" />,
+  <Telescope className="h-5 w-5 text-violet-400" key="telescope" />
 ];
 
 const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
@@ -129,6 +129,16 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
     setSpecialistSuggestions(fallbackSpecialistSuggestions);
   };
 
+  // Function to handle suggestion clicks safely
+  const handleSuggestionClick = (question: string) => {
+    if (onSuggestionClick && typeof onSuggestionClick === 'function') {
+      onSuggestionClick(question);
+    } else {
+      console.error("onSuggestionClick is not a function or not provided");
+      toast.error("Could not process this suggestion. Please try again.");
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="p-6 rounded-xl bg-gradient-to-br from-indigo-900/50 to-fuchsia-900/50 backdrop-blur-sm border border-white/10 my-8">
@@ -172,7 +182,7 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
           <motion.button
             key={`suggestion-${index}`}
             whileHover={{ x: 5 }}
-            onClick={() => onSuggestionClick(suggestion.question)}
+            onClick={() => handleSuggestionClick(suggestion.question)}
             className="w-full text-left p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-colors flex items-center justify-between group"
           >
             <div className="flex-1">
@@ -212,7 +222,7 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
                 <motion.button
                   key={`specialist-${index}`}
                   whileHover={{ x: 5 }}
-                  onClick={() => onSuggestionClick(suggestion.question)}
+                  onClick={() => handleSuggestionClick(suggestion.question)}
                   className="w-full text-left p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-colors flex items-center justify-between group"
                 >
                   <div className="flex items-start">
