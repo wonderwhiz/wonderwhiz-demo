@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Lightbulb, Compass, Brain, Sparkles, PenTool, Flame, ArrowRight } from 'lucide-react';
 
 interface ChapterHeaderProps {
   chapterId: string;
@@ -11,72 +10,71 @@ interface ChapterHeaderProps {
   totalChapters: number;
 }
 
-const ChapterHeader: React.FC<ChapterHeaderProps> = ({
-  chapterId,
-  title,
+const ChapterHeader: React.FC<ChapterHeaderProps> = ({ 
+  chapterId, 
+  title, 
   description,
   index,
   totalChapters
 }) => {
-  const getChapterIcon = () => {
+  // Create color variants based on chapter type
+  const getColor = () => {
     switch(chapterId) {
-      case 'introduction': return <Lightbulb className="h-5 w-5 text-wonderwhiz-vibrant-yellow" />;
-      case 'exploration': return <Compass className="h-5 w-5 text-wonderwhiz-bright-pink" />;
-      case 'understanding': return <Brain className="h-5 w-5 text-wonderwhiz-cyan" />;
-      case 'challenge': return <Sparkles className="h-5 w-5 text-wonderwhiz-gold" />;
-      case 'creation': return <PenTool className="h-5 w-5 text-emerald-400" />;
-      case 'reflection': return <Flame className="h-5 w-5 text-wonderwhiz-bright-pink" />;
-      case 'nextSteps': return <ArrowRight className="h-5 w-5 text-wonderwhiz-blue-accent" />;
-      default: return <Lightbulb className="h-5 w-5 text-wonderwhiz-vibrant-yellow" />;
-    }
-  };
-
-  // Get background style based on chapter type
-  const getBackgroundStyle = () => {
-    switch(chapterId) {
-      case 'introduction': return 'from-wonderwhiz-vibrant-yellow/20 to-transparent';
-      case 'exploration': return 'from-wonderwhiz-bright-pink/20 to-transparent';
-      case 'understanding': return 'from-wonderwhiz-cyan/20 to-transparent';
-      case 'challenge': return 'from-wonderwhiz-gold/20 to-transparent';
-      case 'creation': return 'from-emerald-400/20 to-transparent';
-      case 'reflection': return 'from-wonderwhiz-bright-pink/20 to-transparent';
-      case 'nextSteps': return 'from-wonderwhiz-blue-accent/20 to-transparent';
-      default: return 'from-wonderwhiz-vibrant-yellow/20 to-transparent';
+      case 'introduction':
+        return 'from-blue-400 to-indigo-500';
+      case 'exploration':
+        return 'from-purple-400 to-purple-600';
+      case 'understanding':
+        return 'from-teal-400 to-teal-600';
+      case 'challenge':
+        return 'from-amber-400 to-amber-600';
+      case 'creation':
+        return 'from-pink-400 to-pink-600';
+      case 'reflection':
+        return 'from-cyan-400 to-cyan-600';
+      case 'nextSteps':
+        return 'from-emerald-400 to-emerald-600';
+      default:
+        return 'from-blue-400 to-indigo-500';
     }
   };
 
   return (
-    <motion.div 
-      className="mb-5 mt-8 pt-6 relative"
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      viewport={{ once: true }}
+      className="mb-6 pt-8 relative"
     >
-      {/* Animated background gradient */}
-      <div className={`absolute top-0 left-0 right-0 h-16 bg-gradient-to-r ${getBackgroundStyle()} opacity-25 rounded-t-xl -z-10`} />
-      
-      {/* Connecting lines to show progress */}
-      {index > 0 && (
-        <div className="absolute top-0 left-6 w-0.5 h-6 bg-white/10" />
-      )}
-      {index < totalChapters - 1 && (
-        <div className="absolute bottom-0 left-6 w-0.5 h-full bg-white/10" />
-      )}
-      
-      {/* Chapter indicator */}
-      <div className="flex items-center mb-3">
-        <div className={`
-          w-12 h-12 rounded-full flex items-center justify-center
-          bg-wonderwhiz-deep-purple border-2 border-white/20
-          shadow-lg shadow-wonderwhiz-bright-pink/10
-        `}>
-          {getChapterIcon()}
-        </div>
-        
-        <div className="ml-4">
-          <h2 className="text-xl font-bold text-white font-nunito">{title}</h2>
-          <p className="text-white/70 text-sm">{description}</p>
+      {/* Progress indicator */}
+      <div className="absolute left-0 top-0 h-full w-1">
+        <div className="h-full w-full rounded-full bg-white/10"></div>
+        <div 
+          className={`absolute top-0 h-${Math.ceil((index + 1) / totalChapters * 100)}% w-full rounded-full bg-gradient-to-b ${getColor()}`} 
+          style={{ height: `${Math.ceil((index + 1) / totalChapters * 100)}%` }}
+        ></div>
+      </div>
+
+      {/* Chapter decorative line */}
+      <div className="relative h-1 mb-6 rounded overflow-hidden">
+        <svg width="100%" height="4" className="absolute inset-0">
+          <defs>
+            <linearGradient id={`gradient-${chapterId}`} x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" className={`stop-${getColor().split(' ')[0]}`} />
+              <stop offset="100%" className={`stop-${getColor().split(' ')[1]}`} />
+            </linearGradient>
+          </defs>
+          <rect width="100%" height="4" fill={`url(#gradient-${chapterId})`} />
+        </svg>
+      </div>
+
+      {/* Chapter title */}
+      <div className="flex flex-col md:flex-row md:items-center mb-2">
+        <h2 className={`text-xl md:text-2xl font-bold bg-gradient-to-r ${getColor()} bg-clip-text text-transparent`}>
+          {title}
+        </h2>
+        <div className="md:ml-3 text-white/60 text-sm">
+          {description}
         </div>
       </div>
     </motion.div>
