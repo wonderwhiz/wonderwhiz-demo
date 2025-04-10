@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
@@ -7,12 +6,21 @@ import { Check, Timer, Star } from 'lucide-react';
 interface ActivityBlockProps {
   content: {
     activity: string;
+    title?: string;
+    instructions?: string;
+    steps?: string[];
   };
   onActivityComplete?: () => void;
   narrativePosition?: 'beginning' | 'middle' | 'end';
+  specialistId?: string;
 }
 
-const ActivityBlock: React.FC<ActivityBlockProps> = ({ content, onActivityComplete, narrativePosition }) => {
+const ActivityBlock: React.FC<ActivityBlockProps> = ({ 
+  content, 
+  onActivityComplete, 
+  narrativePosition,
+  specialistId 
+}) => {
   const [completed, setCompleted] = useState(false);
   const [showTimer, setShowTimer] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(5); // Short timer for demonstration

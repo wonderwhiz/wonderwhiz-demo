@@ -9,18 +9,22 @@ import { supabase } from '@/integrations/supabase/client';
 interface CreativeBlockProps {
   content: {
     prompt: string;
+    description?: string;
     guidelines?: string;
+    examples?: any[];
   };
-  onCreativeUpload: () => void;
+  onCreativeUpload?: () => void;
   uploadFeedback?: string | null;
   curioId?: string;
+  specialistId?: string;
 }
 
 const CreativeBlock: React.FC<CreativeBlockProps> = ({ 
   content, 
   onCreativeUpload, 
   uploadFeedback,
-  curioId
+  curioId,
+  specialistId
 }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [isUploaded, setIsUploaded] = useState(false);

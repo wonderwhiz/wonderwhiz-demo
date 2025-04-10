@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -8,10 +7,13 @@ interface RiddleBlockProps {
   content: {
     riddle: string;
     answer: string;
+    question?: string;
+    hint?: string;
   };
+  specialistId?: string;
 }
 
-const RiddleBlock: React.FC<RiddleBlockProps> = ({ content }) => {
+const RiddleBlock: React.FC<RiddleBlockProps> = ({ content, specialistId }) => {
   const [flipCard, setFlipCard] = useState(false);
   const [isRiddleSolved, setIsRiddleSolved] = useState(false);
   

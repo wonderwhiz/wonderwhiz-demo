@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
@@ -8,11 +7,18 @@ interface MindfulnessBlockProps {
   content: {
     exercise: string;
     duration: number;
+    title?: string;
+    instruction?: string;
   };
   onMindfulnessComplete?: () => void;
+  specialistId?: string;
 }
 
-const MindfulnessBlock: React.FC<MindfulnessBlockProps> = ({ content, onMindfulnessComplete }) => {
+const MindfulnessBlock: React.FC<MindfulnessBlockProps> = ({ 
+  content, 
+  onMindfulnessComplete,
+  specialistId 
+}) => {
   const [timerRunning, setTimerRunning] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(content.duration);
   const [completed, setCompleted] = useState(false);

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
@@ -8,11 +7,15 @@ interface TaskBlockProps {
   content: {
     task: string;
     reward: string | number;
+    title?: string;
+    description?: string;
+    steps?: string[];
   };
   onTaskComplete?: () => void;
+  specialistId?: string;
 }
 
-const TaskBlock: React.FC<TaskBlockProps> = ({ content, onTaskComplete }) => {
+const TaskBlock: React.FC<TaskBlockProps> = ({ content, onTaskComplete, specialistId }) => {
   const [completed, setCompleted] = useState(false);
   const [showReward, setShowReward] = useState(false);
   

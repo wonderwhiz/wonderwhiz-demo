@@ -24,9 +24,6 @@ import ProgressVisualization from '@/components/curio/ProgressVisualization';
 import LearningCertificate from '@/components/curio/LearningCertificate';
 import ChapterHeader from '@/components/curio/ChapterHeader';
 import IllustratedContentBlock from '@/components/content-blocks/IllustratedContentBlock';
-import CurioSearchNoMore from '@/components/curio/CurioSearchNoMore';
-import CurioNoMore from '@/components/curio/CurioNoMore';
-import CurioLoadMore from '@/components/curio/CurioLoadMore';
 import { Chapter } from '@/types/Chapter';
 
 const DEFAULT_CHAPTERS: Chapter[] = [
@@ -99,15 +96,15 @@ const CurioPage: React.FC = () => {
   const { loadingMore, loadTriggerRef } = useInfiniteScroll(loadMore, hasMore);
   
   const { 
+    handleToggleLike,
+    handleToggleBookmark,
     handleReply,
     handleQuizCorrect,
     handleNewsRead,
     handleCreativeUpload,
     handleActivityComplete,
     handleMindfulnessComplete,
-    handleTaskComplete,
-    handleToggleLike,
-    handleToggleBookmark
+    handleTaskComplete
   } = useBlockInteractions(childId);
 
   const [animateBlocks, setAnimateBlocks] = useState(true);
@@ -358,6 +355,51 @@ const CurioPage: React.FC = () => {
     return <CurioLoadingState message="Loading profile..." />;
   }
 
+  const handleBackToDashboard = () => {
+    navigate(`/dashboard/${childId}`);
+  };
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    window.location.reload();
+  };
+  
+  const handleToggleInsights = () => {
+    setShowInsights(!showInsights);
+  };
+  
+  const handleChapterClick = (chapterId: string) => {
+    setActiveChapter(chapterId);
+    
+    setChapters(prev => prev.map(chapter => ({
+      ...chapter,
+      isActive: chapter.id === chapterId
+    })));
+    
+    document.getElementById(`chapter-${chapterId}`)?.scrollIntoView({ 
+      behavior: 'smooth', 
+      block: 'start' 
+    });
+  };
+  
+  const handleStartJourney = () => {
+    setIsJourneyStarted(true);
+    setQuickAnswerExpanded(false);
+    
+    document.getElementById('table-of-contents')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    });
+  };
+  
+  const handleCertificateDownload = () => {
+    toast.success("Certificate downloaded successfully!");
+  };
+  
+  const handleCertificateShare = () => {
+    toast.success("Certificate shared successfully!");
+  };
+  
   const handleRabbitHoleClick = async (question: string) => {
     if (!childId) return;
     
@@ -416,51 +458,6 @@ const CurioPage: React.FC = () => {
     }
   };
 
-  const handleBackToDashboard = () => {
-    navigate(`/dashboard/${childId}`);
-  };
-
-  const handleRefresh = () => {
-    setRefreshing(true);
-    window.location.reload();
-  };
-  
-  const handleToggleInsights = () => {
-    setShowInsights(!showInsights);
-  };
-  
-  const handleChapterClick = (chapterId: string) => {
-    setActiveChapter(chapterId);
-    
-    setChapters(prev => prev.map(chapter => ({
-      ...chapter,
-      isActive: chapter.id === chapterId
-    })));
-    
-    document.getElementById(`chapter-${chapterId}`)?.scrollIntoView({ 
-      behavior: 'smooth', 
-      block: 'start' 
-    });
-  };
-  
-  const handleStartJourney = () => {
-    setIsJourneyStarted(true);
-    setQuickAnswerExpanded(false);
-    
-    document.getElementById('table-of-contents')?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start'
-    });
-  };
-  
-  const handleCertificateDownload = () => {
-    toast.success("Certificate downloaded successfully!");
-  };
-  
-  const handleCertificateShare = () => {
-    toast.success("Certificate shared successfully!");
-  };
-  
   const organizeBlocksIntoChapters = (blocks: any[]) => {
     if (!blocks.length) return {};
     

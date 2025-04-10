@@ -27,10 +27,10 @@ export interface CreativeBlockProps extends BaseBlockProps {
 
 export interface TaskBlockProps extends BaseBlockProps {
   content: {
-    title: string;
-    description: string;
-    task?: string;
-    reward?: string | number;
+    task: string;
+    reward: string | number;
+    title?: string;
+    description?: string;
     steps?: string[];
   };
   onTaskComplete?: () => void;
@@ -38,9 +38,9 @@ export interface TaskBlockProps extends BaseBlockProps {
 
 export interface RiddleBlockProps extends BaseBlockProps {
   content: {
-    question: string;
-    riddle?: string;
+    riddle: string;
     answer: string;
+    question?: string;
     hint?: string;
   };
 }
@@ -58,9 +58,9 @@ export interface NewsBlockProps extends BaseBlockProps {
 
 export interface ActivityBlockProps extends BaseBlockProps {
   content: {
-    title: string;
-    activity?: string;
-    instructions: string;
+    activity: string;
+    title?: string;
+    instructions?: string;
     steps?: string[];
   };
   onActivityComplete?: () => void;
@@ -68,10 +68,10 @@ export interface ActivityBlockProps extends BaseBlockProps {
 
 export interface MindfulnessBlockProps extends BaseBlockProps {
   content: {
-    title: string;
-    exercise?: string;
-    instruction: string;
+    exercise: string;
     duration: number;
+    title?: string;
+    instruction?: string;
   };
   onMindfulnessComplete?: () => void;
 }
