@@ -2,15 +2,15 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ContentBlock from '@/components/ContentBlock';
 import CurioLoading from '@/components/CurioLoading';
-import { AlertCircle, RefreshCw, Sparkles, Brain, BookOpen, Lightbulb, Search, X } from 'lucide-react';
+import { AlertCircle, RefreshCw, Sparkles, Brain, Lightbulb } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import RabbitHoleSuggestions from '@/components/content-blocks/RabbitHoleSuggestions';
 import TableOfContents from '@/components/curio/TableOfContents';
 import ChapterHeader from '@/components/curio/ChapterHeader';
 import QuickAnswer from '@/components/curio/QuickAnswer';
 import LearningCertificate from '@/components/curio/LearningCertificate';
 import { ChapterIconType } from '@/components/curio/TableOfContents';
+import SimplifiedCurioHeader from '@/components/curio/SimplifiedCurioHeader';
 
 interface ContentBlock {
   id: string;
@@ -318,6 +318,12 @@ const CurioContent: React.FC<CurioContentProps> = ({
     console.log('Sharing certificate...');
   };
 
+  const recentQueries = currentCurio ? [
+    `Tell me more about ${currentCurio.title}`,
+    `Why is ${currentCurio.title} important?`,
+    `Fun facts about ${currentCurio.title}`
+  ] : [];
+
   if (!currentCurio) {
     return null;
   }
@@ -332,61 +338,16 @@ const CurioContent: React.FC<CurioContentProps> = ({
           exit={{ opacity: 0 }}
         >
           <div className="max-w-4xl mx-auto">
-            <motion.div
-              className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6"
-              initial={{ y: -20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.4 }}
-            >
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center sm:text-left text-white font-nunito">
-                {currentCurio.title}
-              </h1>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowLearningPath(!showLearningPath)}
-                className="bg-white/10 hover:bg-white/20 text-white"
-              >
-                <BookOpen className="w-4 h-4 mr-2" />
-                {showLearningPath ? "Hide Learning Path" : "Show Learning Path"}
-              </Button>
-            </motion.div>
-            
-            <motion.form
-              onSubmit={handleSearch}
-              className="mb-6"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1, duration: 0.3 }}
-            >
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
-                <Input
-                  type="text"
-                  placeholder="Ask another question or search within this topic..."
-                  className="pl-9 pr-12 py-6 rounded-full bg-white/10 border-white/20 text-white placeholder:text-white/40 font-inter transition-all duration-300 focus:bg-white/15"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                {searchQuery && (
-                  <button 
-                    type="button" 
-                    className="absolute right-16 top-1/2 -translate-y-1/2 text-white/60 hover:text-white/90"
-                    onClick={() => setSearchQuery('')}
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-                <Button 
-                  type="submit" 
-                  className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-vibrant-yellow text-wonderwhiz-deep-purple"
-                  size="sm"
-                >
-                  Search
-                </Button>
-              </div>
-            </motion.form>
+            <SimplifiedCurioHeader
+              title={currentCurio.title}
+              showLearningPath={showLearningPath}
+              setShowLearningPath={setShowLearningPath}
+              query={searchQuery}
+              setQuery={setSearchQuery}
+              handleSearch={handleSearch}
+              recentQueries={recentQueries}
+              isGenerating={isGenerating}
+            />
             
             {quickAnswer && !journeyStarted && (
               <motion.div

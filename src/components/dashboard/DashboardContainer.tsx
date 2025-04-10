@@ -4,7 +4,7 @@ import { Helmet } from 'react-helmet-async';
 import { useParams } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { useSparksSystem } from '@/hooks/useSparksSystem';
-import DashboardHeader from '@/components/dashboard/DashboardHeader';
+import SimplifiedHeader from '@/components/dashboard/SimplifiedHeader';
 import DashboardSidebar from '@/components/dashboard/DashboardSidebar';
 import CurioContent from '@/components/dashboard/CurioContent';
 import { useDashboardProfile } from '@/hooks/useDashboardProfile';
@@ -12,7 +12,6 @@ import { useCurioCreation } from '@/hooks/useCurioCreation';
 import { useCurioData } from '@/hooks/useCurioData';
 import { useBlockInteractionHandlers } from '@/hooks/useBlockInteractionHandlers';
 import WelcomeSection from '@/components/dashboard/WelcomeSection';
-import { motion } from 'framer-motion';
 
 interface Curio {
   id: string;
@@ -25,7 +24,6 @@ const DashboardContainer = () => {
   const { profileId } = useParams<{ profileId: string }>();
   const [currentCurio, setCurrentCurio] = useState<Curio | null>(null);
   const { streakDays } = useSparksSystem(profileId);
-  const [showSparksDisplay, setShowSparksDisplay] = useState(false);
 
   // Fetch profile and curios data
   const {
@@ -80,24 +78,10 @@ const DashboardContainer = () => {
     setCurrentCurio(curio);
   };
 
-  // Toggle show/hide sparks display based on screen size
-  useEffect(() => {
-    const handleResize = () => {
-      setShowSparksDisplay(window.innerWidth >= 1024); // Show on larger screens
-    };
-    
-    handleResize(); // Initial check
-    window.addEventListener('resize', handleResize);
-    
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []);
-
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-wonderwhiz-gradient flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-wonderwhiz-pink"></div>
+      <div className="min-h-screen bg-wonderwhiz-deep-purple flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-wonderwhiz-bright-pink"></div>
       </div>
     );
   }
@@ -118,10 +102,14 @@ const DashboardContainer = () => {
       />
       
       <main className="flex-1 flex flex-col min-h-screen relative">
-        <DashboardHeader childName={childProfile?.name || 'Explorer'} profileId={profileId} />
+        <SimplifiedHeader 
+          childName={childProfile?.name || 'Explorer'} 
+          sparksBalance={childProfile?.sparks_balance || 0}
+          streakDays={childProfile?.streak_days || 0}
+        />
         
-        <div className="flex-1 overflow-y-auto py-3 px-3 sm:px-4 md:px-6">
-          <div className="max-w-5xl mx-auto space-y-6">
+        <div className="flex-1 overflow-y-auto">
+          <div className="max-w-5xl mx-auto space-y-6 p-4">
             {/* Main content area */}
             <Card className="bg-white/5 border-white/10 flex-grow relative overflow-hidden">
               {!currentCurio ? (
