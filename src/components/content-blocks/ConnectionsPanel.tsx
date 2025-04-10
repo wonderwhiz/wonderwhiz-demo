@@ -124,18 +124,24 @@ const ConnectionsPanel: React.FC<ConnectionsPanelProps> = ({
     if (!content) return "this topic";
     
     if (type === 'fact' || type === 'funFact') {
-      const words = content.fact.split(' ');
+      const words = content.fact?.split(' ') || [];
       // Extract likely noun phrases - simplified version
       if (words.length > 5) {
         return words.slice(0, 3).join(' ');
       }
-      return content.fact.split(' ').slice(0, 2).join(' ') || "this topic";
+      return content.fact?.split(' ').slice(0, 2).join(' ') || "this topic";
     }
     
     if (content.title) return content.title;
     if (content.topic) return content.topic;
     
     return "this topic";
+  };
+
+  const handleConnectionClick = (title: string) => {
+    if (onRabbitHoleClick) {
+      onRabbitHoleClick(title);
+    }
   };
 
   return (
@@ -157,7 +163,7 @@ const ConnectionsPanel: React.FC<ConnectionsPanelProps> = ({
             className="w-full text-left p-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-all group"
             whileHover={{ scale: 1.02, y: -2 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => onRabbitHoleClick(connection.title)}
+            onClick={() => handleConnectionClick(connection.title)}
           >
             <div className="flex items-start">
               <div className="mt-0.5 mr-3 w-6 h-6 rounded-full bg-wonderwhiz-gold/20 flex items-center justify-center flex-shrink-0">

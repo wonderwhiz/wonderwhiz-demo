@@ -253,13 +253,9 @@ const CurioPage: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [blocks.length, hasScrolledToBottom]);
 
-  if (profileError) {
-    return <CurioErrorState message="Failed to load profile." />;
-  }
-
-  if (isLoadingProfile) {
-    return <CurioLoadingState message="Loading profile..." />;
-  }
+  const handleClearSearch = () => {
+    setSearchQuery('');
+  };
 
   const organizeBlocksIntoChapters = (blocks: any[]) => {
     if (!blocks.length) return {};
