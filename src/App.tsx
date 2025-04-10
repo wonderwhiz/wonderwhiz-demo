@@ -19,6 +19,7 @@ import Dashboard from "./pages/Dashboard";
 import ParentZone from "./pages/ParentZone";
 import CurioPage from "./pages/CurioPage";
 import EnhancedCurioPage from '@/components/curio/EnhancedCurioPage';
+import SimplifiedCurioPage from '@/components/curio/SimplifiedCurioPage';
 import { useEffect } from "react";
 
 // Import the spark animations CSS
@@ -217,6 +218,7 @@ const App = () => {
               <Route path="/dashboard/:profileId" element={<Dashboard />} />
               <Route path="/parent-zone/:profileId" element={<ParentZone />} />
               <Route path="/curio/:childId/:curioId" element={<EnhancedCurioPage />} />
+              <Route path="/simple-curio/:childId/:curioId" element={<SimplifiedCurioPage />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

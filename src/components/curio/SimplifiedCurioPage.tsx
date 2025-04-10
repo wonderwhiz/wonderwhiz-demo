@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,20 +11,18 @@ import { useBlockInteractions } from '@/hooks/useBlockInteractions';
 import { ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
-
-// Import our new streamlined components
 import QuickAnswer from '@/components/curio/QuickAnswer';
 import CosmicFlow from '@/components/curio/CosmicFlow';
 import SimplifiedContentBlock from '@/components/curio/SimplifiedContentBlock';
 import CurioSearchBar from '@/components/curio/CurioSearchBar';
 import CurioLoadingState from '@/components/curio/CurioLoadingState';
 import CurioErrorState from '@/components/curio/CurioErrorState';
+import ViewModeSwitcher from '@/components/curio/ViewModeSwitcher';
 
 const SimplifiedCurioPage: React.FC = () => {
   const { childId, curioId } = useParams<{ childId: string, curioId: string }>();
   const navigate = useNavigate();
 
-  // Hooks
   const { user } = useUser();
   const { childProfile, isLoading: isLoadingProfile, error: profileError } = useChildProfile(childId);
   const { searchQuery, setSearchQuery, handleSearch } = useSearch();
@@ -39,7 +36,6 @@ const SimplifiedCurioPage: React.FC = () => {
     handleToggleBookmark
   } = useBlockInteractions(childId);
 
-  // State
   const [curioTitle, setCurioTitle] = useState<string | null>(null);
   const [quickAnswerExpanded, setQuickAnswerExpanded] = useState(false);
   const [journeyStarted, setJourneyStarted] = useState(false);
@@ -47,17 +43,14 @@ const SimplifiedCurioPage: React.FC = () => {
   const [currentBlockIndex, setCurrentBlockIndex] = useState(0);
   const [visibleBlocks, setVisibleBlocks] = useState<any[]>([]);
   
-  // Handle loading more blocks as user scrolls
   const lastBlockRef = useRef<HTMLDivElement>(null);
-  
-  // Navigation guard
+
   useEffect(() => {
     if (user && !childId) {
       navigate('/profiles');
     }
   }, [user, childId, navigate]);
 
-  // Fetch curio title
   useEffect(() => {
     if (curioId) {
       supabase
@@ -73,7 +66,6 @@ const SimplifiedCurioPage: React.FC = () => {
     }
   }, [curioId]);
 
-  // Determine child's age group
   useEffect(() => {
     if (childProfile?.age) {
       const age = typeof childProfile.age === 'string' 
@@ -90,7 +82,6 @@ const SimplifiedCurioPage: React.FC = () => {
     }
   }, [childProfile]);
 
-  // Show confetti when blocks first load
   useEffect(() => {
     if (blocks.length > 0 && isFirstLoad) {
       setTimeout(() => {
@@ -105,18 +96,14 @@ const SimplifiedCurioPage: React.FC = () => {
     }
   }, [blocks.length, isFirstLoad]);
   
-  // Update visible blocks
   useEffect(() => {
     if (!searchQuery) {
       setVisibleBlocks(blocks);
     } else {
-      // When searching, only show matching blocks
       setVisibleBlocks(blocks.filter(block => {
-        // Check if block content contains the search query
         const content = block.content;
         if (!content) return false;
         
-        // Search in different content fields based on block type
         const searchIn = [
           content.fact,
           content.text,
@@ -136,7 +123,6 @@ const SimplifiedCurioPage: React.FC = () => {
     }
   }, [blocks, searchQuery]);
   
-  // Infinite scroll observer
   useEffect(() => {
     const observer = new IntersectionObserver(
       entries => {
@@ -158,7 +144,6 @@ const SimplifiedCurioPage: React.FC = () => {
     };
   }, [hasMore, loadMore]);
 
-  // Error handling
   if (profileError) {
     return <CurioErrorState message="Failed to load profile." />;
   }
@@ -167,7 +152,6 @@ const SimplifiedCurioPage: React.FC = () => {
     return <CurioLoadingState message="Loading profile..." />;
   }
 
-  // Event handlers
   const handleNavigateToIndex = (index: number) => {
     setCurrentBlockIndex(index);
     const blockElement = document.getElementById(`block-${index}`);
@@ -188,7 +172,6 @@ const SimplifiedCurioPage: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-indigo-950 to-indigo-900">
-      {/* Header - simplified and cleaner */}
       <motion.header 
         className="py-4 sm:py-6 px-4 sm:px-6 bg-black/20 backdrop-blur-sm sticky top-0 z-40"
         initial={{ opacity: 0, y: -20 }}
@@ -196,18 +179,10 @@ const SimplifiedCurioPage: React.FC = () => {
         transition={{ duration: 0.4 }}
       >
         <div className="max-w-4xl mx-auto">
+          <ViewModeSwitcher currentMode="simplified" />
+          
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={handleBackToDashboard}
-                className="mb-2 text-white/70 hover:text-white -ml-2 group transition-colors"
-              >
-                <ArrowLeft className="w-4 h-4 mr-1 group-hover:-translate-x-1 transition-transform duration-200" />
-                <span>Back</span>
-              </Button>
-              
               {curioTitle && (
                 <h1 className="text-xl sm:text-2xl font-bold text-white leading-tight">
                   {curioTitle}
@@ -216,7 +191,6 @@ const SimplifiedCurioPage: React.FC = () => {
             </div>
           </div>
           
-          {/* Search - simplified */}
           <div className="mt-3">
             <CurioSearchBar
               searchQuery={searchQuery}
@@ -228,10 +202,8 @@ const SimplifiedCurioPage: React.FC = () => {
         </div>
       </motion.header>
 
-      {/* Main Content - radical simplification */}
       <main className="flex-grow">
         <div className="max-w-4xl mx-auto py-6 px-4 sm:px-6">
-          {/* Quick Answer - prominently featured */}
           {curioTitle && !isLoadingBlocks && !searchQuery && (
             <QuickAnswer 
               question={curioTitle}
@@ -242,17 +214,14 @@ const SimplifiedCurioPage: React.FC = () => {
             />
           )}
           
-          {/* Loading State */}
           {isLoadingBlocks && (
             <CurioLoadingState />
           )}
           
-          {/* Error State */}
           {blocksError && (
             <CurioErrorState message="Failed to load content." />
           )}
           
-          {/* Empty Search Results */}
           {searchQuery && visibleBlocks.length === 0 && !isLoadingBlocks && (
             <div className="text-center py-10">
               <p className="text-white/70">No results found for "{searchQuery}"</p>
@@ -266,7 +235,6 @@ const SimplifiedCurioPage: React.FC = () => {
             </div>
           )}
           
-          {/* Cosmic Flow Navigation - only visible when journey started */}
           {journeyStarted && visibleBlocks.length > 0 && !searchQuery && (
             <CosmicFlow
               blocks={visibleBlocks}
@@ -276,7 +244,6 @@ const SimplifiedCurioPage: React.FC = () => {
             />
           )}
           
-          {/* Simplified Content Blocks */}
           <div className="space-y-6 mt-6">
             {visibleBlocks.map((block, index) => (
               <div key={block.id} id={`block-${index}`}>
@@ -290,7 +257,6 @@ const SimplifiedCurioPage: React.FC = () => {
               </div>
             ))}
             
-            {/* Load More Reference */}
             {hasMore && (
               <div ref={lastBlockRef} className="h-12 flex items-center justify-center">
                 <div className="animate-pulse text-white/30 text-sm">Loading more...</div>
