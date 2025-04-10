@@ -42,14 +42,12 @@ const SmartDashboard: React.FC<SmartDashboardProps> = ({
 }) => {
   // Handle topic click
   const handleTopicClick = (topicQuery: string) => {
-    if (onCurioSuggestionClick) {
-      onCurioSuggestionClick(topicQuery);
-    }
+    onCurioSuggestionClick(topicQuery);
   };
 
   // Handle curio click
   const handleCurioClick = (curio: any) => {
-    if (curio && curio.query && onCurioSuggestionClick) {
+    if (curio && curio.query) {
       onCurioSuggestionClick(curio.query);
     }
   };
@@ -158,7 +156,6 @@ const SmartDashboard: React.FC<SmartDashboardProps> = ({
       >
         <Button
           variant="ghost"
-          size="lg"
           className="bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-full py-5 px-6"
           onClick={() => {
             const inputElement = document.querySelector('input[type="text"]') as HTMLInputElement;

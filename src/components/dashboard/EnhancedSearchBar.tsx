@@ -1,6 +1,6 @@
 
-import React, { useState, useRef } from 'react';
-import { Search, ArrowRight, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -24,7 +24,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,11 +31,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       handleSubmitQuery();
       setShowSuggestions(false);
     }
-  };
-
-  const clearInput = () => {
-    setQuery('');
-    inputRef.current?.focus();
   };
 
   const handleTopicClick = (topic: string) => {
@@ -54,7 +48,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/50" />
           
           <Input
-            ref={inputRef}
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -67,37 +60,28 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               setShowSuggestions(false);
             }, 200)}
             placeholder="What are you curious about today?"
-            className="h-12 pl-10 pr-20 w-full bg-white/5 border-white/10 text-white placeholder:text-white/50 focus:border-wonderwhiz-bright-pink/30 transition-all duration-300 rounded-full"
+            className="h-12 pl-10 pr-16 w-full bg-white/5 border-white/10 text-white placeholder:text-white/50 focus:border-wonderwhiz-bright-pink/30 transition-all duration-300 rounded-full"
           />
           
-          <AnimatePresence>
-            {query && (
-              <motion.button
-                initial={{ opacity: 0, scale: 0 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0 }}
-                transition={{ duration: 0.2 }}
-                type="button"
-                onClick={clearInput}
-                className="absolute right-14 top-1/2 -translate-y-1/2 h-5 w-5 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-              >
-                <X className="h-3 w-3 text-white" />
-              </motion.button>
-            )}
-          </AnimatePresence>
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery('')}
+              className="absolute right-14 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
           
           <Button 
             type="submit"
             disabled={!query.trim() || isGenerating}
-            className="absolute right-2 top-1/2 -translate-y-1/2 bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/90 text-white h-8 px-3 rounded-full flex items-center gap-1.5 transition-all"
+            className="absolute right-2 top-1/2 -translate-y-1/2 bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/90 text-white h-8 px-4 rounded-full"
           >
             {isGenerating ? (
               <div className="animate-spin h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full" />
             ) : (
-              <>
-                <span className="text-xs font-medium">Ask</span>
-                <ArrowRight className="h-3 w-3" />
-              </>
+              "Ask"
             )}
           </Button>
         </div>

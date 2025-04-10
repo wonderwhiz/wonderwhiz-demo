@@ -36,22 +36,6 @@ const UnifiedSearchBar: React.FC<UnifiedSearchBarProps> = ({
     }
   };
 
-  // Handle input focus
-  const handleFocus = () => {
-    setFocused(true);
-    if (query.length === 0 && recentQueries.length > 0) {
-      setShowSuggestions(true);
-    }
-  };
-
-  // Handle input blur
-  const handleBlur = () => {
-    setTimeout(() => {
-      setFocused(false);
-      setShowSuggestions(false);
-    }, 200);
-  };
-
   // Handle suggestion click
   const handleSuggestionClick = (suggestion: string) => {
     setQuery(suggestion);
@@ -71,47 +55,49 @@ const UnifiedSearchBar: React.FC<UnifiedSearchBarProps> = ({
         transition={{ duration: 0.4 }}
       >
         <div className="relative">
-          <div className="absolute left-0 inset-y-0 pl-4 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-white/40" />
-          </div>
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/40" />
           
           <Input
             type="text"
             placeholder="What are you curious about today?"
-            className={`pl-12 pr-28 py-6 w-full rounded-full backdrop-blur-sm border 
-              ${focused 
-                ? "border-wonderwhiz-bright-pink/40 bg-white/5 shadow-sm" 
-                : "border-white/10 bg-white/5"} 
-              text-white placeholder:text-white/50 transition-all duration-300`}
+            className="pl-12 pr-20 py-6 w-full rounded-full bg-white/5 border-white/10 text-white placeholder:text-white/50 focus:border-wonderwhiz-bright-pink/40 focus:bg-white/5 transition-all duration-300"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
+            onFocus={() => {
+              setFocused(true);
+              if (recentQueries.length > 0) {
+                setShowSuggestions(true);
+              }
+            }}
+            onBlur={() => {
+              setTimeout(() => {
+                setFocused(false);
+                setShowSuggestions(false);
+              }, 200);
+            }}
           />
           
           {query && (
             <button
               type="button"
-              className="absolute right-24 inset-y-0 flex items-center text-white/40 hover:text-white/60 pr-2"
+              className="absolute right-20 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/60"
               onClick={() => setQuery('')}
             >
               <X className="h-4 w-4" />
             </button>
           )}
           
-          <div className="absolute right-3 inset-y-0 flex items-center">
-            <Button 
-              type="submit" 
-              disabled={isGenerating || !query.trim()}
-              className="bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/90 text-white font-medium rounded-full px-4 py-1.5 h-auto text-sm"
-            >
-              {isGenerating ? (
-                <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
-              ) : (
-                "Explore"
-              )}
-            </Button>
-          </div>
+          <Button 
+            type="submit" 
+            disabled={isGenerating || !query.trim()}
+            className="absolute right-3 top-1/2 -translate-y-1/2 bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/90 text-white font-medium rounded-full px-4 py-1.5 h-auto text-sm"
+          >
+            {isGenerating ? (
+              <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+            ) : (
+              "Explore"
+            )}
+          </Button>
         </div>
       </motion.form>
       
