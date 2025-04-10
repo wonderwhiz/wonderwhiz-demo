@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,7 +15,6 @@ import RabbitHoleSuggestions from '@/components/content-blocks/RabbitHoleSuggest
 import CurioPageHeader from '@/components/curio/CurioPageHeader';
 import CurioPageInsights from '@/components/curio/CurioPageInsights';
 import CurioSearchBar from '@/components/curio/CurioSearchBar';
-import CurioPageSearch from '@/components/curio/CurioPageSearch';
 import CurioLoadingState from '@/components/curio/CurioLoadingState';
 import CurioEmptyState from '@/components/curio/CurioEmptyState';
 import CurioErrorState from '@/components/curio/CurioErrorState';
@@ -26,66 +26,7 @@ import LearningCertificate from '@/components/curio/LearningCertificate';
 import ChapterHeader from '@/components/curio/ChapterHeader';
 import IllustratedContentBlock from '@/components/content-blocks/IllustratedContentBlock';
 import { Chapter } from '@/types/Chapter';
-import CurioPageNavigation from '@/components/curio/CurioPageNavigation';
-
-const DEFAULT_CHAPTERS: Chapter[] = [
-  {
-    id: 'introduction',
-    title: 'Introduction',
-    description: 'Get started with your learning journey.',
-    icon: 'introduction',
-    isCompleted: false,
-    isActive: true
-  },
-  {
-    id: 'exploration',
-    title: 'Exploration',
-    description: 'Discover new information.',
-    icon: 'exploration',
-    isCompleted: false,
-    isActive: false
-  },
-  {
-    id: 'understanding',
-    title: 'Understanding',
-    description: 'Gain deeper insights.',
-    icon: 'understanding',
-    isCompleted: false,
-    isActive: false
-  },
-  {
-    id: 'challenge',
-    title: 'Challenge',
-    description: 'Test your knowledge.',
-    icon: 'challenge',
-    isCompleted: false,
-    isActive: false
-  },
-  {
-    id: 'creation',
-    title: 'Creation',
-    description: 'Create something new.',
-    icon: 'creation',
-    isCompleted: false,
-    isActive: false
-  },
-  {
-    id: 'reflection',
-    title: 'Reflection',
-    description: 'Reflect on your learning.',
-    icon: 'reflection',
-    isCompleted: false,
-    isActive: false
-  },
-  {
-    id: 'nextSteps',
-    title: 'Next Steps',
-    description: 'Continue your learning.',
-    icon: 'nextSteps',
-    isCompleted: false,
-    isActive: false
-  }
-];
+import { useCurioChapters } from '@/hooks/useCurioChapters';
 
 const CurioPage: React.FC = () => {
   const { childId, curioId } = useParams<{ childId: string, curioId: string }>();
@@ -122,7 +63,7 @@ const CurioPage: React.FC = () => {
   
   const [quickAnswer, setQuickAnswer] = useState<string>('');
   const [quickAnswerExpanded, setQuickAnswerExpanded] = useState(false);
-  const [chapters, setChapters] = useState<Chapter[]>(DEFAULT_CHAPTERS);
+  const [chapters, setChapters] = useState<Chapter[]>(useCurioChapters());
   const [activeChapter, setActiveChapter] = useState('introduction');
   const [progress, setProgress] = useState(0);
   const [isJourneyStarted, setIsJourneyStarted] = useState(false);
@@ -143,7 +84,7 @@ const CurioPage: React.FC = () => {
         setAgeGroup('5-7');
       } else if (age >= 8 && age <= 11) {
         setAgeGroup('8-11');
-      } else if (age >= 12 && age <= 16) {
+      } else {
         setAgeGroup('12-16');
       }
     }
@@ -312,18 +253,6 @@ const CurioPage: React.FC = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [blocks.length, hasScrolledToBottom]);
-
-  const handleCurioSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      handleSearch(e);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  };
-
-  const handleClearSearch = () => {
-    setSearchQuery('');
-  };
 
   if (profileError) {
     return <CurioErrorState message="Failed to load profile." />;
@@ -497,19 +426,6 @@ const CurioPage: React.FC = () => {
         )}
       </AnimatePresence>
       
-      <div className="px-4 sm:px-6 max-w-3xl mx-auto w-full mt-2">
-        <CurioPageSearch
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          handleSearch={handleCurioSearch}
-          handleBackToDashboard={handleBackToDashboard}
-        />
-        
-        <div className="block sm:hidden mt-4 mb-2">
-          <CurioPageNavigation childId={childId} />
-        </div>
-      </div>
-      
       <div className="mt-4 px-4 sm:px-6 max-w-3xl mx-auto w-full">
         {isLoadingBlocks && <CurioLoadingState />}
         
@@ -606,8 +522,6 @@ const CurioPage: React.FC = () => {
                   handleActivityComplete={handleActivityComplete}
                   handleMindfulnessComplete={handleMindfulnessComplete}
                   handleRabbitHoleClick={handleRabbitHoleClick}
-                  generationError={generationError}
-                  onRefresh={handleRefresh}
                 />
               </div>
             );

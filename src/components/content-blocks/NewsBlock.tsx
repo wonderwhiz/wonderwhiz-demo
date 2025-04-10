@@ -5,14 +5,7 @@ import { motion } from 'framer-motion';
 import { Check, Newspaper, ExternalLink } from 'lucide-react';
 import { NewsBlockProps } from './interfaces';
 
-const NewsBlock: React.FC<NewsBlockProps> = ({ 
-  content, 
-  onNewsRead, 
-  specialistId, 
-  onLike, 
-  onBookmark, 
-  onReply 
-}) => {
+const NewsBlock: React.FC<NewsBlockProps> = ({ content, onNewsRead, specialistId }) => {
   const [newsRead, setNewsRead] = useState(false);
   const [animateReward, setAnimateReward] = useState(false);
 

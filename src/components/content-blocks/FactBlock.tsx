@@ -39,30 +39,19 @@ const FactBlock: React.FC<FactBlockProps> = ({
 }) => {
   const blockRef = useRef<HTMLDivElement>(null);
   const [prevHeight, setPrevHeight] = useState<number | null>(null);
-  const [initialMeasurementDone, setInitialMeasurementDone] = useState(false);
   
   // Only measure and update height when the component mounts or facts/expands change
   useEffect(() => {
     if (blockRef.current && updateHeight) {
       const currentHeight = blockRef.current.offsetHeight;
       
-      // Only update if height actually changed or this is the first measurement
-      if (!initialMeasurementDone || (prevHeight !== null && prevHeight !== currentHeight)) {
+      // Only update if height actually changed to prevent infinite loop
+      if (prevHeight === null || prevHeight !== currentHeight) {
         setPrevHeight(currentHeight);
         updateHeight(currentHeight);
-        
-        if (!initialMeasurementDone) {
-          setInitialMeasurementDone(true);
-        }
       }
     }
-  }, [fact, expanded, updateHeight, prevHeight, initialMeasurementDone]);
-  
-  const handleRabbitHoleClick = (question: string) => {
-    if (onRabbitHoleClick && typeof onRabbitHoleClick === 'function') {
-      onRabbitHoleClick(question);
-    }
-  };
+  }, [fact, expanded, updateHeight, prevHeight, rabbitHoles?.length]);
   
   return (
     <Card 
@@ -89,7 +78,7 @@ const FactBlock: React.FC<FactBlockProps> = ({
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.99 }}
                   className="w-full text-left p-2.5 px-3 bg-white/5 hover:bg-white/10 rounded-lg text-white/80 text-sm transition-colors"
-                  onClick={() => handleRabbitHoleClick(question)}
+                  onClick={() => onRabbitHoleClick && onRabbitHoleClick(question)}
                 >
                   {question}
                 </motion.button>

@@ -1,5 +1,5 @@
 
-export type ContentBlockType = "fact" | "quiz" | "flashcard" | "creative" | "task" | "riddle" | "funFact" | "activity" | "news" | "mindfulness" | "illustrated";
+export type ContentBlockType = "fact" | "quiz" | "flashcard" | "creative" | "task" | "riddle" | "funFact" | "activity" | "news" | "mindfulness";
 
 export interface ContentBlock {
   id: string;
@@ -14,5 +14,5 @@ export interface ContentBlock {
 
 // Add a type guard to validate ContentBlockType
 export function isValidContentBlockType(type: string): type is ContentBlockType {
-  return ["fact", "quiz", "flashcard", "creative", "task", "riddle", "funFact", "activity", "news", "mindfulness", "illustrated"].includes(type);
+  return ["fact", "quiz", "flashcard", "creative", "task", "riddle", "funFact", "activity", "news", "mindfulness"].includes(type);
 }

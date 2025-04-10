@@ -17,9 +17,6 @@ interface CreativeBlockProps {
   uploadFeedback?: string | null;
   curioId?: string;
   specialistId?: string;
-  onLike?: () => void;
-  onBookmark?: () => void;
-  onReply?: (message: string) => void;
 }
 
 const CreativeBlock: React.FC<CreativeBlockProps> = ({ 
@@ -27,10 +24,7 @@ const CreativeBlock: React.FC<CreativeBlockProps> = ({
   onCreativeUpload, 
   uploadFeedback,
   curioId,
-  specialistId,
-  onLike,
-  onBookmark,
-  onReply
+  specialistId
 }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [isUploaded, setIsUploaded] = useState(false);

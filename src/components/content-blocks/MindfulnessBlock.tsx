@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
@@ -10,22 +9,15 @@ interface MindfulnessBlockProps {
     duration: number;
     title?: string;
     instruction?: string;
-    audioUrl?: string;
   };
   onMindfulnessComplete?: () => void;
   specialistId?: string;
-  onLike?: () => void;
-  onBookmark?: () => void;
-  onReply?: (message: string) => void;
 }
 
 const MindfulnessBlock: React.FC<MindfulnessBlockProps> = ({ 
   content, 
   onMindfulnessComplete,
-  specialistId,
-  onLike,
-  onBookmark,
-  onReply
+  specialistId 
 }) => {
   const [timerRunning, setTimerRunning] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(content.duration);

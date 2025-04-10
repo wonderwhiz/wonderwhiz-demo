@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { ContentBlock, isValidContentBlockType, ContentBlockType } from '@/types/curio';
+import { ContentBlock } from '@/types/curio';
 
 interface UseCurioBlocksResult {
   blocks: ContentBlock[];
@@ -27,7 +27,6 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
 
     setIsLoading(true);
     setError(null);
-    console.info(`Fetching blocks for curioId: ${curioId}, with search: ${searchQuery}`);
 
     const start = page * 10;
     const end = start + 9;
@@ -48,17 +47,15 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
 
       if (error) {
         setError(error);
-        console.error('Error fetching blocks:', error);
         return;
       }
 
       if (data) {
-        console.info(`Fetched ${data.length} blocks`);
         // Make sure we're properly typing our ContentBlock before setting state
         const typedBlocks = data.map(block => ({
           id: block.id,
           curio_id: block.curio_id,
-          type: isValidContentBlockType(block.type) ? block.type as ContentBlockType : 'fact',
+          type: block.type,
           specialist_id: block.specialist_id,
           content: block.content,
           liked: block.liked || false,
@@ -72,7 +69,6 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
       }
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch blocks'));
-      console.error('Error in fetchBlocks:', err);
     } finally {
       setIsLoading(false);
     }

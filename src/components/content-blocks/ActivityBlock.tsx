@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
@@ -10,24 +9,17 @@ interface ActivityBlockProps {
     title?: string;
     instructions?: string;
     steps?: string[];
-    materials?: string[];
   };
   onActivityComplete?: () => void;
   narrativePosition?: 'beginning' | 'middle' | 'end';
   specialistId?: string;
-  onLike?: () => void;
-  onBookmark?: () => void;
-  onReply?: (message: string) => void;
 }
 
 const ActivityBlock: React.FC<ActivityBlockProps> = ({ 
   content, 
   onActivityComplete, 
   narrativePosition,
-  specialistId,
-  onLike,
-  onBookmark,
-  onReply
+  specialistId 
 }) => {
   const [completed, setCompleted] = useState(false);
   const [showTimer, setShowTimer] = useState(false);
@@ -68,17 +60,6 @@ const ActivityBlock: React.FC<ActivityBlockProps> = ({
       >
         {content.activity}
       </motion.p>
-      
-      {content.materials && content.materials.length > 0 && (
-        <div className="mt-3 mb-4">
-          <h4 className="text-white/80 text-sm font-medium mb-2">Materials Needed:</h4>
-          <ul className="list-disc list-inside text-white/70 text-xs space-y-1">
-            {content.materials.map((material, index) => (
-              <li key={index}>{material}</li>
-            ))}
-          </ul>
-        </div>
-      )}
       
       {!completed && !showTimer ? (
         <div className="flex flex-wrap gap-2">

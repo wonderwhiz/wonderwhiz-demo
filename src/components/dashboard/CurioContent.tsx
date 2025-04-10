@@ -9,11 +9,11 @@ import QuickAnswer from '@/components/curio/QuickAnswer';
 import { TableOfContents } from '@/components/curio/TableOfContents';
 import ProgressVisualization from '@/components/curio/ProgressVisualization';
 import IllustratedContentBlock from '@/components/content-blocks/IllustratedContentBlock';
-import { ContentBlock as CurioContentBlock, ContentBlockType } from '@/types/curio';
+import { ContentBlock as CurioContentBlock } from '@/types/curio';
 
 interface ContentBlock {
   id: string;
-  type: ContentBlockType;
+  type: 'fact' | 'quiz' | 'flashcard' | 'creative' | 'task' | 'riddle' | 'funFact' | 'activity' | 'news' | 'mindfulness';
   specialist_id: string;
   content: any;
   liked: boolean;
@@ -65,6 +65,7 @@ interface CurioContentProps {
   generationError?: string | null;
 }
 
+// Define the ChapterIconType here instead of importing it
 export type ChapterIconType = 
   | 'introduction' 
   | 'exploration' 
@@ -74,6 +75,7 @@ export type ChapterIconType =
   | 'reflection' 
   | 'nextSteps';
 
+// Define a local Chapter interface
 interface Chapter {
   id: string;
   title: string;
@@ -105,6 +107,7 @@ const CurioContent: React.FC<CurioContentProps> = ({
   onRefresh,
   generationError
 }) => {
+  // Convert ContentBlock[] to CurioContentBlock[] by adding curio_id if missing
   const convertedBlocks: CurioContentBlock[] = contentBlocks.map(block => ({
     ...block,
     curio_id: block.curio_id || currentCurio?.id || ''
@@ -121,7 +124,6 @@ const CurioContent: React.FC<CurioContentProps> = ({
         animateBlocks={true}
         hasMoreBlocks={hasMoreBlocks}
         loadingMoreBlocks={loadingBlocks}
-        loadTriggerRef={undefined}
         searchQuery={""}
         profileId={profileId}
         isFirstLoad={true}
@@ -131,9 +133,6 @@ const CurioContent: React.FC<CurioContentProps> = ({
         handleQuizCorrect={onQuizCorrect}
         handleNewsRead={onNewsRead}
         handleCreativeUpload={onCreativeUpload}
-        handleTaskComplete={() => {}} 
-        handleActivityComplete={() => {}}
-        handleMindfulnessComplete={() => {}}
         handleRabbitHoleClick={onRabbitHoleFollow}
         generationError={generationError}
         onRefresh={onRefresh}

@@ -12,7 +12,6 @@ import { useCurioCreation } from '@/hooks/useCurioCreation';
 import { useCurioData } from '@/hooks/useCurioData';
 import { useBlockInteractionHandlers } from '@/hooks/useBlockInteractionHandlers';
 import WelcomeSection from '@/components/dashboard/WelcomeSection';
-import { ContentBlock as CurioContentBlock, ContentBlockType } from '@/types/curio';
 
 interface Curio {
   id: string;
@@ -21,28 +20,12 @@ interface Curio {
   created_at: string;
 }
 
-interface ContentBlock {
-  id: string;
-  type: ContentBlockType;
-  specialist_id: string;
-  content: any;
-  liked: boolean;
-  bookmarked: boolean;
-  curio_id?: string;
-  learningContext?: {
-    sequencePosition: number;
-    totalBlocks: number;
-    cognitiveLevel: string;
-    timeOfDay: string;
-    recommendedPacing: string;
-  };
-}
-
 const DashboardContainer = () => {
   const { profileId } = useParams<{ profileId: string }>();
   const [currentCurio, setCurrentCurio] = useState<Curio | null>(null);
   const { streakDays } = useSparksSystem(profileId);
 
+  // Fetch profile and curios data
   const {
     childProfile,
     setChildProfile,
@@ -54,6 +37,7 @@ const DashboardContainer = () => {
     handleRefreshSuggestions
   } = useDashboardProfile(profileId);
 
+  // Handle curio creation
   const {
     query,
     setQuery,
@@ -63,8 +47,9 @@ const DashboardContainer = () => {
     handleCurioSuggestionClick
   } = useCurioCreation(profileId, childProfile, setPastCurios, setChildProfile, setCurrentCurio);
 
+  // Get content blocks for current curio
   const {
-    blocks: curioBlocks,
+    blocks: contentBlocks,
     isLoading: isLoadingBlocks,
     isGeneratingContent,
     hasMoreBlocks,
@@ -79,11 +64,7 @@ const DashboardContainer = () => {
     generationError
   } = useCurioData(currentCurio?.id, profileId);
 
-  const contentBlocks: ContentBlock[] = curioBlocks.map((block: CurioContentBlock) => ({
-    ...block,
-    type: block.type as ContentBlockType,
-  }));
-
+  // Block interaction handlers
   const {
     blockReplies,
     handleBlockReply,
@@ -129,6 +110,7 @@ const DashboardContainer = () => {
         
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-5xl mx-auto space-y-6 p-4">
+            {/* Main content area */}
             <Card className="bg-white/5 border-white/10 flex-grow relative overflow-hidden">
               {!currentCurio ? (
                 <WelcomeSection 
@@ -164,11 +146,6 @@ const DashboardContainer = () => {
                   onNewsRead={handleNewsRead}
                   onCreativeUpload={handleCreativeUpload}
                   generationError={generationError}
-                  onRefresh={() => {
-                    if (currentCurio && currentCurio.id) {
-                      // Implement refresh logic if needed
-                    }
-                  }}
                 />
               )}
             </Card>
