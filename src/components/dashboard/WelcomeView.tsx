@@ -1,10 +1,11 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Compass, Sparkles } from 'lucide-react';
 import MagicalSearchBar from './MagicalSearchBar';
-import { Card, CardContent } from '@/components/ui/card';
-import CurioSuggestion from '@/components/CurioSuggestion';
+import { Button } from '@/components/ui/button';
+import { Sparkles, RefreshCw } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import TasksSection from './TasksSection';
 
 interface WelcomeViewProps {
   childId: string;
@@ -29,139 +30,170 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
   isGenerating,
   onCurioSuggestionClick
 }) => {
-  // Format recent queries for search history
-  const recentQueries = pastCurios
-    .slice(0, 3)
-    .map(curio => curio.query || curio.title)
-    .filter(Boolean);
+  const [pendingTasksCount, setPendingTasksCount] = useState(0);
   
-  // Get greeting based on time of day
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    const name = childProfile?.name || 'Explorer';
-    
-    if (hour < 12) return `Good morning, ${name}`;
-    if (hour < 18) return `Good afternoon, ${name}`;
-    return `Good evening, ${name}`;
-  };
-  
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        when: "beforeChildren",
-        staggerChildren: 0.1
+  // Fetch pending tasks count
+  useEffect(() => {
+    const fetchPendingTasksCount = async () => {
+      try {
+        const { count, error } = await supabase
+          .from('child_tasks')
+          .select('*', { count: 'exact', head: true })
+          .eq('child_profile_id', childId)
+          .eq('status', 'pending');
+          
+        if (error) throw error;
+        setPendingTasksCount(count || 0);
+      } catch (error) {
+        console.error('Error fetching pending tasks count:', error);
+        setPendingTasksCount(0);
       }
+    };
+    
+    if (childId) {
+      fetchPendingTasksCount();
     }
-  };
-  
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.4 }
-    }
-  };
-  
+    
+    // Set up a subscription to listen for task updates
+    const tasksSubscription = supabase
+      .channel('public:child_tasks')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'child_tasks', filter: `child_profile_id=eq.${childId}` },
+        () => {
+          fetchPendingTasksCount();
+        }
+      )
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(tasksSubscription);
+    };
+  }, [childId]);
+
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="max-w-4xl mx-auto px-4 py-6 flex flex-col items-center"
-    >
-      {/* Header - Simple greeting */}
-      <motion.div 
-        variants={itemVariants}
-        className="mb-6 text-center"
-      >
-        <h1 className="text-2xl sm:text-3xl font-nunito font-bold text-white">{getGreeting()}</h1>
-        <p className="text-white/70 mt-1">What would you like to discover today?</p>
-      </motion.div>
-      
-      {/* Search Experience - The central focus */}
-      <motion.div variants={itemVariants} className="w-full mb-12">
-        <MagicalSearchBar
-          query={query}
-          setQuery={setQuery}
-          handleSubmitQuery={handleSubmitQuery}
-          isGenerating={isGenerating}
-          recentQueries={recentQueries}
-          autoFocus={true}
-        />
-      </motion.div>
-      
-      {/* Curio Suggestions - Simplified with gentle animation */}
-      {curioSuggestions.length > 0 && (
-        <motion.div variants={itemVariants} className="w-full">
-          <div className="flex items-center mb-4">
-            <div className="w-7 h-7 rounded-full bg-wonderwhiz-bright-pink/20 flex items-center justify-center mr-2">
-              <Compass className="h-4 w-4 text-wonderwhiz-bright-pink" />
-            </div>
-            <h2 className="text-lg font-bold text-white font-nunito">Wonder Journeys</h2>
+    <div className="container mx-auto px-4 pt-8 pb-16">
+      <div className="max-w-3xl mx-auto">
+        {/* Header Section */}
+        <div className="text-center mb-8">
+          <motion.h1 
+            className="text-3xl md:text-4xl font-bold text-white mb-2 font-nunito"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            Hello, {childProfile?.name || 'Explorer'}!
+          </motion.h1>
+          
+          <motion.p 
+            className="text-white/70 mb-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
+            What would you like to discover today?
+          </motion.p>
+          
+          {childProfile?.sparks_balance !== undefined && (
+            <motion.div 
+              className="inline-flex items-center bg-white/10 px-4 py-2 rounded-full text-white text-sm mb-6"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3, delay: 0.2 }}
+            >
+              <Sparkles className="h-4 w-4 text-wonderwhiz-vibrant-yellow mr-2" />
+              <span>{childProfile.sparks_balance} Sparks</span>
+            </motion.div>
+          )}
+        </div>
+        
+        {/* Search Section */}
+        <motion.div 
+          className="mb-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+        >
+          <MagicalSearchBar
+            query={query}
+            setQuery={setQuery}
+            handleSubmitQuery={handleSubmitQuery}
+            isGenerating={isGenerating}
+            placeholder="What do you want to learn about?"
+          />
+        </motion.div>
+        
+        {/* Tasks Section - Intelligently blended into the experience */}
+        {pendingTasksCount > 0 && (
+          <TasksSection childId={childId} pendingTasksCount={pendingTasksCount} />
+        )}
+        
+        {/* Curio Suggestions */}
+        <motion.div
+          className="mb-10"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-white">Discover Something New</h2>
+            <Button 
+              variant="ghost"
+              size="sm"
+              className="text-white/70 hover:text-white hover:bg-white/10"
+              onClick={() => onCurioSuggestionClick(curioSuggestions[Math.floor(Math.random() * curioSuggestions.length)])}
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Surprise Me
+            </Button>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {curioSuggestions.slice(0, 3).map((suggestion, index) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {curioSuggestions.slice(0, 4).map((suggestion, index) => (
               <motion.div
-                key={index}
-                variants={itemVariants}
-                whileHover={{ y: -5, transition: { duration: 0.2 } }}
-                className="h-full"
+                key={`suggestion-${index}`}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.2 + (index * 0.1) }}
+                className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg p-4 cursor-pointer transition-all"
+                onClick={() => onCurioSuggestionClick(suggestion)}
+                whileHover={{ scale: 1.02, backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
+                whileTap={{ scale: 0.98 }}
               >
-                <CurioSuggestion
-                  suggestion={suggestion}
-                  onClick={() => onCurioSuggestionClick(suggestion)}
-                  type="general"
-                  index={index}
-                  profileId={childId}
-                />
+                <p className="text-white">{suggestion}</p>
               </motion.div>
             ))}
           </div>
         </motion.div>
-      )}
-      
-      {/* Recent journeys - Simple card view */}
-      {pastCurios.length > 0 && (
-        <motion.div variants={itemVariants} className="w-full mt-8">
-          <div className="flex items-center mb-4">
-            <div className="w-7 h-7 rounded-full bg-wonderwhiz-vibrant-yellow/20 flex items-center justify-center mr-2">
-              <Sparkles className="h-4 w-4 text-wonderwhiz-vibrant-yellow" />
-            </div>
-            <h2 className="text-lg font-bold text-white font-nunito">Recent Discoveries</h2>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {pastCurios.slice(0, 3).map((curio, index) => (
-              <motion.div
-                key={curio.id}
-                variants={itemVariants}
-                whileHover={{ y: -5, transition: { duration: 0.2 } }}
-              >
-                <Card 
-                  className="bg-white/5 border-white/10 hover:bg-white/10 transition-all duration-300 h-full cursor-pointer"
-                  onClick={() => {
-                    // Navigate to curio
-                    window.location.href = `/curio/${childId}/${curio.id}`;
-                  }}
+        
+        {/* Recent Curios */}
+        {pastCurios && pastCurios.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+          >
+            <h2 className="text-xl font-bold text-white mb-4">Your Recent Explorations</h2>
+            <div className="space-y-3">
+              {pastCurios.slice(0, 3).map((curio, index) => (
+                <motion.div
+                  key={`curio-${curio.id}`}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3, delay: 0.3 + (index * 0.1) }}
+                  className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg p-4 cursor-pointer transition-all"
+                  onClick={() => onCurioSuggestionClick(curio.query || curio.title)}
+                  whileHover={{ scale: 1.01, backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
+                  whileTap={{ scale: 0.99 }}
                 >
-                  <CardContent className="p-4">
-                    <h3 className="text-white font-medium line-clamp-2 mb-2">{curio.title}</h3>
-                    <p className="text-white/60 text-sm">
-                      {new Date(curio.created_at).toLocaleDateString()}
-                    </p>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-      )}
-    </motion.div>
+                  <p className="text-white font-medium">{curio.title}</p>
+                  <p className="text-white/60 text-sm mt-1">{new Date(curio.created_at).toLocaleDateString()}</p>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </div>
+    </div>
   );
 };
 

@@ -1,6 +1,7 @@
 
 import React from 'react';
 import WelcomeView from './WelcomeView';
+import DiscoverySection from './DiscoverySection';
 
 interface WelcomeSectionProps {
   curioSuggestions: string[];
@@ -18,6 +19,8 @@ interface WelcomeSectionProps {
 
 const WelcomeSection: React.FC<WelcomeSectionProps> = ({
   curioSuggestions,
+  isLoadingSuggestions,
+  handleRefreshSuggestions,
   handleCurioSuggestionClick,
   childProfile,
   pastCurios,
@@ -39,6 +42,16 @@ const WelcomeSection: React.FC<WelcomeSectionProps> = ({
         handleSubmitQuery={handleSubmitQuery}
         isGenerating={isGenerating}
         onCurioSuggestionClick={handleCurioSuggestionClick}
+      />
+      
+      {/* Integrate tasks directly into the welcome flow */}
+      <DiscoverySection 
+        childId={childId} 
+        sparksBalance={childProfile?.sparks_balance || 0}
+        onSparkEarned={(amount) => {
+          // This would be handled by the parent component
+          console.log(`Earned ${amount} sparks`);
+        }}
       />
     </div>
   );
