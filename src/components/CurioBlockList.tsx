@@ -171,11 +171,11 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
                 content={{
                   prompt: block.content.prompt,
                   description: block.content.description,
+                  guidelines: block.content.guidelines,
                   examples: block.content.examples || []
                 }}
                 specialistId={block.specialist_id}
                 onCreativeUpload={handleCreativeUpload ? () => handleCreativeUpload(block.id, {}) : undefined}
-                updateHeight={(height) => updateBlockHeight(block.id, height)}
               />
             );
             break;
@@ -183,13 +183,13 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
             BlockComponent = (
               <ActivityBlock 
                 content={{
+                  activity: block.content.activity || block.content.title || "",
                   title: block.content.title,
                   instructions: block.content.instructions,
                   steps: block.content.steps || []
                 }}
                 specialistId={block.specialist_id}
                 onActivityComplete={handleActivityComplete ? () => handleActivityComplete(block.id) : undefined}
-                updateHeight={(height) => updateBlockHeight(block.id, height)}
               />
             );
             break;
@@ -197,13 +197,13 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
             BlockComponent = (
               <MindfulnessBlock 
                 content={{
+                  exercise: block.content.exercise || block.content.title || "",
+                  duration: block.content.duration || 60,
                   title: block.content.title,
-                  instruction: block.content.instruction,
-                  duration: block.content.duration
+                  instruction: block.content.instruction
                 }}
                 specialistId={block.specialist_id}
                 onMindfulnessComplete={handleMindfulnessComplete ? () => handleMindfulnessComplete(block.id) : undefined}
-                updateHeight={(height) => updateBlockHeight(block.id, height)}
               />
             );
             break;

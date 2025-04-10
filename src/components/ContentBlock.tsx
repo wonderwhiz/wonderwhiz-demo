@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
@@ -476,6 +477,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
           content={{
             prompt: block.content?.prompt,
             description: block.content?.description,
+            guidelines: block.content?.guidelines,
             examples: block.content?.examples || []
           }}
           specialistId={block.specialist_id}
@@ -485,6 +487,8 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       case 'task':
         return <TaskBlock 
           content={{
+            task: block.content?.task || "",
+            reward: block.content?.reward || "5",
             title: block.content?.title,
             description: block.content?.description,
             steps: block.content?.steps || []
@@ -495,8 +499,9 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       case 'riddle':
         return <RiddleBlock 
           content={{
+            riddle: block.content?.riddle || block.content?.question || "",
+            answer: block.content?.answer || "",
             question: block.content?.question,
-            answer: block.content?.answer,
             hint: block.content?.hint
           }}
           specialistId={block.specialist_id}
@@ -516,6 +521,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       case 'activity':
         return <ActivityBlock 
           content={{
+            activity: block.content?.activity || block.content?.title || "",
             title: block.content?.title,
             instructions: block.content?.instructions,
             steps: block.content?.steps || []
@@ -526,9 +532,10 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       case 'mindfulness':
         return <MindfulnessBlock 
           content={{
+            exercise: block.content?.exercise || block.content?.title || "",
+            duration: block.content?.duration || 60,
             title: block.content?.title,
-            instruction: block.content?.instruction,
-            duration: block.content?.duration
+            instruction: block.content?.instruction
           }}
           specialistId={block.specialist_id}
           onMindfulnessComplete={onMindfulnessComplete || (() => {})}
