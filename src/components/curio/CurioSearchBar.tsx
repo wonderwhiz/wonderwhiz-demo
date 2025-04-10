@@ -36,7 +36,7 @@ const CurioSearchBar: React.FC<CurioSearchBarProps> = ({
         return {
           container: "mb-3",
           input: "py-2 text-sm",
-          button: "text-xs",
+          button: "text-xs px-3",
           icon: "h-3.5 w-3.5" 
         };
       default:
@@ -79,10 +79,11 @@ const CurioSearchBar: React.FC<CurioSearchBarProps> = ({
         )}
         <Button 
           type="submit" 
-          className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-vibrant-yellow text-wonderwhiz-deep-purple"
+          className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-vibrant-yellow text-wonderwhiz-deep-purple sm:px-4 px-2"
           size="sm"
         >
-          Search
+          <span className="sm:block hidden">Search</span>
+          <Search className="sm:hidden block h-4 w-4" />
         </Button>
       </div>
     </motion.form>

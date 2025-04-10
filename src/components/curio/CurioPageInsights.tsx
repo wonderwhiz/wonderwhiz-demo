@@ -20,7 +20,7 @@ const CurioPageInsights: React.FC<CurioPageInsightsProps> = ({
       animate={{ opacity: 1, height: 'auto' }}
       exit={{ opacity: 0, height: 0 }}
       transition={{ duration: 0.3 }}
-      className="mt-4 max-w-3xl mx-auto px-4 sm:px-6 bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 p-3 sm:p-4"
+      className="mx-4 sm:mx-auto max-w-3xl mt-2 sm:mt-4 bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 p-3 sm:p-4 overflow-hidden"
     >
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="bg-white/5 rounded-md p-2 sm:p-3 flex flex-col items-center justify-center">

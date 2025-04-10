@@ -127,8 +127,9 @@ const CurioPage: React.FC = () => {
   const [showCertificate, setShowCertificate] = useState(false);
   const [ageGroup, setAgeGroup] = useState<'5-7' | '8-11' | '12-16'>('8-11');
   
-  // Use ref to prevent infinite loops
+  // Use refs to prevent infinite loops
   const blocksProcessedRef = useRef(false);
+  const chaptersUpdatedRef = useRef(false);
   
   // Organize blocks into chapters
   const organizeBlocksIntoChapters = (blocks: any[]) => {
@@ -206,10 +207,13 @@ const CurioPage: React.FC = () => {
             
             // Generate quick answer for the query if it exists
             if (data.query) {
-              const query = data.query.trim();
-              
-              // Simulate quick answer generation
-              setQuickAnswer(`Paneer is a fresh cheese commonly used in Indian cuisine. It's made by curdling milk with lemon juice, vinegar, or other food acids, then draining and pressing the curds to form a firm cheese that holds its shape. Unlike many cheeses, paneer doesn't melt when heated, making it perfect for curries and grilled dishes.`);
+              // In a real implementation, this would call an API for a quick answer
+              // For demonstration, we'll use a predefined answer about paneer
+              if (data.query.toLowerCase().includes('paneer')) {
+                setQuickAnswer("Paneer is a fresh cheese commonly used in Indian cuisine. It's made by curdling milk with lemon juice, vinegar, or other food acids, then draining and pressing the curds to form a firm cheese that holds its shape. Unlike many cheeses, paneer doesn't melt when heated, making it perfect for curries and grilled dishes.");
+              } else {
+                setQuickAnswer(`Here's a quick answer to "${data.query}". This would typically be a concise response that directly addresses the question before diving into the detailed learning journey.`);
+              }
             }
           }
         });
@@ -283,6 +287,13 @@ const CurioPage: React.FC = () => {
       if (topicList.length > 0) {
         setLearningSummary(`This curio explores ${topicList.join(', ')}.`);
       }
+    }
+  }, [blocks]);
+
+  // Update chapter completion status
+  useEffect(() => {
+    if (blocks.length > 0 && !chaptersUpdatedRef.current) {
+      chaptersUpdatedRef.current = true;
       
       // Update chapters completion status based on block types
       const updatedChapters: Chapter[] = [...chapters];
@@ -341,6 +352,7 @@ const CurioPage: React.FC = () => {
   useEffect(() => {
     if (blocks.length === 0) {
       blocksProcessedRef.current = false;
+      chaptersUpdatedRef.current = false;
     }
   }, [blocks]);
 
@@ -548,7 +560,7 @@ const CurioPage: React.FC = () => {
 
       {/* Main Content Area */}
       <div className="flex-grow overflow-y-auto relative">
-        <div className="max-w-3xl mx-auto py-6 sm:py-8 px-2 sm:px-0">
+        <div className="max-w-3xl mx-auto py-4 sm:py-8 px-2 sm:px-0">
           {/* Loading States */}
           {isLoadingBlocks && <CurioLoadingState />}
           

@@ -23,7 +23,7 @@ const CurioPageHeader: React.FC<CurioPageHeaderProps> = ({
 }) => {
   return (
     <motion.div 
-      className="py-4 sm:py-6 px-4 sm:px-6 bg-gradient-to-r from-wonderwhiz-deep-purple/80 to-wonderwhiz-deep-purple/60 border-b border-white/10 backdrop-blur-md"
+      className="py-3 sm:py-6 px-4 sm:px-6 bg-gradient-to-r from-wonderwhiz-deep-purple/80 to-wonderwhiz-deep-purple/60 border-b border-white/10 backdrop-blur-md"
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
@@ -35,14 +35,24 @@ const CurioPageHeader: React.FC<CurioPageHeaderProps> = ({
               variant="ghost" 
               size="sm" 
               onClick={handleBackToDashboard}
-              className="mb-2 text-white/70 hover:text-white -ml-2 group transition-colors"
+              className="mb-2 text-white/70 hover:text-white -ml-2 group transition-colors hidden sm:flex"
             >
               <ArrowLeft className="w-4 h-4 mr-1 group-hover:-translate-x-1 transition-transform duration-200" />
               <span>Back to Dashboard</span>
             </Button>
             
+            {/* Mobile back button */}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleBackToDashboard}
+              className="mb-2 text-white/70 hover:text-white -ml-2 group transition-colors sm:hidden"
+            >
+              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform duration-200" />
+            </Button>
+            
             {curioTitle && (
-              <h1 className="text-xl sm:text-2xl font-bold text-white leading-tight">
+              <h1 className="text-lg sm:text-2xl font-bold text-white leading-tight line-clamp-2 sm:line-clamp-none">
                 {curioTitle}
               </h1>
             )}
@@ -52,15 +62,32 @@ const CurioPageHeader: React.FC<CurioPageHeaderProps> = ({
             <motion.div 
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              className="hidden sm:block"
             >
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleToggleInsights}
-                className={`text-white/90 border-white/20 hover:bg-white/10 ${showInsights ? 'bg-white/15' : 'bg-white/5'} flex items-center backdrop-blur-md`}
+                className={`text-white/90 border-white/20 hover:bg-white/10 bg-white/5 flex items-center backdrop-blur-md ${showInsights ? 'bg-white/10' : ''}`}
               >
                 <Brain className="w-4 h-4 mr-1.5 text-wonderwhiz-bright-pink" />
                 <span>Learning Insights</span>
+              </Button>
+            </motion.div>
+            
+            {/* Mobile insights button */}
+            <motion.div 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="sm:hidden"
+            >
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleToggleInsights}
+                className={`text-white/90 border-white/20 hover:bg-white/10 bg-white/5 backdrop-blur-md ${showInsights ? 'bg-white/10' : ''}`}
+              >
+                <Brain className="w-4 h-4 text-wonderwhiz-bright-pink" />
               </Button>
             </motion.div>
             
