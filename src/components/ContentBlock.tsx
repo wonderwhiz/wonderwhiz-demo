@@ -512,6 +512,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         )}
         
         <BlockHeader 
+          type={block.type}
           specialistId={block.specialist_id} 
           blockTitle={blockTitle}
           blockType={block.type}

@@ -1,109 +1,73 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
 import { useUser } from '@/hooks/use-user';
 import { useChildProfile } from '@/hooks/use-child-profile';
 import { useCurioBlocks } from '@/hooks/use-curio-blocks';
-import { useInfiniteScroll } from '@/hooks/use-infinite-scroll';
 import { useSearch } from '@/hooks/use-search';
 import { useBlockInteractions } from '@/hooks/useBlockInteractions';
-import { ArrowLeft, Brain, Sparkles, RefreshCw } from 'lucide-react';
+import { useDynamicContentGeneration } from '@/hooks/use-dynamic-content-generation';
+import { Chapter } from '@/types/Chapter';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
-import RabbitHoleSuggestions from '@/components/content-blocks/RabbitHoleSuggestions';
-import CurioPageHeader from '@/components/curio/CurioPageHeader';
-import CurioPageInsights from '@/components/curio/CurioPageInsights';
-import CurioSearchBar from '@/components/curio/CurioSearchBar';
-import CurioLoadingState from '@/components/curio/CurioLoadingState';
-import CurioEmptyState from '@/components/curio/CurioEmptyState';
-import CurioErrorState from '@/components/curio/CurioErrorState';
-import CurioBlockList from '@/components/CurioBlockList';
 import QuickAnswer from '@/components/curio/QuickAnswer';
 import { TableOfContents } from '@/components/curio/TableOfContents';
 import ProgressVisualization from '@/components/curio/ProgressVisualization';
 import ChapterHeader from '@/components/curio/ChapterHeader';
 import LearningCertificate from '@/components/curio/LearningCertificate';
-import { Chapter } from '@/types/Chapter';
-
-const DEFAULT_CHAPTERS: Chapter[] = [
-  {
-    id: 'introduction',
-    title: 'Introduction',
-    description: 'Discover the basics',
-    icon: 'introduction',
-    isCompleted: false,
-    isActive: true
-  },
-  {
-    id: 'exploration',
-    title: 'Exploration',
-    description: 'Dive deeper',
-    icon: 'exploration',
-    isCompleted: false,
-    isActive: false
-  },
-  {
-    id: 'understanding',
-    title: 'Understanding',
-    description: 'Make connections',
-    icon: 'understanding',
-    isCompleted: false,
-    isActive: false
-  },
-  {
-    id: 'challenge',
-    title: 'Challenge',
-    description: 'Test your knowledge',
-    icon: 'challenge',
-    isCompleted: false,
-    isActive: false
-  },
-  {
-    id: 'creation',
-    title: 'Creation',
-    description: 'Apply what you learned',
-    icon: 'creation',
-    isCompleted: false, 
-    isActive: false
-  },
-  {
-    id: 'reflection',
-    title: 'Reflection',
-    description: 'Think and connect',
-    icon: 'reflection',
-    isCompleted: false,
-    isActive: false
-  },
-  {
-    id: 'nextSteps',
-    title: 'Next Steps',
-    description: 'Continue exploring',
-    icon: 'nextSteps',
-    isCompleted: false,
-    isActive: false
-  }
-];
+import RabbitHoleSuggestions from '@/components/content-blocks/RabbitHoleSuggestions';
+import CurioBlockList from '@/components/CurioBlockList';
 
 const EnhancedCurioPage: React.FC = () => {
-  const { childId, curioId } = useParams<{ childId: string, curioId: string }>();
+  const { childId, curioId } = useParams<{ childId: string; curioId: string }>();
   const navigate = useNavigate();
 
   const { user } = useUser();
   const { childProfile, isLoading: isLoadingProfile, error: profileError } = useChildProfile(childId);
   const { searchQuery, setSearchQuery, handleSearch } = useSearch();
   const { blocks, isLoading: isLoadingBlocks, error: blocksError, hasMore, loadMore, isFirstLoad, generationError } = useCurioBlocks(childId, curioId, searchQuery);
-  const { loadingMore, loadTriggerRef } = useInfiniteScroll(loadMore, hasMore);
+  const { generateContent, isGenerating } = useDynamicContentGeneration();
+  
   const { 
-    handleReply,
-    handleQuizCorrect,
-    handleNewsRead,
-    handleCreativeUpload,
-    handleActivityComplete,
-    handleMindfulnessComplete,
-    handleTaskComplete,
+    handleToggleLike,
+    handleToggleBookmark,
+    handleReply: handleMessageReply,
+    handleQuizCorrect: handleQuizSuccess,
+    handleNewsRead: handleNewsWasRead,
+    handleCreativeUpload: handleCreativeSubmission,
+    handleActivityComplete: handleActivityFinished,
+    handleMindfulnessComplete: handleMindfulnessFinished,
+    handleTaskComplete: handleTaskFinished
   } = useBlockInteractions(childId);
+
+  const handleReply = (blockId: string, message: string) => {
+    handleMessageReply(blockId, message);
+  };
+  
+  const handleQuizCorrect = (blockId: string) => {
+    handleQuizSuccess(blockId);
+  };
+  
+  const handleNewsRead = (blockId: string) => {
+    handleNewsWasRead(blockId);
+  };
+  
+  const handleCreativeUpload = (blockId: string, content: any) => {
+    handleCreativeSubmission(blockId, content);
+  };
+  
+  const handleActivityComplete = (blockId: string) => {
+    handleActivityFinished(blockId);
+  };
+  
+  const handleMindfulnessComplete = (blockId: string) => {
+    handleMindfulnessFinished(blockId);
+  };
+  
+  const handleTaskComplete = (blockId: string) => {
+    handleTaskFinished(blockId);
+  };
 
   const [animateBlocks, setAnimateBlocks] = useState(true);
   const [curioTitle, setCurioTitle] = useState<string | null>(null);
@@ -367,314 +331,6 @@ const EnhancedCurioPage: React.FC = () => {
     }
   };
 
-  const handleReply = async (blockId: string, message: string) => {
-    try {
-      await supabase.functions.invoke('handle-interaction', {
-        body: { 
-          type: 'reply',
-          blockId,
-          childId,
-          message
-        }
-      });
-    } catch (error) {
-      console.error('Error adding reply:', error);
-      toast.error("Could not add your comment. Please try again later.");
-    }
-  };
-
-  const handleQuizCorrect = async (blockId: string) => {
-    try {
-      await supabase.functions.invoke('handle-interaction', {
-        body: { 
-          type: 'quiz-correct',
-          blockId,
-          childId
-        }
-      });
-      
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 }
-      });
-      
-      try {
-        await supabase.functions.invoke('increment-sparks-balance', {
-          body: JSON.stringify({
-            profileId: childId,
-            amount: 3
-          })
-        });
-        
-        await supabase.from('sparks_transactions').insert({
-          child_id: childId,
-          amount: 3,
-          reason: 'Quiz answered correctly'
-        });
-        
-        toast.success('You earned 3 sparks for your knowledge!', {
-          icon: '✨',
-          position: 'bottom-right',
-          duration: 3000
-        });
-      } catch (err) {
-        console.error('Error awarding sparks:', err);
-      }
-    } catch (error) {
-      console.error('Error handling quiz correct:', error);
-    }
-  };
-
-  const handleNewsRead = async (blockId: string) => {
-    try {
-      await supabase.functions.invoke('handle-interaction', {
-        body: { 
-          type: 'news-read',
-          blockId,
-          childId
-        }
-      });
-      
-      try {
-        await supabase.functions.invoke('increment-sparks-balance', {
-          body: JSON.stringify({
-            profileId: childId,
-            amount: 1
-          })
-        });
-        
-        await supabase.from('sparks_transactions').insert({
-          child_id: childId,
-          amount: 1,
-          reason: 'Stayed informed with news'
-        });
-        
-        toast.success('You earned 1 spark for staying informed!', {
-          icon: '✨',
-          position: 'bottom-right',
-          duration: 3000
-        });
-      } catch (err) {
-        console.error('Error awarding sparks:', err);
-      }
-    } catch (error) {
-      console.error('Error marking news as read:', error);
-    }
-  };
-
-  const handleCreativeUpload = async (blockId: string, content: any) => {
-    try {
-      await supabase.functions.invoke('handle-interaction', {
-        body: { 
-          type: 'creative-upload',
-          blockId,
-          childId,
-          content
-        }
-      });
-      
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 }
-      });
-      
-      try {
-        await supabase.functions.invoke('increment-sparks-balance', {
-          body: JSON.stringify({
-            profileId: childId,
-            amount: 5
-          })
-        });
-        
-        await supabase.from('sparks_transactions').insert({
-          child_id: childId,
-          amount: 5,
-          reason: 'Creative submission'
-        });
-        
-        toast.success('You earned 5 sparks for your creativity!', {
-          icon: '✨',
-          position: 'bottom-right',
-          duration: 3000
-        });
-      } catch (err) {
-        console.error('Error awarding sparks:', err);
-      }
-    } catch (error) {
-      console.error('Error handling creative upload:', error);
-    }
-  };
-
-  const handleActivityComplete = async (blockId: string) => {
-    try {
-      await supabase.functions.invoke('handle-interaction', {
-        body: { 
-          type: 'activity-complete',
-          blockId,
-          childId
-        }
-      });
-      
-      confetti({
-        particleCount: 50,
-        spread: 70,
-        origin: { y: 0.6 }
-      });
-      
-      try {
-        await supabase.functions.invoke('increment-sparks-balance', {
-          body: JSON.stringify({
-            profileId: childId,
-            amount: 3
-          })
-        });
-        
-        await supabase.from('sparks_transactions').insert({
-          child_id: childId,
-          amount: 3,
-          reason: 'Activity completed'
-        });
-        
-        toast.success('You earned 3 sparks for completing an activity!', {
-          icon: '✨',
-          position: 'bottom-right',
-          duration: 3000
-        });
-      } catch (err) {
-        console.error('Error awarding sparks:', err);
-      }
-    } catch (error) {
-      console.error('Error marking activity as complete:', error);
-    }
-  };
-
-  const handleMindfulnessComplete = async (blockId: string) => {
-    try {
-      await supabase.functions.invoke('handle-interaction', {
-        body: { 
-          type: 'mindfulness-complete',
-          blockId,
-          childId
-        }
-      });
-      
-      try {
-        await supabase.functions.invoke('increment-sparks-balance', {
-          body: JSON.stringify({
-            profileId: childId,
-            amount: 2
-          })
-        });
-        
-        await supabase.from('sparks_transactions').insert({
-          child_id: childId,
-          amount: 2,
-          reason: 'Mindfulness practice'
-        });
-        
-        toast.success('You earned 2 sparks for mindfulness practice!', {
-          icon: '✨',
-          position: 'bottom-right',
-          duration: 3000
-        });
-      } catch (err) {
-        console.error('Error awarding sparks:', err);
-      }
-    } catch (error) {
-      console.error('Error marking mindfulness as complete:', error);
-    }
-  };
-
-  const handleTaskComplete = async (blockId: string) => {
-    try {
-      await supabase.functions.invoke('handle-interaction', {
-        body: { 
-          type: 'task-complete',
-          blockId,
-          childId
-        }
-      });
-      
-      confetti({
-        particleCount: 30,
-        spread: 50,
-        origin: { y: 0.6 }
-      });
-      
-      try {
-        await supabase.functions.invoke('increment-sparks-balance', {
-          body: JSON.stringify({
-            profileId: childId,
-            amount: 1
-          })
-        });
-        
-        await supabase.from('sparks_transactions').insert({
-          child_id: childId,
-          amount: 1,
-          reason: 'Task completed'
-        });
-        
-        toast.success('You earned 1 spark for completing a task!', {
-          icon: '✨',
-          position: 'bottom-right',
-          duration: 3000
-        });
-      } catch (err) {
-        console.error('Error awarding sparks:', err);
-      }
-    } catch (error) {
-      console.error('Error marking task as complete:', error);
-    }
-  };
-
-  const handleBackToDashboard = () => {
-    navigate(`/dashboard/${childId}`);
-  };
-
-  const handleRefresh = () => {
-    setRefreshing(true);
-    window.location.reload();
-  };
-  
-  const handleToggleInsights = () => {
-    setShowInsights(!showInsights);
-  };
-  
-  const handleChapterClick = (chapterId: string) => {
-    setActiveChapter(chapterId);
-    
-    setChapters(prev => prev.map(chapter => ({
-      ...chapter,
-      isActive: chapter.id === chapterId
-    })));
-    
-    document.getElementById(`chapter-${chapterId}`)?.scrollIntoView({ 
-      behavior: 'smooth', 
-      block: 'start' 
-    });
-  };
-  
-  const handleStartJourney = () => {
-    setIsJourneyStarted(true);
-    setQuickAnswerExpanded(false);
-    
-    document.getElementById('table-of-contents')?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start'
-    });
-  };
-  
-  const handleCertificateDownload = () => {
-    toast.success("Certificate downloaded successfully!");
-  };
-  
-  const handleCertificateShare = () => {
-    toast.success("Certificate shared successfully!");
-  };
-  
   const handleRabbitHoleClick = async (question: string) => {
     if (!childId) return;
     
@@ -725,7 +381,7 @@ const EnhancedCurioPage: React.FC = () => {
           origin: { y: 0.6 }
         });
         
-        navigate(`/curio/${childId}/${newCurio.id}`);
+        navigate(`/enhanced-curio/${childId}/${newCurio.id}`);
       }
     } catch (error) {
       console.error('Error creating rabbit hole curio:', error);
@@ -736,7 +392,7 @@ const EnhancedCurioPage: React.FC = () => {
   const blocksByChapter = organizeBlocksIntoChapters(blocks);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col min-h-screen bg-gradient-to-b from-indigo-950 to-indigo-900">
       <CurioPageHeader 
         curioTitle={curioTitle} 
         handleBackToDashboard={handleBackToDashboard}
@@ -756,68 +412,87 @@ const EnhancedCurioPage: React.FC = () => {
         )}
       </AnimatePresence>
       
-      <div className="mt-4 px-4 sm:px-6 max-w-3xl mx-auto w-full">
-        {isLoadingBlocks && <CurioLoadingState />}
-        
-        {blocksError && <CurioErrorState message="Failed to load content." />}
-        
-        {!isLoadingBlocks && !blocksError && blocks.length === 0 && !isFirstLoad && (
-          <CurioEmptyState />
-        )}
-        
-        {quickAnswer && blocks.length > 0 && (
-          <QuickAnswer 
-            question={curioTitle || "Your question"}
-            answer={quickAnswer}
-            isExpanded={quickAnswerExpanded}
-            onToggleExpand={() => setQuickAnswerExpanded(!quickAnswerExpanded)}
-            onStartJourney={handleStartJourney}
-          />
-        )}
-        
-        {blocks.length > 0 && (
-          <div id="table-of-contents">
-            <TableOfContents 
-              chapters={chapters}
-              onChapterClick={handleChapterClick}
-              ageGroup={ageGroup}
+      <main className="flex-grow">
+        <div className="max-w-4xl mx-auto py-6 px-4 sm:px-6">
+          {curioTitle && !isLoadingBlocks && !searchQuery && (
+            <QuickAnswer 
+              question={curioTitle}
+              isExpanded={quickAnswerExpanded}
+              onToggleExpand={() => setQuickAnswerExpanded(!quickAnswerExpanded)}
+              onStartJourney={handleStartJourney}
+              childId={childId}
             />
-          </div>
-        )}
-        
-        {blocks.length > 0 && (
-          <ProgressVisualization 
-            progress={progress} 
-            ageGroup={ageGroup}
-            totalChapters={chapters.length}
-            completedChapters={chapters.filter(chapter => chapter.isCompleted).length}
-          />
-        )}
-        
-        {blocks.length > 0 && Object.keys(blocksByChapter).map((chapterId, index) => {
-          const chapterBlocks = blocksByChapter[chapterId];
-          if (!chapterBlocks || chapterBlocks.length === 0) return null;
+          )}
           
-          const chapterInfo = chapters.find(ch => ch.id === chapterId);
-          if (!chapterInfo) return null;
-          
-          return (
-            <div key={chapterId} id={`chapter-${chapterId}`}>
-              <ChapterHeader 
-                chapterId={chapterId}
-                title={chapterInfo.title}
-                description={chapterInfo.description}
-                index={index}
-                totalChapters={chapters.length}
+          {blocks.length > 0 && !searchQuery && (
+            <div id="table-of-contents">
+              <TableOfContents 
+                chapters={chapters}
+                onChapterClick={handleChapterClick}
+                ageGroup={ageGroup}
               />
+            </div>
+          )}
+          
+          {blocks.length > 0 && !searchQuery && (
+            <ProgressVisualization 
+              progress={progress} 
+              ageGroup={ageGroup}
+              totalChapters={chapters.length}
+              completedChapters={chapters.filter(chapter => chapter.isCompleted).length}
+            />
+          )}
+
+          {blocks.length > 0 && !searchQuery ? (
+            Object.keys(blocksByChapter).map((chapterId, index) => {
+              const chapterBlocks = blocksByChapter[chapterId];
+              if (!chapterBlocks || chapterBlocks.length === 0) return null;
               
+              const chapterInfo = chapters.find(ch => ch.id === chapterId);
+              if (!chapterInfo) return null;
+              
+              return (
+                <div key={chapterId} id={`chapter-${chapterId}`}>
+                  <ChapterHeader 
+                    chapterId={chapterId}
+                    title={chapterInfo.title}
+                    description={chapterInfo.description}
+                    index={index}
+                    totalChapters={chapters.length}
+                  />
+                  
+                  <CurioBlockList
+                    blocks={chapterBlocks}
+                    animateBlocks={animateBlocks}
+                    hasMoreBlocks={false}
+                    loadingMoreBlocks={false}
+                    loadTriggerRef={loadTriggerRef}
+                    searchQuery=""
+                    profileId={childId}
+                    isFirstLoad={isFirstLoad}
+                    handleToggleLike={handleToggleLike}
+                    handleToggleBookmark={handleToggleBookmark}
+                    handleReply={handleReply}
+                    handleQuizCorrect={handleQuizCorrect}
+                    handleNewsRead={handleNewsRead}
+                    handleCreativeUpload={handleCreativeUpload}
+                    handleTaskComplete={handleTaskComplete}
+                    handleActivityComplete={handleActivityComplete}
+                    handleMindfulnessComplete={handleMindfulnessComplete}
+                    handleRabbitHoleClick={handleRabbitHoleClick}
+                  />
+                </div>
+              );
+            })
+          ) : (
+            blocks.length > 0 && (
               <CurioBlockList
-                blocks={chapterBlocks}
+                blocks={blocks}
                 animateBlocks={animateBlocks}
-                hasMoreBlocks={false}
-                loadingMoreBlocks={false}
+                hasMoreBlocks={hasMore}
+                loadingMoreBlocks={loadingMore}
                 loadTriggerRef={loadTriggerRef}
-                searchQuery={""}
+                searchQuery={searchQuery}
                 profileId={childId}
                 isFirstLoad={isFirstLoad}
                 handleToggleLike={handleToggleLike}
@@ -830,38 +505,39 @@ const EnhancedCurioPage: React.FC = () => {
                 handleActivityComplete={handleActivityComplete}
                 handleMindfulnessComplete={handleMindfulnessComplete}
                 handleRabbitHoleClick={handleRabbitHoleClick}
-                generationError={null}
+                generationError={generationError}
+                onRefresh={handleRefresh}
               />
-            </div>
-          );
-        })}
-        
-        {showCertificate && blocks.length > 0 && (
-          <LearningCertificate 
-            learnerName={learnerName}
-            topic={curioTitle || "Wonders of Knowledge"}
-            date={new Date().toLocaleDateString()}
-            onDownload={handleCertificateDownload}
-            onShare={handleCertificateShare}
-            ageGroup={ageGroup}
-          />
-        )}
-        
-        {showRabbitHoleSuggestions && blocks.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-8"
-          >
-            <RabbitHoleSuggestions
-              curioTitle={curioTitle || ''}
-              profileId={childId}
-              onSuggestionClick={handleRabbitHoleClick}
-              specialistIds={specialistIds}
+            )
+          )}
+
+          {showCertificate && !searchQuery && blocks.length > 0 && (
+            <LearningCertificate
+              learnerName={learnerName}
+              topic={curioTitle || 'Knowledge Exploration'}
+              date={new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+              onDownload={handleCertificateDownload}
+              onShare={handleCertificateShare}
+              ageGroup={ageGroup}
             />
-          </motion.div>
-        )}
-      </div>
+          )}
+
+          {showRabbitHoleSuggestions && blocks.length > 0 && !searchQuery && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-8"
+            >
+              <RabbitHoleSuggestions
+                curioTitle={curioTitle || ''}
+                profileId={childId}
+                onSuggestionClick={handleRabbitHoleClick}
+                specialistIds={specialistIds}
+              />
+            </motion.div>
+          )}
+        </div>
+      </main>
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -27,6 +27,66 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useCurioData } from '@/hooks/useCurioData';
 import confetti from 'canvas-confetti';
 import RabbitHoleSuggestions from '@/components/content-blocks/RabbitHoleSuggestions';
+import { Chapter } from '@/types/Chapter';
+
+const DEFAULT_CHAPTERS: Chapter[] = [
+  {
+    id: 'introduction',
+    title: 'Introduction',
+    description: 'Discover the basics',
+    icon: 'introduction',
+    isCompleted: false,
+    isActive: true
+  },
+  {
+    id: 'exploration',
+    title: 'Exploration',
+    description: 'Dive deeper',
+    icon: 'exploration',
+    isCompleted: false,
+    isActive: false
+  },
+  {
+    id: 'understanding',
+    title: 'Understanding',
+    description: 'Make connections',
+    icon: 'understanding',
+    isCompleted: false,
+    isActive: false
+  },
+  {
+    id: 'challenge',
+    title: 'Challenge',
+    description: 'Test your knowledge',
+    icon: 'challenge',
+    isCompleted: false,
+    isActive: false
+  },
+  {
+    id: 'creation',
+    title: 'Creation',
+    description: 'Apply what you learned',
+    icon: 'creation',
+    isCompleted: false, 
+    isActive: false
+  },
+  {
+    id: 'reflection',
+    title: 'Reflection',
+    description: 'Think and connect',
+    icon: 'reflection',
+    isCompleted: false,
+    isActive: false
+  },
+  {
+    id: 'nextSteps',
+    title: 'Next Steps',
+    description: 'Continue exploring',
+    icon: 'nextSteps',
+    isCompleted: false,
+    isActive: false
+  }
+];
 
 const CurioPage: React.FC = () => {
   const { childId, curioId } = useParams<{ childId: string, curioId: string }>();
@@ -37,15 +97,18 @@ const CurioPage: React.FC = () => {
   const { searchQuery, setSearchQuery, handleSearch } = useSearch();
   const { blocks, isLoading: isLoadingBlocks, error: blocksError, hasMore, loadMore, isFirstLoad, generationError } = useCurioBlocks(childId, curioId, searchQuery);
   const { loadingMore, loadTriggerRef } = useInfiniteScroll(loadMore, hasMore);
+  
+  // Destructure the interaction handlers from useBlockInteractions
   const { 
-    handleReply,
-    handleQuizCorrect,
-    handleNewsRead,
-    handleCreativeUpload,
-    handleActivityComplete,
-    handleMindfulnessComplete,
-    handleTaskComplete,
-    loadingStates
+    handleToggleLike,
+    handleToggleBookmark,
+    handleReply: handleMessageReply,
+    handleQuizCorrect: handleQuizSuccess,
+    handleNewsRead: handleNewsWasRead,
+    handleCreativeUpload: handleCreativeSubmission,
+    handleActivityComplete: handleActivityFinished,
+    handleMindfulnessComplete: handleMindfulnessFinished,
+    handleTaskComplete: handleTaskFinished
   } = useBlockInteractions(childId);
 
   const [animateBlocks, setAnimateBlocks] = useState(true);
@@ -58,6 +121,100 @@ const CurioPage: React.FC = () => {
   const [specialistIds, setSpecialistIds] = useState<string[]>([]);
   const [showRabbitHoleSuggestions, setShowRabbitHoleSuggestions] = useState(false);
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
+  
+  const [quickAnswer, setQuickAnswer] = useState<string>('');
+  const [quickAnswerExpanded, setQuickAnswerExpanded] = useState(false);
+  const [chapters, setChapters] = useState<Chapter[]>(DEFAULT_CHAPTERS);
+  const [activeChapter, setActiveChapter] = useState('introduction');
+  const [progress, setProgress] = useState(0);
+  const [isJourneyStarted, setIsJourneyStarted] = useState(false);
+  const [learnerName, setLearnerName] = useState('');
+  const [showCertificate, setShowCertificate] = useState(false);
+  const [ageGroup, setAgeGroup] = useState<'5-7' | '8-11' | '12-16'>('8-11');
+  
+  const blocksProcessedRef = useRef(false);
+  const chaptersUpdatedRef = useRef(false);
+
+  // Wrapper functions to prevent redeclaration errors
+  const handleReply = (blockId: string, message: string) => {
+    handleMessageReply(blockId, message);
+  };
+  
+  const handleQuizCorrect = (blockId: string) => {
+    handleQuizSuccess(blockId);
+  };
+  
+  const handleNewsRead = (blockId: string) => {
+    handleNewsWasRead(blockId);
+  };
+  
+  const handleCreativeUpload = (blockId: string, content: any) => {
+    handleCreativeSubmission(blockId, content);
+  };
+  
+  const handleActivityComplete = (blockId: string) => {
+    handleActivityFinished(blockId);
+  };
+  
+  const handleMindfulnessComplete = (blockId: string) => {
+    handleMindfulnessFinished(blockId);
+  };
+  
+  const handleTaskComplete = (blockId: string) => {
+    handleTaskFinished(blockId);
+  };
+
+  const organizeBlocksIntoChapters = (blocks: any[]) => {
+    if (!blocks.length) return {};
+    
+    const chapterMap: Record<string, any[]> = {
+      introduction: [],
+      exploration: [],
+      understanding: [],
+      challenge: [],
+      creation: [],
+      reflection: [],
+      nextSteps: []
+    };
+    
+    blocks.forEach(block => {
+      if (block.type === 'quiz') {
+        chapterMap.challenge.push(block);
+      } else if (block.type === 'fact' || block.type === 'funFact') {
+        if (chapterMap.introduction.length < 2) {
+          chapterMap.introduction.push(block);
+        } else if (chapterMap.understanding.length < 3) {
+          chapterMap.understanding.push(block);
+        } else {
+          chapterMap.exploration.push(block);
+        }
+      } else if (block.type === 'creative' || block.type === 'activity') {
+        chapterMap.creation.push(block);
+      } else if (block.type === 'mindfulness') {
+        chapterMap.reflection.push(block);
+      } else {
+        chapterMap.exploration.push(block);
+      }
+    });
+    
+    return chapterMap;
+  };
+
+  useEffect(() => {
+    if (childProfile?.age) {
+      const age = typeof childProfile.age === 'string' 
+        ? parseInt(childProfile.age, 10) 
+        : childProfile.age;
+        
+      if (age >= 5 && age <= 7) {
+        setAgeGroup('5-7');
+      } else if (age >= 8 && age <= 11) {
+        setAgeGroup('8-11');
+      } else {
+        setAgeGroup('12-16');
+      }
+    }
+  }, [childProfile]);
 
   useEffect(() => {
     if (user && !childId) {
@@ -202,269 +359,6 @@ const CurioPage: React.FC = () => {
     } catch (error) {
       console.error('Error toggling bookmark:', error);
       toast.error("Could not bookmark this wonder. Please try again later.");
-    }
-  };
-
-  const handleReply = async (blockId: string, message: string) => {
-    try {
-      await supabase.functions.invoke('handle-interaction', {
-        body: { 
-          type: 'reply',
-          blockId,
-          childId,
-          message
-        }
-      });
-    } catch (error) {
-      console.error('Error adding reply:', error);
-      toast.error("Could not add your comment. Please try again later.");
-    }
-  };
-
-  const handleQuizCorrect = async (blockId: string) => {
-    try {
-      await supabase.functions.invoke('handle-interaction', {
-        body: { 
-          type: 'quiz-correct',
-          blockId,
-          childId
-        }
-      });
-      
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 }
-      });
-      
-      try {
-        await supabase.functions.invoke('increment-sparks-balance', {
-          body: JSON.stringify({
-            profileId: childId,
-            amount: 3
-          })
-        });
-        
-        await supabase.from('sparks_transactions').insert({
-          child_id: childId,
-          amount: 3,
-          reason: 'Quiz answered correctly'
-        });
-        
-        toast.success('You earned 3 sparks for your knowledge!', {
-          icon: '✨',
-          position: 'bottom-right',
-          duration: 3000
-        });
-      } catch (err) {
-        console.error('Error awarding sparks:', err);
-      }
-    } catch (error) {
-      console.error('Error handling quiz correct:', error);
-    }
-  };
-
-  const handleNewsRead = async (blockId: string) => {
-    try {
-      await supabase.functions.invoke('handle-interaction', {
-        body: { 
-          type: 'news-read',
-          blockId,
-          childId
-        }
-      });
-      
-      try {
-        await supabase.functions.invoke('increment-sparks-balance', {
-          body: JSON.stringify({
-            profileId: childId,
-            amount: 1
-          })
-        });
-        
-        await supabase.from('sparks_transactions').insert({
-          child_id: childId,
-          amount: 1,
-          reason: 'Stayed informed with news'
-        });
-        
-        toast.success('You earned 1 spark for staying informed!', {
-          icon: '✨',
-          position: 'bottom-right',
-          duration: 3000
-        });
-      } catch (err) {
-        console.error('Error awarding sparks:', err);
-      }
-    } catch (error) {
-      console.error('Error marking news as read:', error);
-    }
-  };
-
-  const handleCreativeUpload = async (blockId: string, content: any) => {
-    try {
-      await supabase.functions.invoke('handle-interaction', {
-        body: { 
-          type: 'creative-upload',
-          blockId,
-          childId,
-          content
-        }
-      });
-      
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 }
-      });
-      
-      try {
-        await supabase.functions.invoke('increment-sparks-balance', {
-          body: JSON.stringify({
-            profileId: childId,
-            amount: 5
-          })
-        });
-        
-        await supabase.from('sparks_transactions').insert({
-          child_id: childId,
-          amount: 5,
-          reason: 'Creative submission'
-        });
-        
-        toast.success('You earned 5 sparks for your creativity!', {
-          icon: '✨',
-          position: 'bottom-right',
-          duration: 3000
-        });
-      } catch (err) {
-        console.error('Error awarding sparks:', err);
-      }
-    } catch (error) {
-      console.error('Error handling creative upload:', error);
-    }
-  };
-
-  const handleActivityComplete = async (blockId: string) => {
-    try {
-      await supabase.functions.invoke('handle-interaction', {
-        body: { 
-          type: 'activity-complete',
-          blockId,
-          childId
-        }
-      });
-      
-      confetti({
-        particleCount: 50,
-        spread: 70,
-        origin: { y: 0.6 }
-      });
-      
-      try {
-        await supabase.functions.invoke('increment-sparks-balance', {
-          body: JSON.stringify({
-            profileId: childId,
-            amount: 3
-          })
-        });
-        
-        await supabase.from('sparks_transactions').insert({
-          child_id: childId,
-          amount: 3,
-          reason: 'Activity completed'
-        });
-        
-        toast.success('You earned 3 sparks for completing an activity!', {
-          icon: '✨',
-          position: 'bottom-right',
-          duration: 3000
-        });
-      } catch (err) {
-        console.error('Error awarding sparks:', err);
-      }
-    } catch (error) {
-      console.error('Error marking activity as complete:', error);
-    }
-  };
-
-  const handleMindfulnessComplete = async (blockId: string) => {
-    try {
-      await supabase.functions.invoke('handle-interaction', {
-        body: { 
-          type: 'mindfulness-complete',
-          blockId,
-          childId
-        }
-      });
-      
-      try {
-        await supabase.functions.invoke('increment-sparks-balance', {
-          body: JSON.stringify({
-            profileId: childId,
-            amount: 2
-          })
-        });
-        
-        await supabase.from('sparks_transactions').insert({
-          child_id: childId,
-          amount: 2,
-          reason: 'Mindfulness practice'
-        });
-        
-        toast.success('You earned 2 sparks for mindfulness practice!', {
-          icon: '✨',
-          position: 'bottom-right',
-          duration: 3000
-        });
-      } catch (err) {
-        console.error('Error awarding sparks:', err);
-      }
-    } catch (error) {
-      console.error('Error marking mindfulness as complete:', error);
-    }
-  };
-
-  const handleTaskComplete = async (blockId: string) => {
-    try {
-      await supabase.functions.invoke('handle-interaction', {
-        body: { 
-          type: 'task-complete',
-          blockId,
-          childId
-        }
-      });
-      
-      confetti({
-        particleCount: 30,
-        spread: 50,
-        origin: { y: 0.6 }
-      });
-      
-      try {
-        await supabase.functions.invoke('increment-sparks-balance', {
-          body: JSON.stringify({
-            profileId: childId,
-            amount: 1
-          })
-        });
-        
-        await supabase.from('sparks_transactions').insert({
-          child_id: childId,
-          amount: 1,
-          reason: 'Task completed'
-        });
-        
-        toast.success('You earned 1 spark for completing a task!', {
-          icon: '✨',
-          position: 'bottom-right',
-          duration: 3000
-        });
-      } catch (err) {
-        console.error('Error awarding sparks:', err);
-      }
-    } catch (error) {
-      console.error('Error marking task as complete:', error);
     }
   };
 

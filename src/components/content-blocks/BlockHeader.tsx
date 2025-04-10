@@ -11,7 +11,7 @@ import {
   BookOpen
 } from 'lucide-react';
 
-interface BlockHeaderProps {
+export interface BlockHeaderProps {
   type: string;
   specialistId: string;
   tag?: string;
