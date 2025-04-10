@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -11,10 +10,11 @@ export const useBlockInteractions = (childProfileId?: string) => {
     creative: false,
     task: false,
     activity: false,
-    mindfulness: false
+    mindfulness: false,
+    like: false,
+    bookmark: false
   });
 
-  // Handle block replies
   const handleReply = async (blockId: string, message: string) => {
     if (!childProfileId) return;
     
@@ -39,14 +39,12 @@ export const useBlockInteractions = (childProfileId?: string) => {
     }
   };
 
-  // Handle correct quiz answers
   const handleQuizCorrect = async (blockId: string) => {
     if (!childProfileId) return;
     
     setLoadingStates(prev => ({ ...prev, quiz: true }));
     
     try {
-      // Call edge function to handle quiz completion
       await supabase.functions.invoke('handle-interaction', {
         body: { 
           type: 'quiz',
@@ -65,14 +63,12 @@ export const useBlockInteractions = (childProfileId?: string) => {
     }
   };
 
-  // Handle news items being read
   const handleNewsRead = async (blockId: string) => {
     if (!childProfileId) return;
     
     setLoadingStates(prev => ({ ...prev, news: true }));
     
     try {
-      // Call edge function to handle news read
       await supabase.functions.invoke('handle-interaction', {
         body: { 
           type: 'news',
@@ -89,14 +85,12 @@ export const useBlockInteractions = (childProfileId?: string) => {
     }
   };
 
-  // Handle creative content uploads
   const handleCreativeUpload = async (blockId: string) => {
     if (!childProfileId) return;
     
     setLoadingStates(prev => ({ ...prev, creative: true }));
     
     try {
-      // Call edge function to handle creative upload
       await supabase.functions.invoke('handle-interaction', {
         body: { 
           type: 'creative',
@@ -113,14 +107,12 @@ export const useBlockInteractions = (childProfileId?: string) => {
     }
   };
 
-  // Handle activity completion
   const handleActivityComplete = async () => {
     if (!childProfileId) return;
     
     setLoadingStates(prev => ({ ...prev, activity: true }));
     
     try {
-      // Call edge function to handle activity completion
       await supabase.functions.invoke('handle-interaction', {
         body: { 
           type: 'activity',
@@ -138,14 +130,12 @@ export const useBlockInteractions = (childProfileId?: string) => {
     }
   };
 
-  // Handle mindfulness completion
   const handleMindfulnessComplete = async () => {
     if (!childProfileId) return;
     
     setLoadingStates(prev => ({ ...prev, mindfulness: true }));
     
     try {
-      // Call edge function to handle mindfulness completion
       await supabase.functions.invoke('handle-interaction', {
         body: { 
           type: 'mindfulness',
@@ -163,14 +153,12 @@ export const useBlockInteractions = (childProfileId?: string) => {
     }
   };
 
-  // Handle task completion  
   const handleTaskComplete = async () => {
     if (!childProfileId) return;
     
     setLoadingStates(prev => ({ ...prev, task: true }));
     
     try {
-      // Call edge function to handle task completion
       await supabase.functions.invoke('handle-interaction', {
         body: { 
           type: 'task',
@@ -188,6 +176,52 @@ export const useBlockInteractions = (childProfileId?: string) => {
     }
   };
 
+  const handleToggleLike = async (blockId: string) => {
+    if (!childProfileId) return;
+    
+    setLoadingStates(prev => ({ ...prev, like: true }));
+    
+    try {
+      await supabase.functions.invoke('handle-interaction', {
+        body: { 
+          type: 'like',
+          blockId,
+          childId: childProfileId
+        }
+      });
+      
+      console.log('Like toggled successfully');
+    } catch (error) {
+      console.error('Error toggling like:', error);
+      toast.error('Could not like this content. Please try again.');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, like: false }));
+    }
+  };
+
+  const handleToggleBookmark = async (blockId: string) => {
+    if (!childProfileId) return;
+    
+    setLoadingStates(prev => ({ ...prev, bookmark: true }));
+    
+    try {
+      await supabase.functions.invoke('handle-interaction', {
+        body: { 
+          type: 'bookmark',
+          blockId,
+          childId: childProfileId
+        }
+      });
+      
+      console.log('Bookmark toggled successfully');
+    } catch (error) {
+      console.error('Error toggling bookmark:', error);
+      toast.error('Could not bookmark this content. Please try again.');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, bookmark: false }));
+    }
+  };
+
   return {
     handleReply,
     handleQuizCorrect,
@@ -196,6 +230,8 @@ export const useBlockInteractions = (childProfileId?: string) => {
     handleActivityComplete,
     handleMindfulnessComplete,
     handleTaskComplete,
+    handleToggleLike,
+    handleToggleBookmark,
     loadingStates
   };
 };

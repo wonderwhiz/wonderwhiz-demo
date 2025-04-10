@@ -13,6 +13,7 @@ interface AgeAdaptiveBlockProps {
   onInteract?: () => void;
   interactionLabel?: string;
   className?: string;
+  children?: React.ReactNode; // Add children prop to the interface
 }
 
 // Get appropriate styling based on age group
@@ -143,6 +144,7 @@ const AgeAdaptiveBlock: React.FC<AgeAdaptiveBlockProps> = ({
   onInteract,
   interactionLabel = 'Continue',
   className = '',
+  children, // Add children to component props
 }) => {
   const styles = getAgeAdaptiveStyling(ageGroup, type);
   
@@ -227,6 +229,8 @@ const AgeAdaptiveBlock: React.FC<AgeAdaptiveBlockProps> = ({
           </Button>
         </div>
       )}
+      
+      {children} {/* Render children if provided */}
     </motion.div>
   );
 };
