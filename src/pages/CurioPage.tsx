@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -427,6 +426,12 @@ const CurioPage: React.FC = () => {
       </AnimatePresence>
       
       <div className="mt-4 px-4 sm:px-6 max-w-3xl mx-auto w-full">
+        <CurioSearchBar
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          handleSearch={handleSearch}
+        />
+
         {isLoadingBlocks && <CurioLoadingState />}
         
         {blocksError && <CurioErrorState message="Failed to load content." />}
