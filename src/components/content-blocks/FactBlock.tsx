@@ -9,6 +9,10 @@ export interface FactBlockProps {
   title?: string;
   specialistId: string;
   rabbitHoles?: string[];
+  expanded?: boolean;
+  setExpanded?: React.Dispatch<React.SetStateAction<boolean>>;
+  textSize?: string;
+  narrativePosition?: 'beginning' | 'middle' | 'end';
   onLike?: () => void;
   onBookmark?: () => void;
   onReply?: (message: string) => void;
@@ -22,6 +26,10 @@ const FactBlock: React.FC<FactBlockProps> = ({
   title,
   specialistId,
   rabbitHoles = [],
+  expanded,
+  setExpanded,
+  textSize,
+  narrativePosition,
   onLike,
   onBookmark,
   onReply,
@@ -29,7 +37,6 @@ const FactBlock: React.FC<FactBlockProps> = ({
   onRabbitHoleClick,
   updateHeight
 }) => {
-  const [expanded, setExpanded] = useState(false);
   const blockRef = React.useRef<HTMLDivElement>(null);
   
   React.useEffect(() => {

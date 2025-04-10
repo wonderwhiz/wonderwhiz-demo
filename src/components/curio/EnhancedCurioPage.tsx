@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useUser } from '@/hooks/use-user';
@@ -94,10 +93,10 @@ const EnhancedCurioPage: React.FC = () => {
   const { blocks, isLoading: isLoadingBlocks, error: blocksError, hasMore, loadMore, isFirstLoad, generationError } = useCurioBlocks(childId, curioId, searchQuery);
   const { generateContent, isGenerating } = useDynamicContentGeneration();
   
-  // Get handle methods from useBlockInteractions
+  // Get handle methods from useBlockInteractions with renamed variables
   const { 
-    handleToggleLike,
-    handleToggleBookmark,
+    handleToggleLike: likeHandler,
+    handleToggleBookmark: bookmarkHandler,
     handleReply: handleMessageReply,
     handleQuizCorrect: handleQuizSuccess,
     handleNewsRead: handleNewsWasRead,
@@ -134,6 +133,14 @@ const EnhancedCurioPage: React.FC = () => {
   
   const handleTaskComplete = (blockId: string) => {
     handleTaskFinished(blockId);
+  };
+  
+  const handleToggleLike = (blockId: string) => {
+    likeHandler(blockId);
+  };
+  
+  const handleToggleBookmark = (blockId: string) => {
+    bookmarkHandler(blockId);
   };
 
   const [animateBlocks, setAnimateBlocks] = useState(true);
@@ -428,7 +435,6 @@ const EnhancedCurioPage: React.FC = () => {
     }
   };
 
-  // Missing handlers needed by components
   const handleBackToDashboard = () => {
     navigate(`/dashboard/${childId}`);
   };

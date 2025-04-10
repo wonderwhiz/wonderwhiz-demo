@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -96,7 +95,6 @@ const CurioPage: React.FC = () => {
   const { blocks, isLoading: isLoadingBlocks, error: blocksError, hasMore, loadMore, isFirstLoad, generationError } = useCurioBlocks(childId, curioId, searchQuery);
   const { loadingMore, loadTriggerRef } = useInfiniteScroll(loadMore, hasMore);
   
-  // Get block interaction handlers from the hook
   const { 
     handleReply,
     handleQuizCorrect,
@@ -105,8 +103,8 @@ const CurioPage: React.FC = () => {
     handleActivityComplete,
     handleMindfulnessComplete,
     handleTaskComplete,
-    handleToggleLike,
-    handleToggleBookmark
+    handleToggleLike: handleLike,
+    handleToggleBookmark: handleBookmark
   } = useBlockInteractions(childId);
 
   const [animateBlocks, setAnimateBlocks] = useState(true);
@@ -133,7 +131,7 @@ const CurioPage: React.FC = () => {
   const blocksProcessedRef = useRef(false);
   const chaptersUpdatedRef = useRef(false);
 
-  const organizeBlocksIntoChapters = (blocks: any[]) => {
+  const handleOrganizeBlocksIntoChapters = (blocks: any[]) => {
     if (!blocks.length) return {};
     
     const chapterMap: Record<string, any[]> = {
@@ -460,6 +458,14 @@ const CurioPage: React.FC = () => {
     toast.success("Certificate shared successfully!");
   };
   
+  const handleToggleLike = (blockId: string) => {
+    handleLike(blockId);
+  };
+
+  const handleToggleBookmark = (blockId: string) => {
+    handleBookmark(blockId);
+  };
+
   const organizeBlocksIntoChapters = (blocks: any[]) => {
     if (!blocks.length) return {};
     

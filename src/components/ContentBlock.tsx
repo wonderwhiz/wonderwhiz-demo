@@ -432,50 +432,80 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       case 'fact':
       case 'funFact':
         return <FactBlock 
-          content={block.content} 
-          onRabbitHoleClick={handleRabbitHoleClick} 
+          fact={block.content?.fact || block.content?.text}
+          title={block.content?.title}
+          specialistId={block.specialist_id}
+          rabbitHoles={block.content?.rabbitHoles || []}
           expanded={expanded} 
           setExpanded={setExpanded} 
           textSize={getTextSize(block.type)}
           narrativePosition={narrativePosition}
+          onRabbitHoleClick={handleRabbitHoleClick}
         />;
       case 'quiz':
         return <QuizBlock 
-          content={block.content} 
+          question={block.content?.question}
+          options={block.content?.options}
+          correctIndex={block.content?.correctIndex}
+          explanation={block.content?.explanation}
+          specialistId={block.specialist_id}
           onQuizCorrect={onQuizCorrect}
         />;
       case 'flashcard':
         return <FlashcardBlock 
-          content={block.content}
+          front={block.content?.front}
+          back={block.content?.back}
+          hint={block.content?.hint}
+          specialistId={block.specialist_id}
         />;
       case 'creative':
         return <CreativeBlock 
-          content={block.content} 
+          prompt={block.content?.prompt}
+          description={block.content?.description}
+          examples={block.content?.examples || []}
+          specialistId={block.specialist_id}
           onCreativeUpload={() => handleCreativeUploadSuccess(uploadFeedback || "Your artwork is amazing! I love the colors and creativity you've shown. You're a wonderful artist!")} 
           uploadFeedback={uploadFeedback}
         />;
       case 'task':
         return <TaskBlock 
-          content={block.content} 
+          title={block.content?.title}
+          description={block.content?.description}
+          steps={block.content?.steps || []}
+          specialistId={block.specialist_id}
           onTaskComplete={onTaskComplete || (() => {})}
         />;
       case 'riddle':
         return <RiddleBlock 
-          content={block.content}
+          question={block.content?.question}
+          answer={block.content?.answer}
+          hint={block.content?.hint}
+          specialistId={block.specialist_id}
         />;
       case 'news':
         return <NewsBlock 
-          content={block.content} 
+          headline={block.content?.headline}
+          summary={block.content?.summary}
+          body={block.content?.body}
+          source={block.content?.source}
+          date={block.content?.date}
+          specialistId={block.specialist_id}
           onNewsRead={onNewsRead || (() => {})}
         />;
       case 'activity':
         return <ActivityBlock 
-          content={block.content} 
+          title={block.content?.title}
+          instructions={block.content?.instructions}
+          steps={block.content?.steps || []}
+          specialistId={block.specialist_id}
           onActivityComplete={onActivityComplete || (() => {})}
         />;
       case 'mindfulness':
         return <MindfulnessBlock 
-          content={block.content} 
+          title={block.content?.title}
+          instruction={block.content?.instruction}
+          duration={block.content?.duration}
+          specialistId={block.specialist_id}
           onMindfulnessComplete={onMindfulnessComplete || (() => {})}
         />;
       default:
@@ -483,7 +513,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     }
   };
   
-  if (block.id.startsWith('generating-') && !isFirstBlock) {
+  if (block.id?.startsWith('generating-') && !isFirstBlock) {
     return null;
   }
 
@@ -512,11 +542,11 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         )}
         
         <BlockHeader 
-          type={block.type}
           specialistId={block.specialist_id} 
           blockTitle={blockTitle}
           blockType={block.type}
           narrativePosition={narrativePosition}
+          type={block.type}
         />
         
         {isFirstBlock && (
@@ -567,13 +597,13 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         />
         
         <BlockInteractions
-          blockId={block.id}
+          id={block.id}
           liked={block.liked}
           bookmarked={block.bookmarked}
-          onToggleLike={onToggleLike}
-          onToggleBookmark={onToggleBookmark}
+          onToggleLike={() => onToggleLike(block.id)}
+          onToggleBookmark={() => onToggleBookmark(block.id)}
           setShowReplyForm={setShowReplyForm}
-          blockType={block.type}
+          type={block.type}
         />
         
         {showReplyForm && (

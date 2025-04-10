@@ -178,8 +178,8 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
                 onLike={handleToggleLike ? () => handleToggleLike(block.id) : undefined}
                 onBookmark={handleToggleBookmark ? () => handleToggleBookmark(block.id) : undefined}
                 onReply={handleReply ? (message) => handleReply(block.id, message) : undefined}
-                onUpload={handleCreativeUpload ? 
-                  (content) => handleCreativeUpload(block.id, content) : 
+                onCreativeUpload={handleCreativeUpload ? 
+                  () => handleCreativeUpload(block.id, {}) : 
                   undefined
                 }
                 onRabbitHoleClick={handleRabbitHoleClick}
@@ -197,7 +197,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
                 onLike={handleToggleLike ? () => handleToggleLike(block.id) : undefined}
                 onBookmark={handleToggleBookmark ? () => handleToggleBookmark(block.id) : undefined}
                 onReply={handleReply ? (message) => handleReply(block.id, message) : undefined}
-                onComplete={handleActivityComplete ? 
+                onActivityComplete={handleActivityComplete ? 
                   () => handleActivityComplete(block.id) : 
                   undefined
                 }
@@ -216,7 +216,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
                 onLike={handleToggleLike ? () => handleToggleLike(block.id) : undefined}
                 onBookmark={handleToggleBookmark ? () => handleToggleBookmark(block.id) : undefined}
                 onReply={handleReply ? (message) => handleReply(block.id, message) : undefined}
-                onComplete={handleMindfulnessComplete ? 
+                onMindfulnessComplete={handleMindfulnessComplete ? 
                   () => handleMindfulnessComplete(block.id) : 
                   undefined
                 }
@@ -237,7 +237,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
                 onLike={handleToggleLike ? () => handleToggleLike(block.id) : undefined}
                 onBookmark={handleToggleBookmark ? () => handleToggleBookmark(block.id) : undefined}
                 onReply={handleReply ? (message) => handleReply(block.id, message) : undefined}
-                onRead={handleNewsRead ? 
+                onNewsRead={handleNewsRead ? 
                   () => handleNewsRead(block.id) : 
                   undefined
                 }

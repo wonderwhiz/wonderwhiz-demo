@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,7 +8,6 @@ import InteractiveSearchBar from '@/components/dashboard/SearchBar';
 import QuickAnswer from '@/components/curio/QuickAnswer';
 import { TableOfContents } from '@/components/curio/TableOfContents';
 import ProgressVisualization from '@/components/curio/ProgressVisualization';
-import { Chapter } from '@/types/Chapter';
 import IllustratedContentBlock from '@/components/content-blocks/IllustratedContentBlock';
 
 interface ContentBlock {
@@ -63,6 +63,17 @@ interface CurioContentProps {
   generationError?: string | null;
 }
 
+// Define the ChapterIconType here instead of importing it
+export type ChapterIconType = 
+  | 'introduction' 
+  | 'exploration' 
+  | 'understanding' 
+  | 'challenge' 
+  | 'creation' 
+  | 'reflection' 
+  | 'nextSteps';
+
+// Define a local Chapter interface
 interface Chapter {
   id: string;
   title: string;
@@ -94,7 +105,33 @@ const CurioContent: React.FC<CurioContentProps> = ({
   onRefresh,
   generationError
 }) => {
-  // ... rest of the code remains unchanged
+  // Just return a simple placeholder until we implement this component fully
+  return (
+    <div className="space-y-6">
+      {currentCurio && (
+        <h3 className="text-xl font-semibold">{currentCurio.title}</h3>
+      )}
+      
+      <CurioBlockList
+        blocks={contentBlocks}
+        animateBlocks={true}
+        hasMoreBlocks={hasMoreBlocks}
+        loadingMoreBlocks={loadingBlocks}
+        searchQuery={""}
+        profileId={profileId}
+        isFirstLoad={true}
+        handleToggleLike={onToggleLike}
+        handleToggleBookmark={onToggleBookmark}
+        handleReply={onReply}
+        handleQuizCorrect={onQuizCorrect}
+        handleNewsRead={onNewsRead}
+        handleCreativeUpload={onCreativeUpload}
+        handleRabbitHoleClick={onRabbitHoleFollow}
+        generationError={generationError}
+        onRefresh={onRefresh}
+      />
+    </div>
+  );
 };
 
 export default CurioContent;

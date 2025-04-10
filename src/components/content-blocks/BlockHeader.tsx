@@ -1,102 +1,109 @@
 
 import React from 'react';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Globe, 
-  Star, 
-  Activity, 
-  Sparkles, 
-  Sun, 
-  Newspaper, 
-  BookOpen
-} from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getSpecialistName, getSpecialistAvatarUrl } from './utils/specialistUtils';
 
 export interface BlockHeaderProps {
-  type: string;
   specialistId: string;
-  tag?: string;
   blockTitle?: string;
-  blockType?: any;
-  narrativePosition?: "end" | "middle" | "beginning";
+  blockType?: string;
+  narrativePosition?: 'beginning' | 'middle' | 'end';
+  type: string;
 }
 
-const BlockHeader: React.FC<BlockHeaderProps> = ({ 
-  type, 
-  specialistId, 
-  tag,
+const BlockHeader: React.FC<BlockHeaderProps> = ({
+  specialistId,
   blockTitle,
   blockType,
-  narrativePosition 
+  narrativePosition,
+  type
 }) => {
-  const getIconForType = () => {
-    const typeToCheck = blockType || type;
+  const specialistName = getSpecialistName(specialistId);
+  const specialistRole = getSpecialistRole(specialistId, type);
+  const avatarUrl = getSpecialistAvatarUrl(specialistId);
+  
+  const getSpecialistEmoji = () => {
+    switch (specialistId) {
+      case 'nova': return '🚀';
+      case 'spark': return '✨';
+      case 'prism': return '🔬';
+      case 'pixel': return '💻';
+      case 'atlas': return '🗺️';
+      case 'lotus': return '🌱';
+      default: return '🧠';
+    }
+  };
+  
+  const getThoughtBubble = () => {
+    if (!narrativePosition || narrativePosition !== 'beginning') return null;
     
-    switch(typeToCheck) {
-      case 'Fact':
-      case 'fact': return <Globe className="h-4 w-4" />;
-      case 'Fun Fact':
-      case 'funFact': return <Star className="h-4 w-4" />;
-      case 'Quiz':
-      case 'quiz': return <Activity className="h-4 w-4" />;
-      case 'Creative':
-      case 'creative': return <Sparkles className="h-4 w-4" />;
-      case 'Mindfulness':
-      case 'mindfulness': return <Sun className="h-4 w-4" />;
-      case 'News':
-      case 'news': return <Newspaper className="h-4 w-4" />;
-      case 'Flashcard':
-      case 'flashcard': return <BookOpen className="h-4 w-4" />;
-      default: return <Star className="h-4 w-4" />;
+    let thought = '';
+    
+    switch (blockType) {
+      case 'fact':
+        thought = "Let's start our cosmic journey of discovery!";
+        break;
+      case 'quiz':
+        thought = "Think carefully about what we've learned so far!";
+        break;
+      case 'creative':
+        thought = "Let's express our learning through creativity!";
+        break;
+      case 'mindfulness':
+        thought = "Let's take a moment to reflect and connect with what we're learning.";
+        break;
+      default:
+        thought = "I'm excited to explore this with you!";
     }
+    
+    return (
+      <div className="text-xs text-white/60 mb-2">
+        {thought}
+      </div>
+    );
   };
-  
-  const getSpecialistName = (id: string) => {
-    switch(id) {
-      case 'nova': return 'Nova';
-      case 'spark': return 'Spark';
-      case 'prism': return 'Prism';
-      case 'pixel': return 'Pixel';
-      case 'atlas': return 'Atlas';
-      case 'lotus': return 'Lotus';
-      default: return 'Specialist';
-    }
-  };
-  
-  const getSpecialistColor = (id: string) => {
-    switch(id) {
-      case 'nova': return 'bg-indigo-800/60';
-      case 'spark': return 'bg-orange-800/60';
-      case 'prism': return 'bg-pink-800/60';
-      case 'pixel': return 'bg-blue-800/60';
-      case 'atlas': return 'bg-amber-800/60';
-      case 'lotus': return 'bg-green-800/60';
-      default: return 'bg-gray-800/60';
-    }
-  };
-  
-  // Use provided blockTitle or fall back to type
-  const displayTitle = blockTitle || type;
   
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-      <div className="flex items-center space-x-2">
-        <Badge variant="outline" className="bg-white/10 border-none text-white/80 hover:bg-white/20">
-          <span className="mr-1">{getIconForType()}</span>
-          {displayTitle}
-        </Badge>
+    <div className="p-3 pb-2 border-b border-white/10">
+      <div className="flex items-center">
+        <div className="mr-3 relative">
+          <Avatar className="h-10 w-10 border-2 border-white/20">
+            <AvatarImage src={avatarUrl} />
+            <AvatarFallback>{getSpecialistEmoji()}</AvatarFallback>
+          </Avatar>
+        </div>
         
-        {tag && (
-          <Badge variant="outline" className="bg-violet-900/40 border-none text-white/80 hover:bg-violet-900/60">
-            {tag}
-          </Badge>
-        )}
+        <div>
+          <div className="flex items-center gap-1">
+            <span className="font-semibold text-white">{specialistName}</span>
+            <span className="text-white/50">•</span>
+          </div>
+          <p className="text-white/60 text-xs">{specialistRole}</p>
+        </div>
       </div>
       
-      <Badge className={`${getSpecialistColor(specialistId)} border-none text-white`}>
-        {getSpecialistName(specialistId)}
-      </Badge>
+      {getThoughtBubble()}
     </div>
   );
 };
+
+function getSpecialistRole(specialistId: string, blockType: string): string {
+  switch (specialistId) {
+    case 'nova':
+      return 'Space Expert';
+    case 'spark':
+      return blockType === 'creative' ? 'Imagination Catalyst' : 'Creative Genius';
+    case 'prism':
+      return 'Science Whiz';
+    case 'pixel':
+      return 'Tech Guru';
+    case 'atlas':
+      return 'History Explorer';
+    case 'lotus':
+      return 'Nature Guide';
+    default:
+      return 'Wonder Specialist';
+  }
+}
 
 export default BlockHeader;
