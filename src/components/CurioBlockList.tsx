@@ -26,9 +26,9 @@ interface CurioBlockListProps {
   handleToggleLike: (blockId: string) => void;
   handleToggleBookmark: (blockId: string) => void;
   handleReply: (blockId: string, message: string) => void;
-  handleQuizCorrect: (blockId: string, isCorrect: boolean) => void;
+  handleQuizCorrect: (blockId: string, isCorrect?: boolean) => void;
   handleNewsRead: (blockId: string) => void;
-  handleCreativeUpload: (blockId: string, fileUrl: string) => void;
+  handleCreativeUpload: (blockId: string, fileUrl?: string) => void;
   handleTaskComplete: (blockId: string) => void;
   handleActivityComplete: (blockId: string) => void;
   handleMindfulnessComplete: (blockId: string) => void;

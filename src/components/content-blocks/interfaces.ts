@@ -20,7 +20,7 @@ export interface CreativeBlockProps extends BaseBlockProps {
     guidelines?: string;
     examples?: any[];
   };
-  onCreativeUpload?: () => void;
+  onCreativeUpload?: (fileUrl: string) => void;
   uploadFeedback?: string | null;
   curioId?: string;
 }
@@ -52,6 +52,7 @@ export interface NewsBlockProps extends BaseBlockProps {
     body?: string;
     source: string;
     date?: string;
+    imageUrl?: string;
   };
   onNewsRead?: () => void;
 }
@@ -62,6 +63,7 @@ export interface ActivityBlockProps extends BaseBlockProps {
     title?: string;
     instructions?: string;
     steps?: string[];
+    materials?: string[];
   };
   onActivityComplete?: () => void;
 }
@@ -72,6 +74,7 @@ export interface MindfulnessBlockProps extends BaseBlockProps {
     duration: number;
     title?: string;
     instruction?: string;
+    audioUrl?: string;
   };
   onMindfulnessComplete?: () => void;
 }

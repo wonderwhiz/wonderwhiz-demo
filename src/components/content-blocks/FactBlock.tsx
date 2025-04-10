@@ -56,7 +56,7 @@ const FactBlock: React.FC<FactBlockProps> = ({
         }
       }
     }
-  }, [fact, expanded, updateHeight, prevHeight, initialMeasurementDone, rabbitHoles]);
+  }, [fact, expanded, updateHeight, prevHeight, initialMeasurementDone, rabbitHoles.length]);
   
   const handleRabbitHoleClick = (question: string) => {
     if (onRabbitHoleClick && typeof onRabbitHoleClick === 'function') {

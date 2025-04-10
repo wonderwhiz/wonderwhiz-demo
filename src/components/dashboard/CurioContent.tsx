@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,7 +13,7 @@ import { ContentBlock as CurioContentBlock } from '@/types/curio';
 
 interface ContentBlock {
   id: string;
-  type: 'fact' | 'quiz' | 'flashcard' | 'creative' | 'task' | 'riddle' | 'funFact' | 'activity' | 'news' | 'mindfulness';
+  type: 'fact' | 'quiz' | 'flashcard' | 'creative' | 'task' | 'riddle' | 'funFact' | 'activity' | 'news' | 'mindfulness' | 'illustrated';
   specialist_id: string;
   content: any;
   liked: boolean;
@@ -127,9 +128,9 @@ const CurioContent: React.FC<CurioContentProps> = ({
         handleToggleLike={onToggleLike}
         handleToggleBookmark={onToggleBookmark}
         handleReply={onReply}
-        handleQuizCorrect={onQuizCorrect}
+        handleQuizCorrect={(blockId, isCorrect) => onQuizCorrect(blockId)}
         handleNewsRead={onNewsRead}
-        handleCreativeUpload={onCreativeUpload}
+        handleCreativeUpload={(blockId, fileUrl) => onCreativeUpload(blockId)}
         handleTaskComplete={() => {}} 
         handleActivityComplete={() => {}}
         handleMindfulnessComplete={() => {}}
