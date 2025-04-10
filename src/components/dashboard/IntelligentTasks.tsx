@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, Star, Clock, Sparkles, Brain, Award, Zap, Lightbulb, BookOpen, Bell, ChevronDown, Rocket } from 'lucide-react';
@@ -385,7 +386,7 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
                 whileHover={{ scale: 1.02, x: 2 }}
                 whileTap={{ scale: 0.98 }}
                 animate={completingTaskId === task.id ? "animate" : "initial"}
-                variants={completingTaskId === task.id ? completionVariants : undefined}
+                {...(completingTaskId === task.id ? { variants: completionVariants } : {})}
                 onClick={() => handleParentTaskCompletion(task.id)}
                 className="p-3 rounded-lg cursor-pointer transition-all relative overflow-hidden group bg-gradient-to-r from-wonderwhiz-bright-pink/10 to-wonderwhiz-bright-pink/5 border border-wonderwhiz-bright-pink/30 hover:border-wonderwhiz-bright-pink/50"
               >
@@ -436,7 +437,7 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
                 whileHover={{ scale: 1.02, x: 2 }}
                 whileTap={{ scale: 0.98 }}
                 animate={completingTaskId === task.id ? "animate" : "initial"}
-                variants={completingTaskId === task.id ? completionVariants : undefined}
+                {...(completingTaskId === task.id ? { variants: completionVariants } : {})}
                 onClick={() => handleSystemTaskClick(task)}
                 className={cn(
                   "p-3 rounded-lg cursor-pointer transition-all relative overflow-hidden group border",
@@ -518,7 +519,7 @@ const IntelligentTasks: React.FC<IntelligentTasksProps> = ({
                   whileHover={{ scale: 1.02, x: 2 }}
                   whileTap={{ scale: 0.98 }}
                   animate={completingTaskId === task.id ? "animate" : "initial"}
-                  variants={completingTaskId === task.id ? completionVariants : undefined}
+                  {...(completingTaskId === task.id ? { variants: completionVariants } : {})}
                   onClick={() => handleParentTaskCompletion(task.id)}
                   className="p-3 rounded-lg cursor-pointer transition-all relative overflow-hidden group bg-gradient-to-r from-wonderwhiz-bright-pink/10 to-wonderwhiz-bright-pink/5 border border-wonderwhiz-bright-pink/30 hover:border-wonderwhiz-bright-pink/50"
                 >
