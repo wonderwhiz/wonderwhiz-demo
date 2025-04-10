@@ -1,162 +1,97 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Brain, Book, Mountain, Palette, LightbulbIcon, Map } from 'lucide-react';
-
-export type ChapterIconType = 'introduction' | 'exploration' | 'understanding' | 'challenge' | 'creation' | 'reflection' | 'nextSteps';
-
-export interface Chapter {
-  id: string;
-  title: string;
-  description: string;
-  icon: ChapterIconType;
-  isCompleted: boolean;
-  isActive: boolean;
-}
+import { Chapter } from '@/types/Chapter';
+import { 
+  BookOpen, 
+  Compass, 
+  Brain, 
+  PuzzlePiece, 
+  Palette, 
+  Feather, 
+  ArrowRight,
+  Globe
+} from 'lucide-react';
 
 interface TableOfContentsProps {
   chapters: Chapter[];
   onChapterClick: (chapterId: string) => void;
-  ageGroup: '5-7' | '8-11' | '12-16';
+  ageGroup?: '5-7' | '8-11' | '12-16';
 }
 
 const TableOfContents: React.FC<TableOfContentsProps> = ({ 
   chapters, 
   onChapterClick,
-  ageGroup
+  ageGroup = '8-11' 
 }) => {
-  // Render the appropriate icon based on chapter type
-  const renderIcon = (iconType: ChapterIconType) => {
-    switch(iconType) {
-      case 'introduction':
-        return <LightbulbIcon className="w-4 h-4 sm:w-5 sm:h-5 text-wonderwhiz-vibrant-yellow" />;
-      case 'exploration':
-        return <Mountain className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />;
-      case 'understanding':
-        return <Book className="w-4 h-4 sm:w-5 sm:h-5 text-wonderwhiz-cyan" />;
-      case 'challenge':
-        return <Brain className="w-4 h-4 sm:w-5 sm:h-5 text-wonderwhiz-bright-pink" />;
-      case 'creation':
-        return <Palette className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />;
-      case 'reflection':
-        return <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-wonderwhiz-gold" />;
-      case 'nextSteps':
-        return <Map className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-400" />;
-      default:
-        return <LightbulbIcon className="w-4 h-4 sm:w-5 sm:h-5 text-wonderwhiz-vibrant-yellow" />;
+  const getIconForChapter = (iconName: string) => {
+    switch(iconName) {
+      case 'introduction': return <BookOpen className="h-5 w-5" />;
+      case 'exploration': return <Compass className="h-5 w-5" />;
+      case 'understanding': return <Brain className="h-5 w-5" />;
+      case 'challenge': return <PuzzlePiece className="h-5 w-5" />;
+      case 'creation': return <Palette className="h-5 w-5" />;
+      case 'reflection': return <Feather className="h-5 w-5" />;
+      case 'nextSteps': return <ArrowRight className="h-5 w-5" />;
+      default: return <Globe className="h-5 w-5" />;
     }
   };
-
-  // Adapt UI based on age group
-  const getAgeGroupStyles = () => {
-    switch(ageGroup) {
-      case '5-7':
-        return {
-          title: "text-base font-bold",
-          fontSize: "text-xs"
-        };
-      case '12-16':
-        return {
-          title: "text-lg font-semibold",
-          fontSize: "text-sm"
-        };
-      default: // 8-11
-        return {
-          title: "text-base font-semibold",
-          fontSize: "text-xs"
-        };
-    }
-  };
-
-  const styles = getAgeGroupStyles();
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="mb-5"
+      transition={{ duration: 0.5 }}
+      className="mb-8 bg-white/5 backdrop-blur-sm p-4 rounded-lg border border-white/10"
     >
-      <h3 className={`mb-3 text-white ${styles.title} font-nunito flex items-center`}>
-        <div className="w-6 h-1 bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-vibrant-yellow rounded-full mr-2"></div>
-        Your Learning Journey
-      </h3>
+      <h2 className={`mb-4 font-bold text-white ${ageGroup === '5-7' ? 'text-xl' : 'text-lg'}`}>
+        Your Wonder Journey
+      </h2>
       
-      {/* Desktop version - horizontal display */}
-      <div className="hidden md:flex overflow-x-auto pb-2 -mx-2 px-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-        <div className="flex space-x-2">
-          {chapters.map((chapter, index) => (
-            <motion.button
-              key={chapter.id}
-              onClick={() => onChapterClick(chapter.id)}
-              className={`flex-shrink-0 flex flex-col items-center p-2.5 rounded-lg transition-all duration-200 ${
-                chapter.isActive 
-                  ? 'bg-white/15 border border-white/20 shadow-sm shadow-wonderwhiz-bright-pink/5' 
-                  : chapter.isCompleted 
-                    ? 'hover:bg-white/10 border border-white/10' 
-                    : 'hover:bg-white/5 border border-white/5'
-              }`}
-              whileHover={{ scale: 1.02, y: -2 }}
-              whileTap={{ scale: 0.98 }}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2, delay: index * 0.05 }}
-            >
-              <div className={`${
-                chapter.isCompleted ? 'bg-white/15' : 'bg-white/5'
-              } rounded-full p-2 mb-1.5 transition-colors duration-200`}>
-                {renderIcon(chapter.icon)}
-              </div>
-              <span className="text-white font-medium text-xs mb-0.5 font-nunito">{chapter.title}</span>
-              <span className="text-white/50 text-[10px] text-center max-w-[90px] font-inter">{chapter.description}</span>
-              
-              {chapter.isCompleted && (
-                <div className="mt-1.5 text-[10px] px-1.5 py-0.5 bg-wonderwhiz-vibrant-yellow/10 text-wonderwhiz-vibrant-yellow rounded-full">
-                  ✓
-                </div>
-              )}
-            </motion.button>
-          ))}
-        </div>
-      </div>
-      
-      {/* Mobile version - vertical compact list */}
-      <div className="md:hidden space-y-1">
+      <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
         {chapters.map((chapter, index) => (
-          <motion.button
+          <motion.li
             key={chapter.id}
-            onClick={() => onChapterClick(chapter.id)}
-            className={`w-full flex items-center p-2 rounded-lg transition-all duration-200 ${
-              chapter.isActive 
-                ? 'bg-white/15 border border-white/20' 
-                : chapter.isCompleted 
-                  ? 'hover:bg-white/10 border border-white/10' 
-                  : 'hover:bg-white/5 border border-white/5'
-            }`}
-            whileTap={{ scale: 0.98 }}
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2, delay: index * 0.03 }}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.1, duration: 0.3 }}
           >
-            <div className={`${
-              chapter.isCompleted ? 'bg-white/15' : 'bg-white/5'
-            } rounded-full p-1.5 mr-2.5 flex-shrink-0 transition-colors duration-200`}>
-              {renderIcon(chapter.icon)}
-            </div>
-            <div className="flex-grow text-left">
-              <div className="text-white text-xs font-medium font-nunito">{chapter.title}</div>
-              <div className="text-white/50 text-[10px] font-inter">{chapter.description}</div>
-            </div>
-            {chapter.isCompleted && (
-              <div className="ml-1.5 text-[10px] px-1.5 py-0.5 bg-wonderwhiz-vibrant-yellow/10 text-wonderwhiz-vibrant-yellow rounded-full flex-shrink-0">
-                ✓
+            <button
+              onClick={() => onChapterClick(chapter.id)}
+              className={`w-full text-left p-3 rounded-md flex items-center space-x-3 transition-all
+                ${chapter.isActive 
+                  ? 'bg-indigo-600 text-white' 
+                  : chapter.isCompleted 
+                    ? 'bg-indigo-900/40 text-white/80 hover:bg-indigo-900/60' 
+                    : 'bg-white/5 text-white/50 hover:bg-white/10'
+                }
+              `}
+            >
+              <div className={`rounded-full p-2 
+                ${chapter.isActive 
+                  ? 'bg-indigo-700' 
+                  : chapter.isCompleted 
+                    ? 'bg-indigo-900/60' 
+                    : 'bg-white/10'
+                }`}
+              >
+                {getIconForChapter(chapter.icon)}
               </div>
-            )}
-          </motion.button>
+              <div>
+                <h3 className={`font-medium ${ageGroup === '5-7' ? 'text-base' : 'text-sm'}`}>
+                  {chapter.title}
+                </h3>
+                <p className={`${ageGroup === '5-7' ? 'text-sm' : 'text-xs'} opacity-80`}>
+                  {chapter.description}
+                </p>
+              </div>
+            </button>
+          </motion.li>
         ))}
-      </div>
+      </ul>
     </motion.div>
   );
 };
 
-export default TableOfContents;
+export { TableOfContents };
+export type { Chapter };

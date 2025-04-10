@@ -32,12 +32,12 @@ const SimplifiedCurioPage: React.FC = () => {
   const { blocks, isLoading: isLoadingBlocks, error: blocksError, hasMore, loadMore, isFirstLoad } = useCurioBlocks(childId, curioId, searchQuery);
   const { generateContent, isGenerating } = useDynamicContentGeneration();
   const { 
+    handleToggleLike,
+    handleToggleBookmark,
     handleReply,
     handleQuizCorrect,
     handleNewsRead,
     handleCreativeUpload,
-    handleToggleLike,
-    handleToggleBookmark,
     handleActivityComplete,
     handleMindfulnessComplete,
     handleTaskComplete

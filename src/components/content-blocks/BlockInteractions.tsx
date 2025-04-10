@@ -1,172 +1,149 @@
 
 import React, { useState } from 'react';
-import { Heart, Bookmark, MessageSquare, ThumbsUp, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { motion, AnimatePresence } from 'framer-motion';
-import { toast } from 'sonner';
+import { Textarea } from '@/components/ui/textarea';
+import { 
+  Heart, 
+  Bookmark, 
+  MessageSquare, 
+  Share2, 
+  Send, 
+  X,
+  Rocket
+} from 'lucide-react';
 
 interface BlockInteractionsProps {
-  blockId: string;
-  liked: boolean;
-  bookmarked: boolean;
-  onToggleLike: (blockId: string) => void;
-  onToggleBookmark: (blockId: string) => void;
-  setShowReplyForm: React.Dispatch<React.SetStateAction<boolean>>;
-  blockType?: string;
+  onLike?: () => void;
+  onBookmark?: () => void;
+  onReply?: (message: string) => void;
+  onRabbitHoleClick?: (question: string) => void;
+  relatedQuestions?: string[];
 }
 
 const BlockInteractions: React.FC<BlockInteractionsProps> = ({
-  blockId,
-  liked,
-  bookmarked,
-  onToggleLike,
-  onToggleBookmark,
-  setShowReplyForm,
-  blockType
+  onLike,
+  onBookmark,
+  onReply,
+  onRabbitHoleClick,
+  relatedQuestions = []
 }) => {
-  // Check if this is one of the interactive blocks where replies make sense
-  const allowsReplies = !['task', 'activity', 'mindfulness'].includes(blockType || '');
+  const [showReplyBox, setShowReplyBox] = useState(false);
+  const [reply, setReply] = useState('');
+  const [showRelatedQuestions, setShowRelatedQuestions] = useState(false);
   
-  const [showRewardAnimation, setShowRewardAnimation] = useState(false);
-  
-  // Handle like with micro-celebration
-  const handleLike = () => {
-    onToggleLike(blockId);
-    
-    if (!liked) {
-      setShowRewardAnimation(true);
-      setTimeout(() => setShowRewardAnimation(false), 1500);
-      
-      if (Math.random() > 0.7) {
-        // Sometimes give a spark for liking content
-        toast.success('You earned a spark for appreciating this content!', {
-          icon: '✨',
-          position: 'bottom-right',
-          duration: 3000
-        });
-      }
+  const handleReplySubmit = () => {
+    if (reply.trim() && onReply) {
+      onReply(reply);
+      setReply('');
+      setShowReplyBox(false);
     }
   };
   
-  // Fixed the implementation to properly toggle the reply form
-  const handleReplyClick = () => {
-    setShowReplyForm(prev => !prev);
-  };
-  
-  // Handle share functionality
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: 'Check out this WonderWhiz card!',
-        text: 'I found something amazing on WonderWhiz!',
-        url: window.location.href,
-      })
-      .then(() => console.log('Successful share'))
-      .catch((error) => console.log('Error sharing:', error));
-    } else {
-      // Fallback for browsers that don't support share API
-      toast.success('Link copied to clipboard!', {
-        icon: '🔗',
-        position: 'bottom-right',
-        duration: 2000
-      });
-      
-      // Copy to clipboard
-      const dummy = document.createElement('textarea');
-      document.body.appendChild(dummy);
-      dummy.value = window.location.href;
-      dummy.select();
-      document.execCommand('copy');
-      document.body.removeChild(dummy);
-    }
-  };
-
   return (
-    <div className="relative">
-      <AnimatePresence>
-        {showRewardAnimation && (
-          <motion.div 
-            className="absolute -top-16 right-0 left-0 flex justify-center"
-            initial={{ opacity: 0, y: 10, scale: 0.8 }}
-            animate={{ opacity: 1, y: -10, scale: 1 }}
-            exit={{ opacity: 0, y: -30, scale: 0.8 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="bg-wonderwhiz-gold/20 backdrop-blur-sm text-wonderwhiz-gold px-3 py-1.5 rounded-full text-sm flex items-center">
-              <ThumbsUp className="h-4 w-4 mr-1" />
-              <span>Great choice!</span>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      
-      <div className="flex items-center justify-end mt-3 gap-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleLike}
-          className={`text-xs text-white/70 hover:text-white hover:bg-white/10 ${liked ? 'text-pink-400 hover:text-pink-300' : ''}`}
-        >
-          <motion.div
-            animate={liked ? { scale: [1, 1.3, 1] } : {}}
-            transition={{ duration: 0.3 }}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-          >
-            <Heart className="h-4 w-4 mr-1" fill={liked ? 'currentColor' : 'none'} />
-          </motion.div>
-          Like
-        </Button>
-        
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onToggleBookmark(blockId)}
-          className={`text-xs text-white/70 hover:text-white hover:bg-white/10 ${bookmarked ? 'text-amber-400 hover:text-amber-300' : ''}`}
-        >
-          <motion.div
-            animate={bookmarked ? { scale: [1, 1.3, 1] } : {}}
-            transition={{ duration: 0.3 }}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-          >
-            <Bookmark className="h-4 w-4 mr-1" fill={bookmarked ? 'currentColor' : 'none'} />
-          </motion.div>
-          Save
-        </Button>
-        
-        {allowsReplies && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleReplyClick}
-            className="text-xs text-white/70 hover:text-white hover:bg-white/10"
-          >
-            <motion.div
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
+    <div className="border-t border-white/10">
+      <div className="flex items-center justify-between px-4 py-2">
+        <div className="flex items-center space-x-1">
+          {onLike && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onLike}
+              className="text-white/60 hover:text-white hover:bg-white/10"
+            >
+              <Heart className="h-4 w-4 mr-1" />
+              <span className="text-xs">Like</span>
+            </Button>
+          )}
+          
+          {onBookmark && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onBookmark}
+              className="text-white/60 hover:text-white hover:bg-white/10"
+            >
+              <Bookmark className="h-4 w-4 mr-1" />
+              <span className="text-xs">Save</span>
+            </Button>
+          )}
+          
+          {onReply && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setShowReplyBox(!showReplyBox)}
+              className="text-white/60 hover:text-white hover:bg-white/10"
             >
               <MessageSquare className="h-4 w-4 mr-1" />
-            </motion.div>
-            Reply
+              <span className="text-xs">Reply</span>
+            </Button>
+          )}
+        </div>
+        
+        {relatedQuestions && relatedQuestions.length > 0 && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setShowRelatedQuestions(!showRelatedQuestions)}
+            className="text-white/60 hover:text-white hover:bg-white/10"
+          >
+            <Rocket className="h-4 w-4 mr-1" />
+            <span className="text-xs">Explore</span>
           </Button>
         )}
-        
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleShare}
-          className="text-xs text-white/70 hover:text-white hover:bg-white/10"
-        >
-          <motion.div
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-          >
-            <Share2 className="h-4 w-4 mr-1" />
-          </motion.div>
-          Share
-        </Button>
       </div>
+      
+      {showReplyBox && (
+        <div className="px-4 py-2 border-t border-white/10">
+          <Textarea 
+            value={reply}
+            onChange={(e) => setReply(e.target.value)}
+            placeholder="Write your thoughts..."
+            className="mb-2 bg-white/5 border-white/10 text-white"
+            rows={2}
+          />
+          <div className="flex justify-end space-x-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setShowReplyBox(false)}
+              className="text-white/60 hover:text-white hover:bg-white/10"
+            >
+              <X className="h-4 w-4 mr-1" />
+              <span className="text-xs">Cancel</span>
+            </Button>
+            <Button 
+              size="sm" 
+              onClick={handleReplySubmit}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+              disabled={!reply.trim()}
+            >
+              <Send className="h-4 w-4 mr-1" />
+              <span className="text-xs">Send</span>
+            </Button>
+          </div>
+        </div>
+      )}
+      
+      {showRelatedQuestions && relatedQuestions.length > 0 && (
+        <div className="px-4 py-2 border-t border-white/10 bg-indigo-950/30">
+          <h4 className="text-sm font-medium text-white/80 mb-2">Related Questions</h4>
+          <div className="space-y-2">
+            {relatedQuestions.map((question, index) => (
+              <Button 
+                key={index}
+                variant="outline" 
+                size="sm" 
+                className="bg-white/5 border-white/10 text-white w-full justify-start text-left"
+                onClick={() => onRabbitHoleClick?.(question)}
+              >
+                <Rocket className="h-3 w-3 mr-2 text-indigo-400" />
+                <span className="text-xs truncate">{question}</span>
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

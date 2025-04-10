@@ -1,8 +1,9 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Download, Share2, Trophy, Sparkles } from 'lucide-react';
+import { Award, Download, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 
 interface LearningCertificateProps {
   learnerName: string;
@@ -10,7 +11,7 @@ interface LearningCertificateProps {
   date: string;
   onDownload: () => void;
   onShare: () => void;
-  ageGroup: '5-7' | '8-11' | '12-16';
+  ageGroup?: '5-7' | '8-11' | '12-16';
 }
 
 const LearningCertificate: React.FC<LearningCertificateProps> = ({
@@ -19,119 +20,55 @@ const LearningCertificate: React.FC<LearningCertificateProps> = ({
   date,
   onDownload,
   onShare,
-  ageGroup
+  ageGroup = '8-11'
 }) => {
-  // Generate different certificate styles based on age group
-  const getCertificateStyle = () => {
-    switch(ageGroup) {
-      case '5-7':
-        return {
-          border: "border-4 border-dashed",
-          colors: "from-wonderwhiz-vibrant-yellow via-wonderwhiz-bright-pink to-wonderwhiz-cyan",
-          fontSize: "text-xl sm:text-2xl",
-          decorations: true,
-          iconSize: "w-8 h-8 sm:w-10 sm:h-10"
-        };
-      case '12-16':
-        return {
-          border: "border-2",
-          colors: "from-indigo-500 to-blue-600",
-          fontSize: "text-lg sm:text-xl",
-          decorations: false,
-          iconSize: "w-5 h-5 sm:w-6 sm:h-6"
-        };
-      default: // 8-11
-        return {
-          border: "border-3",
-          colors: "from-wonderwhiz-bright-pink to-wonderwhiz-vibrant-yellow",
-          fontSize: "text-xl sm:text-2xl",
-          decorations: true,
-          iconSize: "w-6 h-6 sm:w-8 sm:h-8"
-        };
-    }
-  };
-  
-  const style = getCertificateStyle();
-
-  // Animation variants for the stars
-  const starVariants = {
-    animate: {
-      scale: [1, 1.2, 1],
-      opacity: [0.7, 1, 0.7],
-      transition: {
-        duration: 2,
-        repeat: Infinity,
-        repeatType: "reverse" as const
-      }
-    }
-  };
-
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.8, type: "spring" }}
-      className="mb-12 mt-8"
+      initial={{ opacity: 0, y: 50 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+      className="my-12"
     >
-      <div className={`relative bg-white/5 backdrop-blur-md ${style.border} border-gradient-to-r ${style.colors} rounded-lg p-6 sm:p-8 max-w-xl mx-auto`}>
-        {/* Decorative elements */}
-        {style.decorations && (
-          <>
-            <motion.div
-              className="absolute -top-3 -right-3 text-wonderwhiz-vibrant-yellow"
-              variants={starVariants}
-              animate="animate"
-            >
-              <Sparkles className={style.iconSize} />
-            </motion.div>
-            <motion.div
-              className="absolute -bottom-3 -left-3 text-wonderwhiz-bright-pink"
-              variants={starVariants}
-              animate="animate"
-              transition={{ delay: 0.5 }}
-            >
-              <Sparkles className={style.iconSize} />
-            </motion.div>
-          </>
-        )}
+      <Card className="relative p-8 border-2 border-indigo-500/30 overflow-hidden bg-gradient-to-b from-indigo-950/80 to-purple-950/80 backdrop-blur-lg">
+        <div className="absolute top-0 left-0 w-full h-full bg-[url('/certificate-bg.png')] opacity-10 mix-blend-overlay"></div>
         
-        <div className="text-center">
-          <div className="flex justify-center mb-3">
-            <div className="bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-vibrant-yellow p-3 rounded-full">
-              <Trophy className="h-6 w-6 sm:h-8 sm:w-8 text-wonderwhiz-deep-purple" />
-            </div>
+        <div className="relative text-center z-10">
+          <div className="flex justify-center mb-6">
+            <Award className="h-16 w-16 text-yellow-400" />
           </div>
           
-          <h2 className="text-white font-bold text-xl sm:text-2xl mb-2">Certificate of Achievement</h2>
+          <h2 className={`text-white font-bold mb-2 ${ageGroup === '5-7' ? 'text-3xl' : 'text-2xl'}`}>
+            Certificate of Exploration
+          </h2>
           
-          <div className="my-6">
-            <p className="text-white/70 text-sm sm:text-base">This certifies that</p>
-            <h3 className={`text-white font-bold ${style.fontSize} my-2`}>{learnerName}</h3>
-            <p className="text-white/70 text-sm sm:text-base">has successfully completed the exploration of</p>
-            <h4 className="text-white font-semibold text-lg sm:text-xl my-2">{topic}</h4>
-            <p className="text-white/50 text-xs sm:text-sm mt-4">Completed on {date}</p>
+          <p className="text-white/80 mb-6">This certificate is proudly presented to</p>
+          
+          <h3 className={`font-bold text-white mb-6 ${ageGroup === '5-7' ? 'text-4xl' : 'text-2xl'}`}>
+            {learnerName}
+          </h3>
+          
+          <p className="text-white/80 mb-3">for successfully exploring the wonders of</p>
+          
+          <div className="bg-white/10 backdrop-blur-sm p-3 rounded-lg inline-block mb-6">
+            <h4 className={`font-semibold text-white ${ageGroup === '5-7' ? 'text-xl' : 'text-lg'}`}>
+              {topic}
+            </h4>
           </div>
           
-          <div className="flex flex-col sm:flex-row justify-center gap-3 mt-6">
-            <Button
-              onClick={onDownload}
-              variant="outline"
-              className="border-white/20 text-white hover:bg-white/10"
-            >
-              <Download className="mr-2 h-4 w-4" />
-              <span>Download</span>
+          <p className="text-white/60 mb-8">Awarded on {date}</p>
+          
+          <div className="flex justify-center space-x-4">
+            <Button onClick={onDownload} variant="outline" className="bg-white/5 border-white/20 hover:bg-white/10">
+              <Download className="h-4 w-4 mr-2" />
+              Download
             </Button>
-            <Button
-              onClick={onShare}
-              variant="outline"
-              className="border-white/20 text-white hover:bg-white/10"
-            >
-              <Share2 className="mr-2 h-4 w-4" />
-              <span>Share</span>
+            <Button onClick={onShare} variant="outline" className="bg-white/5 border-white/20 hover:bg-white/10">
+              <Share2 className="h-4 w-4 mr-2" />
+              Share
             </Button>
           </div>
         </div>
-      </div>
+      </Card>
     </motion.div>
   );
 };

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { BlockHeader } from './BlockHeader';
-import { BlockInteractions } from './BlockInteractions';
+import BlockHeader from './BlockHeader';
+import BlockInteractions from './BlockInteractions';
 import { Card } from '@/components/ui/card';
 
 interface FunFactBlockProps {
