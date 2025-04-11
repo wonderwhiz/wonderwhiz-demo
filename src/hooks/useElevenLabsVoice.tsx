@@ -70,7 +70,13 @@ export function useElevenLabsVoice({ voiceId = 'pkDwhVp7Wc7dQq2DBbpK' }: UseElev
       
       console.log(`Generating speech with voice ID: ${selectedVoiceId}`);
       
-      const { data, error } = await supabase.functions.invoke('text-to-speech', {
+      // Create a timeout promise to abort if it takes too long
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Text-to-speech request timed out')), 15000);
+      });
+      
+      // Create the actual API call promise
+      const apiCallPromise = supabase.functions.invoke('text-to-speech', {
         body: { 
           text,
           voiceId: selectedVoiceId,
@@ -78,6 +84,14 @@ export function useElevenLabsVoice({ voiceId = 'pkDwhVp7Wc7dQq2DBbpK' }: UseElev
           optimizeStreamingLatency: true
         }
       });
+      
+      // Race the timeout against the API call
+      const { data, error } = await Promise.race([
+        apiCallPromise,
+        timeoutPromise.then(() => {
+          throw new Error('Text-to-speech request timed out');
+        })
+      ]) as { data: any, error: any };
 
       if (error) {
         console.error('Error calling text-to-speech function:', error);
