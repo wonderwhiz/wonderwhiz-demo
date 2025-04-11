@@ -24,6 +24,8 @@ import ProgressVisualization from '@/components/curio/ProgressVisualization';
 import LearningCertificate from '@/components/curio/LearningCertificate';
 import ChapterHeader from '@/components/curio/ChapterHeader';
 import IllustratedContentBlock from '@/components/content-blocks/IllustratedContentBlock';
+import InteractiveImageBlock from '@/components/content-blocks/InteractiveImageBlock';
+import TalkToWhizzy from '@/components/curio/TalkToWhizzy';
 import { Chapter } from '@/types/Chapter';
 import { useCurioChapters } from '@/hooks/useCurioChapters';
 
@@ -447,13 +449,11 @@ const CurioPage: React.FC = () => {
         )}
 
         {curioTitle && !isLoadingBlocks && !searchQuery && (
-          <IllustratedContentBlock
+          <InteractiveImageBlock
             topic={curioTitle}
             childId={childId}
-            onLike={() => {}}
-            onSave={() => {}}
+            childAge={childProfile?.age ? Number(childProfile.age) : 10}
             onShare={() => {}}
-            onReply={(reply) => console.log('Reply:', reply)}
           />
         )}
         
@@ -569,6 +569,13 @@ const CurioPage: React.FC = () => {
           </motion.div>
         )}
       </div>
+
+      <TalkToWhizzy 
+        childId={childId}
+        curioTitle={curioTitle || undefined}
+        ageGroup={ageGroup}
+        onNewQuestionGenerated={handleRabbitHoleClick}
+      />
     </div>
   );
 };

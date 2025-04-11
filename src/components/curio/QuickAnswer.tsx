@@ -1,130 +1,172 @@
 
-import React, { useState } from 'react';
-import { Card } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronRight, Sparkles, SkipForward } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowRight, ChevronDown, ChevronUp, Volume2, VolumeX } from 'lucide-react';
+import { useGroqGeneration } from '@/hooks/useGroqGeneration';
+import { useElevenLabsVoice } from '@/hooks/useElevenLabsVoice';
 
 interface QuickAnswerProps {
   question: string;
-  answer?: string;
   isExpanded: boolean;
   onToggleExpand: () => void;
   onStartJourney: () => void;
   childId?: string;
+  answer?: string;
 }
 
 const QuickAnswer: React.FC<QuickAnswerProps> = ({
   question,
-  answer,
   isExpanded,
   onToggleExpand,
   onStartJourney,
-  childId
+  childId,
+  answer
 }) => {
-  const [generatingAnswer, setGeneratingAnswer] = useState(!answer);
-  const [quickAnswer, setQuickAnswer] = useState(answer || '');
+  const { generateQuickAnswer } = useGroqGeneration();
+  const { playText, isLoading: isVoiceLoading } = useElevenLabsVoice();
   
-  React.useEffect(() => {
-    if (!answer && childId) {
-      // Simulate generating an answer
-      const timer = setTimeout(() => {
-        setQuickAnswer(`${question} is a fascinating topic! It involves several key concepts and fun facts that you'll explore in this learning journey. Whether you're curious about how it works, why it matters, or what makes it special, you'll find answers in the activities ahead.`);
-        setGeneratingAnswer(false);
-      }, 2000);
-      
-      return () => clearTimeout(timer);
+  const [quickAnswer, setQuickAnswer] = useState<string>(answer || '');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isMuted, setIsMuted] = useState<boolean>(false);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!quickAnswer && question) {
+      loadQuickAnswer();
     }
-  }, [answer, childId, question]);
+  }, [question]);
+
+  const loadQuickAnswer = async () => {
+    if (answer) {
+      setQuickAnswer(answer);
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      const generatedAnswer = await generateQuickAnswer(question);
+      setQuickAnswer(generatedAnswer);
+      
+      // Auto-play the answer when it's first loaded and not muted
+      if (!isMuted && generatedAnswer) {
+        playVoice(generatedAnswer);
+      }
+    } catch (error) {
+      console.error('Error generating quick answer:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const playVoice = async (text: string) => {
+    setIsPlaying(true);
+    await playText(text, 'spark');
+    setIsPlaying(false);
+  };
+  
+  const handleToggleSound = () => {
+    setIsMuted(!isMuted);
+    
+    if (isMuted && quickAnswer && !isPlaying) {
+      // Play voice when unmuting
+      playVoice(quickAnswer);
+    }
+  };
+  
+  const handlePlaySound = () => {
+    if (!isPlaying && quickAnswer) {
+      playVoice(quickAnswer);
+    }
+  };
+
+  if (!question) return null;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="mb-8"
+      className="mb-6 bg-gradient-to-br from-wonderwhiz-deep-purple/30 to-wonderwhiz-purple/20 backdrop-blur-sm rounded-lg overflow-hidden"
     >
-      <Card className="overflow-hidden bg-white/5 backdrop-blur-lg border-primary/10">
-        <div className="bg-gradient-to-r from-wonderwhiz-purple/40 to-wonderwhiz-cyan/20 px-4 py-3 border-b border-white/10 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Sparkles className="h-4 w-4 text-wonderwhiz-vibrant-yellow" />
-            <h3 className="font-medium text-white text-sm">Quick Answer</h3>
-          </div>
-          
-          <Button 
-            size="sm" 
-            variant="ghost" 
-            onClick={onToggleExpand}
-            className="text-white/60 h-8 px-2 hover:bg-white/10"
+      <div
+        className="px-4 py-3 bg-black/20 flex justify-between items-center cursor-pointer"
+        onClick={onToggleExpand}
+      >
+        <h3 className="text-white font-medium text-lg">Quick Answer</h3>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 rounded-full text-white/70 hover:text-white hover:bg-white/10"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleToggleSound();
+            }}
           >
-            {isExpanded ? 
-              <ChevronDown className="h-4 w-4" /> : 
-              <ChevronRight className="h-4 w-4" />
-            }
-          </Button>
-        </div>
-        
-        <div className="p-4">
-          <h2 className="text-lg font-medium text-white mb-2">{question}</h2>
-          
-          <AnimatePresence mode="wait">
-            {generatingAnswer ? (
-              <motion.div
-                key="generating"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="text-white/70 space-y-2"
-              >
-                <div className="flex items-center space-x-2">
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ 
-                      repeat: Infinity, 
-                      duration: 1.5, 
-                      ease: "linear" 
-                    }}
-                  >
-                    <Sparkles className="h-4 w-4 text-wonderwhiz-bright-pink" />
-                  </motion.div>
-                  <span className="text-sm">Generating quick answer...</span>
-                </div>
-                
-                <div className="space-y-1.5">
-                  <div className="h-3 bg-white/10 animate-pulse rounded-full w-full" />
-                  <div className="h-3 bg-white/10 animate-pulse rounded-full w-5/6" />
-                  <div className="h-3 bg-white/10 animate-pulse rounded-full w-4/6" />
-                </div>
-              </motion.div>
+            {isMuted ? (
+              <VolumeX className="h-4 w-4" />
             ) : (
-              <motion.div
-                key="answer"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <div className={`text-white/80 overflow-hidden transition-all duration-300 ${isExpanded ? 'max-h-96' : 'max-h-20'}`}>
-                  <p className={isExpanded ? '' : 'line-clamp-2'}>{quickAnswer}</p>
-                </div>
-                
-                {!isExpanded && (
-                  <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-wonderwhiz-purple/80 to-transparent pointer-events-none" />
-                )}
-                
-                <div className="mt-4 flex justify-end">
-                  <Button 
-                    onClick={onStartJourney}
-                    className="bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-vibrant-yellow hover:brightness-110 text-black font-medium"
-                  >
-                    <SkipForward className="h-4 w-4 mr-2" />
-                    Continue Your Wonder Journey
-                  </Button>
-                </div>
-              </motion.div>
+              <Volume2 className="h-4 w-4" />
             )}
-          </AnimatePresence>
+          </Button>
+          {isExpanded ? (
+            <ChevronUp className="h-5 w-5 text-white/70" />
+          ) : (
+            <ChevronDown className="h-5 w-5 text-white/70" />
+          )}
         </div>
-      </Card>
+      </div>
+
+      {isExpanded && (
+        <div className="p-4">
+          <h4 className="text-white/90 font-medium mb-2">{question}</h4>
+          
+          {isLoading ? (
+            <div className="animate-pulse space-y-2">
+              <div className="h-4 bg-white/10 rounded w-full"></div>
+              <div className="h-4 bg-white/10 rounded w-5/6"></div>
+              <div className="h-4 bg-white/10 rounded w-4/6"></div>
+            </div>
+          ) : (
+            <div className="relative">
+              <p className="text-white/80 text-sm leading-relaxed">{quickAnswer}</p>
+              
+              {!isMuted && !isPlaying && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute top-0 right-0 h-8 w-8 p-0 rounded-full text-white/50 hover:text-white hover:bg-white/10"
+                  onClick={handlePlaySound}
+                  disabled={isVoiceLoading}
+                >
+                  <Volume2 className="h-4 w-4" />
+                </Button>
+              )}
+              
+              {isVoiceLoading && (
+                <div className="absolute top-0 right-0 h-8 w-8 flex items-center justify-center">
+                  <div className="h-4 w-4 border-2 border-white/30 border-t-wonderwhiz-bright-pink rounded-full animate-spin"></div>
+                </div>
+              )}
+            </div>
+          )}
+          
+          <div className="mt-4">
+            <Button
+              onClick={(e) => {
+                e.stopPropagation();
+                onStartJourney();
+              }}
+              className="bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/90 text-white"
+              size="sm"
+            >
+              Explore Full Journey
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 };
