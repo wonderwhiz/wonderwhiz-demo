@@ -1,7 +1,10 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Send } from 'lucide-react';
 import { getSpecialistInfo } from '@/utils/specialists';
 
 interface BlockReply {
@@ -17,12 +20,19 @@ interface BlockReply {
 interface BlockRepliesProps {
   replies: BlockReply[];
   specialistId: string;
+  onSendReply?: (message: string) => void;
 }
 
-const BlockReplies: React.FC<BlockRepliesProps> = ({ replies, specialistId }) => {
-  if (replies.length === 0) {
-    return null;
-  }
+const BlockReplies: React.FC<BlockRepliesProps> = ({ replies, specialistId, onSendReply }) => {
+  const [replyText, setReplyText] = useState('');
+  const specialist = getSpecialistInfo(specialistId);
+  
+  const handleSubmitReply = () => {
+    if (replyText.trim() && onSendReply) {
+      onSendReply(replyText);
+      setReplyText('');
+    }
+  };
   
   return (
     <motion.div 
@@ -73,6 +83,39 @@ const BlockReplies: React.FC<BlockRepliesProps> = ({ replies, specialistId }) =>
           })}
         </AnimatePresence>
       </div>
+      
+      {/* Comment input form */}
+      {onSendReply && (
+        <div className="mt-3 flex items-center gap-2">
+          <Avatar className="h-7 w-7 border border-white/10 flex-shrink-0">
+            <AvatarFallback className="bg-indigo-500">U</AvatarFallback>
+          </Avatar>
+          <div className="flex-1 flex items-center bg-white/5 rounded-full border border-white/10 pr-1">
+            <Input
+              type="text"
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value)}
+              placeholder={`Chat with ${specialist.name}...`}
+              className="border-0 bg-transparent focus-visible:ring-0 text-white placeholder:text-white/40 flex-1 text-sm"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSubmitReply();
+                }
+              }}
+            />
+            <Button 
+              size="icon" 
+              variant="ghost" 
+              className="h-8 w-8 rounded-full text-white/70 hover:text-white hover:bg-indigo-500/30"
+              onClick={handleSubmitReply}
+              disabled={!replyText.trim()}
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 };

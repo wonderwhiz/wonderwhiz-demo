@@ -512,6 +512,9 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
           }}
           specialistId={block.specialist_id}
           onNewsRead={onNewsRead || (() => {})}
+          updateHeight={(height) => {
+            if (updateHeight) updateHeight(height);
+          }}
         />;
       case 'activity':
         return <ActivityBlock 
@@ -621,21 +624,15 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         <BlockReplies 
           replies={replies} 
           specialistId={block.specialist_id} 
+          onSendReply={(message) => handleSubmitReply(message)}
         />
         
         <BlockInteractions
           id={block.id}
-          liked={block.liked}
           bookmarked={block.bookmarked}
-          onToggleLike={() => onToggleLike(block.id)}
           onToggleBookmark={() => onToggleBookmark(block.id)}
-          setShowReplyForm={setShowReplyForm}
           type={block.type}
         />
-        
-        {showReplyForm && (
-          <BlockReplyForm isLoading={isLoading} onSubmit={handleSubmitReply} />
-        )}
       </div>
     </Card>
   );

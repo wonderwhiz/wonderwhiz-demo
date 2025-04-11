@@ -1,18 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { Play, Pause, Check, Clock } from 'lucide-react';
-
-interface MindfulnessBlockProps {
-  content: {
-    exercise: string;
-    duration: number;
-    title?: string;
-    instruction?: string;
-  };
-  onMindfulnessComplete?: () => void;
-  specialistId?: string;
-}
+import { MindfulnessBlockProps } from './interfaces';
 
 const MindfulnessBlock: React.FC<MindfulnessBlockProps> = ({ 
   content, 
@@ -20,7 +11,7 @@ const MindfulnessBlock: React.FC<MindfulnessBlockProps> = ({
   specialistId 
 }) => {
   const [timerRunning, setTimerRunning] = useState(false);
-  const [secondsLeft, setSecondsLeft] = useState(content.duration);
+  const [secondsLeft, setSecondsLeft] = useState(content.duration || 60);
   const [completed, setCompleted] = useState(false);
   
   useEffect(() => {
@@ -49,11 +40,11 @@ const MindfulnessBlock: React.FC<MindfulnessBlockProps> = ({
   
   const resetTimer = () => {
     setTimerRunning(false);
-    setSecondsLeft(content.duration);
+    setSecondsLeft(content.duration || 60);
     setCompleted(false);
   };
   
-  const progress = 1 - secondsLeft / content.duration;
+  const progress = 1 - secondsLeft / (content.duration || 60);
   
   return (
     <div>
@@ -96,12 +87,12 @@ const MindfulnessBlock: React.FC<MindfulnessBlockProps> = ({
                 {timerRunning ? (
                   <><Pause className="h-3.5 w-3.5 mr-1.5" /> Pause</>
                 ) : (
-                  <><Play className="h-3.5 w-3.5 mr-1.5" /> {secondsLeft === content.duration ? 'Start' : 'Resume'}</>
+                  <><Play className="h-3.5 w-3.5 mr-1.5" /> {secondsLeft === (content.duration || 60) ? 'Start' : 'Resume'}</>
                 )}
               </Button>
             </motion.div>
             
-            {secondsLeft < content.duration && (
+            {secondsLeft < (content.duration || 60) && (
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}

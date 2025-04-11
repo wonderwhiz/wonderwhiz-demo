@@ -1,9 +1,9 @@
 
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
-import BlockHeader from './BlockHeader';
 import { CheckCircle, XCircle, HelpCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { getSpecialistInfo } from '@/utils/specialists';
 
 export interface QuizBlockProps {
   question: string;
@@ -11,7 +11,6 @@ export interface QuizBlockProps {
   correctIndex: number;
   explanation?: string;
   specialistId: string;
-  onLike?: () => void;
   onBookmark?: () => void;
   onReply?: (message: string) => void;
   onCorrectAnswer?: () => void;
@@ -26,7 +25,6 @@ const QuizBlock: React.FC<QuizBlockProps> = ({
   correctIndex,
   explanation,
   specialistId,
-  onLike,
   onBookmark,
   onReply,
   onCorrectAnswer,
@@ -81,66 +79,55 @@ const QuizBlock: React.FC<QuizBlockProps> = ({
   };
   
   return (
-    <Card 
-      ref={blockRef}
-      className="overflow-hidden bg-white/5 backdrop-blur-sm border-primary/10"
-    >
-      <BlockHeader 
-        type="quiz" 
-        specialistId={specialistId} 
-        blockTitle="Quiz Question"
-      />
+    <div ref={blockRef}>
+      <p className="text-white/90 text-lg font-medium mb-4">{question || "Quiz Question"}</p>
       
-      <div className="p-4">
-        <p className="text-white/90 text-lg font-medium mb-4">{question || "Quiz Question"}</p>
-        
-        <div className="space-y-3 mb-4">
-          {/* Add null check for options before mapping */}
-          {Array.isArray(options) && options.length > 0 ? (
-            options.map((option, index) => (
-              <motion.button
-                key={index}
-                whileHover={selectedIndex === null ? { scale: 1.01 } : {}}
-                whileTap={selectedIndex === null ? { scale: 0.99 } : {}}
-                className={getOptionClassName(index)}
-                onClick={() => handleOptionSelect(index)}
-                disabled={selectedIndex !== null}
-              >
-                {selectedIndex !== null && (
-                  <span className="mr-2">
-                    {index === correctIndex ? (
-                      <CheckCircle className="h-5 w-5 text-green-400" />
-                    ) : index === selectedIndex ? (
-                      <XCircle className="h-5 w-5 text-red-400" />
-                    ) : (
-                      <div className="w-5" />
-                    )}
-                  </span>
-                )}
-                <span>{option}</span>
-              </motion.button>
-            ))
-          ) : (
-            <div className="p-3 bg-white/5 rounded-lg text-white/60">
-              No options available for this quiz
-            </div>
-          )}
-        </div>
-        
-        {showExplanation && explanation && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            className="mt-4 p-4 bg-white/5 rounded-lg"
-          >
-            <div className="flex items-start">
-              <HelpCircle className="h-5 w-5 text-blue-400 mr-2 mt-0.5 flex-shrink-0" />
-              <p className="text-white/80 text-sm">{explanation}</p>
-            </div>
-          </motion.div>
+      <div className="space-y-3 mb-4">
+        {/* Add null check for options before mapping */}
+        {Array.isArray(options) && options.length > 0 ? (
+          options.map((option, index) => (
+            <motion.button
+              key={index}
+              whileHover={selectedIndex === null ? { scale: 1.01 } : {}}
+              whileTap={selectedIndex === null ? { scale: 0.99 } : {}}
+              className={getOptionClassName(index)}
+              onClick={() => handleOptionSelect(index)}
+              disabled={selectedIndex !== null}
+            >
+              {selectedIndex !== null && (
+                <span className="mr-2">
+                  {index === correctIndex ? (
+                    <CheckCircle className="h-5 w-5 text-green-400" />
+                  ) : index === selectedIndex ? (
+                    <XCircle className="h-5 w-5 text-red-400" />
+                  ) : (
+                    <div className="w-5" />
+                  )}
+                </span>
+              )}
+              <span>{option}</span>
+            </motion.button>
+          ))
+        ) : (
+          <div className="p-3 bg-white/5 rounded-lg text-white/60">
+            No options available for this quiz
+          </div>
         )}
       </div>
-    </Card>
+      
+      {showExplanation && explanation && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          className="mt-4 p-4 bg-white/5 rounded-lg"
+        >
+          <div className="flex items-start">
+            <HelpCircle className="h-5 w-5 text-blue-400 mr-2 mt-0.5 flex-shrink-0" />
+            <p className="text-white/80 text-sm">{explanation}</p>
+          </div>
+        </motion.div>
+      )}
+    </div>
   );
 };
 
