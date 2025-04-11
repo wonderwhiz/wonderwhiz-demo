@@ -4,8 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Phone, X, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useElevenLabsVoice } from '@/hooks/useElevenLabsVoice';
+import { useGeminiLiveChat } from '@/hooks/useGeminiLiveChat';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 
 interface TalkToWhizzyProps {
   childId?: string;
@@ -24,10 +24,23 @@ const TalkToWhizzy: React.FC<TalkToWhizzyProps> = ({
   const [isListening, setIsListening] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [transcript, setTranscript] = useState('');
-  const [response, setResponse] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
   
-  const { playText, isLoading: isVoiceLoading } = useElevenLabsVoice({ voiceId: 'pkDwhVp7Wc7dQq2DBbpK' });
+  // Convert age group to numeric age for API
+  const childAge = ageGroup === '5-7' ? 6 : ageGroup === '8-11' ? 9 : 14;
+  
+  // Use our new Gemini Live chat hook
+  const {
+    sendMessage,
+    resetChat,
+    response,
+    isProcessing,
+    isVoiceLoading,
+    chatHistory
+  } = useGeminiLiveChat({
+    childAge,
+    curioContext: curioTitle,
+    specialistId: 'whizzy'
+  });
   
   const recognitionRef = useRef<any>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -98,12 +111,11 @@ const TalkToWhizzy: React.FC<TalkToWhizzyProps> = ({
   
   // Play the welcome message when first opened
   useEffect(() => {
-    if (isOpen && !isMuted && !response) {
+    if (isOpen && !isMuted && chatHistory.length === 0) {
       const welcomeMessage = `Hi there! I'm Whizzy. What would you like to know about ${curioTitle || 'this topic'}?`;
-      setResponse(welcomeMessage);
-      playText(welcomeMessage, 'whizzy');
+      sendMessage(welcomeMessage);
     }
-  }, [isOpen, isMuted, curioTitle, playText, response]);
+  }, [isOpen, isMuted, curioTitle, sendMessage, chatHistory.length]);
   
   const toggleMic = () => {
     if (isListening) {
@@ -132,62 +144,23 @@ const TalkToWhizzy: React.FC<TalkToWhizzyProps> = ({
     }
     setIsOpen(false);
     setTranscript('');
-    setResponse('');
+    resetChat();
   };
   
   const handleSendMessage = async () => {
     if (!transcript.trim() || isProcessing) return;
     
-    setIsProcessing(true);
+    const userQuestion = transcript;
+    setTranscript('');
     
-    try {
-      const userQuestion = transcript;
-      setTranscript('');
-      
-      // Show thinking state
-      const thinkingMessage = "Hmm, let me think about that...";
-      setResponse(thinkingMessage);
-      if (!isMuted) {
-        await playText(thinkingMessage, 'whizzy');
-      }
-      
-      // Call the Supabase function to process the question
-      const { data, error } = await supabase.functions.invoke('generate-quick-answer', {
-        body: { 
-          query: userQuestion,
-          childAge: ageGroup === '5-7' ? 6 : ageGroup === '8-11' ? 9 : 14,
-          curioContext: curioTitle
-        }
-      });
-      
-      if (error) throw error;
-      
-      const answer = data?.answer || "I'm not sure about that. Would you like to explore a different question?";
-      setResponse(answer);
-      
-      // Read the response aloud if not muted
-      if (!isMuted) {
-        playText(answer, 'whizzy');
-      }
-      
-      // Potentially generate a new exploration from this question
-      if (userQuestion.length > 10 && onNewQuestionGenerated && childId) {
-        // Only suggest new topics for substantive questions
-        setTimeout(() => {
-          onNewQuestionGenerated(userQuestion);
-        }, 5000); // Suggest after 5 seconds
-      }
-      
-    } catch (error) {
-      console.error('Error processing message:', error);
-      const errorMessage = "Sorry, I'm having trouble answering that right now.";
-      setResponse(errorMessage);
-      
-      if (!isMuted) {
-        playText(errorMessage, 'whizzy');
-      }
-    } finally {
-      setIsProcessing(false);
+    const result = await sendMessage(userQuestion);
+    
+    // Potentially generate a new exploration from this question
+    if (result && userQuestion.length > 10 && onNewQuestionGenerated && childId) {
+      // Only suggest new topics for substantive questions
+      setTimeout(() => {
+        onNewQuestionGenerated(userQuestion);
+      }, 5000); // Suggest after 5 seconds
     }
   };
   
@@ -267,28 +240,41 @@ const TalkToWhizzy: React.FC<TalkToWhizzyProps> = ({
               
               {/* Content Area */}
               <div className="h-[300px] px-6 py-4 overflow-y-auto">
-                {!response ? (
+                {chatHistory.length === 0 ? (
                   <div className="flex items-center justify-center h-full">
                     <div className="animate-pulse text-white/50">Connecting to Whizzy...</div>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="flex items-start">
-                      <div className="flex-shrink-0 h-10 w-10 rounded-full bg-wonderwhiz-purple flex items-center justify-center">
-                        <span className="text-white font-bold">W</span>
+                    {chatHistory.map((message, index) => (
+                      <div key={index} className={`flex items-start ${message.role === 'model' ? '' : 'justify-end'}`}>
+                        {message.role === 'model' && (
+                          <div className="flex-shrink-0 h-10 w-10 rounded-full bg-wonderwhiz-purple flex items-center justify-center">
+                            <span className="text-white font-bold">W</span>
+                          </div>
+                        )}
+                        <div className={`mx-3 rounded-lg p-3 text-white max-w-[85%] ${
+                          message.role === 'model' 
+                            ? 'bg-white/10' 
+                            : 'bg-wonderwhiz-bright-pink/30'
+                        }`}>
+                          {message.content}
+                        </div>
+                        {message.role === 'user' && (
+                          <div className="flex-shrink-0 h-10 w-10 rounded-full bg-wonderwhiz-bright-pink/40 flex items-center justify-center">
+                            <span className="text-white">You</span>
+                          </div>
+                        )}
                       </div>
-                      <div className="ml-3 bg-white/10 rounded-lg p-3 text-white max-w-[85%]">
-                        {response}
-                      </div>
-                    </div>
+                    ))}
                     
                     {transcript && (
                       <div className="flex items-start justify-end">
-                        <div className="mr-3 bg-wonderwhiz-bright-pink/30 rounded-lg p-3 text-white max-w-[85%]">
+                        <div className="mr-3 bg-wonderwhiz-bright-pink/20 rounded-lg p-3 text-white/80 max-w-[85%] border border-wonderwhiz-bright-pink/30">
                           {transcript}
                         </div>
-                        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-wonderwhiz-bright-pink/40 flex items-center justify-center">
-                          <span className="text-white">You</span>
+                        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-wonderwhiz-bright-pink/30 flex items-center justify-center">
+                          <span className="text-white/80">You</span>
                         </div>
                       </div>
                     )}

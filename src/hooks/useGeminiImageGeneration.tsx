@@ -50,11 +50,11 @@ export function useGeminiImageGeneration({ childAge = 10 }: UseGeminiImageGenera
     let adaptedPrompt = prompt;
     
     if (age < 8) {
-      adaptedPrompt += ', kid-friendly, colorful, cartoonish, simple shapes, cheerful, educational illustration';
+      adaptedPrompt += ', kid-friendly, colorful, cartoonish, simple shapes, cheerful, educational illustration, cute characters';
     } else if (age < 12) {
-      adaptedPrompt += ', educational, vibrant colors, stylized, age-appropriate, learning material';
+      adaptedPrompt += ', educational, vibrant colors, stylized, age-appropriate, learning material, engaging illustration';
     } else {
-      adaptedPrompt += ', educational, detailed, engaging, teenage-appropriate illustration';
+      adaptedPrompt += ', educational, detailed, engaging, teenage-appropriate illustration, modern style';
     }
     
     return adaptedPrompt;
@@ -86,6 +86,15 @@ export function useGeminiImageGeneration({ childAge = 10 }: UseGeminiImageGenera
       morning: 'https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?q=80&w=1000&auto=format&fit=crop',
       night: 'https://images.unsplash.com/photo-1516339901601-2e1b62dc0c45?q=80&w=1000&auto=format&fit=crop',
       firefly: 'https://images.unsplash.com/photo-1562155955-1cb2d73488d7?q=80&w=1000&auto=format&fit=crop',
+      // Add more topic-specific fallbacks
+      water: 'https://images.unsplash.com/photo-1586856822992-40c6c266f044?q=80&w=1000&auto=format&fit=crop',
+      music: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?q=80&w=1000&auto=format&fit=crop',
+      history: 'https://images.unsplash.com/photo-1461360370896-922624d12aa1?q=80&w=1000&auto=format&fit=crop',
+      art: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?q=80&w=1000&auto=format&fit=crop',
+      math: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?q=80&w=1000&auto=format&fit=crop',
+      coding: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=1000&auto=format&fit=crop',
+      stars: 'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?q=80&w=1000&auto=format&fit=crop',
+      planets: 'https://images.unsplash.com/photo-1614314169000-4ef4aebc2573?q=80&w=1000&auto=format&fit=crop',
     };
     
     const topicLower = topic.toLowerCase();
