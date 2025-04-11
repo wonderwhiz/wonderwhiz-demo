@@ -20,7 +20,7 @@ import CurioEmptyState from '@/components/curio/CurioEmptyState';
 import CurioErrorState from '@/components/curio/CurioErrorState';
 import QuickAnswer from '@/components/curio/QuickAnswer';
 import IllustratedContentBlock from '@/components/curio/IllustratedContentBlock';
-import { TableOfContents } from '@/components/curio/TableOfContents';
+import TableOfContents from '@/components/curio/TableOfContents';
 import ProgressVisualization from '@/components/curio/ProgressVisualization';
 import LearningCertificate from '@/components/curio/LearningCertificate';
 import ChapterHeader from '@/components/curio/ChapterHeader';
