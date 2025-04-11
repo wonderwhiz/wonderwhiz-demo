@@ -26,30 +26,10 @@ serve(async (req) => {
     // Build system instruction based on child's age and specialist
     const systemInstruction = buildSystemInstruction(specialistId, childAge, curioContext);
     
-    // Create connection configuration
-    const config = {
-      "system_instruction": {
-        "parts": [{ "text": systemInstruction }]
-      },
-      "response_modalities": ["TEXT", "AUDIO"],
-      "speech_config": {
-        "voice_config": {
-          "prebuilt_voice_config": {
-            "voice_name": getSpecialistVoice(specialistId)
-          }
-        }
-      },
-      "context_window_compression": {
-        "sliding_window": {}
-      },
-      "session_resumption": sessionId ? {
-        "handle": sessionId
-      } : {}
-    };
-
-    // For production, we would need to implement WebSocket proxying
-    // This is a simplified version that simulates the response
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1alpha/models/gemini-2.0-flash-live-001:streamGenerateContent`, {
+    // Create request to Gemini API 
+    // Note: Using the standard Gemini API for text generation instead of Live API
+    // since Live API requires WebSockets which are difficult to proxy through edge functions
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -62,12 +42,15 @@ serve(async (req) => {
             parts: [{ text: message }]
           }
         ],
+        systemInstruction: {
+          parts: [{ text: systemInstruction }]
+        },
         generation_config: {
           temperature: 0.4,
           topP: 0.95,
           topK: 64,
           candidateCount: 1,
-          maxOutputTokens: 8192,
+          maxOutputTokens: 2048,
         }
       })
     });
@@ -161,15 +144,15 @@ function buildSystemInstruction(specialistId: string, age: number, curioContext:
 }
 
 function getSpecialistVoice(specialistId: string): string {
-  // Map specialists to Gemini Live voices
+  // Map specialists to voices
   const voiceMap: Record<string, string> = {
-    'nova': 'Fenrir', // Space expert - deeper voice
-    'spark': 'Aoede', // Creative genius - enthusiastic voice
-    'prism': 'Orus', // Science wizard - clear, precise voice
-    'pixel': 'Charon', // Tech guru - tech-savvy voice
-    'atlas': 'Leda', // History expert - storytelling voice
-    'lotus': 'Kore', // Nature guide - calm, soothing voice
-    'whizzy': 'Puck', // Default - friendly, warm voice
+    'nova': 'Fenrir', // Space expert
+    'spark': 'Aoede', // Creative genius
+    'prism': 'Orus', // Science wizard
+    'pixel': 'Charon', // Tech guru
+    'atlas': 'Leda', // History expert
+    'lotus': 'Kore', // Nature guide
+    'whizzy': 'Puck', // Default
   };
   
   return voiceMap[specialistId] || 'Puck';

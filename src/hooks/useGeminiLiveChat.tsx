@@ -50,6 +50,14 @@ export function useGeminiLiveChat({
       // Add user message to chat history
       setChatHistory(prev => [...prev, { role: 'user', content: message }]);
       
+      console.log('Sending message to Gemini Live Chat:', {
+        message,
+        childAge,
+        curioContext,
+        specialistId,
+        sessionId
+      });
+      
       // Call edge function
       const { data, error } = await supabase.functions.invoke('gemini-live-chat', {
         body: {
@@ -63,6 +71,8 @@ export function useGeminiLiveChat({
       
       if (error) throw error;
       
+      console.log('Received response:', data);
+      
       // Process and return response
       const responseText = data?.text || "I'm having trouble responding right now. Can we try again?";
       const newSessionId = data?.sessionId || null;
@@ -73,7 +83,7 @@ export function useGeminiLiveChat({
       // Add model response to chat history
       setChatHistory(prev => [...prev, { role: 'model', content: responseText }]);
       
-      // Play audio response using ElevenLabs (temporary until WebSocket implementation)
+      // Play audio response using ElevenLabs
       playText(responseText, specialistId);
       
       return {
