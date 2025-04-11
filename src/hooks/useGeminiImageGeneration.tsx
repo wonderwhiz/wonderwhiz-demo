@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -41,22 +40,20 @@ export function useGeminiImageGeneration({ childAge = 10 }: UseGeminiImageGenera
       
       console.log('Image generation response:', data);
       
-      if (data.imageUrl) {
+      if (data.success && data.imageUrl) {
         console.log('Setting image URL from response');
         setImageUrl(data.imageUrl);
         return data.imageUrl;
       } else {
-        console.error('No image URL in response:', data);
-        throw new Error('No image URL returned');
+        console.error('No image URL or unsuccessful generation:', data);
+        throw new Error(data.error || 'No image URL returned');
       }
     } catch (err) {
       console.error('Error generating image:', err);
       setGenerationError(err instanceof Error ? err.message : 'Unknown error generating image');
       
-      // Return fallback image based on topic
-      const fallbackUrl = getFallbackImage(prompt);
-      setImageUrl(fallbackUrl);
-      return fallbackUrl;
+      // Do not return fallback image automatically
+      return null;
     } finally {
       setIsGenerating(false);
     }

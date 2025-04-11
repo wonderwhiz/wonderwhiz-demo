@@ -26,13 +26,10 @@ serve(async (req) => {
       throw new Error('API configuration error');
     }
     
-    console.log(`Generating image for prompt: "${prompt}" with style: ${style}`);
-    
     // Prepare prompt with style and educational adaptation
     const enhancedPrompt = `${prompt}. Style: ${style}, educational, child-friendly, vibrant colors, inspiring wonder and curiosity`;
     
     try {
-      // Using Gemini 2.0 Flash Experimental for image generation
       const geminiResponse = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent", {
         method: "POST",
         headers: {
@@ -51,15 +48,18 @@ serve(async (req) => {
             }
           ],
           generation_config: {
-            response_modalities: ["TEXT", "IMAGE"]
+            response_modalities: ["TEXT", "IMAGE"],
+            temperature: 0.4,
+            top_p: 1,
+            top_k: 32
           }
         })
       });
       
       if (!geminiResponse.ok) {
-        const errorData = await geminiResponse.json();
+        const errorData = await geminiResponse.text();
         console.error('Gemini API error:', errorData);
-        throw new Error(`Gemini API error: ${JSON.stringify(errorData)}`);
+        throw new Error(`Gemini API error: ${errorData}`);
       }
       
       const responseData = await geminiResponse.json();
@@ -81,7 +81,6 @@ serve(async (req) => {
             const imageData = part.inline_data.data;
             const mimeType = part.inline_data.mime_type;
             
-            // Return the base64 image data to be displayed
             imageUrl = `data:${mimeType};base64,${imageData}`;
             console.log('Image URL generated from inline data');
             break;
@@ -90,7 +89,7 @@ serve(async (req) => {
       }
       
       if (!imageUrl) {
-        console.warn('No image found in Gemini response, falling back to alternative');
+        console.warn('No image found in Gemini response');
         throw new Error('No image in response');
       }
       
@@ -107,16 +106,9 @@ serve(async (req) => {
     } catch (apiError) {
       console.error('Error calling Gemini API:', apiError);
       
-      // Fallback to Unsplash for reliable image results
-      const encodedPrompt = encodeURIComponent(prompt.substring(0, 100));
-      const seed = Math.floor(Math.random() * 1000);
-      const fallbackImageUrl = `https://source.unsplash.com/random/800x600?${encodedPrompt}&seed=${seed}`;
-      
       return new Response(
         JSON.stringify({ 
-          success: true, 
-          imageUrl: fallbackImageUrl,
-          fallback: true,
+          success: false, 
           error: apiError.message || 'Error generating image with Gemini'
         }),
         { 
@@ -127,16 +119,14 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in image generation function:', error);
     
-    // Return a default image as fallback
     return new Response(
       JSON.stringify({ 
-        success: true,
-        imageUrl: 'https://source.unsplash.com/random/800x600?education',
-        fallback: true,
+        success: false,
         error: error.message || 'An error occurred during image generation' 
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500
       }
     );
   }
