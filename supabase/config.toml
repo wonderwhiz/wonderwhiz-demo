@@ -1,4 +1,6 @@
 
+project_id = "turexhnvsvmllwitllmg"
+
 [functions]
 
 [functions.generate-gemini-image]
@@ -11,4 +13,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.analyze-image]
+verify_jwt = false
+
+[functions.generate-contextual-image]
 verify_jwt = false

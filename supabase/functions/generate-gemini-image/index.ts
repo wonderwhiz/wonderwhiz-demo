@@ -1,5 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -32,35 +33,32 @@ serve(async (req) => {
     
     console.log(`Generating image for prompt: "${enhancedPrompt}" with style: ${style}`);
     
-    // Try Gemini 2.0 Flash Experimental with Imagen 3 first
+    // Try Gemini first - using both Imagen 3 and Flash 2.0 APIs
     if (GEMINI_API_KEY) {
       try {
-        // First attempt: Try with Imagen 3 directly as it's most reliable for images
+        // First attempt with Imagen 3 (Direct image generation API)
         console.log("Generating image with Imagen 3...");
         
-        const imagen3Response = await fetch(
-          "https://generativelanguage.googleapis.com/v1/models/imagen-3.0-generate:generateImage", 
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-goog-api-key": GEMINI_API_KEY
-            },
-            body: JSON.stringify({
-              prompt: enhancedPrompt,
-              responseFormat: {
-                format: "IMAGE"
-              }
-            })
-          }
-        );
+        const imagen3Url = "https://generativelanguage.googleapis.com/v1/models/imagen3:generateImage";
+        
+        const imagen3Response = await fetch(`${imagen3Url}?key=${GEMINI_API_KEY}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            prompt: enhancedPrompt,
+            responseFormat: {
+              format: "IMAGE"
+            }
+          })
+        });
         
         if (imagen3Response.ok) {
           const imagen3Data = await imagen3Response.json();
-          console.log('Imagen 3 API response structure:', JSON.stringify(Object.keys(imagen3Data)).substring(0, 500));
           
           if (imagen3Data?.image?.data) {
-            console.log('Found image in Imagen 3 response');
+            console.log('Successfully generated image with Imagen 3');
             const mimeType = 'image/png'; // Default to png
             return new Response(
               JSON.stringify({ 
@@ -74,118 +72,136 @@ serve(async (req) => {
               }
             );
           } else {
-            console.log("Imagen 3 response didn't contain image data, trying Gemini 2.0 Flash");
+            console.log("No image data in Imagen 3 response, trying alternate endpoint");
           }
         } else {
           const errorText = await imagen3Response.text();
           console.error(`Imagen 3 API error (${imagen3Response.status}):`, errorText);
-          console.log("Falling back to Gemini 2.0 Flash Experimental...");
-        }
-        
-        // Second attempt: Try with Gemini 2.0 Flash Experimental
-        console.log("Generating image with Gemini 2.0 Flash Experimental...");
-        
-        const geminiResponse = await fetch(
-          "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash-exp-image-generation:generateContent", 
-          {
+          console.log("Trying alternative Imagen 3 endpoint...");
+          
+          // Try the new Imagen-3.0-generate endpoint
+          const imagen3AlternateUrl = "https://generativelanguage.googleapis.com/v1/models/imagen-3.0-generate:generateImage";
+          
+          const imagen3AlternateResponse = await fetch(`${imagen3AlternateUrl}?key=${GEMINI_API_KEY}`, {
             method: "POST",
             headers: {
-              "Content-Type": "application/json",
-              "x-goog-api-key": GEMINI_API_KEY
+              "Content-Type": "application/json"
             },
             body: JSON.stringify({
-              contents: [
-                {
-                  role: "user",
-                  parts: [
-                    {
-                      text: enhancedPrompt
-                    }
-                  ]
-                }
-              ],
-              generation_config: {
-                response_modalities: ["TEXT", "IMAGE"],
-                temperature: 0.4,
-                top_p: 1,
-                top_k: 32
+              prompt: enhancedPrompt,
+              responseFormat: {
+                format: "IMAGE"
               }
             })
+          });
+          
+          if (imagen3AlternateResponse.ok) {
+            const imagen3AltData = await imagen3AlternateResponse.json();
+            
+            if (imagen3AltData?.image?.data) {
+              console.log('Successfully generated image with Imagen 3.0 alternative endpoint');
+              const mimeType = 'image/png';
+              return new Response(
+                JSON.stringify({ 
+                  success: true, 
+                  imageUrl: `data:${mimeType};base64,${imagen3AltData.image.data}`,
+                  textResponse: "Image generated with Imagen 3.0",
+                  source: "gemini"
+                }),
+                { 
+                  headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                }
+              );
+            }
+          } else {
+            const errorAlt = await imagen3AlternateResponse.text();
+            console.error(`Imagen 3.0 alternate API error:`, errorAlt);
+          }
+        }
+        
+        // Second attempt with Gemini 2.0 Flash Experimental for image gen
+        console.log("Trying Gemini 2.0 Flash Experimental for image generation...");
+        
+        const geminiFlashUrl = "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash-exp-image-generation:generateContent";
+        
+        const geminiResponse = await fetch(`${geminiFlashUrl}?key=${GEMINI_API_KEY}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                role: "user",
+                parts: [
+                  {
+                    text: enhancedPrompt
+                  }
+                ]
+              }
+            ],
+            generation_config: {
+              response_modalities: ["TEXT", "IMAGE"],
+              temperature: 0.4,
+              top_p: 1,
+              top_k: 32
+            }
+          })
         });
         
-        if (!geminiResponse.ok) {
-          const errorText = await geminiResponse.text();
-          console.error(`Gemini API error (${geminiResponse.status}):`, errorText);
-          throw new Error(`Gemini API error: ${geminiResponse.status} - ${errorText}`);
-        }
-        
-        const responseData = await geminiResponse.json();
-        console.log('Gemini API response structure:', JSON.stringify(Object.keys(responseData)).substring(0, 500));
-        
-        // Extract image data from the response
-        let imageUrl = null;
-        let textResponse = '';
-        
-        // Extraction logic for Gemini 2.0 Flash Experimental
-        if (responseData?.candidates?.[0]?.content?.parts) {
-          for (const part of responseData.candidates[0].content.parts) {
-            if (part.text) {
-              textResponse = part.text;
-              console.log('Text response:', textResponse);
-            }
-            
-            if (part.inline_data && part.inline_data.mime_type.startsWith('image/')) {
-              // Convert base64 to image URL
-              const imageData = part.inline_data.data;
-              const mimeType = part.inline_data.mime_type;
-              
-              imageUrl = `data:${mimeType};base64,${imageData}`;
-              console.log('Image URL generated from inline data');
-              break; // We found the image, exit the loop
-            }
-          }
-        }
-        
-        if (imageUrl) {
-          return new Response(
-            JSON.stringify({ 
-              success: true, 
-              imageUrl: imageUrl,
-              textResponse: textResponse,
-              source: "gemini"
-            }),
-            { 
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            }
-          );
-        }
-        
-        // Deep inspection of the response to find any image data
-        console.log('Performing deep inspection of Gemini response to find image data...');
-        
-        if (responseData.candidates) {
-          console.log('Candidates count:', responseData.candidates.length);
-          console.log('First candidate keys:', responseData.candidates[0] ? Object.keys(responseData.candidates[0]).join(', ') : 'none');
+        if (geminiResponse.ok) {
+          const responseData = await geminiResponse.json();
+          console.log('Flash experimental response structure:', JSON.stringify(Object.keys(responseData)).substring(0, 500));
           
-          if (responseData.candidates[0]?.content) {
-            console.log('Content keys:', Object.keys(responseData.candidates[0].content).join(', '));
-            
-            if (responseData.candidates[0].content.parts) {
-              console.log('Parts count:', responseData.candidates[0].content.parts.length);
-              console.log('Parts types:', responseData.candidates[0].content.parts.map(p => Object.keys(p).join(',')).join(' | '));
+          // Extract image data from the response
+          let imageUrl = null;
+          let textResponse = '';
+          
+          // Extraction logic for Gemini 2.0 Flash Experimental
+          if (responseData?.candidates?.[0]?.content?.parts) {
+            for (const part of responseData.candidates[0].content.parts) {
+              if (part.text) {
+                textResponse = part.text;
+              }
+              
+              if (part.inline_data && part.inline_data.mime_type.startsWith('image/')) {
+                // Convert base64 to image URL
+                const imageData = part.inline_data.data;
+                const mimeType = part.inline_data.mime_type;
+                
+                imageUrl = `data:${mimeType};base64,${imageData}`;
+                console.log('Image URL generated from Gemini Flash 2.0');
+                break; // We found the image, exit the loop
+              }
             }
           }
+          
+          if (imageUrl) {
+            return new Response(
+              JSON.stringify({ 
+                success: true, 
+                imageUrl: imageUrl,
+                textResponse: textResponse,
+                source: "gemini"
+              }),
+              { 
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              }
+            );
+          }
+          
+          console.error('Could not extract image from Gemini Flash response');
+        } else {
+          const errorText = await geminiResponse.text();
+          console.error(`Gemini Flash API error:`, errorText);
         }
-        
-        console.error('Could not extract image from Gemini response after multiple attempts');
-        throw new Error('No image data found in Gemini response');
       } catch (geminiError) {
-        console.error('Error with Gemini API, trying DALL-E as fallback:', geminiError);
+        console.error('All Gemini API attempts failed:', geminiError);
         // Fall through to DALL-E
       }
     }
     
-    // Try DALL-E if Gemini fails or is not available
+    // Use DALL-E if Gemini fails or is not available
     if (OPENAI_API_KEY) {
       try {
         console.log('Using OpenAI DALL-E for image generation');
@@ -215,7 +231,6 @@ serve(async (req) => {
         }
         
         const dalleData = await dalleResponse.json();
-        console.log('DALL-E response received:', JSON.stringify(dalleData).substring(0, 500) + '...');
         
         if (dalleData?.data?.[0]?.url) {
           const dalleImageUrl = dalleData.data[0].url;
@@ -245,7 +260,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in image generation function:', error);
     
-    // Return with error - no fallback to Unsplash
+    // Return with error
     return new Response(
       JSON.stringify({ 
         success: false,

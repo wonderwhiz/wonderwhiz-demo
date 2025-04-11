@@ -87,18 +87,18 @@ serve(async (req) => {
 
     const prompt = `A ${style} about ${topic}. The image should be ${ageAppropriate}, educational, inspiring wonder and curiosity. No text in the image.`;
 
-    // Try Gemini Imagen first if available
+    // Try Gemini Imagen first if available (updated URLs)
     if (geminiApiKey) {
       try {
         console.log('Attempting to generate image with Gemini Imagen 3...');
         
+        // First try the newer endpoint format
         const imagen3Response = await fetch(
-          "https://generativelanguage.googleapis.com/v1/models/imagen-3.0-generate:generateImage", 
+          `https://generativelanguage.googleapis.com/v1/models/imagen-3.0-generate:generateImage?key=${geminiApiKey}`, 
           {
             method: "POST",
             headers: {
-              "Content-Type": "application/json",
-              "x-goog-api-key": geminiApiKey
+              "Content-Type": "application/json"
             },
             body: JSON.stringify({
               prompt: prompt,
@@ -123,7 +123,46 @@ serve(async (req) => {
               headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             });
           } else {
-            console.log('No image data in Imagen 3 response, trying Gemini 2.0 Flash...');
+            console.log('No image data in Imagen 3 response, trying older Imagen 3 endpoint...');
+            
+            // Try the older endpoint format
+            const imagen3AltResponse = await fetch(
+              `https://generativelanguage.googleapis.com/v1/models/imagen3:generateImage?key=${geminiApiKey}`, 
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                  prompt: prompt,
+                  responseFormat: {
+                    format: "IMAGE"
+                  }
+                })
+              }
+            );
+            
+            if (imagen3AltResponse.ok) {
+              const imagen3AltData = await imagen3AltResponse.json();
+              
+              if (imagen3AltData?.image?.data) {
+                console.log('Successfully generated image with alternate Imagen 3 endpoint');
+                const imageUrl = `data:image/png;base64,${imagen3AltData.image.data}`;
+                
+                return new Response(JSON.stringify({ 
+                  imageUrl,
+                  source: 'gemini'
+                }), {
+                  headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                });
+              } else {
+                console.log('No image data in alternate Imagen 3 response, trying Gemini 2.0 Flash...');
+              }
+            } else {
+              const altErrorText = await imagen3AltResponse.text();
+              console.error(`Alternate Imagen 3 API error:`, altErrorText);
+              console.log('Falling back to Gemini 2.0 Flash...');
+            }
           }
         } else {
           const errorText = await imagen3Response.text();
@@ -133,12 +172,11 @@ serve(async (req) => {
         
         // Try Gemini 2.0 Flash next
         const geminiResponse = await fetch(
-          "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash-exp-image-generation:generateContent", 
+          `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${geminiApiKey}`, 
           {
             method: "POST",
             headers: {
-              "Content-Type": "application/json",
-              "x-goog-api-key": geminiApiKey
+              "Content-Type": "application/json"
             },
             body: JSON.stringify({
               contents: [
@@ -225,7 +263,7 @@ serve(async (req) => {
         const data = await response.json();
         const imageUrl = data.data[0].url;
 
-        console.log('Successfully generated image with DALL-E:', imageUrl.substring(0, 40) + '...');
+        console.log('Successfully generated image with DALL-E');
 
         return new Response(JSON.stringify({ 
           imageUrl,
