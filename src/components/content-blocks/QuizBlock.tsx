@@ -11,6 +11,7 @@ export interface QuizBlockProps {
   correctIndex: number;
   explanation?: string;
   specialistId: string;
+  onLike?: () => void;
   onBookmark?: () => void;
   onReply?: (message: string) => void;
   onCorrectAnswer?: () => void;
@@ -25,6 +26,7 @@ const QuizBlock: React.FC<QuizBlockProps> = ({
   correctIndex,
   explanation,
   specialistId,
+  onLike,
   onBookmark,
   onReply,
   onCorrectAnswer,

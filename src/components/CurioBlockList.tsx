@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ContentBlock } from '@/types/curio';
@@ -206,7 +205,6 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
                 correctIndex={block.content?.correctIndex || 0}
                 explanation={block.content?.explanation || ''}
                 specialistId={block.specialist_id}
-                onLike={handleToggleLike ? () => handleToggleLike(block.id) : undefined}
                 onBookmark={handleToggleBookmark ? () => handleToggleBookmark(block.id) : undefined}
                 onReply={handleReply ? (message) => handleReply(block.id, message) : undefined}
                 onCorrectAnswer={handleQuizCorrect ? () => handleQuizCorrect(block.id) : undefined}
