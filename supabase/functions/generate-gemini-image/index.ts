@@ -32,6 +32,7 @@ serve(async (req) => {
     console.log(`Generating image for prompt: "${enhancedPrompt}" with style: ${style}`);
     
     try {
+      // Using the Gemini 2.0 Flash Experimental model for image generation
       const geminiResponse = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent", {
         method: "POST",
         headers: {
@@ -85,7 +86,6 @@ serve(async (req) => {
             
             imageUrl = `data:${mimeType};base64,${imageData}`;
             console.log('Image URL generated from inline data');
-            break;
           }
         }
       }

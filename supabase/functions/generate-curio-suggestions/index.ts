@@ -13,275 +13,177 @@ serve(async (req) => {
   }
 
   try {
-    const body = await req.json();
-    const { childProfile, pastCurios, topic, specialistIds } = body;
+    // Parse request body
+    const { topic, childAge = 10, count = 5 } = await req.json();
+    
+    if (!topic) {
+      throw new Error('Topic is required');
+    }
 
-    // Different behavior based on whether we're generating topic-based suggestions
-    // or personalized curio suggestions
-    if (topic) {
-      // Topic-specific suggestions (for rabbit hole feature)
-      return generateTopicalSuggestions(topic, specialistIds);
-    } else if (childProfile) {
-      // Personalized suggestions for dashboard
-      return generatePersonalizedSuggestions(childProfile, pastCurios);
-    } else {
-      // No valid input provided
-      throw new Error("No topic or child profile provided");
+    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+    if (!GEMINI_API_KEY) {
+      console.error('Missing GEMINI_API_KEY environment variable');
+      throw new Error('API configuration error');
+    }
+
+    console.log(`Generating curio suggestions for topic: "${topic}", childAge: ${childAge}, count: ${count}`);
+
+    try {
+      // Call Gemini API to generate suggestions
+      const geminiResponse = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": GEMINI_API_KEY,
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: "user",
+              parts: [
+                {
+                  text: `You are an AI designed to generate interesting, educational, and age-appropriate questions for children aged ${childAge} that build upon a topic they're currently learning about.
+
+Based on the topic "${topic}", generate ${count} engaging follow-up questions that would spark a child's curiosity and motivate them to learn more. 
+
+Format these as a JSON array of objects, each with a "question" field. Do not include any other text in your response, just the JSON.
+
+Example output format:
+[
+  {"question": "How do plants make their own food through photosynthesis?"},
+  {"question": "Why are some plants carnivorous and how do they catch insects?"}
+]
+
+Make sure questions are:
+- Age appropriate for ${childAge} year olds
+- Educational and fact-based
+- Open-ended to encourage exploration
+- Directly related to the original topic
+- Clear and concise (under 100 characters if possible)
+- Free of any harmful, inappropriate, or overly complex content
+- Varied in focus to cover different aspects of the topic`
+                }
+              ]
+            }
+          ],
+          generationConfig: {
+            temperature: 0.7,
+            topK: 40,
+            topP: 0.95,
+            maxOutputTokens: 800,
+          }
+        })
+      });
+
+      if (!geminiResponse.ok) {
+        const errorData = await geminiResponse.text();
+        console.error('Gemini API error:', errorData);
+        throw new Error(`Gemini API error: ${errorData}`);
+      }
+
+      const data = await geminiResponse.json();
+      
+      if (!data.candidates || data.candidates.length === 0) {
+        throw new Error('No response from Gemini');
+      }
+      
+      const responseText = data.candidates[0].content.parts[0].text;
+      
+      // Parse the JSON response
+      let suggestions = [];
+      try {
+        // Clean the response if it contains markdown code blocks
+        const cleanedResponse = responseText.replace(/```json\s*|\s*```/g, '');
+        suggestions = JSON.parse(cleanedResponse);
+      } catch (parseError) {
+        console.error('Error parsing JSON response:', parseError);
+        console.log('Raw response:', responseText);
+        
+        // Use a fallback approach to extract questions if JSON parsing fails
+        const lines = responseText.split('\n');
+        const jsonStartIndex = lines.findIndex(line => line.trim().startsWith('['));
+        const jsonEndIndex = lines.findIndex(line => line.trim().startsWith(']'));
+        
+        if (jsonStartIndex >= 0 && jsonEndIndex >= 0) {
+          const jsonSubset = lines.slice(jsonStartIndex, jsonEndIndex + 1).join('');
+          try {
+            suggestions = JSON.parse(jsonSubset);
+          } catch (subsetError) {
+            console.error('Error parsing JSON subset:', subsetError);
+            // If all parsing attempts fail, use a regex fallback
+            const questionMatches = responseText.match(/"question":\s*"([^"]+)"/g);
+            if (questionMatches) {
+              suggestions = questionMatches.map(match => {
+                const question = match.match(/"question":\s*"([^"]+)"/)[1];
+                return { question };
+              });
+            }
+          }
+        }
+      }
+      
+      // If we still have no suggestions, provide fallbacks
+      if (!Array.isArray(suggestions) || suggestions.length === 0) {
+        console.warn('Failed to parse suggestions, using fallbacks');
+        suggestions = [
+          { question: `What else can we learn about ${topic}?` },
+          { question: `Why is ${topic} important?` },
+          { question: `How does ${topic} affect our everyday lives?` },
+          { question: `What are the most interesting facts about ${topic}?` },
+          { question: `How has ${topic} changed over time?` }
+        ];
+      }
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          suggestions: suggestions.slice(0, count) 
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    } catch (apiError) {
+      console.error('Error generating suggestions:', apiError);
+      
+      // Provide fallback suggestions
+      const fallbackSuggestions = [
+        { question: `What else can we learn about ${topic}?` },
+        { question: `Why is ${topic} important?` },
+        { question: `How does ${topic} affect our everyday lives?` },
+        { question: `What are the most interesting facts about ${topic}?` },
+        { question: `How has ${topic} changed over time?` }
+      ];
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          suggestions: fallbackSuggestions.slice(0, count),
+          error: apiError.message,
+          fallback: true 
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
     }
   } catch (error) {
     console.error('Error in generate-curio-suggestions:', error);
     
-    // Return a fallback response with default suggestions
     return new Response(
-      JSON.stringify({
-        fallbackSuggestions: [
-          "How do volcanoes work?",
-          "What's inside a black hole?",
-          "Why do we dream?",
-          "How do animals communicate?",
-          "What makes rainbows appear?",
-          "How do computers think?"
-        ],
-        error: error.message
+      JSON.stringify({ 
+        success: false, 
+        error: error.message, 
+        suggestions: [
+          { question: "What other topics are you interested in?" },
+          { question: "Would you like to learn about space instead?" },
+          { question: "Are you curious about animals?" }
+        ]
       }),
-      {
+      { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400
       }
     );
   }
 });
-
-async function generateTopicalSuggestions(topic: string, specialistIds: string[] = []) {
-  if (!topic) {
-    throw new Error("No topic provided");
-  }
-
-  try {
-    // Generate suggestions based on the topic
-    // This will be used for the "rabbit hole" feature in curio pages
-    const defaultSuggestions = [
-      {
-        question: `What's the most surprising fact about ${topic}?`,
-        description: "Uncover deeper mysteries and fascinating details through scientific inquiry"
-      },
-      {
-        question: `Why is ${topic} important to understand?`,
-        description: "Discover the real-world significance and impact on our daily lives"
-      },
-      {
-        question: `How does ${topic} work?`,
-        description: "Explore the mechanics and processes behind this fascinating subject"
-      },
-      {
-        question: `${topic} in the future`,
-        description: "Imagine how this concept might evolve and change in years to come"
-      }
-    ];
-    
-    // Generate specialist insights if specialistIds are provided
-    const specialistInsights = generateSpecialistInsights(topic, specialistIds);
-    
-    return new Response(
-      JSON.stringify({
-        suggestions: defaultSuggestions,
-        specialistInsights
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
-  } catch (error) {
-    console.error('Error generating topical suggestions:', error);
-    throw error;
-  }
-}
-
-function generateSpecialistInsights(topic: string, specialistIds: string[] = []) {
-  if (!specialistIds.length) return [];
-  
-  const specialistMap: Record<string, { title: string, domain: string }> = {
-    'nova': { title: 'Space Expert', domain: 'astronomy' },
-    'spark': { title: 'Creativity Guide', domain: 'creativity' },
-    'prism': { title: 'Science Specialist', domain: 'science' },
-    'pixel': { title: 'Tech Guru', domain: 'technology' },
-    'atlas': { title: 'History Explorer', domain: 'history' },
-    'lotus': { title: 'Nature Observer', domain: 'nature' }
-  };
-  
-  return specialistIds.map(id => {
-    const specialist = specialistMap[id] || { title: 'Expert', domain: 'general knowledge' };
-    
-    return {
-      question: `How does ${topic} relate to ${specialist.domain}?`,
-      description: `Explore the fascinating connections between ${topic} and the world of ${specialist.domain}`,
-      specialist: id
-    };
-  });
-}
-
-async function generatePersonalizedSuggestions(childProfile: any, pastCurios: any[] = []) {
-  if (!childProfile) {
-    throw new Error("Child profile is required");
-  }
-  
-  try {
-    const { age = 10, interests = [] } = childProfile;
-    
-    // Generate based on time of day
-    const hour = new Date().getHours();
-    const timeBasedSuggestions = getTimeBasedSuggestions(hour);
-    
-    // Generate based on interests
-    const interestBasedSuggestions = getInterestBasedSuggestions(interests);
-    
-    // Generate age-appropriate suggestions
-    const ageBasedSuggestions = getAgeBasedSuggestions(age);
-    
-    // Combine and shuffle all suggestions
-    const allSuggestions = [
-      ...timeBasedSuggestions,
-      ...interestBasedSuggestions,
-      ...ageBasedSuggestions
-    ];
-    
-    // Shuffle using Fisher-Yates algorithm
-    for (let i = allSuggestions.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [allSuggestions[i], allSuggestions[j]] = [allSuggestions[j], allSuggestions[i]];
-    }
-    
-    // Take a subset to return
-    const finalSuggestions = allSuggestions.slice(0, 6);
-    
-    return new Response(
-      JSON.stringify(finalSuggestions),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
-  } catch (error) {
-    console.error('Error generating personalized suggestions:', error);
-    throw error;
-  }
-}
-
-function getTimeBasedSuggestions(hour: number): string[] {
-  const defaultSuggestions = {
-    morning: [
-      "How do our brains wake up in the morning?",
-      "Why is the sky blue?",
-      "What makes rainbows appear?",
-      "How do birds know which way to fly?"
-    ],
-    afternoon: [
-      "How do volcanoes work?",
-      "What are the coolest dinosaurs ever discovered?",
-      "How do computers think?",
-      "What's inside a black hole?"
-    ],
-    evening: [
-      "Why can we see the stars at night?",
-      "How do dreams work?",
-      "What animals can see in the dark?",
-      "How do fireflies make light?"
-    ]
-  };
-
-  // Return time-appropriate suggestions
-  if (hour < 12) return defaultSuggestions.morning;
-  if (hour < 18) return defaultSuggestions.afternoon;
-  return defaultSuggestions.evening;
-}
-
-function getInterestBasedSuggestions(interests: string[]): string[] {
-  const interestMap: Record<string, string[]> = {
-    'space': [
-      "What is the biggest planet?",
-      "How many stars are in the universe?",
-      "What happens inside a black hole?",
-      "How do astronauts live in space?"
-    ],
-    'animals': [
-      "What's the fastest animal on Earth?",
-      "How do chameleons change color?",
-      "Which animals can live the longest?",
-      "How do birds build their nests?"
-    ],
-    'science': [
-      "How do magnets work?",
-      "What are atoms made of?",
-      "How does electricity flow?",
-      "What's inside a volcano?"
-    ],
-    'history': [
-      "Who built the pyramids?",
-      "How did dinosaurs become extinct?",
-      "What was the first computer like?",
-      "Who were the first people to reach the North Pole?"
-    ],
-    'music': [
-      "How do musical instruments make sound?",
-      "Why do some songs make us feel happy or sad?",
-      "How do bats use sound to navigate?",
-      "What is the oldest musical instrument?"
-    ],
-    'nature': [
-      "How do trees communicate with each other?",
-      "What makes lightning and thunder?",
-      "How do seeds know which way to grow?",
-      "Why do leaves change color in autumn?"
-    ]
-  };
-  
-  const result: string[] = [];
-  
-  // For each interest, add 1-2 related questions
-  for (const interest of interests) {
-    if (interestMap[interest]) {
-      // Shuffle the interest's questions
-      const shuffled = [...interestMap[interest]];
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-      }
-      
-      // Add 1-2 questions from this interest
-      result.push(shuffled[0]);
-      if (Math.random() > 0.5 && shuffled.length > 1) {
-        result.push(shuffled[1]);
-      }
-    }
-  }
-  
-  return result;
-}
-
-function getAgeBasedSuggestions(age: number): string[] {
-  // Age-appropriate suggestion templates
-  const suggestionsByAge = {
-    young: [
-      "Why is the sky blue?",
-      "How do butterflies fly?",
-      "Why do we need to sleep?",
-      "How do plants grow?"
-    ],
-    middle: [
-      "How do volcanoes work?",
-      "What are black holes?",
-      "How do computers work?",
-      "Why do some animals hibernate?"
-    ],
-    older: [
-      "How does the internet work?",
-      "What causes climate change?",
-      "How do rockets fly to space?",
-      "How does the human brain work?"
-    ]
-  };
-  
-  // Get age-appropriate suggestions
-  if (age <= 7) return suggestionsByAge.young;
-  if (age >= 12) return suggestionsByAge.older;
-  return suggestionsByAge.middle;
-}
