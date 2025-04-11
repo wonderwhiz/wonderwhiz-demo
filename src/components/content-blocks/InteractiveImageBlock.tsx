@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Image, RefreshCw, Download, Share2, Wand2 } from 'lucide-react';
@@ -29,7 +30,14 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
 }) => {
   const [currentStyle, setCurrentStyle] = useState('cartoon');
   const [isImageLoaded, setIsImageLoaded] = useState(false);
-  const { generateImage, isGenerating, imageUrl, generationError, resetImage } = useGeminiImageGeneration({ childAge });
+  const { 
+    generateImage, 
+    isGenerating, 
+    imageUrl, 
+    generationError, 
+    resetImage, 
+    fallbackSource 
+  } = useGeminiImageGeneration({ childAge });
   
   useEffect(() => {
     if (topic) {
