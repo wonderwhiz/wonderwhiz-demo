@@ -1,7 +1,8 @@
 
 import React from 'react';
-import BlockReply from '../BlockReply';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getSpecialistInfo } from '@/utils/specialists';
 
 interface BlockReply {
   id: string;
@@ -30,30 +31,46 @@ const BlockReplies: React.FC<BlockRepliesProps> = ({ replies, specialistId }) =>
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <h4 className="text-white text-xs sm:text-sm mb-2 flex items-center">
-        <span className="relative inline-flex mr-2">
-          <span className="w-2 h-2 rounded-full bg-green-400"></span>
-          <span className="w-2 h-2 rounded-full bg-green-400 absolute inset-0 animate-ping opacity-75"></span>
-        </span>
-        <span className="font-medium">Your Magical Conversation</span>
-      </h4>
-      <div className="space-y-2 sm:space-y-3 max-h-64 overflow-y-auto px-1 pr-2 scrollbar-thin scrollbar-thumb-wonderwhiz-purple/50 scrollbar-track-transparent">
+      <div className="space-y-2 sm:space-y-3 max-h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-wonderwhiz-purple/50 scrollbar-track-transparent">
         <AnimatePresence initial={false}>
-          {replies.map((reply, index) => (
-            <motion.div
-              key={reply.id}
-              initial={{ opacity: 0, x: reply.from_user ? 20 : -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.1 }}
-            >
-              <BlockReply 
-                content={reply.content} 
-                fromUser={reply.from_user} 
-                specialistId={reply.specialist_id || specialistId} 
-                timestamp={reply.created_at} 
-              />
-            </motion.div>
-          ))}
+          {replies.map((reply, index) => {
+            const replySpecialist = reply.from_user ? null : getSpecialistInfo(reply.specialist_id || specialistId);
+            
+            return (
+              <motion.div
+                key={reply.id}
+                initial={{ opacity: 0, x: reply.from_user ? 20 : -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.1 }}
+                className="flex items-start gap-2"
+              >
+                <Avatar className="h-7 w-7 border border-white/10 mt-1">
+                  {reply.from_user ? (
+                    <AvatarFallback className="bg-indigo-500">U</AvatarFallback>
+                  ) : (
+                    <>
+                      <AvatarImage src={replySpecialist?.avatar} alt={replySpecialist?.name} />
+                      <AvatarFallback className={replySpecialist?.fallbackColor || 'bg-purple-600'}>
+                        {replySpecialist?.fallbackInitial || 'S'}
+                      </AvatarFallback>
+                    </>
+                  )}
+                </Avatar>
+                
+                <div className="flex-1">
+                  <div className="bg-white/5 rounded-lg p-2 text-sm text-white/90">
+                    <p className="text-xs font-medium mb-1">
+                      {reply.from_user ? 'You' : replySpecialist?.name}
+                    </p>
+                    {reply.content}
+                  </div>
+                  <p className="text-xs text-white/40 mt-1">
+                    {new Date(reply.created_at).toLocaleDateString()} • {new Date(reply.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+              </motion.div>
+            );
+          })}
         </AnimatePresence>
       </div>
     </motion.div>

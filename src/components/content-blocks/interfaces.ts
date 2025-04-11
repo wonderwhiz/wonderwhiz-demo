@@ -1,107 +1,89 @@
 
-// Common props that all block components should have
-export interface BaseBlockProps {
-  specialistId: string;
-  updateHeight?: (height: number) => void;
+export interface BlockInteractionsProps {
+  id: string;
+  liked?: boolean;
+  bookmarked?: boolean;
+  type: string;
+  onToggleLike?: () => void;
+  onToggleBookmark: () => void;
+  setShowReplyForm?: (show: boolean) => void;
+  onRabbitHoleClick?: (question: string) => void;
+  relatedQuestions?: string[];
 }
 
-export interface FlashcardBlockProps extends BaseBlockProps {
+export interface FlashcardBlockProps {
   content: {
     front: string;
     back: string;
     hint?: string;
   };
+  specialistId: string;
 }
 
-export interface CreativeBlockProps extends BaseBlockProps {
+export interface CreativeBlockProps {
   content: {
     prompt: string;
     description?: string;
     guidelines?: string;
-    examples?: any[];
+    examples?: string[];
   };
+  specialistId: string;
   onCreativeUpload?: () => void;
   uploadFeedback?: string | null;
-  curioId?: string;
 }
 
-export interface TaskBlockProps extends BaseBlockProps {
+export interface TaskBlockProps {
   content: {
     task: string;
-    reward: string | number;
+    reward?: string;
     title?: string;
     description?: string;
     steps?: string[];
   };
+  specialistId: string;
   onTaskComplete?: () => void;
 }
 
-export interface RiddleBlockProps extends BaseBlockProps {
+export interface RiddleBlockProps {
   content: {
     riddle: string;
     answer: string;
     question?: string;
     hint?: string;
   };
+  specialistId: string;
 }
 
-export interface NewsBlockProps extends BaseBlockProps {
+export interface NewsBlockProps {
   content: {
-    headline: string;
-    summary: string;
+    headline?: string;
+    summary?: string;
     body?: string;
-    source: string;
+    source?: string;
     date?: string;
   };
+  specialistId: string;
   onNewsRead?: () => void;
 }
 
-export interface ActivityBlockProps extends BaseBlockProps {
+export interface ActivityBlockProps {
   content: {
     activity: string;
     title?: string;
     instructions?: string;
     steps?: string[];
   };
+  specialistId: string;
   onActivityComplete?: () => void;
 }
 
-export interface MindfulnessBlockProps extends BaseBlockProps {
+export interface MindfulnessBlockProps {
   content: {
     exercise: string;
-    duration: number;
+    duration?: number;
     title?: string;
     instruction?: string;
   };
+  specialistId: string;
   onMindfulnessComplete?: () => void;
-}
-
-export interface BlockInteractionsProps {
-  id: string;
-  liked: boolean;
-  bookmarked: boolean;
-  type: string;
-  onToggleLike: () => void;
-  onToggleBookmark: () => void;
-  setShowReplyForm: React.Dispatch<React.SetStateAction<boolean>>;
-  onRabbitHoleClick?: (question: string) => void;
-  relatedQuestions?: string[];
-}
-
-export interface CurioPageHeaderProps {
-  curioTitle: string | null;
-  childProfile?: any;
-  handleBackToDashboard: () => void;
-  handleToggleInsights?: () => void;
-  handleRefresh?: () => void;
-  refreshing?: boolean;
-  showInsights?: boolean;
-}
-
-export interface CurioPageInsightsProps {
-  difficulty: string;
-  blockCount: number;
-  learningSummary: string;
-  showInsights?: boolean;
-  handleToggleInsights?: () => void;
 }

@@ -1,11 +1,12 @@
-
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/card';
-import { Lightbulb, BookmarkPlus, ThumbsUp, MessageCircle } from 'lucide-react';
+import { Lightbulb, BookmarkPlus, BookmarkCheck, MessageCircle, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 
 interface FlashcardBlockProps {
   content: {
@@ -15,11 +16,18 @@ interface FlashcardBlockProps {
     rabbitHoles?: string[];
   };
   specialistId: string;
-  onLike?: () => void;
   onBookmark?: () => void;
+  isBookmarked?: boolean;
   onReply?: (message: string) => void;
   onRabbitHoleClick?: (question: string) => void;
   updateHeight?: (height: number) => void;
+  replies?: Array<{
+    id: string;
+    content: string;
+    from_user: boolean;
+    created_at: string;
+    specialist_id?: string;
+  }>;
 }
 
 const getSpecialistInfo = (specialistId: string) => {
@@ -56,19 +64,20 @@ const getSpecialistInfo = (specialistId: string) => {
 const FlashcardBlock: React.FC<FlashcardBlockProps> = ({ 
   content, 
   specialistId,
-  onLike,
   onBookmark,
+  isBookmarked,
   onReply,
   onRabbitHoleClick,
-  updateHeight
+  updateHeight,
+  replies = []
 }) => {
   const [isFlipped, setIsFlipped] = useState(false);
-  const [showReplyForm, setShowReplyForm] = useState(false);
   const [replyText, setReplyText] = useState('');
   const specialist = getSpecialistInfo(specialistId);
   const cardRef = React.useRef<HTMLDivElement>(null);
+  const commentBoxRef = useRef<HTMLDivElement>(null);
   
-  React.useEffect(() => {
+  useEffect(() => {
     if (cardRef.current && updateHeight) {
       const observer = new ResizeObserver(() => {
         updateHeight(cardRef.current?.offsetHeight || 0);
@@ -77,13 +86,12 @@ const FlashcardBlock: React.FC<FlashcardBlockProps> = ({
       observer.observe(cardRef.current);
       return () => observer.disconnect();
     }
-  }, [updateHeight, isFlipped, showReplyForm]);
+  }, [updateHeight, isFlipped, replyText]);
   
   const handleSubmitReply = () => {
     if (replyText.trim() && onReply) {
       onReply(replyText);
       setReplyText('');
-      setShowReplyForm(false);
     }
   };
   
@@ -160,70 +168,100 @@ const FlashcardBlock: React.FC<FlashcardBlockProps> = ({
           </div>
         )}
         
-        {/* Action buttons */}
+        {/* Save button */}
         <div className="flex space-x-2 mt-2 pt-2 border-t border-white/10">
-          {onLike && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={onLike}
-              className="text-white/70 hover:text-white hover:bg-white/10"
-            >
-              <ThumbsUp className="h-4 w-4 mr-1" />
-              Like
-            </Button>
-          )}
-          
           {onBookmark && (
             <Button 
               variant="ghost" 
               size="sm" 
               onClick={onBookmark}
-              className="text-white/70 hover:text-white hover:bg-white/10"
+              className="text-white/70 hover:text-white hover:bg-white/10 flex items-center"
             >
-              <BookmarkPlus className="h-4 w-4 mr-1" />
-              Save
-            </Button>
-          )}
-          
-          {onReply && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setShowReplyForm(!showReplyForm)}
-              className="text-white/70 hover:text-white hover:bg-white/10"
-            >
-              <MessageCircle className="h-4 w-4 mr-1" />
-              Reply
+              {isBookmarked ? (
+                <>
+                  <BookmarkCheck className="h-4 w-4 mr-1 text-yellow-400" />
+                  <span>Saved</span>
+                </>
+              ) : (
+                <>
+                  <BookmarkPlus className="h-4 w-4 mr-1" />
+                  <span>Save</span>
+                </>
+              )}
             </Button>
           )}
         </div>
         
-        {/* Reply form */}
-        {showReplyForm && (
-          <motion.div 
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            transition={{ duration: 0.3 }}
-            className="mt-3"
-          >
-            <div className="flex">
-              <input
+        {/* Comment thread section */}
+        <div ref={commentBoxRef} className="mt-4 border-t border-white/10 pt-3">
+          {/* Existing replies */}
+          {replies.length > 0 && (
+            <div className="space-y-3 mb-3">
+              {replies.map((reply) => {
+                const replySpecialist = reply.from_user ? null : getSpecialistInfo(reply.specialist_id || specialistId);
+                
+                return (
+                  <div key={reply.id} className="flex items-start gap-2">
+                    <Avatar className="h-7 w-7 border border-white/10 flex-shrink-0">
+                      {reply.from_user ? (
+                        <AvatarFallback className="bg-indigo-500">U</AvatarFallback>
+                      ) : (
+                        <>
+                          <AvatarImage src={replySpecialist?.avatar} alt={replySpecialist?.name} />
+                          <AvatarFallback className={replySpecialist?.fallbackColor || 'bg-purple-600'}>
+                            {replySpecialist?.fallbackInitial || 'S'}
+                          </AvatarFallback>
+                        </>
+                      )}
+                    </Avatar>
+                    <div className="flex-1">
+                      <div className="bg-white/5 rounded-lg p-2 text-sm text-white/90">
+                        <p className="text-xs font-medium mb-1">
+                          {reply.from_user ? 'You' : replySpecialist?.name}
+                        </p>
+                        {reply.content}
+                      </div>
+                      <p className="text-xs text-white/40 mt-1">
+                        {new Date(reply.created_at).toLocaleDateString()} • {new Date(reply.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          
+          {/* Comment input */}
+          <div className="flex items-center gap-2">
+            <Avatar className="h-7 w-7 border border-white/10 flex-shrink-0">
+              <AvatarFallback className="bg-indigo-500">U</AvatarFallback>
+            </Avatar>
+            <div className="flex-1 flex items-center bg-white/5 rounded-full border border-white/10 pr-1">
+              <Input
                 type="text"
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
-                placeholder="Write a reply..."
-                className="flex-1 bg-white/5 border border-white/10 rounded-l-md px-3 py-2 text-white placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                placeholder={`Chat with ${specialist.name}...`}
+                className="border-0 bg-transparent focus-visible:ring-0 text-white placeholder:text-white/40 flex-1 text-sm"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSubmitReply();
+                  }
+                }}
               />
               <Button 
-                onClick={handleSubmitReply} 
-                className="rounded-l-none bg-indigo-600 hover:bg-indigo-700"
+                size="icon" 
+                variant="ghost" 
+                className="h-8 w-8 rounded-full text-white/70 hover:text-white hover:bg-indigo-500/30"
+                onClick={handleSubmitReply}
+                disabled={!replyText.trim()}
               >
-                Send
+                <Send className="h-4 w-4" />
               </Button>
             </div>
-          </motion.div>
-        )}
+          </div>
+        </div>
       </div>
     </Card>
   );
