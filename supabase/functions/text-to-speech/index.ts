@@ -24,8 +24,11 @@ serve(async (req) => {
       throw new Error('ELEVEN_LABS_API_KEY environment variable is not set');
     }
 
+    // Use the WonderWhiz voice ID by default
+    const wonderWhizVoiceId = 'pkDwhVp7Wc7dQq2DBbpK';
+    
     // Call ElevenLabs API
-    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId || 'FGY2WhTYpPnrIDTdsKH5'}`, {
+    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId || wonderWhizVoiceId}`, {
       method: 'POST',
       headers: {
         'Accept': 'audio/mpeg',

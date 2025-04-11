@@ -7,7 +7,7 @@ interface UseElevenLabsVoiceProps {
   voiceId?: string;
 }
 
-export function useElevenLabsVoice({ voiceId = 'FGY2WhTYpPnrIDTdsKH5' }: UseElevenLabsVoiceProps = {}) {
+export function useElevenLabsVoice({ voiceId = 'pkDwhVp7Wc7dQq2DBbpK' }: UseElevenLabsVoiceProps = {}) {
   const [isLoading, setIsLoading] = useState(false);
   const [audioSrc, setAudioSrc] = useState<string | null>(null);
   const { toast } = useToast();
@@ -20,7 +20,8 @@ export function useElevenLabsVoice({ voiceId = 'FGY2WhTYpPnrIDTdsKH5' }: UseElev
     pixel: 'iP95p4xoKVk53GoZ742B', // Chris - male tech voice 
     atlas: 'bIHbv24MWmeRgasZH58o', // Will - male history voice
     lotus: 'EXAVITQu4vr4xnSDxMaL', // Sarah - female nature voice
-    default: 'FGY2WhTYpPnrIDTdsKH5', // Laura - default female voice
+    whizzy: 'pkDwhVp7Wc7dQq2DBbpK', // WonderWhiz - primary voice
+    default: 'pkDwhVp7Wc7dQq2DBbpK', // WonderWhiz - default voice
   };
 
   const getSpecialistVoice = (specialistId: string) => {

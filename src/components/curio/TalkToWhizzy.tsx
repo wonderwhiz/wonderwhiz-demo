@@ -27,16 +27,17 @@ const TalkToWhizzy: React.FC<TalkToWhizzyProps> = ({
   const [response, setResponse] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   
-  const { playText, isLoading: isVoiceLoading } = useElevenLabsVoice();
+  const { playText, isLoading: isVoiceLoading } = useElevenLabsVoice({ voiceId: 'pkDwhVp7Wc7dQq2DBbpK' });
   
   const recognitionRef = useRef<any>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   
   useEffect(() => {
-    // Setup Web Speech API
-    if (window.SpeechRecognition || window.webkitSpeechRecognition) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      recognitionRef.current = new SpeechRecognition();
+    // Setup Web Speech API with proper TypeScript check
+    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (SpeechRecognitionAPI) {
+      recognitionRef.current = new SpeechRecognitionAPI();
       recognitionRef.current.continuous = true;
       recognitionRef.current.interimResults = true;
       
@@ -80,9 +81,12 @@ const TalkToWhizzy: React.FC<TalkToWhizzyProps> = ({
   }, [isListening]);
   
   useEffect(() => {
-    // Create audio context for sound playback
+    // Create audio context with proper TypeScript handling
     if (!audioContextRef.current) {
-      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      const AudioContextAPI = window.AudioContext || window.webkitAudioContext;
+      if (AudioContextAPI) {
+        audioContextRef.current = new AudioContextAPI();
+      }
     }
     
     return () => {
@@ -97,7 +101,7 @@ const TalkToWhizzy: React.FC<TalkToWhizzyProps> = ({
     if (isOpen && !isMuted && !response) {
       const welcomeMessage = `Hi there! I'm Whizzy. What would you like to know about ${curioTitle || 'this topic'}?`;
       setResponse(welcomeMessage);
-      playText(welcomeMessage, 'spark');
+      playText(welcomeMessage, 'whizzy');
     }
   }, [isOpen, isMuted, curioTitle, playText, response]);
   
@@ -144,7 +148,7 @@ const TalkToWhizzy: React.FC<TalkToWhizzyProps> = ({
       const thinkingMessage = "Hmm, let me think about that...";
       setResponse(thinkingMessage);
       if (!isMuted) {
-        await playText(thinkingMessage, 'spark');
+        await playText(thinkingMessage, 'whizzy');
       }
       
       // Call the Supabase function to process the question
@@ -163,7 +167,7 @@ const TalkToWhizzy: React.FC<TalkToWhizzyProps> = ({
       
       // Read the response aloud if not muted
       if (!isMuted) {
-        playText(answer, 'spark');
+        playText(answer, 'whizzy');
       }
       
       // Potentially generate a new exploration from this question
@@ -180,7 +184,7 @@ const TalkToWhizzy: React.FC<TalkToWhizzyProps> = ({
       setResponse(errorMessage);
       
       if (!isMuted) {
-        playText(errorMessage, 'spark');
+        playText(errorMessage, 'whizzy');
       }
     } finally {
       setIsProcessing(false);
