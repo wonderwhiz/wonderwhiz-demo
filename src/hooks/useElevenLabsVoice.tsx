@@ -122,10 +122,8 @@ export function useElevenLabsVoice({ voiceId = 'pkDwhVp7Wc7dQq2DBbpK', onError }
           console.error('Error playing audio:', error);
           // Don't show toast for common user-interaction errors
           if (error.name !== 'NotAllowedError') {
-            toast({
-              title: 'Playback Notice',
+            toast("Playback Notice", {
               description: 'Audio might require user interaction first',
-              variant: 'default',
             });
           }
         });
