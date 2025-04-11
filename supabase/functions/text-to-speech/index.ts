@@ -19,10 +19,15 @@ serve(async (req) => {
       throw new Error('Text is required');
     }
 
-    const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
+    // Get API key from environment
+    const ELEVENLABS_API_KEY = Deno.env.get('ELEVEN_LABS_API_KEY');
+    
+    // Log relevant information for debugging
+    console.log(`Using ElevenLabs API key exists: ${!!ELEVENLABS_API_KEY}`);
+    console.log(`API key length: ${ELEVENLABS_API_KEY ? ELEVENLABS_API_KEY.length : 0}`);
     
     if (!ELEVENLABS_API_KEY) {
-      console.warn('ELEVENLABS_API_KEY is not set in environment variables');
+      console.error('ELEVEN_LABS_API_KEY is not set in environment variables');
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -37,7 +42,6 @@ serve(async (req) => {
     const finalVoiceId = voiceId || 'pkDwhVp7Wc7dQq2DBbpK';
 
     console.log(`Generating speech for text (length: ${text.length}) with voice: ${finalVoiceId}`);
-    console.log(`Using ElevenLabs API key length: ${ELEVENLABS_API_KEY.length}`);
 
     try {
       const response = await fetch(

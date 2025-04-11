@@ -12,9 +12,23 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  console.log("Received request to generate-curio-suggestions");
+
   try {
     // Parse request body
-    const { topic, childAge = 10, count = 5 } = await req.json();
+    const reqText = await req.text();
+    let requestBody;
+    
+    try {
+      requestBody = JSON.parse(reqText);
+      console.log("Request body parsed successfully:", JSON.stringify(requestBody).substring(0, 200));
+    } catch (parseError) {
+      console.error("Failed to parse request body:", parseError);
+      console.log("Raw request body:", reqText);
+      throw new Error(`Invalid JSON in request body: ${parseError.message}`);
+    }
+    
+    const { topic, childAge = 10, count = 5 } = requestBody;
     
     if (!topic) {
       throw new Error('Topic is required');
@@ -76,9 +90,9 @@ Make sure questions are:
       });
 
       if (!geminiResponse.ok) {
-        const errorData = await geminiResponse.text();
-        console.error('Gemini API error:', errorData);
-        throw new Error(`Gemini API error: ${errorData}`);
+        const errorText = await geminiResponse.text();
+        console.error('Gemini API error:', errorText);
+        throw new Error(`Gemini API error: ${geminiResponse.status} - ${errorText}`);
       }
 
       const data = await geminiResponse.json();
@@ -88,12 +102,14 @@ Make sure questions are:
       }
       
       const responseText = data.candidates[0].content.parts[0].text;
+      console.log('Raw Gemini response:', responseText.substring(0, 200) + '...');
       
       // Parse the JSON response
       let suggestions = [];
       try {
         // Clean the response if it contains markdown code blocks
-        const cleanedResponse = responseText.replace(/```json\s*|\s*```/g, '');
+        const cleanedResponse = responseText.replace(/```json\s*|\s*```/g, '').trim();
+        console.log('Cleaned JSON:', cleanedResponse.substring(0, 200) + '...');
         suggestions = JSON.parse(cleanedResponse);
       } catch (parseError) {
         console.error('Error parsing JSON response:', parseError);
@@ -104,9 +120,10 @@ Make sure questions are:
         const jsonStartIndex = lines.findIndex(line => line.trim().startsWith('['));
         const jsonEndIndex = lines.findIndex(line => line.trim().startsWith(']'));
         
-        if (jsonStartIndex >= 0 && jsonEndIndex >= 0) {
+        if (jsonStartIndex >= 0 && jsonEndIndex >= 0 && jsonEndIndex > jsonStartIndex) {
           const jsonSubset = lines.slice(jsonStartIndex, jsonEndIndex + 1).join('');
           try {
+            console.log('Attempting to parse JSON subset:', jsonSubset);
             suggestions = JSON.parse(jsonSubset);
           } catch (subsetError) {
             console.error('Error parsing JSON subset:', subsetError);
@@ -134,10 +151,18 @@ Make sure questions are:
         ];
       }
       
+      // Ensure suggestions are valid objects with question field
+      const validSuggestions = suggestions
+        .filter(s => s && typeof s === 'object' && typeof s.question === 'string')
+        .map(s => ({ question: s.question }))
+        .slice(0, count);
+        
+      console.log(`Generated ${validSuggestions.length} valid suggestions`);
+      
       return new Response(
         JSON.stringify({ 
           success: true, 
-          suggestions: suggestions.slice(0, count) 
+          suggestions: validSuggestions
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -182,7 +207,7 @@ Make sure questions are:
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400
+        status: 200 // Return 200 even with errors to prevent crashing the frontend
       }
     );
   }

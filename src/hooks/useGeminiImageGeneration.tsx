@@ -48,7 +48,7 @@ export function useGeminiImageGeneration({ childAge = 10 }: UseGeminiImageGenera
       }
       
       if (data.success && data.imageUrl) {
-        console.log('Setting image URL from response');
+        console.log('Setting image URL from response:', data.imageUrl.substring(0, 50) + '...');
         setImageUrl(data.imageUrl);
         
         if (data.fallback) {
@@ -87,6 +87,7 @@ export function useGeminiImageGeneration({ childAge = 10 }: UseGeminiImageGenera
   const adaptPromptForChildAge = (prompt: string, age: number): string => {
     let adaptedPrompt = prompt;
     
+    // Adapt prompt based on child's age
     if (age < 8) {
       adaptedPrompt += ', kid-friendly, colorful, cartoonish, simple shapes, cheerful, educational illustration, cute characters';
     } else if (age < 12) {

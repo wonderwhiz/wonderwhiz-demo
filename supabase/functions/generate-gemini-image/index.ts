@@ -137,6 +137,25 @@ serve(async (req) => {
           }
         }
         
+        // Deep inspection of the response to find any image data
+        console.log('Performing deep inspection of Gemini response to find image data...');
+        const responseJson = JSON.stringify(responseData);
+        console.log('Response structure:', Object.keys(responseData).join(', '));
+        
+        if (responseData.candidates) {
+          console.log('Candidates count:', responseData.candidates.length);
+          console.log('First candidate keys:', responseData.candidates[0] ? Object.keys(responseData.candidates[0]).join(', ') : 'none');
+          
+          if (responseData.candidates[0]?.content) {
+            console.log('Content keys:', Object.keys(responseData.candidates[0].content).join(', '));
+            
+            if (responseData.candidates[0].content.parts) {
+              console.log('Parts count:', responseData.candidates[0].content.parts.length);
+              console.log('Parts types:', responseData.candidates[0].content.parts.map(p => Object.keys(p).join(',')).join(' | '));
+            }
+          }
+        }
+        
         // If we reach here, no image was found in the Gemini response
         console.error('Could not extract image from Gemini response');
         throw new Error('No image data found in Gemini response');
@@ -206,7 +225,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in image generation function:', error);
     
-    // Return with error - we don't want to fallback to Unsplash
+    // Return with error - no fallback to Unsplash as requested
     return new Response(
       JSON.stringify({ 
         success: false,
