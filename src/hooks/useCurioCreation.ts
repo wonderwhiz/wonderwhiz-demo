@@ -140,12 +140,21 @@ export const useCurioCreation = (
     }, 100);
   };
 
+  const handlePastCurioClick = async (curioQuery: string) => {
+    // Generate a fresh curio based on the past query
+    setQuery(curioQuery);
+    setTimeout(() => {
+      handleSubmitQuery();
+    }, 100);
+  };
+
   return {
     query,
     setQuery,
     isGenerating,
     handleSubmitQuery,
     handleFollowRabbitHole,
-    handleCurioSuggestionClick
+    handleCurioSuggestionClick,
+    handlePastCurioClick
   };
 };

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -255,11 +254,7 @@ const CurioPage: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [blocks.length, hasScrolledToBottom]);
 
-  const handleClearSearch = () => {
-    setSearchQuery('');
-  };
-
-  const organizeBlocksIntoChapters = (blocks: any[]) => {
+  const handleOrganizeBlocksIntoChapters = (blocks: any[]) => {
     if (!blocks.length) return {};
     
     const chapterMap: Record<string, any[]> = {
@@ -294,54 +289,11 @@ const CurioPage: React.FC = () => {
     
     return chapterMap;
   };
-  
-  const blocksByChapter = organizeBlocksIntoChapters(blocks);
 
-  const handleBackToDashboard = () => {
-    navigate(`/dashboard/${childId}`);
+  const handleClearSearch = () => {
+    setSearchQuery('');
   };
 
-  const handleRefresh = () => {
-    setRefreshing(true);
-    window.location.reload();
-  };
-  
-  const handleToggleInsights = () => {
-    setShowInsights(!showInsights);
-  };
-  
-  const handleChapterClick = (chapterId: string) => {
-    setActiveChapter(chapterId);
-    
-    setChapters(prev => prev.map(chapter => ({
-      ...chapter,
-      isActive: chapter.id === chapterId
-    })));
-    
-    document.getElementById(`chapter-${chapterId}`)?.scrollIntoView({ 
-      behavior: 'smooth', 
-      block: 'start' 
-    });
-  };
-  
-  const handleStartJourney = () => {
-    setIsJourneyStarted(true);
-    setQuickAnswerExpanded(false);
-    
-    document.getElementById('table-of-contents')?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start'
-    });
-  };
-  
-  const handleCertificateDownload = () => {
-    toast.success("Certificate downloaded successfully!");
-  };
-  
-  const handleCertificateShare = () => {
-    toast.success("Certificate shared successfully!");
-  };
-  
   const handleRabbitHoleClick = async (question: string) => {
     if (!childId) return;
     
@@ -372,7 +324,7 @@ const CurioPage: React.FC = () => {
           });
           
           await supabase.from('sparks_transactions').insert({
-            child_id: childId,
+            child_id: profileId,
             amount: 2,
             reason: 'Following curiosity'
           });

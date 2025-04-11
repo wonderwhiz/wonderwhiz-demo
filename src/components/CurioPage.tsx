@@ -10,21 +10,6 @@ import { useSearch } from '@/hooks/use-search';
 import { useBlockInteractions } from '@/hooks/useBlockInteractions';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
-import RabbitHoleSuggestions from '@/components/content-blocks/RabbitHoleSuggestions';
-import CurioPageHeader from '@/components/curio/CurioPageHeader';
-import CurioPageInsights from '@/components/curio/CurioPageInsights';
-import CurioSearchBar from '@/components/curio/CurioSearchBar';
-import CurioLoadingState from '@/components/curio/CurioLoadingState';
-import CurioEmptyState from '@/components/curio/CurioEmptyState';
-import CurioErrorState from '@/components/curio/CurioErrorState';
-import CurioBlockList from '@/components/CurioBlockList';
-import QuickAnswer from '@/components/curio/QuickAnswer';
-import { TableOfContents } from '@/components/curio/TableOfContents';
-import ProgressVisualization from '@/components/curio/ProgressVisualization';
-import LearningCertificate from '@/components/curio/LearningCertificate';
-import ChapterHeader from '@/components/curio/ChapterHeader';
-import IllustratedContentBlock from '@/components/content-blocks/IllustratedContentBlock';
-import { Chapter } from '@/types/Chapter';
 
 const DEFAULT_CHAPTERS: Chapter[] = [
   {
@@ -505,6 +490,8 @@ const CurioPage: React.FC = () => {
         handleRefresh={handleRefresh}
         refreshing={refreshing}
         showInsights={showInsights}
+        profileId={childId}
+        childName={childProfile?.name}
       />
 
       <AnimatePresence>
@@ -520,6 +507,12 @@ const CurioPage: React.FC = () => {
       </AnimatePresence>
       
       <div className="mt-4 px-4 sm:px-6 max-w-3xl mx-auto w-full">
+        <CurioSearchBar
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          handleSearch={handleSearch}
+        />
+
         {isLoadingBlocks && <CurioLoadingState />}
         
         {blocksError && <CurioErrorState message="Failed to load content." />}

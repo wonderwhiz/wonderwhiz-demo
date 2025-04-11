@@ -66,7 +66,6 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
   const [storyProgress, setStoryProgress] = useState(0);
   
   useEffect(() => {
-    // Update story progress based on blocks viewed
     if (blocks.length > 0) {
       const progress = Math.min(100, Math.floor((storyProgress + 5) * (blocks.filter(b => !b.id?.startsWith('generating-')).length / blocks.length)));
       setStoryProgress(progress);
@@ -88,7 +87,6 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
     !block.id?.startsWith('generating-')
   );
 
-  // Group blocks by type to create narrative arcs
   const factBlocks = contentBlocks.filter(block => 
     block.type === 'fact' || block.type === 'funFact'
   );
@@ -101,7 +99,6 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
     block.type === 'creative' || block.type === 'activity' || block.type === 'mindfulness'
   );
 
-  // Insert narrative prompts and transitions at appropriate points
   const shouldShowNarrativePrompt = (index: number) => {
     return index > 0 && index % 3 === 0 && contentBlocks.length > 3;
   };
@@ -207,7 +204,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
                 specialistId={block.specialist_id}
                 onBookmark={handleToggleBookmark ? () => handleToggleBookmark(block.id) : undefined}
                 onReply={handleReply ? (message) => handleReply(block.id, message) : undefined}
-                onCorrectAnswer={handleQuizCorrect ? () => handleQuizCorrect(block.id) : undefined}
+                onQuizCorrect={handleQuizCorrect ? () => handleQuizCorrect(block.id) : undefined}
                 onRabbitHoleClick={handleRabbitHoleClick}
                 updateHeight={(height) => updateBlockHeight(block.id, height)}
               />

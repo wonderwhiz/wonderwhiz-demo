@@ -642,6 +642,8 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
           bookmarked={block.bookmarked}
           onToggleBookmark={() => onToggleBookmark(block.id)}
           type={block.type}
+          onRabbitHoleClick={handleRabbitHoleClick}
+          relatedQuestions={block.content?.rabbitHoles || []}
         />
       </div>
     </Card>
