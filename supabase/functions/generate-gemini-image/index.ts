@@ -33,40 +33,42 @@ serve(async (req) => {
     
     try {
       // Using the Gemini 2.0 Flash Experimental model for image generation
-      const geminiResponse = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": GEMINI_API_KEY
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: "user",
-              parts: [
-                {
-                  text: enhancedPrompt
-                }
-              ]
+      const geminiResponse = await fetch(
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent", 
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-goog-api-key": GEMINI_API_KEY
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                role: "user",
+                parts: [
+                  {
+                    text: enhancedPrompt
+                  }
+                ]
+              }
+            ],
+            generation_config: {
+              response_modalities: ["TEXT", "IMAGE"],
+              temperature: 0.4,
+              top_p: 1,
+              top_k: 32
             }
-          ],
-          generation_config: {
-            response_modalities: ["TEXT", "IMAGE"],
-            temperature: 0.4,
-            top_p: 1,
-            top_k: 32
-          }
-        })
+          })
       });
       
       if (!geminiResponse.ok) {
-        const errorData = await geminiResponse.text();
-        console.error('Gemini API error:', errorData);
-        throw new Error(`Gemini API error: ${errorData}`);
+        const errorText = await geminiResponse.text();
+        console.error(`Gemini API error (${geminiResponse.status}):`, errorText);
+        throw new Error(`Gemini API error: ${geminiResponse.status} - ${errorText}`);
       }
       
       const responseData = await geminiResponse.json();
-      console.log('Gemini API response received');
+      console.log('Gemini API response received:', JSON.stringify(responseData).substring(0, 500) + '...');
       
       // Extract image data from the response
       let imageUrl = '';
@@ -92,22 +94,8 @@ serve(async (req) => {
       
       if (!imageUrl) {
         console.warn('No image found in Gemini response, falling back to alternative');
-        // Fallback to Unsplash when Gemini fails to generate image
-        const encodedPrompt = encodeURIComponent(prompt.substring(0, 100));
-        const seed = Math.floor(Math.random() * 1000);
-        imageUrl = `https://source.unsplash.com/random/800x600?${encodedPrompt}&seed=${seed}`;
-        
-        return new Response(
-          JSON.stringify({ 
-            success: true, 
-            imageUrl: imageUrl,
-            fallback: true,
-            error: "No image in response"
-          }),
-          { 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          }
-        );
+        // Use a more descriptive error
+        throw new Error("No image in Gemini response - check API parameters and prompt");
       }
       
       return new Response(

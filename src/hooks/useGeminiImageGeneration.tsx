@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -44,6 +43,14 @@ export function useGeminiImageGeneration({ childAge = 10 }: UseGeminiImageGenera
       if (data.success && data.imageUrl) {
         console.log('Setting image URL from response');
         setImageUrl(data.imageUrl);
+        
+        if (data.fallback) {
+          toast.info("Using a reference image - Gemini image generation unavailable", {
+            duration: 3000,
+            position: "bottom-right"
+          });
+        }
+        
         return data.imageUrl;
       } else {
         console.error('No image URL or unsuccessful generation:', data);
@@ -53,9 +60,14 @@ export function useGeminiImageGeneration({ childAge = 10 }: UseGeminiImageGenera
       console.error('Error generating image:', err);
       setGenerationError(err instanceof Error ? err.message : 'Unknown error generating image');
       
-      // Use fallback image if needed
       const fallbackUrl = getFallbackImage(prompt);
       setImageUrl(fallbackUrl);
+      
+      toast.error("Couldn't generate a custom image", {
+        description: "Using a reference image instead",
+        duration: 3000
+      });
+      
       return fallbackUrl;
     } finally {
       setIsGenerating(false);
@@ -102,7 +114,8 @@ export function useGeminiImageGeneration({ childAge = 10 }: UseGeminiImageGenera
       morning: 'https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?q=80&w=1000&auto=format&fit=crop',
       night: 'https://images.unsplash.com/photo-1516339901601-2e1b62dc0c45?q=80&w=1000&auto=format&fit=crop',
       firefly: 'https://images.unsplash.com/photo-1562155955-1cb2d73488d7?q=80&w=1000&auto=format&fit=crop',
-      // Add more topic-specific fallbacks
+      sleep: 'https://images.unsplash.com/photo-1520206183501-b80df61043c2?q=80&w=1000&auto=format&fit=crop',
+      sleepy: 'https://images.unsplash.com/photo-1520206183501-b80df61043c2?q=80&w=1000&auto=format&fit=crop',
       water: 'https://images.unsplash.com/photo-1586856822992-40c6c266f044?q=80&w=1000&auto=format&fit=crop',
       music: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?q=80&w=1000&auto=format&fit=crop',
       history: 'https://images.unsplash.com/photo-1461360370896-922624d12aa1?q=80&w=1000&auto=format&fit=crop',
@@ -111,8 +124,6 @@ export function useGeminiImageGeneration({ childAge = 10 }: UseGeminiImageGenera
       coding: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=1000&auto=format&fit=crop',
       stars: 'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?q=80&w=1000&auto=format&fit=crop',
       planets: 'https://images.unsplash.com/photo-1614314169000-4ef4aebc2573?q=80&w=1000&auto=format&fit=crop',
-      sleep: 'https://images.unsplash.com/photo-1520206183501-b80df61043c2?q=80&w=1000&auto=format&fit=crop',
-      sleepy: 'https://images.unsplash.com/photo-1520206183501-b80df61043c2?q=80&w=1000&auto=format&fit=crop',
     };
     
     const topicLower = topic.toLowerCase();
