@@ -51,7 +51,7 @@ export function useGeminiImageGeneration({ childAge = 10 }: UseGeminiImageGenera
           setFallbackSource(data.fallbackSource || 'unknown');
           
           if (data.fallbackSource === 'dalle') {
-            toast.info("Using DALL-E image - Gemini image generation unavailable", {
+            toast.info("Using DALL-E image generation", {
               duration: 3000,
               position: "bottom-right"
             });
@@ -61,6 +61,8 @@ export function useGeminiImageGeneration({ childAge = 10 }: UseGeminiImageGenera
               position: "bottom-right"
             });
           }
+        } else if (data.source === 'gemini') {
+          setFallbackSource('gemini');
         }
         
         return data.imageUrl;

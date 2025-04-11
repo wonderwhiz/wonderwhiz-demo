@@ -22,14 +22,12 @@ serve(async (req) => {
     const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
     
     if (!ELEVENLABS_API_KEY) {
-      // Return a fallback response if the API key is missing
-      console.warn('ELEVENLABS_API_KEY is not set in environment variables, returning fallback response');
+      console.warn('ELEVENLABS_API_KEY is not set in environment variables');
       return new Response(
         JSON.stringify({ 
-          success: true, 
-          audioContent: '', // Empty audio content as fallback
-          fallback: true,
-          message: 'Text-to-speech fallback: No API key configured'
+          success: false, 
+          error: 'ElevenLabs API key is not configured',
+          message: 'ElevenLabs API key is required for text-to-speech'
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -66,18 +64,7 @@ serve(async (req) => {
       if (!response.ok) {
         const errorText = await response.text();
         console.error(`ElevenLabs API error: ${response.status} ${errorText}`);
-        
-        // Return graceful fallback
-        return new Response(
-          JSON.stringify({ 
-            success: true, 
-            audioContent: '', // Empty audio content as fallback
-            fallback: true,
-            message: `ElevenLabs API error: ${response.status}`,
-            error: errorText
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        throw new Error(`ElevenLabs API error: ${response.status} - ${errorText}`);
       }
 
       // Get audio data as ArrayBuffer
@@ -101,18 +88,7 @@ serve(async (req) => {
       );
     } catch (fetchError) {
       console.error('Error fetching from ElevenLabs:', fetchError);
-      
-      // Return graceful fallback
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          audioContent: '', // Empty audio content as fallback
-          fallback: true,
-          message: 'Error connecting to ElevenLabs API',
-          error: fetchError.message
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      throw new Error(`Error connecting to ElevenLabs API: ${fetchError.message}`);
     }
   } catch (error) {
     console.error('Error in text-to-speech function:', error);

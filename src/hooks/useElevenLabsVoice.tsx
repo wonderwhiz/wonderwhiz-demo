@@ -1,16 +1,17 @@
 
 import { useState, useCallback } from 'react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
 interface UseElevenLabsVoiceProps {
   voiceId?: string;
+  onError?: (error: string) => void;
 }
 
-export function useElevenLabsVoice({ voiceId = 'pkDwhVp7Wc7dQq2DBbpK' }: UseElevenLabsVoiceProps = {}) {
+export function useElevenLabsVoice({ voiceId = 'pkDwhVp7Wc7dQq2DBbpK', onError }: UseElevenLabsVoiceProps = {}) {
   const [isLoading, setIsLoading] = useState(false);
   const [audioSrc, setAudioSrc] = useState<string | null>(null);
-  const { toast } = useToast();
+  const [error, setError] = useState<string | null>(null);
 
   // Map specialists to appropriate voice IDs
   const specialistVoiceMap = {
@@ -36,6 +37,7 @@ export function useElevenLabsVoice({ voiceId = 'pkDwhVp7Wc7dQq2DBbpK' }: UseElev
     
     try {
       setIsLoading(true);
+      setError(null);
       
       // Use the provided voiceId or get one based on the specialist
       const selectedVoiceId = specialistId 
@@ -44,7 +46,7 @@ export function useElevenLabsVoice({ voiceId = 'pkDwhVp7Wc7dQq2DBbpK' }: UseElev
       
       console.log(`Generating speech with voice ID: ${selectedVoiceId}`);
       
-      const { data, error } = await supabase.functions.invoke('text-to-speech', {
+      const { data, error: funcError } = await supabase.functions.invoke('text-to-speech', {
         body: { 
           text,
           voiceId: selectedVoiceId,
@@ -53,25 +55,40 @@ export function useElevenLabsVoice({ voiceId = 'pkDwhVp7Wc7dQq2DBbpK' }: UseElev
         }
       });
 
-      if (error) {
-        console.error('Error calling text-to-speech function:', error);
-        // We'll continue without audio
+      if (funcError) {
+        console.error('Error calling text-to-speech function:', funcError);
+        setError(funcError.message);
+        if (onError) onError(funcError.message);
+        toast.error("Speech generation failed", {
+          description: "Check that ElevenLabs API key is configured",
+        });
         return;
       }
 
       if (!data) {
-        console.warn('No data returned from text-to-speech function');
+        const errMsg = 'No data returned from text-to-speech function';
+        console.warn(errMsg);
+        setError(errMsg);
+        if (onError) onError(errMsg);
         return;
       }
 
-      // Handle fallback response
-      if (data.fallback) {
-        console.log('Using fallback for audio response:', data.message);
+      if (!data.success) {
+        const errMsg = data.error || 'Speech generation failed';
+        console.error(errMsg);
+        setError(errMsg);
+        if (onError) onError(errMsg);
+        toast.error("Speech generation failed", {
+          description: data.message || "Please check ElevenLabs configuration",
+        });
         return;
       }
 
       if (!data.audioContent) {
-        console.warn('No audio content in response');
+        const errMsg = 'No audio content in response';
+        console.warn(errMsg);
+        setError(errMsg);
+        if (onError) onError(errMsg);
         return;
       }
 
@@ -113,13 +130,15 @@ export function useElevenLabsVoice({ voiceId = 'pkDwhVp7Wc7dQq2DBbpK' }: UseElev
           }
         });
       }
-    } catch (error) {
-      console.error('Error playing text:', error);
-      // Don't show error toast to users - just fail silently
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error playing text';
+      console.error('Error playing text:', errorMessage);
+      setError(errorMessage);
+      if (onError) onError(errorMessage);
     } finally {
       setIsLoading(false);
     }
-  }, [voiceId, toast]);
+  }, [voiceId, onError]);
 
   // Helper function to convert base64 to Blob
   const base64ToBlob = (base64: string, mimeType: string) => {
@@ -151,6 +170,7 @@ export function useElevenLabsVoice({ voiceId = 'pkDwhVp7Wc7dQq2DBbpK' }: UseElev
     playText,
     isLoading,
     audioSrc,
+    error,
     getSpecialistVoice
   };
 }
