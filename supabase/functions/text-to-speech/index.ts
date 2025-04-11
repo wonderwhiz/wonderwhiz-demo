@@ -22,7 +22,6 @@ serve(async (req) => {
     const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
     
     if (!ELEVENLABS_API_KEY) {
-      // Return a fallback response if the API key is missing
       console.warn('ELEVENLABS_API_KEY is not set in environment variables, returning fallback response');
       return new Response(
         JSON.stringify({ 
