@@ -30,7 +30,8 @@ export function useGeminiImageGeneration({ childAge = 10 }: UseGeminiImageGenera
         body: { 
           prompt: adaptedPrompt,
           style: imageStyle,
-          childAge: childAge
+          childAge: childAge,
+          retryOnFail: true
         }
       });
       
@@ -90,6 +91,10 @@ export function useGeminiImageGeneration({ childAge = 10 }: UseGeminiImageGenera
           }
         } else if (data.source === 'gemini') {
           setFallbackSource('gemini');
+          toast.success("Image created with Gemini AI", {
+            duration: 3000,
+            position: "bottom-right"
+          });
         }
         
         return data.imageUrl;
