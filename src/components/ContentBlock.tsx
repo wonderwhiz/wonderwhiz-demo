@@ -434,6 +434,10 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     }
   };
   
+  const handleBlockHeightUpdate = (height: number) => {
+    console.log(`Block ${block.id} height updated to ${height}px`);
+  };
+  
   const renderBlockContent = () => {
     switch (block.type) {
       case 'fact':
@@ -448,6 +452,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
           textSize={getTextSize(block.type)}
           narrativePosition={narrativePosition}
           onRabbitHoleClick={handleRabbitHoleClick}
+          updateHeight={handleBlockHeightUpdate}
         />;
       case 'quiz':
         return <QuizBlock 
@@ -457,6 +462,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
           explanation={block.content?.explanation}
           specialistId={block.specialist_id}
           onQuizCorrect={onQuizCorrect}
+          updateHeight={handleBlockHeightUpdate}
         />;
       case 'flashcard':
         return <FlashcardBlock 
@@ -466,6 +472,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
             hint: block.content?.hint
           }}
           specialistId={block.specialist_id}
+          updateHeight={handleBlockHeightUpdate}
         />;
       case 'creative':
         return <CreativeBlock 
@@ -478,6 +485,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
           specialistId={block.specialist_id}
           onCreativeUpload={onCreativeUpload} 
           uploadFeedback={uploadFeedback}
+          updateHeight={handleBlockHeightUpdate}
         />;
       case 'task':
         return <TaskBlock 
@@ -490,6 +498,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
           }}
           specialistId={block.specialist_id}
           onTaskComplete={onTaskComplete || (() => {})}
+          updateHeight={handleBlockHeightUpdate}
         />;
       case 'riddle':
         return <RiddleBlock 
@@ -500,6 +509,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
             hint: block.content?.hint
           }}
           specialistId={block.specialist_id}
+          updateHeight={handleBlockHeightUpdate}
         />;
       case 'news':
         return <NewsBlock 
@@ -512,9 +522,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
           }}
           specialistId={block.specialist_id}
           onNewsRead={onNewsRead || (() => {})}
-          updateHeight={(height) => {
-            if (updateHeight) updateHeight(height);
-          }}
+          updateHeight={handleBlockHeightUpdate}
         />;
       case 'activity':
         return <ActivityBlock 
@@ -526,6 +534,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
           }}
           specialistId={block.specialist_id}
           onActivityComplete={onActivityComplete || (() => {})}
+          updateHeight={handleBlockHeightUpdate}
         />;
       case 'mindfulness':
         return <MindfulnessBlock 
@@ -537,6 +546,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
           }}
           specialistId={block.specialist_id}
           onMindfulnessComplete={onMindfulnessComplete || (() => {})}
+          updateHeight={handleBlockHeightUpdate}
         />;
       default:
         return <p className="text-white/70 text-sm">This content type is not supported yet.</p>;
