@@ -95,7 +95,6 @@ export function useElevenLabsVoice({ voiceId = 'pkDwhVp7Wc7dQq2DBbpK' }: UseElev
 
       if (error) {
         console.error('Error calling text-to-speech function:', error);
-        // We'll continue without audio but still show a toast
         toast({
           title: 'Audio Unavailable',
           description: 'Could not generate speech at this time',
@@ -112,7 +111,7 @@ export function useElevenLabsVoice({ voiceId = 'pkDwhVp7Wc7dQq2DBbpK' }: UseElev
       // Handle fallback response
       if (data.fallback) {
         console.log('Using fallback for audio response:', data.message);
-        // Don't show error to user, just fail silently
+        // Silent fallback - don't show error to user
         return;
       }
 
@@ -150,7 +149,7 @@ export function useElevenLabsVoice({ voiceId = 'pkDwhVp7Wc7dQq2DBbpK' }: UseElev
         await audio.play();
       } catch (playError) {
         console.error('Error playing audio:', playError);
-        // Don't show toast for common user-interaction errors
+        // Only show toast for serious errors, not user-interaction errors
         if (playError instanceof Error && playError.name !== 'NotAllowedError') {
           toast({
             title: 'Playback Notice',
@@ -161,11 +160,11 @@ export function useElevenLabsVoice({ voiceId = 'pkDwhVp7Wc7dQq2DBbpK' }: UseElev
       }
     } catch (error) {
       console.error('Error playing text:', error);
-      // Don't show error toast to users - just fail silently
+      // Silent failure - don't show error to user
     } finally {
       setIsLoading(false);
     }
-  }, [voiceId, toast, stopAudio]);
+  }, [voiceId, toast, stopAudio, getSpecialistVoice]);
 
   // Helper function to convert base64 to Blob
   const base64ToBlob = (base64: string, mimeType: string) => {

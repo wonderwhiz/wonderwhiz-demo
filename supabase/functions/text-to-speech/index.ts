@@ -28,7 +28,7 @@ serve(async (req) => {
           success: true, 
           audioContent: '', // Empty audio content as fallback
           fallback: true,
-          message: 'Text-to-speech fallback: No API key configured'
+          message: 'Text-to-speech fallback: API key not found'
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -37,7 +37,7 @@ serve(async (req) => {
     // Use a valid default voice ID if none provided
     const finalVoiceId = voiceId || 'pkDwhVp7Wc7dQq2DBbpK';
 
-    console.log(`Generating speech for text (length: ${text.length}) with voice: ${finalVoiceId}`);
+    console.log(`Generating speech for text (length: ${text.length}) with voice: ${finalVoiceId}, model: ${model}`);
 
     // Make the request with a timeout to prevent hanging
     const controller = new AbortController();
@@ -73,10 +73,9 @@ serve(async (req) => {
         const errorText = await response.text();
         console.error(`ElevenLabs API error: ${response.status} ${errorText}`);
         
-        // Return graceful fallback
         return new Response(
           JSON.stringify({ 
-            success: true, 
+            success: false, 
             audioContent: '', // Empty audio content as fallback
             fallback: true,
             message: `ElevenLabs API error: ${response.status}`,
@@ -109,10 +108,9 @@ serve(async (req) => {
       clearTimeout(timeoutId);
       console.error('Error fetching from ElevenLabs:', fetchError);
       
-      // Return graceful fallback
       return new Response(
         JSON.stringify({ 
-          success: true, 
+          success: false, 
           audioContent: '', // Empty audio content as fallback
           fallback: true,
           message: 'Error connecting to ElevenLabs API',
