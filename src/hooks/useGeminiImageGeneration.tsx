@@ -31,7 +31,8 @@ export function useGeminiImageGeneration({ childAge = 10 }: UseGeminiImageGenera
           prompt: adaptedPrompt,
           style: imageStyle,
           childAge: childAge,
-          retryOnFail: true
+          retryOnFail: true,
+          maxRetries: 2  // Allow multiple retries
         }
       });
       
