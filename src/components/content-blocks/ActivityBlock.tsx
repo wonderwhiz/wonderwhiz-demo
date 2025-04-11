@@ -13,13 +13,15 @@ interface ActivityBlockProps {
   onActivityComplete?: () => void;
   narrativePosition?: 'beginning' | 'middle' | 'end';
   specialistId?: string;
+  updateHeight?: (height: number) => void;
 }
 
 const ActivityBlock: React.FC<ActivityBlockProps> = ({ 
   content, 
   onActivityComplete, 
   narrativePosition,
-  specialistId 
+  specialistId,
+  updateHeight
 }) => {
   const [completed, setCompleted] = useState(false);
   const [showTimer, setShowTimer] = useState(false);

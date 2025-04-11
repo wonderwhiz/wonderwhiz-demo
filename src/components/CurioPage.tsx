@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,6 +11,21 @@ import { useSearch } from '@/hooks/use-search';
 import { useBlockInteractions } from '@/hooks/useBlockInteractions';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
+import { Chapter } from '@/types/Chapter';
+import CurioPageHeader from '@/components/curio/CurioPageHeader';
+import CurioPageInsights from '@/components/curio/CurioPageInsights';
+import CurioSearchBar from '@/components/curio/CurioSearchBar';
+import CurioLoadingState from '@/components/curio/CurioLoadingState';
+import CurioEmptyState from '@/components/curio/CurioEmptyState';
+import CurioErrorState from '@/components/curio/CurioErrorState';
+import QuickAnswer from '@/components/curio/QuickAnswer';
+import IllustratedContentBlock from '@/components/curio/IllustratedContentBlock';
+import { TableOfContents } from '@/components/curio/TableOfContents';
+import ProgressVisualization from '@/components/curio/ProgressVisualization';
+import LearningCertificate from '@/components/curio/LearningCertificate';
+import ChapterHeader from '@/components/curio/ChapterHeader';
+import CurioBlockList from '@/components/CurioBlockList';
+import RabbitHoleSuggestions from '@/components/content-blocks/RabbitHoleSuggestions';
 
 const DEFAULT_CHAPTERS: Chapter[] = [
   {
@@ -115,42 +131,6 @@ const CurioPage: React.FC = () => {
   
   const blocksProcessedRef = useRef(false);
   const chaptersUpdatedRef = useRef(false);
-
-  const handleOrganizeBlocksIntoChapters = (blocks: any[]) => {
-    if (!blocks.length) return {};
-    
-    const chapterMap: Record<string, any[]> = {
-      introduction: [],
-      exploration: [],
-      understanding: [],
-      challenge: [],
-      creation: [],
-      reflection: [],
-      nextSteps: []
-    };
-    
-    blocks.forEach(block => {
-      if (block.type === 'quiz') {
-        chapterMap.challenge.push(block);
-      } else if (block.type === 'fact' || block.type === 'funFact') {
-        if (chapterMap.introduction.length < 2) {
-          chapterMap.introduction.push(block);
-        } else if (chapterMap.understanding.length < 3) {
-          chapterMap.understanding.push(block);
-        } else {
-          chapterMap.exploration.push(block);
-        }
-      } else if (block.type === 'creative' || block.type === 'activity') {
-        chapterMap.creation.push(block);
-      } else if (block.type === 'mindfulness') {
-        chapterMap.reflection.push(block);
-      } else {
-        chapterMap.exploration.push(block);
-      }
-    });
-    
-    return chapterMap;
-  };
 
   useEffect(() => {
     if (childProfile?.age) {

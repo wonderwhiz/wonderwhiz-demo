@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ContentBlock } from '@/types/curio';
@@ -123,6 +124,12 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
     return messages[blockIndex % messages.length];
   };
 
+  const handleOnRabbitHoleClick = (question: string) => {
+    if (handleRabbitHoleClick) {
+      handleRabbitHoleClick(question);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {generationError && (
@@ -176,7 +183,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
                 onBookmark={handleToggleBookmark ? () => handleToggleBookmark(block.id) : undefined}
                 onReply={handleReply ? (message) => handleReply(block.id, message) : undefined}
                 onTaskComplete={handleTaskComplete ? () => handleTaskComplete(block.id) : undefined}
-                onRabbitHoleClick={handleRabbitHoleClick}
+                onRabbitHoleClick={handleOnRabbitHoleClick}
                 updateHeight={(height) => updateBlockHeight(block.id, height)}
               />
             );
@@ -189,7 +196,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
                 onLike={handleToggleLike ? () => handleToggleLike(block.id) : undefined}
                 onBookmark={handleToggleBookmark ? () => handleToggleBookmark(block.id) : undefined}
                 onReply={handleReply ? (message) => handleReply(block.id, message) : undefined}
-                onRabbitHoleClick={handleRabbitHoleClick}
+                onRabbitHoleClick={handleOnRabbitHoleClick}
                 updateHeight={(height) => updateBlockHeight(block.id, height)}
               />
             );
@@ -205,7 +212,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
                 onBookmark={handleToggleBookmark ? () => handleToggleBookmark(block.id) : undefined}
                 onReply={handleReply ? (message) => handleReply(block.id, message) : undefined}
                 onQuizCorrect={handleQuizCorrect ? () => handleQuizCorrect(block.id) : undefined}
-                onRabbitHoleClick={handleRabbitHoleClick}
+                onRabbitHoleClick={handleOnRabbitHoleClick}
                 updateHeight={(height) => updateBlockHeight(block.id, height)}
               />
             );
@@ -221,6 +228,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
                 }}
                 specialistId={block.specialist_id}
                 onCreativeUpload={handleCreativeUpload ? () => handleCreativeUpload(block.id, {}) : undefined}
+                updateHeight={(height) => updateBlockHeight(block.id, height)}
               />
             );
             break;
@@ -235,6 +243,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
                 }}
                 specialistId={block.specialist_id}
                 onActivityComplete={handleActivityComplete ? () => handleActivityComplete(block.id) : undefined}
+                updateHeight={(height) => updateBlockHeight(block.id, height)}
               />
             );
             break;
@@ -249,6 +258,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
                 }}
                 specialistId={block.specialist_id}
                 onMindfulnessComplete={handleMindfulnessComplete ? () => handleMindfulnessComplete(block.id) : undefined}
+                updateHeight={(height) => updateBlockHeight(block.id, height)}
               />
             );
             break;
@@ -296,7 +306,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
               <NarrativePrompt 
                 profileId={profileId || ''}
                 specialistId={block.specialist_id}
-                onPromptClick={handleRabbitHoleClick}
+                onPromptClick={handleOnRabbitHoleClick}
               />
             )}
             
