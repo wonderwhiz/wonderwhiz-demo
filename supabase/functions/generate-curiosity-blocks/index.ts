@@ -32,14 +32,19 @@ serve(async (req) => {
     Create a variety of content types to maintain interest.
     Focus on accuracy, engagement, and inspiration.
     IMPORTANT: Make sure ALL the block content is complete and thorough - never leave any content field empty.
-    Each content block MUST have complete information appropriate for its type.`;
+    Each content block MUST have complete information appropriate for its type.
+    Every rabbitHole question should be directly related to the topic of the block, or be a logical follow-up question that extends learning.
+    NEVER use generic placeholder text in ANY field.
+    NEVER use the phrase "most yummy food in the world" or similar generics as placeholder text in rabbitHoles.`;
 
     // Create a user prompt with the query and child profile
     const userPrompt = `Generate ${blockCount} diverse educational content blocks about "${query}" for a child age ${childProfile.age || 10}.
-    Use these content block types:
+    
+    You MUST use ALL of these content block types in a balanced distribution:
     - fact: Educational facts with a title and explanation
-    - funFact: Interesting, memorable trivia
-    - quiz: Multiple-choice questions with options and explanation
+    - funFact: Interesting, memorable trivia with clear text
+    - quiz: Multiple-choice questions with 4 options, a correctIndex (0-3), and explanation
+    - flashcard: Flashcards with front and back content for memorization
     - creative: Creative activities with clear instructions
     - mindfulness: Reflection exercises related to the topic
     
@@ -53,20 +58,50 @@ serve(async (req) => {
         "content": {
           "fact": "The educational content goes here...",
           "title": "Interesting Title",
-          "rabbitHoles": ["Related question 1?", "Related question 2?"]
+          "rabbitHoles": ["What is the history of X?", "How does X relate to Y?"]
         }
       },
-      ...more blocks with different types
+      {
+        "type": "quiz",
+        "specialist_id": "prism",
+        "content": {
+          "question": "What is X?",
+          "options": ["Option A", "Option B", "Option C", "Option D"],
+          "correctIndex": 2,
+          "explanation": "Explanation of the correct answer"
+        }
+      },
+      {
+        "type": "flashcard",
+        "specialist_id": "nova",
+        "content": {
+          "front": "Question or concept on front of card",
+          "back": "Answer or explanation on back of card",
+          "hint": "Optional hint to help remember"
+        }
+      },
+      {
+        "type": "mindfulness",
+        "specialist_id": "lotus",
+        "content": {
+          "title": "Mindful Activity Name",
+          "instruction": "Detailed, specific instructions for the mindfulness exercise",
+          "duration": "3 minutes"
+        }
+      }
     ]
     
-    IMPORTANT REQUIREMENTS:
-    1. Each block MUST have a complete, non-empty content field with all necessary information.
-    2. For quiz blocks, include a question, an array of options, correctIndex, and explanation.
+    CRITICAL REQUIREMENTS:
+    1. Each block MUST have complete, specific, non-empty content with all required fields.
+    2. For quiz blocks, include a specific question about ${query}, an array of 4 options, correctIndex (0-3), and explanation.
     3. For fact blocks, include both fact text and title.
-    4. Include at least 2 "rabbitHoles" for each block - these are related questions to explore further.
-    5. DO NOT leave any required content fields empty.
+    4. For flashcard blocks, include front and back content.
+    5. For mindfulness blocks, include a title, specific instruction, and duration.
+    6. Include EXACTLY 2 "rabbitHoles" for each block - these should be SPECIFIC questions about ${query}, not generic placeholders.
+    7. NEVER use placeholder text in any field.
+    8. Make ALL content specific to ${query} - avoid generic content.
     
-    Keep explanations concise but engaging. Use simple language for younger children.`;
+    Keep explanations concise but engaging. Use language appropriate for age ${childProfile.age || 10}.`;
 
     // Call the Groq API to generate content blocks
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -122,16 +157,29 @@ serve(async (req) => {
         // Ensure each quiz has question, options, and correctIndex
         if (!block.content) block.content = {};
         if (!block.content.question || block.content.question === '') {
-          block.content.question = `What do you know about ${query}?`;
+          block.content.question = `What is an interesting fact about ${query}?`;
         }
-        if (!block.content.options || !Array.isArray(block.content.options) || block.content.options.length < 2) {
-          block.content.options = ["Option A", "Option B", "Option C", "Option D"];
+        if (!block.content.options || !Array.isArray(block.content.options) || block.content.options.length < 4) {
+          block.content.options = [
+            `An interesting fact about ${query}`, 
+            `A surprising aspect of ${query}`, 
+            `A key feature of ${query}`, 
+            `A common misconception about ${query}`
+          ];
         }
         if (block.content.correctIndex === undefined || block.content.correctIndex === null) {
           block.content.correctIndex = 0;
         }
         if (!block.content.explanation || block.content.explanation === '') {
-          block.content.explanation = `This is important to understand about ${query}.`;
+          block.content.explanation = `This is important to understand about ${query} because it helps us learn more about the topic.`;
+        }
+        
+        // Add rabbit holes if missing
+        if (!block.content.rabbitHoles || !Array.isArray(block.content.rabbitHoles) || block.content.rabbitHoles.length < 2) {
+          block.content.rabbitHoles = [
+            `How does ${query} compare to similar concepts?`,
+            `What are the most interesting aspects of ${query}?`
+          ];
         }
       }
       
@@ -139,10 +187,18 @@ serve(async (req) => {
       if (block.type === 'fact') {
         if (!block.content) block.content = {};
         if (!block.content.fact || block.content.fact === '') {
-          block.content.fact = `${query} is an interesting topic with many fascinating aspects to learn about.`;
+          block.content.fact = `${query} is a fascinating topic with many interesting aspects to explore.`;
         }
         if (!block.content.title || block.content.title === '') {
-          block.content.title = `Fact About ${query}`;
+          block.content.title = `Interesting Fact About ${query}`;
+        }
+        
+        // Check for rabbitHoles
+        if (!block.content.rabbitHoles || !Array.isArray(block.content.rabbitHoles) || block.content.rabbitHoles.length < 2) {
+          block.content.rabbitHoles = [
+            `What is the history of ${query}?`,
+            `How does ${query} impact our world today?`
+          ];
         }
       }
       
@@ -150,19 +206,164 @@ serve(async (req) => {
       if (block.type === 'funFact') {
         if (!block.content) block.content = {};
         if (!block.content.text && !block.content.fact) {
-          block.content.text = `Did you know that ${query} has some amazing properties that scientists are still studying?`;
+          block.content.text = `Did you know that ${query} has some surprising properties that many people don't know about?`;
+        }
+        
+        // Check for rabbitHoles
+        if (!block.content.rabbitHoles || !Array.isArray(block.content.rabbitHoles) || block.content.rabbitHoles.length < 2) {
+          block.content.rabbitHoles = [
+            `What other surprising facts exist about ${query}?`,
+            `How was ${query} discovered or developed?`
+          ];
         }
       }
       
-      // Check for rabbitHoles
-      if (!block.content.rabbitHoles || !Array.isArray(block.content.rabbitHoles) || block.content.rabbitHoles.length < 2) {
-        block.content.rabbitHoles = [
-          `What else can we learn about ${query}?`,
-          `How does ${query} affect our daily life?`
-        ];
+      // Check for flashcard blocks with incomplete data
+      if (block.type === 'flashcard') {
+        if (!block.content) block.content = {};
+        if (!block.content.front || block.content.front === '') {
+          block.content.front = `What is the most important thing to know about ${query}?`;
+        }
+        if (!block.content.back || block.content.back === '') {
+          block.content.back = `${query} is important because it helps us understand more about our world.`;
+        }
+        if (!block.content.hint || block.content.hint === '') {
+          block.content.hint = `Think about how ${query} relates to things you already know.`;
+        }
+        
+        // Check for rabbitHoles
+        if (!block.content.rabbitHoles || !Array.isArray(block.content.rabbitHoles) || block.content.rabbitHoles.length < 2) {
+          block.content.rabbitHoles = [
+            `What are the key concepts related to ${query}?`,
+            `How can learning about ${query} help us in daily life?`
+          ];
+        }
+      }
+      
+      // Check for mindfulness blocks with incomplete data
+      if (block.type === 'mindfulness') {
+        if (!block.content) block.content = {};
+        if (!block.content.title || block.content.title === '') {
+          block.content.title = `Mindful Reflection on ${query}`;
+        }
+        if (!block.content.instruction || block.content.instruction === '') {
+          block.content.instruction = `Take a few minutes to think about how ${query} relates to your own experiences. What connections can you make?`;
+        }
+        if (!block.content.duration || block.content.duration === '') {
+          block.content.duration = "3 minutes";
+        }
+        
+        // Check for rabbitHoles
+        if (!block.content.rabbitHoles || !Array.isArray(block.content.rabbitHoles) || block.content.rabbitHoles.length < 2) {
+          block.content.rabbitHoles = [
+            `How does ${query} make you feel?`,
+            `What questions do you still have about ${query}?`
+          ];
+        }
+      }
+      
+      // Check for creative blocks with incomplete data
+      if (block.type === 'creative') {
+        if (!block.content) block.content = {};
+        if (!block.content.prompt || block.content.prompt === '') {
+          block.content.prompt = `Create something inspired by what you've learned about ${query}.`;
+        }
+        if (!block.content.description || block.content.description === '') {
+          block.content.description = `Use your imagination to explore ${query} in a creative way.`;
+        }
+        if (!block.content.examples || !Array.isArray(block.content.examples) || block.content.examples.length < 1) {
+          block.content.examples = [`Draw a picture`, `Write a story`, `Make a model`];
+        }
+        
+        // Check for rabbitHoles
+        if (!block.content.rabbitHoles || !Array.isArray(block.content.rabbitHoles) || block.content.rabbitHoles.length < 2) {
+          block.content.rabbitHoles = [
+            `How can we represent ${query} through art?`,
+            `What creative projects might be inspired by ${query}?`
+          ];
+        }
+      }
+      
+      // Fix any generic rabbitHoles by making them specific to the topic
+      if (block.content && block.content.rabbitHoles) {
+        block.content.rabbitHoles = block.content.rabbitHoles.map((question: string) => {
+          if (question.includes("most yummy food in the world") || 
+              question.includes("What else can we learn about") ||
+              question.includes("How does") && question.includes("affect our daily life")) {
+            // Replace with more specific question
+            return `How does ${query} compare to other similar ${block.type === 'fact' ? 'concepts' : 'topics'}?`;
+          }
+          return question;
+        });
+      }
+      
+      // Ensure we have specialist_id
+      if (!block.specialist_id) {
+        block.specialist_id = ['nova', 'spark', 'prism'][Math.floor(Math.random() * 3)];
       }
       
       return block;
+    });
+
+    // Ensure we have at least one of each required block type
+    const blockTypes = ['fact', 'funFact', 'quiz', 'creative', 'mindfulness', 'flashcard'];
+    const missingTypes = blockTypes.filter(type => 
+      !validatedBlocks.some(block => block.type === type)
+    );
+    
+    // Add missing block types if needed
+    missingTypes.forEach(type => {
+      const specialists = ['nova', 'spark', 'prism', 'lotus'];
+      const specialist = specialists[Math.floor(Math.random() * specialists.length)];
+      
+      let newBlock: any = {
+        type: type,
+        specialist_id: specialist,
+        content: {
+          rabbitHoles: [
+            `What's the most interesting aspect of ${query}?`,
+            `How has our understanding of ${query} changed over time?`
+          ]
+        }
+      };
+      
+      switch(type) {
+        case 'fact':
+          newBlock.content.fact = `${query} is a fascinating topic with many aspects to explore.`;
+          newBlock.content.title = `Key Fact About ${query}`;
+          break;
+        case 'funFact':
+          newBlock.content.text = `Did you know that ${query} has been studied by scientists for many years?`;
+          break;
+        case 'quiz':
+          newBlock.content.question = `What is a key characteristic of ${query}?`;
+          newBlock.content.options = [
+            `It relates to many other topics`,
+            `It has a fascinating history`,
+            `It helps us understand our world better`,
+            `All of the above`
+          ];
+          newBlock.content.correctIndex = 3;
+          newBlock.content.explanation = `${query} has all these characteristics, making it an important topic to study!`;
+          break;
+        case 'flashcard':
+          newBlock.content.front = `What is ${query}?`;
+          newBlock.content.back = `${query} is an important concept that helps us understand the world around us.`;
+          newBlock.content.hint = `Think about what you already know about this topic.`;
+          break;
+        case 'mindfulness':
+          newBlock.content.title = `Reflect on ${query}`;
+          newBlock.content.instruction = `Take a few moments to think about how ${query} connects to your own experiences.`;
+          newBlock.content.duration = "2 minutes";
+          break;
+        case 'creative':
+          newBlock.content.prompt = `Create something based on what you've learned about ${query}.`;
+          newBlock.content.description = `Use your imagination to explore ${query} in a creative way.`;
+          newBlock.content.examples = [`Draw a picture`, `Write a story`, `Create a model`];
+          break;
+      }
+      
+      validatedBlocks.push(newBlock);
     });
 
     // Generate IDs for each block

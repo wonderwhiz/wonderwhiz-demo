@@ -116,12 +116,20 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
       'lotus': { title: 'Nature Observer', icon: '🌿' }
     };
     
-    const fallbackSpecialistSuggestions = specialistIds.map(id => {
+    const fallbackSpecialistSuggestions = specialistIds.map((id, index) => {
       const specialist = specialistMap[id] || { title: 'Expert', icon: '🧠' };
       
+      // Create topic-relevant questions
+      const questions = [
+        `How does ${topic} affect our environment?`,
+        `What are the most fascinating aspects of ${topic}?`,
+        `How has ${topic} changed over time?`,
+        `What creative projects are inspired by ${topic}?`
+      ];
+      
       return {
-        question: `What creative projects are inspired by ${topic}?`,
-        description: `Explore how ${topic} influences creative thinking and innovative solutions`,
+        question: questions[index % questions.length],
+        description: `Explore how ${topic} influences our world and sparks curiosity`,
         specialist: id
       };
     });
