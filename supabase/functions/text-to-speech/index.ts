@@ -37,6 +37,7 @@ serve(async (req) => {
     const finalVoiceId = voiceId || 'pkDwhVp7Wc7dQq2DBbpK';
 
     console.log(`Generating speech for text (length: ${text.length}) with voice: ${finalVoiceId}`);
+    console.log(`Using ElevenLabs API key length: ${ELEVENLABS_API_KEY.length}`);
 
     try {
       const response = await fetch(

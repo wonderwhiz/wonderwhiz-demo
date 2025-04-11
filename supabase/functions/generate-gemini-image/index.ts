@@ -32,10 +32,10 @@ serve(async (req) => {
     
     console.log(`Generating image for prompt: "${enhancedPrompt}" with style: ${style}`);
     
-    // Try Gemini first
+    // Always attempt Gemini first
     if (GEMINI_API_KEY) {
       try {
-        console.log("Attempting to generate image with Gemini 2.0 Flash Experimental...");
+        console.log("Generating image with Gemini 2.0 Flash Experimental...");
         
         const geminiResponse = await fetch(
           "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash-exp-image-generation:generateContent", 
@@ -97,24 +97,51 @@ serve(async (req) => {
           }
         }
         
-        if (!imageUrl) {
-          console.warn('No image found in Gemini response, falling back to alternatives');
-          throw new Error("No image in Gemini response");
+        if (imageUrl) {
+          return new Response(
+            JSON.stringify({ 
+              success: true, 
+              imageUrl: imageUrl,
+              textResponse: textResponse,
+              source: "gemini"
+            }),
+            { 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            }
+          );
         }
         
-        return new Response(
-          JSON.stringify({ 
-            success: true, 
-            imageUrl: imageUrl,
-            textResponse: textResponse,
-            source: "gemini"
-          }),
-          { 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        console.warn('No image found in Gemini response, attempting to parse alternative format');
+        
+        // Try to find image in a different format - sometimes Gemini API returns images differently
+        if (responseData?.candidates?.[0]?.content?.parts) {
+          const parts = responseData.candidates[0].content.parts;
+          for (let i = 0; i < parts.length; i++) {
+            const part = parts[i];
+            if (part && part.inline_data) {
+              imageUrl = `data:${part.inline_data.mime_type};base64,${part.inline_data.data}`;
+              console.log('Found image in alternative format');
+              
+              return new Response(
+                JSON.stringify({ 
+                  success: true, 
+                  imageUrl: imageUrl,
+                  textResponse: textResponse,
+                  source: "gemini"
+                }),
+                { 
+                  headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                }
+              );
+            }
           }
-        );
+        }
+        
+        // If we reach here, no image was found in the Gemini response
+        console.error('Could not extract image from Gemini response');
+        throw new Error('No image data found in Gemini response');
       } catch (geminiError) {
-        console.error('Error with Gemini API, falling back to DALL-E:', geminiError);
+        console.error('Error with Gemini API, trying DALL-E as fallback:', geminiError);
         // Fall through to DALL-E
       }
     }
@@ -122,7 +149,7 @@ serve(async (req) => {
     // Try DALL-E if Gemini fails or is not available
     if (OPENAI_API_KEY) {
       try {
-        console.log('Falling back to OpenAI DALL-E for image generation');
+        console.log('Using OpenAI DALL-E for image generation');
         
         const dalleResponse = await fetch(
           "https://api.openai.com/v1/images/generations",
@@ -170,40 +197,19 @@ serve(async (req) => {
           throw new Error("No image URL in DALL-E response");
         }
       } catch (dalleError) {
-        console.error('Error with DALL-E API, falling back to Unsplash:', dalleError);
-        // Fall through to final fallback
+        console.error('Error with DALL-E API:', dalleError);
+        throw new Error(`All image generation services failed: ${dalleError.message}`);
       }
+    } else {
+      throw new Error('No available image generation services configured');
     }
-    
-    // Final fallback to Unsplash
-    console.log('Falling back to Unsplash for image');
-    const encodedPrompt = encodeURIComponent(prompt.substring(0, 100));
-    const seed = Math.floor(Math.random() * 1000);
-    const fallbackUrl = `https://source.unsplash.com/random/800x600?${encodedPrompt}&seed=${seed}`;
-    
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        imageUrl: fallbackUrl,
-        fallback: true,
-        fallbackSource: "unsplash",
-        error: "All image generation services failed"
-      }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
-    
   } catch (error) {
     console.error('Error in image generation function:', error);
     
-    // Return a fallback image even in case of error
+    // Return with error - we don't want to fallback to Unsplash
     return new Response(
       JSON.stringify({ 
-        success: true,
-        imageUrl: 'https://source.unsplash.com/random/800x600?education',
-        fallback: true,
-        fallbackSource: "unsplash",
+        success: false,
         error: error.message || 'An error occurred during image generation' 
       }),
       {
