@@ -30,9 +30,9 @@ serve(async (req) => {
       // Try to generate image with Gemini API
       console.log('Generating image with Gemini API for prompt:', prompt);
       
-      // Use the standard Gemini API to generate image with the DALL-E compatible endpoint
+      // Use Gemini 2.0 model which supports image generation
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-pro-vision:generateContent?key=${GEMINI_API_KEY}`,
         {
           method: 'POST',
           headers: {

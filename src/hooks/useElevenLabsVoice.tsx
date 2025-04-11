@@ -75,19 +75,30 @@ export function useElevenLabsVoice({ voiceId = 'pkDwhVp7Wc7dQq2DBbpK' }: UseElev
         setTimeout(() => reject(new Error('Text-to-speech request timed out')), 15000);
       });
       
-      // Create the actual API call promise
-      const apiCallPromise = supabase.functions.invoke('text-to-speech', {
-        body: { 
-          text,
-          voiceId: selectedVoiceId,
-          model: 'eleven_turbo_v2_5',
-          optimizeStreamingLatency: true
+      // Create the actual API call promise with a retry mechanism
+      const makeApiCall = async (retries = 2) => {
+        try {
+          return await supabase.functions.invoke('text-to-speech', {
+            body: { 
+              text,
+              voiceId: selectedVoiceId,
+              model: 'eleven_turbo_v2_5',
+              optimizeStreamingLatency: true
+            }
+          });
+        } catch (err) {
+          if (retries > 0) {
+            console.log(`Retrying text-to-speech call, ${retries} attempts left`);
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retrying
+            return makeApiCall(retries - 1);
+          }
+          throw err;
         }
-      });
+      };
       
-      // Race the timeout against the API call
+      // Race the timeout against the API call with retries
       const { data, error } = await Promise.race([
-        apiCallPromise,
+        makeApiCall(),
         timeoutPromise.then(() => {
           throw new Error('Text-to-speech request timed out');
         })
@@ -139,24 +150,49 @@ export function useElevenLabsVoice({ voiceId = 'pkDwhVp7Wc7dQq2DBbpK' }: UseElev
         };
         
         audio.onended = () => {
-          // Clean up the blob URL when audio is done playing
-          URL.revokeObjectURL(url);
-          setAudioSrc(null);
-          audioElementRef.current = null;
+          // Only revoke the URL when audio is done playing, not immediately
+          try {
+            URL.revokeObjectURL(url);
+            setAudioSrc(null);
+            audioElementRef.current = null;
+          } catch (e) {
+            console.warn('Error cleaning up audio URL:', e);
+          }
         };
         
-        // Start playing
-        await audio.play();
+        // Start playing after a small delay to ensure browser is ready
+        setTimeout(async () => {
+          try {
+            const playPromise = audio.play();
+            
+            // Modern browsers return a promise from play()
+            if (playPromise !== undefined) {
+              playPromise.catch((e) => {
+                console.error('Play promise error:', e);
+                if (e.name !== 'NotAllowedError') {
+                  toast({
+                    title: 'Playback Notice',
+                    description: 'Audio might require user interaction first',
+                    variant: 'default',
+                  });
+                }
+              });
+            }
+          } catch (playError) {
+            console.error('Error playing audio:', playError);
+            // Only show toast for serious errors, not user-interaction errors
+            if (playError instanceof Error && playError.name !== 'NotAllowedError') {
+              toast({
+                title: 'Playback Notice',
+                description: 'Audio might require user interaction first',
+                variant: 'default',
+              });
+            }
+          }
+        }, 100);
       } catch (playError) {
-        console.error('Error playing audio:', playError);
-        // Only show toast for serious errors, not user-interaction errors
-        if (playError instanceof Error && playError.name !== 'NotAllowedError') {
-          toast({
-            title: 'Playback Notice',
-            description: 'Audio might require user interaction first',
-            variant: 'default',
-          });
-        }
+        console.error('Error preparing audio:', playError);
+        // Silent failure - don't show error to user
       }
     } catch (error) {
       console.error('Error playing text:', error);
@@ -172,6 +208,7 @@ export function useElevenLabsVoice({ voiceId = 'pkDwhVp7Wc7dQq2DBbpK' }: UseElev
       const byteCharacters = atob(base64);
       const byteArrays = [];
 
+      // Process in chunks to prevent memory issues with large audio files
       for (let i = 0; i < byteCharacters.length; i += 512) {
         const slice = byteCharacters.slice(i, i + 512);
         const byteNumbers = new Array(slice.length);

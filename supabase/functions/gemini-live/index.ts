@@ -1,6 +1,5 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,201 +7,145 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
-
-  const { headers } = req;
-  const upgradeHeader = headers.get("upgrade") || "";
-
-  // Check if this is a WebSocket request
-  if (upgradeHeader.toLowerCase() !== "websocket") {
-    return new Response("Expected WebSocket connection", { 
-      status: 400,
+  // This is a WebSocket route
+  const upgradeHeader = req.headers.get('Upgrade');
+  if (!upgradeHeader || upgradeHeader.toLowerCase() !== 'websocket') {
+    return new Response('Expected Upgrade: websocket', { 
+      status: 426,
       headers: corsHeaders 
     });
   }
 
+  const { socket, response } = Deno.upgradeWebSocket(req);
+  
+  // Parse query parameters
+  const url = new URL(req.url);
+  const childAge = url.searchParams.get('childAge') || '10';
+  const curioContext = url.searchParams.get('curioContext') || '';
+  const specialistId = url.searchParams.get('specialistId') || 'whizzy';
+  
+  console.log(`WebSocket connection established. Child age: ${childAge}, Context: ${curioContext}, Specialist: ${specialistId}`);
+  
+  // Setup client connection handlers
+  socket.onopen = () => {
+    console.log("Client socket connected");
+    socket.send(JSON.stringify({
+      type: 'connection',
+      status: 'connected'
+    }));
+  };
+
+  socket.onmessage = async (event) => {
+    try {
+      const message = JSON.parse(event.data);
+      console.log("Received message from client:", message);
+      
+      if (message.type === 'setup') {
+        // Use REST API instead of WebSocket for Gemini
+        await handleGeminiChat(socket, "Hi there! I'm Whizzy. How can I help you explore today?", childAge, curioContext, specialistId);
+      } else if (message.type === 'message') {
+        // Process user message with Gemini
+        await handleGeminiChat(socket, message.text, childAge, curioContext, specialistId);
+      }
+    } catch (error) {
+      console.error("Error processing message:", error);
+      socket.send(JSON.stringify({
+        type: 'error',
+        error: error.message || 'Unknown error'
+      }));
+    }
+  };
+
+  socket.onerror = (error) => {
+    console.error("Client socket error:", error);
+    try {
+      socket.send(JSON.stringify({
+        type: 'error',
+        error: 'WebSocket error occurred'
+      }));
+    } catch (e) {
+      // Socket might already be closed
+    }
+  };
+
+  socket.onclose = () => {
+    console.log("Client socket closed");
+  };
+
+  return response;
+});
+
+// Function to handle chat interaction using REST API instead of WebSocket
+async function handleGeminiChat(socket: WebSocket, userMessage: string, childAge: string, curioContext: string, specialistId: string) {
+  const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+  
+  if (!GEMINI_API_KEY) {
+    socket.send(JSON.stringify({
+      type: 'error',
+      error: 'GEMINI_API_KEY is not set'
+    }));
+    return;
+  }
+
   try {
-    // Get API key from environment
-    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
-    if (!GEMINI_API_KEY) {
-      throw new Error("GEMINI_API_KEY not set in environment");
+    // Build system instruction based on the specialist and child's age
+    const systemInstruction = buildSystemInstruction(specialistId, parseInt(childAge), curioContext);
+    
+    // Use Gemini API with REST endpoint instead of WebSocket
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: userMessage }]
+          }
+        ],
+        systemInstruction: {
+          parts: [{ text: systemInstruction }]
+        },
+        generationConfig: {
+          temperature: 0.4,
+          topP: 0.95,
+          topK: 64,
+          maxOutputTokens: 2048,
+        }
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Gemini API error: ${response.status} ${errorText}`);
     }
 
-    // Extract data from request
-    const url = new URL(req.url);
-    const childAgeParam = url.searchParams.get('childAge') || '10';
-    const childAge = parseInt(childAgeParam);
-    const curioContext = url.searchParams.get('curioContext') || '';
-    const specialistId = url.searchParams.get('specialistId') || 'whizzy';
-
-    // Upgrade the connection to WebSocket
-    const { socket: clientSocket, response } = Deno.upgradeWebSocket(req);
+    const data = await response.json();
     
-    // Build system instruction based on child's age and specialist
-    const systemInstruction = buildSystemInstruction(specialistId, childAge, curioContext);
+    // Extract text response
+    const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || 
+      "I'm having trouble understanding right now. Can you try asking a different way?";
     
-    // Log the connection
-    console.log(`WebSocket connection established. Child age: ${childAge}, Context: ${curioContext}, Specialist: ${specialistId}`);
+    // Send the response back to the client
+    socket.send(JSON.stringify({
+      type: 'text',
+      text: textResponse
+    }));
     
-    // Connect to Gemini WebSocket API
-    const geminiUrl = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${GEMINI_API_KEY}`;
-    const geminiSocket = new WebSocket(geminiUrl);
+    // Send a complete message to signal the end of the response
+    socket.send(JSON.stringify({
+      type: 'complete'
+    }));
     
-    // Event handlers for the client socket
-    clientSocket.onopen = () => {
-      console.log("Client socket connected");
-    };
-    
-    clientSocket.onmessage = async (event) => {
-      try {
-        // Process messages from the client
-        const clientMessage = JSON.parse(event.data);
-        console.log("Received message from client:", clientMessage);
-        
-        if (clientMessage.type === "setup" && geminiSocket.readyState === WebSocket.OPEN) {
-          // Client is setting up the connection
-          console.log("Sending setup to Gemini");
-          const setupMessage = {
-            setup: {
-              model: "models/gemini-1.5-flash",
-              generationConfig: {
-                temperature: 0.4,
-                topP: 0.95,
-                topK: 64,
-                candidateCount: 1,
-                maxOutputTokens: 2048,
-              },
-              systemInstruction: {
-                parts: [{ text: systemInstruction }]
-              }
-            }
-          };
-          geminiSocket.send(JSON.stringify(setupMessage));
-        } else if (clientMessage.type === "message" && geminiSocket.readyState === WebSocket.OPEN) {
-          // Client is sending a regular message
-          console.log("Sending message to Gemini");
-          const contentMessage = {
-            clientContent: {
-              turns: [
-                {
-                  role: "user",
-                  parts: [{ text: clientMessage.text }]
-                }
-              ],
-              turnComplete: true
-            }
-          };
-          geminiSocket.send(JSON.stringify(contentMessage));
-        }
-      } catch (error) {
-        console.error("Error processing client message:", error);
-        clientSocket.send(JSON.stringify({
-          error: `Error processing message: ${error.message}`
-        }));
-      }
-    };
-    
-    clientSocket.onerror = (error) => {
-      console.error("Client socket error:", error);
-    };
-    
-    clientSocket.onclose = () => {
-      console.log("Client socket closed");
-      // Close the Gemini socket when client disconnects
-      if (geminiSocket.readyState === WebSocket.OPEN) {
-        geminiSocket.close();
-      }
-    };
-    
-    // Event handlers for the Gemini socket
-    geminiSocket.onopen = () => {
-      console.log("Connected to Gemini WebSocket API");
-      clientSocket.send(JSON.stringify({
-        type: "connection",
-        status: "connected"
-      }));
-    };
-    
-    geminiSocket.onmessage = (event) => {
-      try {
-        // Forward responses from Gemini to the client
-        const geminiResponse = JSON.parse(event.data);
-        console.log("Received response from Gemini:", geminiResponse);
-        
-        // Forward the response to the client
-        if (clientSocket.readyState === WebSocket.OPEN) {
-          clientSocket.send(JSON.stringify({
-            type: "response",
-            data: geminiResponse
-          }));
-          
-          // Extract text for easier client-side processing
-          if (geminiResponse.serverContent?.modelTurn?.parts) {
-            const textContent = geminiResponse.serverContent.modelTurn.parts
-              .filter(part => part.text)
-              .map(part => part.text)
-              .join(' ');
-              
-            if (textContent) {
-              clientSocket.send(JSON.stringify({
-                type: "text",
-                text: textContent
-              }));
-            }
-          }
-          
-          // Signal completion of turn
-          if (geminiResponse.serverContent?.turnComplete) {
-            clientSocket.send(JSON.stringify({
-              type: "complete"
-            }));
-          }
-        }
-      } catch (error) {
-        console.error("Error processing Gemini response:", error);
-        if (clientSocket.readyState === WebSocket.OPEN) {
-          clientSocket.send(JSON.stringify({
-            error: `Error processing Gemini response: ${error.message}`
-          }));
-        }
-      }
-    };
-    
-    geminiSocket.onerror = (error) => {
-      console.error("Gemini socket error:", error);
-      if (clientSocket.readyState === WebSocket.OPEN) {
-        clientSocket.send(JSON.stringify({
-          error: `Gemini API error: ${error.message || "Unknown error"}`
-        }));
-      }
-    };
-    
-    geminiSocket.onclose = (event) => {
-      console.log(`Gemini socket closed: ${event.code} ${event.reason}`);
-      if (clientSocket.readyState === WebSocket.OPEN) {
-        clientSocket.send(JSON.stringify({
-          type: "disconnected",
-          code: event.code,
-          reason: event.reason
-        }));
-        clientSocket.close();
-      }
-    };
-    
-    return response;
   } catch (error) {
-    console.error("Error in WebSocket handler:", error);
-    return new Response(JSON.stringify({ 
-      error: error.message || "Internal server error"
-    }), { 
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+    console.error("Error calling Gemini API:", error);
+    socket.send(JSON.stringify({
+      type: 'error',
+      error: error.message || 'Unknown error processing your message'
+    }));
   }
-});
+}
 
 // Helper functions
 function buildSystemInstruction(specialistId: string, age: number, curioContext: string): string {

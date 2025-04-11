@@ -25,7 +25,7 @@ serve(async (req) => {
       console.error('ELEVENLABS_API_KEY is not set in environment variables');
       return new Response(
         JSON.stringify({ 
-          success: true, 
+          success: false, 
           audioContent: '', // Empty audio content as fallback
           fallback: true,
           message: 'Text-to-speech fallback: API key not found'
@@ -73,6 +73,7 @@ serve(async (req) => {
         const errorText = await response.text();
         console.error(`ElevenLabs API error: ${response.status} ${errorText}`);
         
+        // Return graceful fallback
         return new Response(
           JSON.stringify({ 
             success: false, 
@@ -108,6 +109,7 @@ serve(async (req) => {
       clearTimeout(timeoutId);
       console.error('Error fetching from ElevenLabs:', fetchError);
       
+      // Return graceful fallback
       return new Response(
         JSON.stringify({ 
           success: false, 
