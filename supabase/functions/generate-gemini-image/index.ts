@@ -32,7 +32,7 @@ serve(async (req) => {
     
     console.log(`Generating image for prompt: "${enhancedPrompt}" with style: ${style}`);
     
-    // Always attempt Gemini first
+    // Try Gemini 2.0 Flash Experimental with Imagen 3 first
     if (GEMINI_API_KEY) {
       try {
         console.log("Generating image with Gemini 2.0 Flash Experimental...");
@@ -72,12 +72,13 @@ serve(async (req) => {
         }
         
         const responseData = await geminiResponse.json();
-        console.log('Gemini API response received:', JSON.stringify(responseData).substring(0, 500) + '...');
+        console.log('Gemini API response structure:', JSON.stringify(Object.keys(responseData)).substring(0, 500));
         
         // Extract image data from the response
-        let imageUrl = '';
+        let imageUrl = null;
         let textResponse = '';
         
+        // New extraction logic for Gemini 2.0 Flash Experimental
         if (responseData?.candidates?.[0]?.content?.parts) {
           for (const part of responseData.candidates[0].content.parts) {
             if (part.text) {
@@ -111,30 +112,49 @@ serve(async (req) => {
           );
         }
         
-        console.warn('No image found in Gemini response, attempting to parse alternative format');
+        // Try alternative model: imagen-3.0-generate
+        console.log("First attempt failed, trying with imagen-3.0-generate...");
         
-        // Try to find image in a different format - sometimes Gemini API returns images differently
-        if (responseData?.candidates?.[0]?.content?.parts) {
-          const parts = responseData.candidates[0].content.parts;
-          for (let i = 0; i < parts.length; i++) {
-            const part = parts[i];
-            if (part && part.inline_data) {
-              imageUrl = `data:${part.inline_data.mime_type};base64,${part.inline_data.data}`;
-              console.log('Found image in alternative format');
-              
-              return new Response(
-                JSON.stringify({ 
-                  success: true, 
-                  imageUrl: imageUrl,
-                  textResponse: textResponse,
-                  source: "gemini"
-                }),
-                { 
-                  headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                }
-              );
-            }
+        const imagen3Response = await fetch(
+          "https://generativelanguage.googleapis.com/v1/models/imagen-3.0-generate:generateImage", 
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-goog-api-key": GEMINI_API_KEY
+            },
+            body: JSON.stringify({
+              prompt: enhancedPrompt,
+              responseFormat: {
+                format: "IMAGE"
+              }
+            })
           }
+        );
+        
+        if (!imagen3Response.ok) {
+          const errorText = await imagen3Response.text();
+          console.error(`Imagen 3 API error (${imagen3Response.status}):`, errorText);
+          throw new Error(`Imagen 3 API error: ${imagen3Response.status} - ${errorText}`);
+        }
+        
+        const imagen3Data = await imagen3Response.json();
+        console.log('Imagen 3 API response structure:', JSON.stringify(Object.keys(imagen3Data)).substring(0, 500));
+        
+        if (imagen3Data?.image?.data) {
+          console.log('Found image in Imagen 3 response');
+          const mimeType = 'image/png'; // Default to png
+          return new Response(
+            JSON.stringify({ 
+              success: true, 
+              imageUrl: `data:${mimeType};base64,${imagen3Data.image.data}`,
+              textResponse: "Image generated with Imagen 3",
+              source: "gemini"
+            }),
+            { 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            }
+          );
         }
         
         // Deep inspection of the response to find any image data
@@ -156,7 +176,6 @@ serve(async (req) => {
           }
         }
         
-        // If we reach here, no image was found in the Gemini response
         console.error('Could not extract image from Gemini response');
         throw new Error('No image data found in Gemini response');
       } catch (geminiError) {
