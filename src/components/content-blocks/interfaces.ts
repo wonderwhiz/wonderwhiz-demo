@@ -64,6 +64,7 @@ export interface NewsBlockProps {
   };
   specialistId: string;
   onNewsRead?: () => void;
+  updateHeight?: (height: number) => void;
 }
 
 export interface ActivityBlockProps {

@@ -1,14 +1,21 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { Check, Newspaper, ExternalLink } from 'lucide-react';
 import { NewsBlockProps } from './interfaces';
 
-const NewsBlock: React.FC<NewsBlockProps> = ({ content, onNewsRead, specialistId }) => {
+const NewsBlock: React.FC<NewsBlockProps> = ({ content, onNewsRead, specialistId, updateHeight }) => {
   const [newsRead, setNewsRead] = useState(false);
   const [animateReward, setAnimateReward] = useState(false);
+  const blockRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    if (blockRef.current && updateHeight) {
+      updateHeight(blockRef.current.offsetHeight);
+    }
+  }, [newsRead, updateHeight]);
+  
   const handleReadNews = () => {
     if (!newsRead) {
       setNewsRead(true);
@@ -18,7 +25,7 @@ const NewsBlock: React.FC<NewsBlockProps> = ({ content, onNewsRead, specialistId
   };
   
   return (
-    <div>
+    <div ref={blockRef}>
       <div className="flex items-start space-x-3 mb-4">
         <div className="flex-shrink-0 mt-1">
           <motion.div
