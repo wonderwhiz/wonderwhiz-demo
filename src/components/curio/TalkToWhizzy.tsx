@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Phone, X, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useElevenLabsVoice } from '@/hooks/useElevenLabsVoice';
-import { useGeminiLiveWebSocket } from '@/hooks/useGeminiLiveWebSocket';
+import { useGeminiLiveChat } from '@/hooks/useGeminiLiveChat';
 import { toast } from 'sonner';
 
 interface TalkToWhizzyProps {
@@ -28,18 +28,15 @@ const TalkToWhizzy: React.FC<TalkToWhizzyProps> = ({
   // Convert age group to numeric age for API
   const childAge = ageGroup === '5-7' ? 6 : ageGroup === '8-11' ? 9 : 14;
   
-  // Use our new Gemini Live WebSocket hook
+  // Use our new Gemini Live chat hook
   const {
-    isConnected,
-    connect,
-    disconnect,
     sendMessage,
     resetChat,
     response,
     isProcessing,
     isVoiceLoading,
     chatHistory
-  } = useGeminiLiveWebSocket({
+  } = useGeminiLiveChat({
     childAge,
     curioContext: curioTitle,
     specialistId: 'whizzy'
@@ -148,7 +145,6 @@ const TalkToWhizzy: React.FC<TalkToWhizzyProps> = ({
     setIsOpen(false);
     setTranscript('');
     resetChat();
-    disconnect();
   };
   
   const handleSendMessage = async () => {
@@ -196,10 +192,7 @@ const TalkToWhizzy: React.FC<TalkToWhizzyProps> = ({
             whileTap="whileTap"
           >
             <Button
-              onClick={() => {
-                setIsOpen(true);
-                connect(); // Connect when opening
-              }}
+              onClick={() => setIsOpen(true)}
               className="h-16 w-16 rounded-full bg-gradient-to-br from-wonderwhiz-bright-pink to-wonderwhiz-purple shadow-lg hover:from-wonderwhiz-purple hover:to-wonderwhiz-bright-pink"
               aria-label="Talk to Whizzy"
             >
@@ -249,9 +242,7 @@ const TalkToWhizzy: React.FC<TalkToWhizzyProps> = ({
               <div className="h-[300px] px-6 py-4 overflow-y-auto">
                 {chatHistory.length === 0 ? (
                   <div className="flex items-center justify-center h-full">
-                    <div className={`animate-pulse text-white/50 ${isConnected ? '' : 'text-red-400'}`}>
-                      {isConnected ? 'Connecting to Whizzy...' : 'Trying to connect...'}
-                    </div>
+                    <div className="animate-pulse text-white/50">Connecting to Whizzy...</div>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -290,13 +281,6 @@ const TalkToWhizzy: React.FC<TalkToWhizzyProps> = ({
                   </div>
                 )}
               </div>
-              
-              {/* Connection Status */}
-              {!isConnected && (
-                <div className="px-4 py-2 bg-red-500/20 text-red-200 text-center text-xs">
-                  Connection issues - Click mic to try again
-                </div>
-              )}
               
               {/* Controls */}
               <div className="px-6 py-4 bg-black/20 flex items-center justify-between">

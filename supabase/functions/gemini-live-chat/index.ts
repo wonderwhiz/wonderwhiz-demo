@@ -37,11 +37,12 @@ serve(async (req) => {
     
     console.log(`Processing chat message with specialist ${specialistId} for context: ${curioContext}`);
     
-    // Use Gemini Pro model which is more reliable than Gemini Flash
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
+    // Use Gemini 1.5 Flash model which is more stable than the Live API
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'x-goog-api-key': GEMINI_API_KEY
       },
       body: JSON.stringify({
         contents: [
