@@ -1,3 +1,5 @@
 
-project_id = "turexhnvsvmllwitllmg"
-name = "generate-curio-suggestions"
+allowed_http_methods = [
+  "OPTIONS",
+  "POST"
+]

@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -52,8 +53,10 @@ export function useGeminiImageGeneration({ childAge = 10 }: UseGeminiImageGenera
       console.error('Error generating image:', err);
       setGenerationError(err instanceof Error ? err.message : 'Unknown error generating image');
       
-      // Do not return fallback image automatically
-      return null;
+      // Use fallback image if needed
+      const fallbackUrl = getFallbackImage(prompt);
+      setImageUrl(fallbackUrl);
+      return fallbackUrl;
     } finally {
       setIsGenerating(false);
     }
@@ -108,6 +111,8 @@ export function useGeminiImageGeneration({ childAge = 10 }: UseGeminiImageGenera
       coding: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=1000&auto=format&fit=crop',
       stars: 'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?q=80&w=1000&auto=format&fit=crop',
       planets: 'https://images.unsplash.com/photo-1614314169000-4ef4aebc2573?q=80&w=1000&auto=format&fit=crop',
+      sleep: 'https://images.unsplash.com/photo-1520206183501-b80df61043c2?q=80&w=1000&auto=format&fit=crop',
+      sleepy: 'https://images.unsplash.com/photo-1520206183501-b80df61043c2?q=80&w=1000&auto=format&fit=crop',
     };
     
     const topicLower = topic.toLowerCase();

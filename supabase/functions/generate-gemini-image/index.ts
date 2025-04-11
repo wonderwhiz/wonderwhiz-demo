@@ -29,6 +29,8 @@ serve(async (req) => {
     // Prepare prompt with style and educational adaptation
     const enhancedPrompt = `${prompt}. Style: ${style}, educational, child-friendly, vibrant colors, inspiring wonder and curiosity`;
     
+    console.log(`Generating image for prompt: "${enhancedPrompt}" with style: ${style}`);
+    
     try {
       const geminiResponse = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent", {
         method: "POST",
@@ -89,8 +91,23 @@ serve(async (req) => {
       }
       
       if (!imageUrl) {
-        console.warn('No image found in Gemini response');
-        throw new Error('No image in response');
+        console.warn('No image found in Gemini response, falling back to alternative');
+        // Fallback to Unsplash when Gemini fails to generate image
+        const encodedPrompt = encodeURIComponent(prompt.substring(0, 100));
+        const seed = Math.floor(Math.random() * 1000);
+        imageUrl = `https://source.unsplash.com/random/800x600?${encodedPrompt}&seed=${seed}`;
+        
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            imageUrl: imageUrl,
+            fallback: true,
+            error: "No image in response"
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
       }
       
       return new Response(
@@ -106,9 +123,16 @@ serve(async (req) => {
     } catch (apiError) {
       console.error('Error calling Gemini API:', apiError);
       
+      // Fallback to Unsplash for reliability
+      const encodedPrompt = encodeURIComponent(prompt.substring(0, 100));
+      const seed = Math.floor(Math.random() * 1000);
+      const fallbackUrl = `https://source.unsplash.com/random/800x600?${encodedPrompt}&seed=${seed}`;
+      
       return new Response(
         JSON.stringify({ 
-          success: false, 
+          success: true, 
+          imageUrl: fallbackUrl,
+          fallback: true,
           error: apiError.message || 'Error generating image with Gemini'
         }),
         { 
@@ -119,9 +143,12 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in image generation function:', error);
     
+    // Return a fallback image even in case of error
     return new Response(
       JSON.stringify({ 
-        success: false,
+        success: true,
+        imageUrl: 'https://source.unsplash.com/random/800x600?education',
+        fallback: true,
         error: error.message || 'An error occurred during image generation' 
       }),
       {

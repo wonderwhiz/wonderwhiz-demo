@@ -18,3 +18,12 @@ verify_jwt = false
 
 [functions.analyze-image]
 verify_jwt = false
+
+[functions.generate-curio-suggestions]
+verify_jwt = false
+
+[functions.handle-block-replies]
+verify_jwt = false
+
+[functions.handle-interaction]
+verify_jwt = false

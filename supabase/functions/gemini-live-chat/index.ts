@@ -13,150 +13,139 @@ serve(async (req) => {
   }
 
   try {
-    const { 
-      message, 
-      childAge = 10, 
-      curioContext = '', 
-      specialistId = 'whizzy',
-      sessionId = null
-    } = await req.json();
+    const { message, childDetails, history = [] } = await req.json();
 
     if (!message) {
       throw new Error('Message is required');
     }
 
-    // Get Gemini API key
     const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
-    
+
     if (!GEMINI_API_KEY) {
-      throw new Error('GEMINI_API_KEY is not set in environment variables');
+      console.error('Missing GEMINI_API_KEY environment variable');
+      throw new Error('API configuration error');
     }
 
-    // Build system instruction based on child's age and specialist
-    const systemInstruction = buildSystemInstruction(specialistId, childAge, curioContext);
+    // Create system prompt based on child's details
+    const childAge = childDetails?.age || 10;
+    const ageGroup = childAge < 8 ? 'young child (5-7 years)' : childAge < 12 ? 'child (8-11 years)' : 'teenager (12-16 years)';
+    const interests = childDetails?.interests?.join(', ') || 'general topics';
     
-    console.log(`Processing chat message with specialist ${specialistId} for context: ${curioContext}`);
+    // Build the conversation history
+    const safeHistory = Array.isArray(history) ? history : [];
     
-    // Use Gemini 1.5 Flash model which is more stable than the Live API
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': GEMINI_API_KEY
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: "user",
-            parts: [{ text: message }]
-          }
-        ],
-        systemInstruction: {
-          parts: [{ text: systemInstruction }]
+    // Add safety measures and error handling
+    try {
+      // Call Gemini API
+      const geminiResponse = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": GEMINI_API_KEY,
         },
-        generation_config: {
-          temperature: 0.4,
-          topP: 0.95,
-          topK: 64,
-          candidateCount: 1,
-          maxOutputTokens: 2048,
+        body: JSON.stringify({
+          contents: [
+            {
+              role: "user",
+              parts: [
+                {
+                  text: `You are Whizzy, a friendly and educational AI assistant for a ${ageGroup} who is interested in ${interests}. 
+                  Answer their questions in a simple, engaging, age-appropriate way, focusing on being educational.
+                  Keep answers concise (max 3-4 sentences for young children, 5-6 for older).
+                  Use simple language for young children (age 5-7), slightly more advanced for children (8-11), 
+                  and more sophisticated for teenagers (12-16).
+                  If the question is inappropriate or too complex, gently redirect to a suitable educational topic.
+                  Be friendly, supportive, and encouraging of curiosity.`
+                }
+              ]
+            },
+            ...safeHistory.map((item: any) => ({
+              role: item.role,
+              parts: [{ text: item.content }]
+            })),
+            {
+              role: "user",
+              parts: [{ text: message }]
+            }
+          ],
+          generationConfig: {
+            temperature: 0.7,
+            topK: 40,
+            topP: 0.95,
+            maxOutputTokens: 800,
+          },
+          safetySettings: [
+            {
+              category: "HARM_CATEGORY_HARASSMENT",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            },
+            {
+              category: "HARM_CATEGORY_HATE_SPEECH",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            },
+            {
+              category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            },
+            {
+              category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            }
+          ]
+        })
+      });
+
+      if (!geminiResponse.ok) {
+        const errorText = await geminiResponse.text();
+        console.error('Gemini API error:', errorText);
+        throw new Error(`Gemini API error: ${errorText}`);
+      }
+
+      const data = await geminiResponse.json();
+      
+      if (!data.candidates || data.candidates.length === 0) {
+        throw new Error('No response from Gemini');
+      }
+      
+      const responseText = data.candidates[0].content.parts[0].text;
+      
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: responseText,
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
-      })
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Gemini API error: ${response.status} ${errorText}`);
+      );
+    } catch (apiError) {
+      console.error('Error calling Gemini API:', apiError);
+      
+      // Return a friendly fallback message
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: "I'm having trouble right now. Can you ask me again or try a different question?",
+          error: apiError.message
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
     }
-
-    const data = await response.json();
+  } catch (error) {
+    console.error('Error in chat function:', error);
     
-    // Extract text response
-    const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || 
-      "I'm having trouble understanding right now. Can you try asking a different way?";
-    
-    // For now, we'll use a simulated sessionId
-    // In a full implementation, this would come from Gemini Live API
-    const newSessionId = sessionId || `session-${Date.now()}`;
-
     return new Response(
       JSON.stringify({
-        text: textResponse,
-        audioUrl: null, // In a real implementation, this would be streamed
-        sessionId: newSessionId,
-        specialistId: specialistId
+        success: false,
+        message: "Oops! Something went wrong. Let's try again with a different question.",
+        error: error.message
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
-  } catch (error) {
-    console.error('Error in gemini-live-chat function:', error);
-    
-    return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        text: "I couldn't process your message right now. Let's try again in a moment.",
-        specialistId: "whizzy" 
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500
       }
     );
   }
 });
-
-// Helper functions
-function buildSystemInstruction(specialistId: string, age: number, curioContext: string): string {
-  const baseInstruction = `You are Whizzy, a friendly educational AI assistant from WonderWhiz, designed to help children learn through conversation. The child you're speaking with is ${age} years old.`;
-  
-  let contextInfo = curioContext 
-    ? `You're currently helping them learn about "${curioContext}". Relate your responses to this topic when possible, but be ready to explore other topics they ask about.` 
-    : `Help them explore any topic they're curious about in a fun, educational way.`;
-  
-  let ageSpecificGuidance = "";
-  if (age < 8) {
-    ageSpecificGuidance = "Use simple language, short sentences, and lots of examples. Be very enthusiastic and encouraging. Avoid complex explanations.";
-  } else if (age < 12) {
-    ageSpecificGuidance = "Use clear explanations with some vocabulary building. Balance fun facts with educational content. Be encouraging and positive.";
-  } else {
-    ageSpecificGuidance = "You can use more advanced vocabulary and concepts. Challenge them to think critically while keeping the tone friendly and supportive.";
-  }
-  
-  let specialistPersonality = "";
-  switch (specialistId) {
-    case 'nova':
-      specialistPersonality = "You are Nova, the space expert. You're enthusiastic about astronomy, space exploration, and cosmic phenomena. Use space analogies when possible.";
-      break;
-    case 'spark':
-      specialistPersonality = "You are Spark, the creative genius. You're enthusiastic about arts, creativity, and imagination. Encourage creative thinking in your responses.";
-      break;
-    case 'prism':
-      specialistPersonality = "You are Prism, the science wizard. You're enthusiastic about experiments, discoveries, and explaining how things work. Use scientific analogies.";
-      break;
-    case 'pixel':
-      specialistPersonality = "You are Pixel, the tech guru. You're enthusiastic about computers, coding, and digital innovation. Use technology examples when relevant.";
-      break;
-    case 'atlas':
-      specialistPersonality = "You are Atlas, the history expert. You're enthusiastic about past events, cultures, and historical figures. Use historical anecdotes when relevant.";
-      break;
-    case 'lotus':
-      specialistPersonality = "You are Lotus, the nature guide. You're enthusiastic about plants, animals, and the environment. Use nature examples in your explanations.";
-      break;
-    default:
-      specialistPersonality = "You are Whizzy, a friendly, knowledgeable guide. You're curious, supportive, and always excited to help children discover new things.";
-  }
-  
-  return `${baseInstruction} ${specialistPersonality} ${contextInfo} ${ageSpecificGuidance}
-  
-  IMPORTANT GUIDELINES:
-  1. Keep responses brief (3-5 sentences) but packed with fascinating, accurate information
-  2. Use a warm, friendly tone that makes learning fun
-  3. Include 1-2 "wow" facts that might surprise the child
-  4. End with a question that encourages further curiosity
-  5. If asked something inappropriate, gently redirect to educational topics
-  6. If you don't know something, admit it and suggest what might be fun to explore instead
-  
-  The child is using voice to talk to you, so keep your responses conversational and natural.`;
-}

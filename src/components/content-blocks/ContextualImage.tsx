@@ -61,6 +61,11 @@ const ContextualImage: React.FC<ContextualImageProps> = ({
            description.includes('planet') || description.includes('space');
   };
 
+  // Determine if image is a fallback from Unsplash
+  const isFallbackImage = () => {
+    return contextualImage?.includes('unsplash.com');
+  };
+
   console.log("ContextualImage - Image state:", { 
     isLoading: imageLoading, 
     hasImage: !!contextualImage, 
@@ -153,7 +158,10 @@ const ContextualImage: React.FC<ContextualImageProps> = ({
               {isJupiterRelated() && (
                 <Telescope className="mr-2 h-4 w-4 text-wonderwhiz-gold flex-shrink-0" />
               )}
-              <p className="text-white text-xs md:text-sm italic font-inter">{getSafeImageDescription()}</p>
+              <p className="text-white text-xs md:text-sm italic font-inter">
+                {getSafeImageDescription()}
+                {isFallbackImage() && <span className="text-xs text-white/60"> (Reference image)</span>}
+              </p>
             </div>
           </motion.div>
         </motion.div>

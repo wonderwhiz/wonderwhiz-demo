@@ -1,3 +1,5 @@
 
-[functions.gemini-live-chat]
-verify_jwt = false
+allowed_http_methods = [
+  "OPTIONS",
+  "POST"
+]
