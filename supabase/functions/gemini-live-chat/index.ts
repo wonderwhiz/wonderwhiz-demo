@@ -6,8 +6,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
-
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -23,17 +21,28 @@ serve(async (req) => {
       sessionId = null
     } = await req.json();
 
+    if (!message) {
+      throw new Error('Message is required');
+    }
+
+    // Get Gemini API key
+    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+    
+    if (!GEMINI_API_KEY) {
+      throw new Error('GEMINI_API_KEY is not set in environment variables');
+    }
+
     // Build system instruction based on child's age and specialist
     const systemInstruction = buildSystemInstruction(specialistId, childAge, curioContext);
     
-    // Create request to Gemini API 
-    // Note: Using the standard Gemini API for text generation instead of Live API
-    // since Live API requires WebSockets which are difficult to proxy through edge functions
+    console.log(`Processing chat message with specialist ${specialistId} for context: ${curioContext}`);
+    
+    // Use Gemini 1.5 Flash model which is more stable than the Live API
     const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-goog-api-key': GEMINI_API_KEY || ''
+        'x-goog-api-key': GEMINI_API_KEY
       },
       body: JSON.stringify({
         contents: [
@@ -126,6 +135,15 @@ function buildSystemInstruction(specialistId: string, age: number, curioContext:
     case 'prism':
       specialistPersonality = "You are Prism, the science wizard. You're enthusiastic about experiments, discoveries, and explaining how things work. Use scientific analogies.";
       break;
+    case 'pixel':
+      specialistPersonality = "You are Pixel, the tech guru. You're enthusiastic about computers, coding, and digital innovation. Use technology examples when relevant.";
+      break;
+    case 'atlas':
+      specialistPersonality = "You are Atlas, the history expert. You're enthusiastic about past events, cultures, and historical figures. Use historical anecdotes when relevant.";
+      break;
+    case 'lotus':
+      specialistPersonality = "You are Lotus, the nature guide. You're enthusiastic about plants, animals, and the environment. Use nature examples in your explanations.";
+      break;
     default:
       specialistPersonality = "You are Whizzy, a friendly, knowledgeable guide. You're curious, supportive, and always excited to help children discover new things.";
   }
@@ -141,19 +159,4 @@ function buildSystemInstruction(specialistId: string, age: number, curioContext:
   6. If you don't know something, admit it and suggest what might be fun to explore instead
   
   The child is using voice to talk to you, so keep your responses conversational and natural.`;
-}
-
-function getSpecialistVoice(specialistId: string): string {
-  // Map specialists to voices
-  const voiceMap: Record<string, string> = {
-    'nova': 'Fenrir', // Space expert
-    'spark': 'Aoede', // Creative genius
-    'prism': 'Orus', // Science wizard
-    'pixel': 'Charon', // Tech guru
-    'atlas': 'Leda', // History expert
-    'lotus': 'Kore', // Nature guide
-    'whizzy': 'Puck', // Default
-  };
-  
-  return voiceMap[specialistId] || 'Puck';
 }

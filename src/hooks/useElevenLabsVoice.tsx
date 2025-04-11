@@ -25,10 +25,15 @@ export function useElevenLabsVoice({ voiceId = 'pkDwhVp7Wc7dQq2DBbpK' }: UseElev
   };
 
   const getSpecialistVoice = (specialistId: string) => {
-    return specialistVoiceMap[specialistId] || specialistVoiceMap.default;
+    return specialistVoiceMap[specialistId as keyof typeof specialistVoiceMap] || specialistVoiceMap.default;
   };
 
   const playText = useCallback(async (text: string, specialistId?: string) => {
+    if (!text) {
+      console.warn('No text provided for speech synthesis');
+      return;
+    }
+    
     try {
       setIsLoading(true);
       
@@ -36,6 +41,8 @@ export function useElevenLabsVoice({ voiceId = 'pkDwhVp7Wc7dQq2DBbpK' }: UseElev
       const selectedVoiceId = specialistId 
         ? getSpecialistVoice(specialistId) 
         : voiceId;
+      
+      console.log(`Generating speech with voice ID: ${selectedVoiceId}`);
       
       const { data, error } = await supabase.functions.invoke('text-to-speech', {
         body: { 
@@ -50,26 +57,50 @@ export function useElevenLabsVoice({ voiceId = 'pkDwhVp7Wc7dQq2DBbpK' }: UseElev
         throw new Error(error.message);
       }
 
-      if (data?.audioContent) {
-        // Create a blob URL from the base64 audio data
-        const blob = base64ToBlob(data.audioContent, 'audio/mpeg');
-        const url = URL.createObjectURL(blob);
-        setAudioSrc(url);
+      if (!data || !data.audioContent) {
+        throw new Error('No audio content returned from API');
+      }
 
-        // Play the audio
-        const audio = new Audio(url);
-        audio.onended = () => {
-          // Clean up the blob URL when audio is done playing
-          URL.revokeObjectURL(url);
-          setAudioSrc(null);
-        };
-        audio.play();
+      // Create a blob URL from the base64 audio data
+      const blob = base64ToBlob(data.audioContent, 'audio/mpeg');
+      const url = URL.createObjectURL(blob);
+      setAudioSrc(url);
+
+      // Play the audio
+      const audio = new Audio(url);
+      
+      // Set up event handlers
+      audio.onerror = (e) => {
+        console.error('Audio playback error:', e);
+        URL.revokeObjectURL(url);
+        setAudioSrc(null);
+      };
+      
+      audio.onended = () => {
+        // Clean up the blob URL when audio is done playing
+        URL.revokeObjectURL(url);
+        setAudioSrc(null);
+      };
+      
+      // Start playing
+      const playPromise = audio.play();
+      
+      // Handle play promise (required for mobile browsers)
+      if (playPromise !== undefined) {
+        playPromise.catch((error) => {
+          console.error('Error playing audio:', error);
+          toast({
+            title: 'Playback Error',
+            description: 'Unable to play audio. Try clicking somewhere on the page first.',
+            variant: 'destructive',
+          });
+        });
       }
     } catch (error) {
       console.error('Error playing text:', error);
       toast({
         title: 'Speech Error',
-        description: 'Unable to play speech at this time.',
+        description: 'Unable to generate speech at this time.',
         variant: 'destructive',
       });
     } finally {
@@ -79,22 +110,27 @@ export function useElevenLabsVoice({ voiceId = 'pkDwhVp7Wc7dQq2DBbpK' }: UseElev
 
   // Helper function to convert base64 to Blob
   const base64ToBlob = (base64: string, mimeType: string) => {
-    const byteCharacters = atob(base64);
-    const byteArrays = [];
+    try {
+      const byteCharacters = atob(base64);
+      const byteArrays = [];
 
-    for (let i = 0; i < byteCharacters.length; i += 512) {
-      const slice = byteCharacters.slice(i, i + 512);
-      const byteNumbers = new Array(slice.length);
-      
-      for (let j = 0; j < slice.length; j++) {
-        byteNumbers[j] = slice.charCodeAt(j);
+      for (let i = 0; i < byteCharacters.length; i += 512) {
+        const slice = byteCharacters.slice(i, i + 512);
+        const byteNumbers = new Array(slice.length);
+        
+        for (let j = 0; j < slice.length; j++) {
+          byteNumbers[j] = slice.charCodeAt(j);
+        }
+        
+        const byteArray = new Uint8Array(byteNumbers);
+        byteArrays.push(byteArray);
       }
-      
-      const byteArray = new Uint8Array(byteNumbers);
-      byteArrays.push(byteArray);
-    }
 
-    return new Blob(byteArrays, { type: mimeType });
+      return new Blob(byteArrays, { type: mimeType });
+    } catch (e) {
+      console.error('Error converting base64 to blob:', e);
+      throw new Error('Failed to process audio data');
+    }
   };
 
   return {

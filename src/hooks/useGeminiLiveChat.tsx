@@ -23,12 +23,10 @@ export function useGeminiLiveChat({
   
   // Store audio context and audio elements
   const audioContextRef = useRef<AudioContext | null>(null);
-  const audioBufferRef = useRef<AudioBuffer | null>(null);
-  const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
   
   // Initialize audio context
   useEffect(() => {
-    const AudioContextAPI = window.AudioContext || window.webkitAudioContext;
+    const AudioContextAPI = window.AudioContext || (window as any).webkitAudioContext;
     if (AudioContextAPI && !audioContextRef.current) {
       audioContextRef.current = new AudioContextAPI();
     }
@@ -84,7 +82,14 @@ export function useGeminiLiveChat({
       setChatHistory(prev => [...prev, { role: 'model', content: responseText }]);
       
       // Play audio response using ElevenLabs
-      playText(responseText, specialistId);
+      if (responseText) {
+        try {
+          await playText(responseText, specialistId);
+        } catch (audioError) {
+          console.error('Error playing text to speech:', audioError);
+          // Continue even if audio fails - text response is still available
+        }
+      }
       
       return {
         text: responseText,
@@ -104,12 +109,6 @@ export function useGeminiLiveChat({
     setResponse('');
     setSessionId(null);
     setChatHistory([]);
-    
-    // Stop any playing audio
-    if (audioSourceRef.current) {
-      audioSourceRef.current.stop();
-      audioSourceRef.current = null;
-    }
   }, []);
   
   return {
