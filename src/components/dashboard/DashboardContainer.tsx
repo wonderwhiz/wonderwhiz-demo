@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useParams } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { useSparksSystem } from '@/hooks/useSparksSystem';
-import SimplifiedHeader from '@/components/dashboard/SimplifiedHeader';
+import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardSidebar from '@/components/dashboard/DashboardSidebar';
 import CurioContent from '@/components/dashboard/CurioContent';
 import { useDashboardProfile } from '@/hooks/useDashboardProfile';
@@ -124,10 +123,9 @@ const DashboardContainer = () => {
       />
       
       <main className="flex-1 flex flex-col min-h-screen relative">
-        <SimplifiedHeader 
+        <DashboardHeader 
           childName={childProfile?.name || 'Explorer'} 
-          sparksBalance={childProfile?.sparks_balance || 0}
-          streakDays={childProfile?.streak_days || 0}
+          profileId={profileId}
         />
         
         <div className="flex-1 overflow-y-auto">

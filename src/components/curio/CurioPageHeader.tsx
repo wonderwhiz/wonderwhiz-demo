@@ -1,9 +1,9 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Brain, RefreshCw, User, LogOut, ArrowLeftRight } from 'lucide-react';
+import { ArrowLeft, Brain, RefreshCw, User, LogOut, ArrowLeftRight, UserCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import WonderWhizLogo from '@/components/WonderWhizLogo';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -58,12 +58,14 @@ const CurioPageHeader: React.FC<CurioPageHeaderProps> = ({
           </Button>
           
           <div className="flex items-center">
-            <WonderWhizLogo className="h-8 mr-2" />
-            {curioTitle && (
-              <h1 className="text-lg sm:text-xl font-bold text-white leading-tight line-clamp-1 sm:line-clamp-none">
-                {curioTitle}
-              </h1>
-            )}
+            <Link to="/dashboard" className="flex items-center">
+              <WonderWhizLogo className="h-8 mr-2" />
+              {curioTitle && (
+                <h1 className="text-lg sm:text-xl font-bold text-white leading-tight line-clamp-1 sm:line-clamp-none">
+                  {curioTitle}
+                </h1>
+              )}
+            </Link>
           </div>
           
           <div className="flex items-center gap-2">
@@ -72,9 +74,9 @@ const CurioPageHeader: React.FC<CurioPageHeaderProps> = ({
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="text-white hover:bg-white/10"
+                  className="relative text-white hover:bg-white/10 rounded-full p-1"
                 >
-                  <User className="h-5 w-5" />
+                  <UserCircle className="h-10 w-10 text-wonderwhiz-purple" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 bg-wonderwhiz-dark/95 border-white/20 backdrop-blur-xl text-white">
