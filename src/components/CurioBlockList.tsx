@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ContentBlock } from '@/types/curio';
@@ -17,6 +16,12 @@ import StoryTransition from '@/components/content-blocks/StoryTransition';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { 
+  CreativeBlockProps, 
+  TaskBlockProps, 
+  RiddleBlockProps, 
+  ActivityBlockProps 
+} from '@/components/content-blocks/interfaces';
 
 interface CurioBlockListProps {
   blocks: ContentBlock[];

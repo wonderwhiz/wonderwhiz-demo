@@ -1,3 +1,4 @@
+
 export interface BlockInteractionsProps {
   id: string;
   liked?: boolean;
@@ -31,6 +32,7 @@ export interface CreativeBlockProps {
   onCreativeUpload?: () => void;
   uploadFeedback?: string | null;
   updateHeight?: (height: number) => void;
+  curioId?: string;
 }
 
 export interface TaskBlockProps {
