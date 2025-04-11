@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,6 +18,8 @@ import CurioErrorState from '@/components/curio/CurioErrorState';
 import RabbitHoleSuggestions from '@/components/content-blocks/RabbitHoleSuggestions';
 import NarrativePrompt from '@/components/content-blocks/NarrativePrompt';
 import { getPersonalizedMessage } from '@/components/content-blocks/utils/narrativeUtils';
+import InteractiveImageBlock from '@/components/content-blocks/InteractiveImageBlock';
+import TalkToWhizzy from '@/components/curio/TalkToWhizzy';
 
 const EnhancedCurioPage: React.FC = () => {
   const { childId, curioId } = useParams<{ childId: string, curioId: string }>();
@@ -231,6 +232,18 @@ const EnhancedCurioPage: React.FC = () => {
             </motion.h1>
           )}
           
+          {/* Interactive Image Block */}
+          {curioTitle && !searchQuery && (
+            <InteractiveImageBlock
+              topic={curioTitle}
+              childId={childId}
+              childAge={childProfile?.age ? Number(childProfile.age) : 10}
+              onShare={() => {
+                toast.success('Image shared with your learning journey!');
+              }}
+            />
+          )}
+          
           {/* Personalized Message */}
           <AnimatePresence>
             {showPersonalizedMessage && (
@@ -292,6 +305,13 @@ const EnhancedCurioPage: React.FC = () => {
           <div ref={loadTriggerRef} className="h-20" />
         </div>
       </main>
+
+      <TalkToWhizzy 
+        childId={childId}
+        curioTitle={curioTitle || undefined}
+        ageGroup={childProfile?.age >= 12 ? '12-16' : childProfile?.age >= 8 ? '8-11' : '5-7'}
+        onNewQuestionGenerated={handleRabbitHoleClick}
+      />
     </div>
   );
 };

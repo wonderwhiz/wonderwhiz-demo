@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,6 +20,8 @@ import CurioLoadingState from '@/components/curio/CurioLoadingState';
 import CurioErrorState from '@/components/curio/CurioErrorState';
 import ViewModeSwitcher from '@/components/curio/ViewModeSwitcher';
 import RabbitHoleSuggestions from '@/components/content-blocks/RabbitHoleSuggestions';
+import InteractiveImageBlock from '@/components/content-blocks/InteractiveImageBlock';
+import TalkToWhizzy from '@/components/curio/TalkToWhizzy';
 
 const SimplifiedCurioPage: React.FC = () => {
   const { childId, curioId } = useParams<{ childId: string, curioId: string }>();
@@ -57,14 +58,12 @@ const SimplifiedCurioPage: React.FC = () => {
   const lastBlockRef = useRef<HTMLDivElement>(null);
   const hasAddedPlaceholders = useRef(false);
 
-  // Navigation guard
   useEffect(() => {
     if (user && !childId) {
       navigate('/profiles');
     }
   }, [user, childId, navigate]);
 
-  // Load curio title
   useEffect(() => {
     if (curioId) {
       supabase
@@ -76,7 +75,6 @@ const SimplifiedCurioPage: React.FC = () => {
           if (data && !error) {
             setCurioTitle(data.title);
             
-            // If no blocks have been loaded yet, let's generate some dynamic content
             if (blocks.length === 0 && !isLoadingBlocks && childProfile && !hasAddedPlaceholders.current) {
               hasAddedPlaceholders.current = true;
               
@@ -86,7 +84,6 @@ const SimplifiedCurioPage: React.FC = () => {
                 
               setIsEnhancingContent(true);
               
-              // Generate placeholder content immediately for better UX
               const placeholderBlocks = [
                 {
                   id: `placeholder-${Date.now()}-1`,
@@ -131,7 +128,6 @@ const SimplifiedCurioPage: React.FC = () => {
               
               setProcessedBlocks(placeholderBlocks);
               
-              // Generate actual content
               generateContent({
                 query: data.query || data.title,
                 childAge: childAge,
@@ -139,7 +135,6 @@ const SimplifiedCurioPage: React.FC = () => {
                 specialistTypes: ['nova', 'spark', 'prism', 'pixel', 'atlas', 'lotus']
               }).then(generatedBlocks => {
                 if (generatedBlocks.length > 0) {
-                  // Add IDs to the generated blocks
                   const blocksWithIds = generatedBlocks.map((block, index) => ({
                     ...block,
                     id: `generated-${Date.now()}-${index}`,
@@ -151,7 +146,6 @@ const SimplifiedCurioPage: React.FC = () => {
                   
                   setProcessedBlocks(blocksWithIds);
                   
-                  // Save the generated blocks to the database
                   blocksWithIds.forEach(async (block) => {
                     try {
                       await supabase
@@ -167,7 +161,6 @@ const SimplifiedCurioPage: React.FC = () => {
                     }
                   });
                   
-                  // Extract specialist IDs
                   const specialists = blocksWithIds.map(block => block.specialist_id);
                   const uniqueSpecialists = Array.from(new Set(specialists));
                   setSpecialistIds(uniqueSpecialists);
@@ -184,7 +177,6 @@ const SimplifiedCurioPage: React.FC = () => {
     }
   }, [curioId, blocks.length, isLoadingBlocks, childProfile, generateContent]);
 
-  // Determine age group from child profile
   useEffect(() => {
     if (childProfile?.age) {
       const age = typeof childProfile.age === 'string' 
@@ -201,7 +193,6 @@ const SimplifiedCurioPage: React.FC = () => {
     }
   }, [childProfile]);
 
-  // Celebration effect when blocks are loaded
   useEffect(() => {
     if (blocks.length > 0 && isFirstLoad) {
       setTimeout(() => {
@@ -216,9 +207,7 @@ const SimplifiedCurioPage: React.FC = () => {
     }
   }, [blocks.length, isFirstLoad]);
   
-  // Filter blocks based on search query
   useEffect(() => {
-    // Determine which blocks to show - database blocks or generated blocks
     const blocksToProcess = blocks.length > 0 ? blocks : processedBlocks;
     
     if (!searchQuery) {
@@ -246,7 +235,6 @@ const SimplifiedCurioPage: React.FC = () => {
       }));
     }
     
-    // Extract specialist IDs if we have real blocks
     if (blocks.length > 0) {
       const specialists = blocks.map(block => block.specialist_id);
       const uniqueSpecialists = Array.from(new Set(specialists));
@@ -254,7 +242,6 @@ const SimplifiedCurioPage: React.FC = () => {
     }
   }, [blocks, processedBlocks, searchQuery]);
   
-  // Set up infinite scrolling
   useEffect(() => {
     const observer = new IntersectionObserver(
       entries => {
@@ -276,7 +263,6 @@ const SimplifiedCurioPage: React.FC = () => {
     };
   }, [hasMore, loadMore]);
 
-  // Show related topics when user scrolls to bottom
   useEffect(() => {
     const handleScroll = () => {
       const scrollPosition = window.scrollY;
@@ -295,7 +281,6 @@ const SimplifiedCurioPage: React.FC = () => {
     };
   }, []);
 
-  // Error handling
   if (profileError) {
     return <CurioErrorState message="Failed to load profile." />;
   }
@@ -304,7 +289,6 @@ const SimplifiedCurioPage: React.FC = () => {
     return <CurioLoadingState message="Loading profile..." />;
   }
 
-  // Navigation handlers
   const handleNavigateToIndex = (index: number) => {
     setCurrentBlockIndex(index);
     const blockElement = document.getElementById(`block-${index}`);
@@ -425,6 +409,17 @@ const SimplifiedCurioPage: React.FC = () => {
             />
           )}
           
+          {curioTitle && !isLoadingBlocks && !searchQuery && (
+            <InteractiveImageBlock
+              topic={curioTitle}
+              childId={childId}
+              childAge={childProfile?.age ? Number(childProfile.age) : 10}
+              onShare={() => {
+                toast.success('Image shared with your learning journey!');
+              }}
+            />
+          )}
+          
           {(isLoadingBlocks || isEnhancingContent) && (
             <CurioLoadingState />
           )}
@@ -488,6 +483,13 @@ const SimplifiedCurioPage: React.FC = () => {
           )}
         </div>
       </main>
+
+      <TalkToWhizzy 
+        childId={childId}
+        curioTitle={curioTitle || undefined}
+        ageGroup={ageGroup}
+        onNewQuestionGenerated={handleRabbitHoleClick}
+      />
     </div>
   );
 };

@@ -1,10 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { Image, RefreshCw, Download, Share2, Wand2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Download, Image, RefreshCw, Palette, Printer, Sparkles } from 'lucide-react';
 import { useGeminiImageGeneration } from '@/hooks/useGeminiImageGeneration';
+import { toast } from 'sonner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface InteractiveImageBlockProps {
   topic: string;
@@ -13,246 +14,193 @@ interface InteractiveImageBlockProps {
   onShare?: () => void;
 }
 
+const imageStyles = [
+  { id: 'cartoon', name: 'Cartoon', description: 'Fun, colorful cartoon style' },
+  { id: 'realistic', name: 'Realistic', description: 'Photo-realistic depiction' },
+  { id: 'painting', name: 'Painting', description: 'Artistic painting style' },
+  { id: 'sketch', name: 'Sketch', description: 'Hand-drawn sketch look' },
+  { id: 'isometric', name: 'Isometric', description: '3D isometric illustration' }
+];
+
 const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
   topic,
   childId,
   childAge = 10,
   onShare
 }) => {
-  const { generateImage, isGenerating, imageUrl, resetImage } = useGeminiImageGeneration({ childAge });
-  
-  const [modificationOptions, setModificationOptions] = useState<string[]>([]);
-  const [activeVariation, setActiveVariation] = useState<string>('original');
+  const [currentStyle, setCurrentStyle] = useState('cartoon');
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const { generateImage, isGenerating, imageUrl, generationError, resetImage } = useGeminiImageGeneration({ childAge });
   
   useEffect(() => {
-    generateInitialImage();
-    
-    // Generate modification options based on the topic
-    generateModificationOptions(topic);
+    if (topic) {
+      handleGenerateImage();
+    }
   }, [topic]);
   
-  const generateInitialImage = async () => {
-    await generateImage(`Educational illustration about ${topic} for ${childAge} year old children`);
-  };
-  
-  const generateModificationOptions = (topicText: string) => {
-    const baseOptions = [
-      'colorful background',
-      'printable activity',
-      'with characters',
-      'sketch style',
-      'labeled diagram',
-      'fantasy version'
-    ];
-    
-    // Add topic-specific options
-    const topicLower = topicText.toLowerCase();
-    
-    if (topicLower.includes('space') || topicLower.includes('planet') || topicLower.includes('star')) {
-      baseOptions.push('space adventure', 'cosmic view');
-    } else if (topicLower.includes('animal') || topicLower.includes('wildlife')) {
-      baseOptions.push('in natural habitat', 'as cartoon character');
-    } else if (topicLower.includes('history') || topicLower.includes('ancient')) {
-      baseOptions.push('historical scene', 'time travel adventure');
-    } else if (topicLower.includes('science') || topicLower.includes('experiment')) {
-      baseOptions.push('lab setup', 'with scientific diagram');
+  const handleGenerateImage = async () => {
+    try {
+      resetImage();
+      setIsImageLoaded(false);
+      
+      // Create style-specific prompt
+      let stylePrompt = '';
+      switch (currentStyle) {
+        case 'cartoon':
+          stylePrompt = ', cartoon style, vibrant colors, simple shapes, kid-friendly illustration';
+          break;
+        case 'realistic':
+          stylePrompt = ', realistic style, detailed, photographic quality';
+          break;
+        case 'painting':
+          stylePrompt = ', digital painting style, artistic, colorful, illustrative';
+          break;
+        case 'sketch':
+          stylePrompt = ', hand-drawn sketch style, pencil drawing, line art';
+          break;
+        case 'isometric':
+          stylePrompt = ', isometric 3D illustration style, geometric, colorful';
+          break;
+        default:
+          stylePrompt = ', colorful illustration, educational';
+      }
+      
+      // Generate a prompt based on the topic
+      const prompt = `Educational illustration about ${topic}${stylePrompt}`;
+      await generateImage(prompt, currentStyle);
+    } catch (error) {
+      console.error('Failed to generate image:', error);
+      toast.error('Could not generate image at this time');
     }
-    
-    setModificationOptions(baseOptions);
   };
   
-  const handleRegenerateImage = async () => {
-    resetImage();
-    await generateImage(`Educational illustration about ${topic} for ${childAge} year old children`);
-    setActiveVariation('original');
+  const handleStyleChange = (style: string) => {
+    setCurrentStyle(style);
+    handleGenerateImage();
   };
   
-  const handleModifyImage = async (modification: string) => {
-    resetImage();
-    await generateImage(`Educational illustration about ${topic} with ${modification}, for ${childAge} year old children`);
-    setActiveVariation(modification);
+  const handleDownload = () => {
+    if (imageUrl) {
+      const link = document.createElement('a');
+      link.href = imageUrl;
+      link.download = `${topic.replace(/\s+/g, '-').toLowerCase()}-${currentStyle}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success('Image downloaded successfully!');
+    }
   };
   
-  const handleDownloadImage = () => {
-    if (!imageUrl) return;
-    
-    const link = document.createElement('a');
-    link.href = imageUrl;
-    link.download = `wonderwhiz-${topic.replace(/\s+/g, '-').toLowerCase()}.jpg`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleShare = () => {
+    if (onShare) {
+      onShare();
+    } else {
+      toast.success('Image shared successfully!');
+    }
   };
   
-  const handlePrintImage = () => {
-    if (!imageUrl) return;
-    
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-    
-    const content = `
-      <html>
-        <head>
-          <title>WonderWhiz - ${topic}</title>
-          <style>
-            body {
-              margin: 0;
-              padding: 20px;
-              text-align: center;
-              font-family: system-ui, -apple-system, sans-serif;
-            }
-            h1 {
-              color: #8b5cf6;
-              margin-bottom: 20px;
-            }
-            img {
-              max-width: 100%;
-              max-height: 80vh;
-              border-radius: 8px;
-              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            }
-            .footer {
-              margin-top: 20px;
-              font-size: 12px;
-              color: #666;
-            }
-          </style>
-        </head>
-        <body>
-          <h1>${topic}</h1>
-          <img src="${imageUrl}" alt="${topic}" />
-          <div class="footer">Generated by WonderWhiz for learning and exploration</div>
-          <script>
-            window.onload = function() {
-              setTimeout(function() {
-                window.print();
-              }, 500);
-            };
-          </script>
-        </body>
-      </html>
-    `;
-    
-    printWindow.document.open();
-    printWindow.document.write(content);
-    printWindow.document.close();
-  };
-
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-      className="mb-6 bg-gradient-to-br from-wonderwhiz-deep-purple/30 to-wonderwhiz-purple/20 backdrop-blur-sm rounded-lg p-4 border border-white/10"
+      transition={{ duration: 0.5 }}
+      className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl overflow-hidden mb-8"
     >
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <Image className="h-5 w-5 text-wonderwhiz-bright-pink" />
-          <h3 className="text-white font-medium text-lg">Visual Explorer</h3>
-        </div>
-        
-        <div className="flex gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-full text-white/70 hover:text-white hover:bg-white/10"
-            onClick={handleRegenerateImage}
-            disabled={isGenerating}
-          >
-            <RefreshCw className={`h-4 w-4 ${isGenerating ? 'animate-spin' : ''}`} />
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-full text-white/70 hover:text-white hover:bg-white/10"
-            onClick={handleDownloadImage}
-            disabled={!imageUrl || isGenerating}
-          >
-            <Download className="h-4 w-4" />
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-full text-white/70 hover:text-white hover:bg-white/10"
-            onClick={handlePrintImage}
-            disabled={!imageUrl || isGenerating}
-          >
-            <Printer className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-      
-      <Card className="overflow-hidden bg-black/30 border-white/10 relative mb-4 aspect-[4/3] flex items-center justify-center">
-        {imageUrl ? (
-          <motion.img
-            key={imageUrl}
-            src={imageUrl}
-            alt={topic}
-            className="w-full h-full object-contain"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-          />
-        ) : (
-          <div className="flex flex-col items-center justify-center h-full p-6">
-            {isGenerating ? (
-              <div className="flex flex-col items-center">
-                <div className="h-10 w-10 border-4 border-t-wonderwhiz-bright-pink border-wonderwhiz-purple/30 rounded-full animate-spin mb-4"></div>
-                <p className="text-white/70 text-center">Creating your visual exploration...</p>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center">
-                <Image className="h-10 w-10 text-white/30 mb-2" />
-                <p className="text-white/50 text-center">No image available</p>
-              </div>
-            )}
+      <div className="p-4 sm:p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-2">
+            <Image className="h-5 w-5 text-purple-400" />
+            <h3 className="text-lg font-medium text-white">Visual Exploration</h3>
           </div>
-        )}
-      </Card>
-      
-      <div className="mb-2">
-        <h4 className="text-white/80 text-sm mb-2 flex items-center">
-          <Palette className="h-4 w-4 mr-1 text-wonderwhiz-bright-pink" />
-          <span>Change the image style:</span>
-        </h4>
-        
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className={`bg-white/5 hover:bg-white/10 border-white/20 text-xs 
-              ${activeVariation === 'original' ? 'border-wonderwhiz-bright-pink text-wonderwhiz-bright-pink' : 'text-white/70'}`}
-            onClick={handleRegenerateImage}
-            disabled={isGenerating}
-          >
-            Original
-          </Button>
           
-          {modificationOptions.map((option) => (
+          <div className="flex space-x-2">
             <Button
-              key={option}
               variant="outline"
-              size="sm"
-              className={`bg-white/5 hover:bg-white/10 border-white/20 text-xs 
-                ${activeVariation === option ? 'border-wonderwhiz-bright-pink text-wonderwhiz-bright-pink' : 'text-white/70'}`}
-              onClick={() => handleModifyImage(option)}
+              size="icon"
+              onClick={handleRefreshCw}
               disabled={isGenerating}
+              className="h-8 w-8 rounded-full bg-white/10 border-white/20 text-white/70"
             >
-              {option.charAt(0).toUpperCase() + option.slice(1)}
+              <RefreshCw className={`h-4 w-4 ${isGenerating ? 'animate-spin' : ''}`} />
             </Button>
-          ))}
+            
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleDownload}
+              disabled={!imageUrl || isGenerating}
+              className="h-8 w-8 rounded-full bg-white/10 border-white/20 text-white/70"
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleShare}
+              disabled={!imageUrl || isGenerating}
+              className="h-8 w-8 rounded-full bg-white/10 border-white/20 text-white/70"
+            >
+              <Share2 className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
-      </div>
-      
-      <div className="mt-4 text-center">
-        <p className="text-white/60 text-xs">
-          Visual representation of {topic} to enhance understanding and engagement
-        </p>
+        
+        <div className="relative aspect-[16/9] sm:aspect-[21/9] rounded-lg overflow-hidden bg-gray-900/50 mb-4">
+          {isGenerating && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="flex flex-col items-center space-y-2">
+                <Wand2 className="h-8 w-8 text-purple-400 animate-pulse" />
+                <p className="text-white/70 text-sm">Creating your visualization...</p>
+              </div>
+            </div>
+          )}
+          
+          {imageUrl ? (
+            <img 
+              src={imageUrl} 
+              alt={`Visualization of ${topic}`}
+              className={`w-full h-full object-cover transition-opacity duration-300 ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`}
+              onLoad={() => setIsImageLoaded(true)}
+            />
+          ) : (
+            !isGenerating && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <p className="text-white/50 text-sm">
+                  {generationError ? 'Unable to generate image' : 'No image generated yet'}
+                </p>
+              </div>
+            )
+          )}
+        </div>
+        
+        <Tabs defaultValue="cartoon" value={currentStyle} onValueChange={handleStyleChange}>
+          <TabsList className="grid grid-cols-3 sm:grid-cols-5 bg-black/20">
+            {imageStyles.map(style => (
+              <TabsTrigger
+                key={style.id}
+                value={style.id}
+                disabled={isGenerating}
+                className="data-[state=active]:bg-purple-800/30 data-[state=active]:text-purple-100"
+              >
+                {style.name}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          <div className="mt-2">
+            <p className="text-xs text-white/60 text-center">
+              {imageStyles.find(style => style.id === currentStyle)?.description || 'Select a visualization style'}
+            </p>
+          </div>
+        </Tabs>
       </div>
     </motion.div>
   );
+  
+  function handleRefreshCw() {
+    handleGenerateImage();
+  }
 };
 
 export default InteractiveImageBlock;

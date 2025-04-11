@@ -23,7 +23,6 @@ import { TableOfContents } from '@/components/curio/TableOfContents';
 import ProgressVisualization from '@/components/curio/ProgressVisualization';
 import LearningCertificate from '@/components/curio/LearningCertificate';
 import ChapterHeader from '@/components/curio/ChapterHeader';
-import IllustratedContentBlock from '@/components/content-blocks/IllustratedContentBlock';
 import InteractiveImageBlock from '@/components/content-blocks/InteractiveImageBlock';
 import TalkToWhizzy from '@/components/curio/TalkToWhizzy';
 import { Chapter } from '@/types/Chapter';
@@ -453,7 +452,9 @@ const CurioPage: React.FC = () => {
             topic={curioTitle}
             childId={childId}
             childAge={childProfile?.age ? Number(childProfile.age) : 10}
-            onShare={() => {}}
+            onShare={() => {
+              toast.success('Image shared with your learning journey!');
+            }}
           />
         )}
         

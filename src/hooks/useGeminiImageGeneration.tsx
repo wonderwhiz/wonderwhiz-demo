@@ -62,11 +62,11 @@ export function useGeminiImageGeneration({ childAge = 10 }: UseGeminiImageGenera
 
   const getDefaultStyleForAge = (age: number): string => {
     if (age < 8) {
-      return 'cartoon, vibrant, simple';
+      return 'cartoon';
     } else if (age < 12) {
-      return 'colorful illustration, educational';
+      return 'colorful illustration';
     } else {
-      return 'detailed illustration, engaging';
+      return 'detailed illustration';
     }
   };
 
