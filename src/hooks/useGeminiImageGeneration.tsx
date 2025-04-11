@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,10 +11,12 @@ export function useGeminiImageGeneration({ childAge = 10 }: UseGeminiImageGenera
   const [isGenerating, setIsGenerating] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
+  const [fallbackSource, setFallbackSource] = useState<string | null>(null);
 
   const generateImage = useCallback(async (prompt: string, style?: string) => {
     setIsGenerating(true);
     setGenerationError(null);
+    setFallbackSource(null);
     
     try {
       const adaptedPrompt = adaptPromptForChildAge(prompt, childAge);
@@ -45,10 +48,19 @@ export function useGeminiImageGeneration({ childAge = 10 }: UseGeminiImageGenera
         setImageUrl(data.imageUrl);
         
         if (data.fallback) {
-          toast.info("Using a reference image - Gemini image generation unavailable", {
-            duration: 3000,
-            position: "bottom-right"
-          });
+          setFallbackSource(data.fallbackSource || 'unknown');
+          
+          if (data.fallbackSource === 'dalle') {
+            toast.info("Using DALL-E image - Gemini image generation unavailable", {
+              duration: 3000,
+              position: "bottom-right"
+            });
+          } else if (data.fallbackSource === 'unsplash') {
+            toast.info("Using a reference image - AI image generation unavailable", {
+              duration: 3000,
+              position: "bottom-right"
+            });
+          }
         }
         
         return data.imageUrl;
@@ -62,6 +74,7 @@ export function useGeminiImageGeneration({ childAge = 10 }: UseGeminiImageGenera
       
       const fallbackUrl = getFallbackImage(prompt);
       setImageUrl(fallbackUrl);
+      setFallbackSource('unsplash');
       
       toast.error("Couldn't generate a custom image", {
         description: "Using a reference image instead",
@@ -140,6 +153,11 @@ export function useGeminiImageGeneration({ childAge = 10 }: UseGeminiImageGenera
     isGenerating,
     imageUrl,
     generationError,
-    resetImage: () => setImageUrl(null)
+    fallbackSource,
+    resetImage: () => {
+      setImageUrl(null);
+      setGenerationError(null);
+      setFallbackSource(null);
+    }
   };
 }

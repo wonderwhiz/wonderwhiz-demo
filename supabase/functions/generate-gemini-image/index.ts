@@ -20,6 +20,7 @@ serve(async (req) => {
     }
 
     const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
     
     if (!GEMINI_API_KEY) {
       console.error('Missing GEMINI_API_KEY environment variable');
@@ -32,9 +33,9 @@ serve(async (req) => {
     console.log(`Generating image for prompt: "${enhancedPrompt}" with style: ${style}`);
     
     try {
-      // Using the Gemini 2.0 Flash Experimental model for image generation
+      // First attempt - Using the Gemini 2.0 Flash Experimental model for image generation
       const geminiResponse = await fetch(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent", 
+        "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash-exp-image-generation:generateContent", 
         {
           method: "POST",
           headers: {
@@ -93,9 +94,8 @@ serve(async (req) => {
       }
       
       if (!imageUrl) {
-        console.warn('No image found in Gemini response, falling back to alternative');
-        // Use a more descriptive error
-        throw new Error("No image in Gemini response - check API parameters and prompt");
+        console.warn('No image found in Gemini response, falling back to DALL-E');
+        throw new Error("No image in Gemini response - falling back to DALL-E");
       }
       
       return new Response(
@@ -108,25 +108,100 @@ serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       );
-    } catch (apiError) {
-      console.error('Error calling Gemini API:', apiError);
+    } catch (geminiError) {
+      console.error('Error calling Gemini API:', geminiError);
       
-      // Fallback to Unsplash for reliability
-      const encodedPrompt = encodeURIComponent(prompt.substring(0, 100));
-      const seed = Math.floor(Math.random() * 1000);
-      const fallbackUrl = `https://source.unsplash.com/random/800x600?${encodedPrompt}&seed=${seed}`;
-      
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          imageUrl: fallbackUrl,
-          fallback: true,
-          error: apiError.message || 'Error generating image with Gemini'
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      // Second attempt - Fall back to OpenAI DALL-E if available
+      if (OPENAI_API_KEY) {
+        console.log('Falling back to OpenAI DALL-E for image generation');
+        
+        try {
+          const dalleResponse = await fetch(
+            "https://api.openai.com/v1/images/generations",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${OPENAI_API_KEY}`
+              },
+              body: JSON.stringify({
+                model: "dall-e-3",
+                prompt: enhancedPrompt,
+                n: 1,
+                size: "1024x1024",
+                quality: "standard"
+              })
+            }
+          );
+          
+          if (!dalleResponse.ok) {
+            const errorText = await dalleResponse.text();
+            console.error(`DALL-E API error (${dalleResponse.status}):`, errorText);
+            throw new Error(`DALL-E API error: ${dalleResponse.status} - ${errorText}`);
+          }
+          
+          const dalleData = await dalleResponse.json();
+          console.log('DALL-E response received:', JSON.stringify(dalleData).substring(0, 500) + '...');
+          
+          if (dalleData?.data?.[0]?.url) {
+            const dalleImageUrl = dalleData.data[0].url;
+            
+            return new Response(
+              JSON.stringify({ 
+                success: true, 
+                imageUrl: dalleImageUrl,
+                textResponse: "Image generated with DALL-E (fallback)",
+                fallback: true,
+                fallbackSource: "dalle"
+              }),
+              { 
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              }
+            );
+          } else {
+            throw new Error("No image URL in DALL-E response");
+          }
+        } catch (dalleError) {
+          console.error('Error calling DALL-E API:', dalleError);
+          
+          // If DALL-E also fails, fall back to Unsplash
+          const encodedPrompt = encodeURIComponent(prompt.substring(0, 100));
+          const seed = Math.floor(Math.random() * 1000);
+          const fallbackUrl = `https://source.unsplash.com/random/800x600?${encodedPrompt}&seed=${seed}`;
+          
+          return new Response(
+            JSON.stringify({ 
+              success: true, 
+              imageUrl: fallbackUrl,
+              fallback: true,
+              fallbackSource: "unsplash",
+              error: dalleError.message || 'Error generating image with DALL-E'
+            }),
+            { 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            }
+          );
         }
-      );
+      } else {
+        // If OpenAI key is not available, fall back to Unsplash
+        console.log('No OpenAI API key, falling back to Unsplash');
+        const encodedPrompt = encodeURIComponent(prompt.substring(0, 100));
+        const seed = Math.floor(Math.random() * 1000);
+        const fallbackUrl = `https://source.unsplash.com/random/800x600?${encodedPrompt}&seed=${seed}`;
+        
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            imageUrl: fallbackUrl,
+            fallback: true,
+            fallbackSource: "unsplash",
+            error: geminiError.message || 'Error generating image with Gemini'
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
     }
   } catch (error) {
     console.error('Error in image generation function:', error);
@@ -137,6 +212,7 @@ serve(async (req) => {
         success: true,
         imageUrl: 'https://source.unsplash.com/random/800x600?education',
         fallback: true,
+        fallbackSource: "unsplash",
         error: error.message || 'An error occurred during image generation' 
       }),
       {

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Image, RefreshCw, Download, Share2, Wand2 } from 'lucide-react';
@@ -166,12 +165,19 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
           )}
           
           {imageUrl ? (
-            <img 
-              src={imageUrl} 
-              alt={`Visualization of ${topic}`}
-              className={`w-full h-full object-cover transition-opacity duration-300 ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`}
-              onLoad={() => setIsImageLoaded(true)}
-            />
+            <>
+              <img 
+                src={imageUrl} 
+                alt={`Visualization of ${topic}`}
+                className={`w-full h-full object-cover transition-opacity duration-300 ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                onLoad={() => setIsImageLoaded(true)}
+              />
+              {fallbackSource && fallbackSource !== 'gemini' && (
+                <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                  {fallbackSource === 'dalle' ? 'DALL-E' : fallbackSource === 'unsplash' ? 'Unsplash' : 'Reference Image'}
+                </div>
+              )}
+            </>
           ) : (
             !isGenerating && (
               <div className="absolute inset-0 flex items-center justify-center">
