@@ -1,15 +1,16 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CircleCheck, Sparkles, Star } from 'lucide-react';
-import CurioBlockList from '@/components/CurioBlockList';
+import { CircleCheck, MessageCircle, Bookmark, ThumbsUp, Sparkles, Star } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import InteractiveSearchBar from '@/components/dashboard/SearchBar';
 import QuickAnswer from '@/components/curio/QuickAnswer';
-import { TableOfContents } from '@/components/curio/TableOfContents';
-import ProgressVisualization from '@/components/curio/ProgressVisualization';
-import IllustratedContentBlock from '@/components/content-blocks/IllustratedContentBlock';
+import InteractiveImageBlock from '@/components/content-blocks/InteractiveImageBlock';
 import { ContentBlock as CurioContentBlock } from '@/types/curio';
+import { toast } from 'sonner';
 
 interface ContentBlock {
   id: string;
@@ -65,26 +66,207 @@ interface CurioContentProps {
   generationError?: string | null;
 }
 
-// Define the ChapterIconType here instead of importing it
-export type ChapterIconType = 
-  | 'introduction' 
-  | 'exploration' 
-  | 'understanding' 
-  | 'challenge' 
-  | 'creation' 
-  | 'reflection' 
-  | 'nextSteps';
+// Helper function to get specialist information
+const getSpecialistInfo = (specialistId: string) => {
+  const specialists = {
+    nova: {
+      name: 'Nova',
+      title: 'Space Expert',
+      avatar: '/specialists/nova-avatar.png',
+      fallbackColor: 'bg-blue-600',
+      fallbackInitial: 'N',
+    },
+    spark: {
+      name: 'Spark',
+      title: 'Creative Genius',
+      avatar: '/specialists/spark-avatar.png',
+      fallbackColor: 'bg-yellow-500',
+      fallbackInitial: 'S',
+    },
+    prism: {
+      name: 'Prism',
+      title: 'Science Wizard',
+      avatar: '/specialists/prism-avatar.png',
+      fallbackColor: 'bg-green-600',
+      fallbackInitial: 'P',
+    },
+    pixel: {
+      name: 'Pixel',
+      title: 'Tech Guru',
+      avatar: '/specialists/pixel-avatar.png',
+      fallbackColor: 'bg-indigo-600',
+      fallbackInitial: 'P',
+    },
+    atlas: {
+      name: 'Atlas',
+      title: 'History Expert',
+      avatar: '/specialists/atlas-avatar.png',
+      fallbackColor: 'bg-amber-700',
+      fallbackInitial: 'A',
+    },
+    lotus: {
+      name: 'Lotus',
+      title: 'Nature Guide',
+      avatar: '/specialists/lotus-avatar.png',
+      fallbackColor: 'bg-emerald-600',
+      fallbackInitial: 'L',
+    },
+    whizzy: {
+      name: 'Whizzy',
+      title: 'Assistant',
+      avatar: '/specialists/whizzy-avatar.png',
+      fallbackColor: 'bg-purple-600',
+      fallbackInitial: 'W',
+    },
+  };
 
-// Define a local Chapter interface
-interface Chapter {
-  id: string;
-  title: string;
-  description: string;
-  icon: ChapterIconType;
-  blocks: ContentBlock[];
-  isCompleted: boolean;
-  isActive: boolean;
-}
+  return specialists[specialistId as keyof typeof specialists] || specialists.whizzy;
+};
+
+const CurioBlock = ({ 
+  block, 
+  onToggleLike, 
+  onToggleBookmark, 
+  onReply 
+}: { 
+  block: ContentBlock; 
+  onToggleLike: (blockId: string) => void;
+  onToggleBookmark: (blockId: string) => void;
+  onReply: (blockId: string, message: string) => void;
+}) => {
+  const specialist = getSpecialistInfo(block.specialist_id);
+  const [replyText, setReplyText] = useState('');
+  
+  const handleSubmitReply = () => {
+    if (replyText.trim()) {
+      onReply(block.id, replyText);
+      setReplyText('');
+    }
+  };
+
+  // Function to extract text content based on block type
+  const getBlockContent = () => {
+    switch (block.type) {
+      case 'fact':
+      case 'funFact':
+        return block.content?.fact || block.content?.text;
+      case 'quiz':
+        return block.content?.question;
+      case 'creative':
+        return block.content?.prompt;
+      case 'task':
+        return block.content?.task;
+      case 'riddle':
+        return block.content?.riddle;
+      case 'news':
+        return block.content?.summary;
+      case 'activity':
+        return block.content?.activity;
+      case 'mindfulness':
+        return block.content?.exercise;
+      default:
+        return "Content not available";
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="mb-6"
+    >
+      <Card className="bg-wonderwhiz-purple border-none overflow-hidden">
+        <div className="p-5">
+          <div className="flex items-center mb-4">
+            <Avatar className="h-12 w-12 border-2 border-white/20">
+              <AvatarImage src={specialist.avatar} alt={specialist.name} />
+              <AvatarFallback className={specialist.fallbackColor}>{specialist.fallbackInitial}</AvatarFallback>
+            </Avatar>
+            <div className="ml-3">
+              <div className="flex items-center">
+                <h3 className="text-lg font-semibold text-white">{specialist.name}</h3>
+                {block.specialist_id === 'nova' && (
+                  <div className="ml-2 text-xs bg-blue-500/30 text-blue-200 px-1.5 py-0.5 rounded-full">•</div>
+                )}
+                {block.specialist_id === 'spark' && (
+                  <div className="ml-2 text-xs bg-yellow-500/30 text-yellow-200 px-1.5 py-0.5 rounded-full">•</div>
+                )}
+              </div>
+              <p className="text-sm text-white/70">{specialist.title}</p>
+            </div>
+          </div>
+          
+          <div className="text-white mb-5">
+            {getBlockContent()}
+          </div>
+          
+          <div className="flex flex-wrap gap-2 mb-4">
+            {block.content?.rabbitHoles?.map((question: string, index: number) => (
+              <Badge 
+                key={index} 
+                variant="outline" 
+                className="bg-white/10 hover:bg-white/20 cursor-pointer text-white/90 border-white/20"
+              >
+                {question}
+              </Badge>
+            ))}
+          </div>
+          
+          <div className="flex space-x-4 pt-2 border-t border-white/10">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => onToggleLike(block.id)}
+              className={`text-white/70 hover:text-white hover:bg-white/10 ${block.liked ? 'text-pink-400 hover:text-pink-400' : ''}`}
+            >
+              <ThumbsUp className="h-4 w-4 mr-1" />
+              Like
+            </Button>
+            
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => onToggleBookmark(block.id)}
+              className={`text-white/70 hover:text-white hover:bg-white/10 ${block.bookmarked ? 'text-yellow-400 hover:text-yellow-400' : ''}`}
+            >
+              <Bookmark className="h-4 w-4 mr-1" />
+              Save
+            </Button>
+            
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setReplyText(prev => prev ? '' : ' ')} // Toggle reply form
+              className="text-white/70 hover:text-white hover:bg-white/10"
+            >
+              <MessageCircle className="h-4 w-4 mr-1" />
+              Reply
+            </Button>
+          </div>
+          
+          {replyText !== '' && (
+            <div className="mt-3 flex">
+              <input
+                type="text"
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                placeholder="Write a reply..."
+                className="flex-1 bg-white/10 border-white/20 rounded-l-md p-2 text-white placeholder:text-white/50 outline-none"
+              />
+              <Button 
+                className="rounded-l-none bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/80"
+                onClick={handleSubmitReply}
+              >
+                Send
+              </Button>
+            </div>
+          )}
+        </div>
+      </Card>
+    </motion.div>
+  );
+};
 
 const CurioContent: React.FC<CurioContentProps> = ({
   currentCurio,
@@ -113,30 +295,104 @@ const CurioContent: React.FC<CurioContentProps> = ({
     curio_id: block.curio_id || currentCurio?.id || ''
   }));
 
+  const handlePlayText = (text: string, specialistId: string) => {
+    toast.success("Playing audio...");
+    // This would use the useElevenLabsVoice hook if we integrated it directly here
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-4 py-4">
       {currentCurio && (
-        <h3 className="text-xl font-semibold">{currentCurio.title}</h3>
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-white mb-4">{currentCurio.title}</h2>
+          
+          {/* Add the QuickAnswer component */}
+          <QuickAnswer 
+            question={currentCurio.title}
+            isExpanded={false}
+            onToggleExpand={() => {}}
+            onStartJourney={() => {}}
+            childId={profileId}
+          />
+
+          {/* Interactive Image Block */}
+          {profileId && (
+            <InteractiveImageBlock
+              topic={currentCurio.title}
+              childId={profileId}
+              onShare={() => toast.success("Image shared!")}
+            />
+          )}
+        </div>
       )}
       
-      <CurioBlockList
-        blocks={convertedBlocks}
-        animateBlocks={true}
-        hasMoreBlocks={hasMoreBlocks}
-        loadingMoreBlocks={loadingBlocks}
-        searchQuery={""}
-        profileId={profileId}
-        isFirstLoad={true}
-        handleToggleLike={onToggleLike}
-        handleToggleBookmark={onToggleBookmark}
-        handleReply={onReply}
-        handleQuizCorrect={onQuizCorrect}
-        handleNewsRead={onNewsRead}
-        handleCreativeUpload={onCreativeUpload}
-        handleRabbitHoleClick={onRabbitHoleFollow}
-        generationError={generationError}
-        onRefresh={onRefresh}
-      />
+      {isGenerating && (
+        <div className="flex justify-center items-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-wonderwhiz-bright-pink"></div>
+          <span className="ml-3 text-white/70">Generating insights...</span>
+        </div>
+      )}
+      
+      {generationError && (
+        <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-4 text-white">
+          <p>There was an error generating content: {generationError}</p>
+          {onRefresh && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={onRefresh}
+              className="mt-2 border-red-500/30 text-white hover:bg-red-500/20"
+            >
+              Try Again
+            </Button>
+          )}
+        </div>
+      )}
+      
+      {contentBlocks.length === 0 && !isGenerating && !generationError && (
+        <div className="text-center py-8">
+          <div className="bg-wonderwhiz-purple/30 inline-block p-4 rounded-full mb-4">
+            <Sparkles className="h-8 w-8 text-wonderwhiz-yellow" />
+          </div>
+          <h3 className="text-xl font-semibold text-white mb-2">No content yet</h3>
+          <p className="text-white/70 max-w-md mx-auto">
+            Ask a question or choose a suggested topic to start your learning journey.
+          </p>
+        </div>
+      )}
+      
+      {/* Render individual content blocks */}
+      <div className="space-y-6">
+        {contentBlocks.map((block) => (
+          <CurioBlock 
+            key={block.id}
+            block={block}
+            onToggleLike={onToggleLike}
+            onToggleBookmark={onToggleBookmark}
+            onReply={onReply}
+          />
+        ))}
+      </div>
+      
+      {hasMoreBlocks && (
+        <div className="flex justify-center pt-4">
+          <Button
+            variant="outline"
+            onClick={onLoadMore}
+            disabled={loadingBlocks}
+            className="border-white/20 text-white hover:bg-white/10"
+          >
+            {loadingBlocks ? (
+              <>
+                <div className="animate-spin h-4 w-4 mr-2 border-2 border-white/50 border-t-white rounded-full"></div>
+                Loading...
+              </>
+            ) : (
+              'Load More'
+            )}
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

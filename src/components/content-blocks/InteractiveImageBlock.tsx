@@ -105,7 +105,7 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl overflow-hidden mb-8"
+      className="bg-wonderwhiz-purple border border-white/10 rounded-xl overflow-hidden mb-8"
     >
       <div className="p-4 sm:p-6">
         <div className="flex items-center justify-between mb-4">

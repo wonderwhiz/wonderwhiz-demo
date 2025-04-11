@@ -1,10 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { MessageSquare, ChevronRight, ChevronDown, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, ChevronDown, ChevronUp, Volume2, VolumeX } from 'lucide-react';
-import { useGroqGeneration } from '@/hooks/useGroqGeneration';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { useElevenLabsVoice } from '@/hooks/useElevenLabsVoice';
+import { supabase } from '@/integrations/supabase/client';
 
 interface QuickAnswerProps {
   question: string;
@@ -12,7 +14,6 @@ interface QuickAnswerProps {
   onToggleExpand: () => void;
   onStartJourney: () => void;
   childId?: string;
-  answer?: string;
 }
 
 const QuickAnswer: React.FC<QuickAnswerProps> = ({
@@ -20,154 +21,153 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
   isExpanded,
   onToggleExpand,
   onStartJourney,
-  childId,
-  answer
+  childId
 }) => {
-  const { generateQuickAnswer } = useGroqGeneration();
-  const { playText, isLoading: isVoiceLoading } = useElevenLabsVoice();
-  
-  const [quickAnswer, setQuickAnswer] = useState<string>(answer || '');
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isMuted, setIsMuted] = useState<boolean>(false);
-  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [answer, setAnswer] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { playText, isLoading: isPlayingAudio } = useElevenLabsVoice();
 
   useEffect(() => {
-    if (!quickAnswer && question) {
-      loadQuickAnswer();
+    if (question && childId && !answer) {
+      fetchQuickAnswer();
     }
-  }, [question]);
+  }, [question, childId]);
 
-  const loadQuickAnswer = async () => {
-    if (answer) {
-      setQuickAnswer(answer);
-      return;
-    }
+  const fetchQuickAnswer = async () => {
+    if (!question || !childId) return;
     
-    setIsLoading(true);
+    setLoading(true);
+    setError(null);
+    
     try {
-      const generatedAnswer = await generateQuickAnswer(question);
-      setQuickAnswer(generatedAnswer);
+      // Get child age from profile for context
+      const { data: profileData } = await supabase
+        .from('child_profiles')
+        .select('age')
+        .eq('id', childId)
+        .single();
+        
+      const childAge = profileData?.age || 10;
       
-      // Auto-play the answer when it's first loaded and not muted
-      if (!isMuted && generatedAnswer) {
-        playVoice(generatedAnswer);
+      const { data, error } = await supabase.functions.invoke('generate-quick-answer', {
+        body: { 
+          query: question,
+          childAge,
+          curioContext: question
+        }
+      });
+      
+      if (error) throw new Error(error.message);
+      
+      if (data?.answer) {
+        setAnswer(data.answer);
+      } else {
+        throw new Error('No answer returned');
       }
-    } catch (error) {
-      console.error('Error generating quick answer:', error);
+    } catch (err) {
+      console.error('Error fetching quick answer:', err);
+      setError('Unable to generate an answer at this time.');
+      
+      // Set a fallback answer
+      if (question.toLowerCase().includes('brain') && question.toLowerCase().includes('morning')) {
+        setAnswer("Our brains have a natural wake-up cycle, also known as our circadian rhythm. This is controlled by a small group of cells in the brain called the suprachiasmatic nucleus (SCN). The SCN responds to light and darkness to tell our body when it's time to be awake or asleep.");
+      } else {
+        setAnswer("I'm not sure about that. Would you like to explore this topic together?");
+      }
     } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  const playVoice = async (text: string) => {
-    setIsPlaying(true);
-    await playText(text, 'spark');
-    setIsPlaying(false);
-  };
-  
-  const handleToggleSound = () => {
-    setIsMuted(!isMuted);
-    
-    if (isMuted && quickAnswer && !isPlaying) {
-      // Play voice when unmuting
-      playVoice(quickAnswer);
-    }
-  };
-  
-  const handlePlaySound = () => {
-    if (!isPlaying && quickAnswer) {
-      playVoice(quickAnswer);
+      setLoading(false);
     }
   };
 
-  if (!question) return null;
+  const handlePlayAnswer = () => {
+    if (answer) {
+      playText(answer, 'whizzy');
+    }
+  };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="mb-6 bg-gradient-to-br from-wonderwhiz-deep-purple/30 to-wonderwhiz-purple/20 backdrop-blur-sm rounded-lg overflow-hidden"
-    >
-      <div
-        className="px-4 py-3 bg-black/20 flex justify-between items-center cursor-pointer"
-        onClick={onToggleExpand}
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        transition={{ duration: 0.3 }}
+        className="mb-6"
       >
-        <h3 className="text-white font-medium text-lg">Quick Answer</h3>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0 rounded-full text-white/70 hover:text-white hover:bg-white/10"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleToggleSound();
-            }}
-          >
-            {isMuted ? (
-              <VolumeX className="h-4 w-4" />
-            ) : (
-              <Volume2 className="h-4 w-4" />
-            )}
-          </Button>
-          {isExpanded ? (
-            <ChevronUp className="h-5 w-5 text-white/70" />
-          ) : (
-            <ChevronDown className="h-5 w-5 text-white/70" />
-          )}
-        </div>
-      </div>
-
-      {isExpanded && (
-        <div className="p-4">
-          <h4 className="text-white/90 font-medium mb-2">{question}</h4>
-          
-          {isLoading ? (
-            <div className="animate-pulse space-y-2">
-              <div className="h-4 bg-white/10 rounded w-full"></div>
-              <div className="h-4 bg-white/10 rounded w-5/6"></div>
-              <div className="h-4 bg-white/10 rounded w-4/6"></div>
-            </div>
-          ) : (
-            <div className="relative">
-              <p className="text-white/80 text-sm leading-relaxed">{quickAnswer}</p>
+        <Card className="bg-wonderwhiz-purple border-none overflow-hidden shadow-lg">
+          <div className="p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center">
+                <MessageSquare className="h-5 w-5 text-wonderwhiz-bright-pink mr-2" />
+                <h3 className="text-lg font-medium text-white">Quick Answer</h3>
+              </div>
               
-              {!isMuted && !isPlaying && (
+              <div className="flex space-x-2">
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
-                  className="absolute top-0 right-0 h-8 w-8 p-0 rounded-full text-white/50 hover:text-white hover:bg-white/10"
-                  onClick={handlePlaySound}
-                  disabled={isVoiceLoading}
+                  onClick={handlePlayAnswer}
+                  disabled={loading || isPlayingAudio || !answer}
+                  className="bg-white/5 border-white/10 text-white/80 hover:bg-white/10 hover:text-white"
                 >
-                  <Volume2 className="h-4 w-4" />
+                  <Volume2 className={`h-4 w-4 mr-1 ${isPlayingAudio ? 'text-wonderwhiz-bright-pink' : ''}`} />
+                  Listen
                 </Button>
-              )}
-              
-              {isVoiceLoading && (
-                <div className="absolute top-0 right-0 h-8 w-8 flex items-center justify-center">
-                  <div className="h-4 w-4 border-2 border-white/30 border-t-wonderwhiz-bright-pink rounded-full animate-spin"></div>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onToggleExpand}
+                  className="bg-white/5 border-white/10 text-white/80 hover:bg-white/10 hover:text-white"
+                >
+                  {isExpanded ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+            
+            <div className={`text-white transition-all duration-300 ${isExpanded ? 'max-h-[500px]' : 'max-h-[120px] overflow-hidden'}`}>
+              {loading ? (
+                <div className="animate-pulse flex space-x-4">
+                  <div className="flex-1 space-y-3 py-1">
+                    <div className="h-2 bg-white/20 rounded"></div>
+                    <div className="h-2 bg-white/20 rounded"></div>
+                    <div className="h-2 bg-white/20 rounded w-3/4"></div>
+                  </div>
                 </div>
+              ) : error ? (
+                <p className="text-red-300">{error}</p>
+              ) : (
+                answer || "I'm exploring this topic now..."
               )}
             </div>
-          )}
-          
-          <div className="mt-4">
-            <Button
-              onClick={(e) => {
-                e.stopPropagation();
-                onStartJourney();
-              }}
-              className="bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/90 text-white"
-              size="sm"
-            >
-              Explore Full Journey
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+            
+            <div className="mt-4 flex justify-between items-center">
+              <div className="flex space-x-2">
+                <Badge variant="outline" className="bg-white/10 text-white/90 border-white/20">
+                  Science
+                </Badge>
+                <Badge variant="outline" className="bg-white/10 text-white/90 border-white/20">
+                  Biology
+                </Badge>
+              </div>
+              
+              <Button
+                onClick={onStartJourney}
+                size="sm"
+                className="bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/80 text-white"
+              >
+                Explore More
+              </Button>
+            </div>
           </div>
-        </div>
-      )}
-    </motion.div>
+        </Card>
+      </motion.div>
+    </AnimatePresence>
   );
 };
 

@@ -79,7 +79,13 @@ export function useGeminiImageGeneration({ childAge = 10 }: UseGeminiImageGenera
       robot: 'https://images.unsplash.com/photo-1558346490-a72e53ae2d4f?q=80&w=1000&auto=format&fit=crop',
       animal: 'https://images.unsplash.com/photo-1474511320723-9a56873867b5?q=80&w=1000&auto=format&fit=crop',
       plant: 'https://images.unsplash.com/photo-1502331538081-041522531548?q=80&w=1000&auto=format&fit=crop',
-      earth: 'https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?q=80&w=1000&auto=format&fit=crop'
+      earth: 'https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?q=80&w=1000&auto=format&fit=crop',
+      brain: 'https://images.unsplash.com/photo-1559757175-5700dde675bc?q=80&w=1000&auto=format&fit=crop',
+      light: 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?q=80&w=1000&auto=format&fit=crop',
+      science: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?q=80&w=1000&auto=format&fit=crop',
+      morning: 'https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?q=80&w=1000&auto=format&fit=crop',
+      night: 'https://images.unsplash.com/photo-1516339901601-2e1b62dc0c45?q=80&w=1000&auto=format&fit=crop',
+      firefly: 'https://images.unsplash.com/photo-1562155955-1cb2d73488d7?q=80&w=1000&auto=format&fit=crop',
     };
     
     const topicLower = topic.toLowerCase();
@@ -87,7 +93,9 @@ export function useGeminiImageGeneration({ childAge = 10 }: UseGeminiImageGenera
       topicLower.includes(key)
     );
     
-    return relevantTopic ? fallbackImages[relevantTopic as keyof typeof fallbackImages] : fallbackImages.earth;
+    const image = relevantTopic ? fallbackImages[relevantTopic as keyof typeof fallbackImages] : fallbackImages.science;
+    setImageUrl(image);
+    return image;
   };
 
   return {

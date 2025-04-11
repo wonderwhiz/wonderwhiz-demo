@@ -12,6 +12,8 @@ import { useCurioCreation } from '@/hooks/useCurioCreation';
 import { useCurioData } from '@/hooks/useCurioData';
 import { useBlockInteractionHandlers } from '@/hooks/useBlockInteractionHandlers';
 import WelcomeSection from '@/components/dashboard/WelcomeSection';
+import TalkToWhizzy from '@/components/curio/TalkToWhizzy';
+import { useElevenLabsVoice } from '@/hooks/useElevenLabsVoice';
 
 interface Curio {
   id: string;
@@ -24,6 +26,7 @@ const DashboardContainer = () => {
   const { profileId } = useParams<{ profileId: string }>();
   const [currentCurio, setCurrentCurio] = useState<Curio | null>(null);
   const { streakDays } = useSparksSystem(profileId);
+  const [ageGroup, setAgeGroup] = useState<'5-7' | '8-11' | '12-16'>('8-11');
 
   // Fetch profile and curios data
   const {
@@ -36,6 +39,9 @@ const DashboardContainer = () => {
     curioSuggestions,
     handleRefreshSuggestions
   } = useDashboardProfile(profileId);
+
+  // Setup Eleven Labs voice
+  const { playText } = useElevenLabsVoice();
 
   // Handle curio creation
   const {
@@ -74,6 +80,22 @@ const DashboardContainer = () => {
     handleSparkEarned
   } = useBlockInteractionHandlers(profileId, childProfile, setChildProfile, contentBlocks);
 
+  useEffect(() => {
+    if (childProfile?.age) {
+      const age = typeof childProfile.age === 'string' 
+        ? parseInt(childProfile.age, 10) 
+        : childProfile.age;
+        
+      if (age >= 5 && age <= 7) {
+        setAgeGroup('5-7');
+      } else if (age >= 8 && age <= 11) {
+        setAgeGroup('8-11');
+      } else {
+        setAgeGroup('12-16');
+      }
+    }
+  }, [childProfile]);
+
   const handleLoadCurio = (curio: Curio) => {
     setCurrentCurio(curio);
   };
@@ -87,7 +109,7 @@ const DashboardContainer = () => {
   }
 
   return (
-    <div className="min-h-screen flex w-full">
+    <div className="min-h-screen flex w-full bg-gradient-to-b from-wonderwhiz-deep-purple to-wonderwhiz-deep-purple/90">
       <Helmet>
         <title>WonderWhiz - Explore & Learn</title>
         <meta name="description" content="Explore topics, ask questions, and learn in a fun, interactive way with WonderWhiz." />
@@ -111,7 +133,7 @@ const DashboardContainer = () => {
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-5xl mx-auto space-y-6 p-4">
             {/* Main content area */}
-            <Card className="bg-white/5 border-white/10 flex-grow relative overflow-hidden">
+            <Card className="bg-wonderwhiz-purple/50 backdrop-blur-sm border-white/10 flex-grow relative overflow-hidden shadow-xl rounded-xl">
               {!currentCurio ? (
                 <WelcomeSection 
                   curioSuggestions={curioSuggestions}
@@ -151,6 +173,16 @@ const DashboardContainer = () => {
             </Card>
           </div>
         </div>
+        
+        {/* Talk to Whizzy component */}
+        {profileId && (
+          <TalkToWhizzy 
+            childId={profileId}
+            curioTitle={currentCurio?.title}
+            ageGroup={ageGroup}
+            onNewQuestionGenerated={handleFollowRabbitHole}
+          />
+        )}
       </main>
     </div>
   );
