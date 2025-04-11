@@ -22,7 +22,7 @@ serve(async (req) => {
     const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
     
     if (!ELEVENLABS_API_KEY) {
-      console.warn('ELEVENLABS_API_KEY is not set in environment variables, returning fallback response');
+      console.error('ELEVENLABS_API_KEY is not set in environment variables');
       return new Response(
         JSON.stringify({ 
           success: true, 
@@ -39,6 +39,10 @@ serve(async (req) => {
 
     console.log(`Generating speech for text (length: ${text.length}) with voice: ${finalVoiceId}`);
 
+    // Make the request with a timeout to prevent hanging
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
     try {
       const response = await fetch(
         `https://api.elevenlabs.io/v1/text-to-speech/${finalVoiceId}`,
@@ -59,8 +63,11 @@ serve(async (req) => {
               use_speaker_boost: true,
             },
           }),
+          signal: controller.signal
         }
       );
+      
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -99,6 +106,7 @@ serve(async (req) => {
         }
       );
     } catch (fetchError) {
+      clearTimeout(timeoutId);
       console.error('Error fetching from ElevenLabs:', fetchError);
       
       // Return graceful fallback

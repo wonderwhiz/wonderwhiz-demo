@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -11,6 +11,7 @@ export function useElevenLabsVoice({ voiceId = 'pkDwhVp7Wc7dQq2DBbpK' }: UseElev
   const [isLoading, setIsLoading] = useState(false);
   const [audioSrc, setAudioSrc] = useState<string | null>(null);
   const { toast } = useToast();
+  const audioElementRef = useRef<HTMLAudioElement | null>(null);
 
   // Map specialists to appropriate voice IDs
   const specialistVoiceMap = {
@@ -28,11 +29,36 @@ export function useElevenLabsVoice({ voiceId = 'pkDwhVp7Wc7dQq2DBbpK' }: UseElev
     return specialistVoiceMap[specialistId as keyof typeof specialistVoiceMap] || specialistVoiceMap.default;
   };
 
+  // Clean up any playing audio
+  const stopAudio = useCallback(() => {
+    if (audioElementRef.current) {
+      try {
+        audioElementRef.current.pause();
+        audioElementRef.current.src = '';
+      } catch (e) {
+        console.warn('Error stopping audio:', e);
+      }
+      audioElementRef.current = null;
+    }
+    
+    if (audioSrc) {
+      try {
+        URL.revokeObjectURL(audioSrc);
+        setAudioSrc(null);
+      } catch (e) {
+        console.warn('Error revoking Object URL:', e);
+      }
+    }
+  }, [audioSrc]);
+
   const playText = useCallback(async (text: string, specialistId?: string) => {
-    if (!text) {
+    if (!text || text.trim() === '') {
       console.warn('No text provided for speech synthesis');
       return;
     }
+    
+    // Clean up any previous audio
+    stopAudio();
     
     try {
       setIsLoading(true);
@@ -55,7 +81,12 @@ export function useElevenLabsVoice({ voiceId = 'pkDwhVp7Wc7dQq2DBbpK' }: UseElev
 
       if (error) {
         console.error('Error calling text-to-speech function:', error);
-        // We'll continue without audio
+        // We'll continue without audio but still show a toast
+        toast({
+          title: 'Audio Unavailable',
+          description: 'Could not generate speech at this time',
+          variant: 'destructive',
+        });
         return;
       }
 
@@ -67,6 +98,7 @@ export function useElevenLabsVoice({ voiceId = 'pkDwhVp7Wc7dQq2DBbpK' }: UseElev
       // Handle fallback response
       if (data.fallback) {
         console.log('Using fallback for audio response:', data.message);
+        // Don't show error to user, just fail silently
         return;
       }
 
@@ -76,42 +108,42 @@ export function useElevenLabsVoice({ voiceId = 'pkDwhVp7Wc7dQq2DBbpK' }: UseElev
       }
 
       // Create a blob URL from the base64 audio data
-      const blob = base64ToBlob(data.audioContent, 'audio/mpeg');
-      const url = URL.createObjectURL(blob);
-      setAudioSrc(url);
+      try {
+        const blob = base64ToBlob(data.audioContent, 'audio/mpeg');
+        const url = URL.createObjectURL(blob);
+        setAudioSrc(url);
 
-      // Play the audio
-      const audio = new Audio(url);
-      
-      // Set up event handlers
-      audio.onerror = (e) => {
-        console.error('Audio playback error:', e);
-        URL.revokeObjectURL(url);
-        setAudioSrc(null);
-      };
-      
-      audio.onended = () => {
-        // Clean up the blob URL when audio is done playing
-        URL.revokeObjectURL(url);
-        setAudioSrc(null);
-      };
-      
-      // Start playing
-      const playPromise = audio.play();
-      
-      // Handle play promise (required for mobile browsers)
-      if (playPromise !== undefined) {
-        playPromise.catch((error) => {
-          console.error('Error playing audio:', error);
-          // Don't show toast for common user-interaction errors
-          if (error.name !== 'NotAllowedError') {
-            toast({
-              title: 'Playback Notice',
-              description: 'Audio might require user interaction first',
-              variant: 'default',
-            });
-          }
-        });
+        // Play the audio
+        const audio = new Audio(url);
+        audioElementRef.current = audio;
+        
+        // Set up event handlers
+        audio.onerror = (e) => {
+          console.error('Audio playback error:', e);
+          URL.revokeObjectURL(url);
+          setAudioSrc(null);
+          audioElementRef.current = null;
+        };
+        
+        audio.onended = () => {
+          // Clean up the blob URL when audio is done playing
+          URL.revokeObjectURL(url);
+          setAudioSrc(null);
+          audioElementRef.current = null;
+        };
+        
+        // Start playing
+        await audio.play();
+      } catch (playError) {
+        console.error('Error playing audio:', playError);
+        // Don't show toast for common user-interaction errors
+        if (playError instanceof Error && playError.name !== 'NotAllowedError') {
+          toast({
+            title: 'Playback Notice',
+            description: 'Audio might require user interaction first',
+            variant: 'default',
+          });
+        }
       }
     } catch (error) {
       console.error('Error playing text:', error);
@@ -119,7 +151,7 @@ export function useElevenLabsVoice({ voiceId = 'pkDwhVp7Wc7dQq2DBbpK' }: UseElev
     } finally {
       setIsLoading(false);
     }
-  }, [voiceId, toast]);
+  }, [voiceId, toast, stopAudio]);
 
   // Helper function to convert base64 to Blob
   const base64ToBlob = (base64: string, mimeType: string) => {
@@ -147,10 +179,18 @@ export function useElevenLabsVoice({ voiceId = 'pkDwhVp7Wc7dQq2DBbpK' }: UseElev
     }
   };
 
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      stopAudio();
+    };
+  }, [stopAudio]);
+
   return {
     playText,
     isLoading,
     audioSrc,
-    getSpecialistVoice
+    getSpecialistVoice,
+    stopAudio
   };
 }
