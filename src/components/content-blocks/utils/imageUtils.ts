@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 // Cute character images as placeholders
@@ -12,156 +11,101 @@ const PLACEHOLDER_IMAGES = [
 ];
 
 export const getContextualImage = async (
-  block: any,
+  block: any, 
   isFirstBlock: boolean, 
   requestId: string,
-  imageRetryCountRef: React.MutableRefObject<number>
+  retryCountRef: React.MutableRefObject<number>
 ) => {
-  // Don't attempt image generation if this is not the first block or we've hit the retry limit
-  if (!isFirstBlock || imageRetryCountRef.current > 2) {
-    const randomPlaceholder = PLACEHOLDER_IMAGES[Math.floor(Math.random() * PLACEHOLDER_IMAGES.length)];
-    return { 
-      imageLoading: false, 
-      imageRequestInProgress: false, 
-      contextualImage: randomPlaceholder, 
-      imageError: null,
-      imageDescription: getDescriptiveImageText(block) || "A magical adventure awaits!"
-    };
+  const result = {
+    contextualImage: null as string | null,
+    imageLoading: false,
+    imageError: null as string | null,
+    imageRequestInProgress: false,
+    imageDescription: "A magical adventure awaits!"
+  };
+  
+  if (!isFirstBlock) {
+    return result;
   }
 
+  console.log(`[${requestId}][${block.id}] Starting image generation for block`);
+  
   try {
-    console.log(`[${requestId}][${block.id}] Starting image generation`);
+    const imageKey = `content-image-${block.id}`;
+    const cachedImage = localStorage.getItem(imageKey);
     
-    // Check for cached image first
-    const cachedImage = checkImageCache(block.id);
     if (cachedImage) {
-      return {
-        imageLoading: false,
-        imageRequestInProgress: false,
-        contextualImage: cachedImage,
-        imageError: null,
-        imageDescription: getDescriptiveImageText(block) || "A magical picture just for you!"
-      };
+      console.log(`[${requestId}][${block.id}] Using cached image`);
+      result.contextualImage = cachedImage;
+      return result;
     }
     
-    // Set loading state
-    const result = {
-      imageLoading: true,
-      imageRequestInProgress: true,
-      contextualImage: null,
-      imageError: null,
-      imageDescription: "Creating a magical picture just for you!"
-    };
+    // Determine the appropriate image prompt based on block type and content
+    let imagePrompt = '';
     
-    console.log(`[${requestId}][${block.id}] Calling generate-contextual-image function`);
+    if (block.type === 'fact' || block.type === 'funFact') {
+      imagePrompt = block.content?.fact || block.content?.text || block.content?.title || 'educational concept';
+    } else if (block.type === 'quiz') {
+      imagePrompt = block.content?.question || 'quiz question';
+    } else {
+      // For other block types
+      const contentText = JSON.stringify(block.content).substring(0, 150);
+      imagePrompt = `Educational concept about ${contentText}`;
+    }
     
-    // Call the Supabase function for image generation
-    const { data, error } = await supabase.functions.invoke('generate-contextual-image', {
-      body: {
-        blockContent: block.content,
-        blockType: block.type,
-        requestId: requestId,
-        timestamp: new Date().toISOString(),
-        style: "cute disney pixar style, child-friendly, colorful, vibrant, magical"
+    result.imageLoading = true;
+    result.imageRequestInProgress = true;
+
+    // Use Supabase Edge function to generate image
+    console.log(`[${requestId}][${block.id}] Calling Supabase function for image generation`);
+    
+    // Determine specialist style for prompting
+    let specialistStyle = 'educational';
+    if (block.specialist_id === 'whizzy') {
+      specialistStyle = 'whimsical, colorful cartoon';
+    } else if (block.specialist_id === 'nova') {
+      specialistStyle = 'cosmic, space-themed';
+    } else if (block.specialist_id === 'spark') {
+      specialistStyle = 'technical, blueprint style';
+    }
+    
+    const { data, error } = await supabase.functions.invoke('generate-gemini-image', {
+      body: { 
+        prompt: imagePrompt,
+        style: specialistStyle
       }
     });
     
-    // Log response time
-    const duration = Date.now() / 1000;
-    console.log(`[${requestId}][${block.id}] Image generation response received after ${duration}s`);
-    
-    // Handle Supabase function error
     if (error) {
       console.error(`[${requestId}][${block.id}] Supabase function error:`, error);
-      
-      // Special handling for billing limit error to make it less alarming
-      const errorMessage = error.message || "Error generating image";
-      const isBillingError = errorMessage.includes("Billing") || errorMessage.includes("quota");
-      
-      // Return a placeholder image instead of an error
-      const randomPlaceholder = PLACEHOLDER_IMAGES[Math.floor(Math.random() * PLACEHOLDER_IMAGES.length)];
-      
-      return { 
-        imageLoading: false, 
-        imageRequestInProgress: false,
-        contextualImage: randomPlaceholder,
-        imageError: null,
-        imageDescription: getDescriptiveImageText(block) || "Imagine a colorful world of discovery!" 
-      };
+      throw new Error(error.message);
     }
     
-    // Handle missing data
-    if (!data) {
-      const randomPlaceholder = PLACEHOLDER_IMAGES[Math.floor(Math.random() * PLACEHOLDER_IMAGES.length)];
-      return { 
-        imageLoading: false,
-        imageRequestInProgress: false,
-        contextualImage: randomPlaceholder,
-        imageError: null,
-        imageDescription: getDescriptiveImageText(block) || "A magical journey awaits you!" 
-      };
-    }
+    console.log(`[${requestId}][${block.id}] Image generation response:`, data);
     
-    // Handle error from the data
-    if (data.error) {
-      console.error(`[${requestId}][${block.id}] Image generation error:`, data.error);
+    if (data?.imageUrl) {
+      result.contextualImage = data.imageUrl;
+      result.imageDescription = data.textResponse || `Visual representation of ${imagePrompt}`;
       
-      // Return a placeholder image instead of an error message
-      const randomPlaceholder = PLACEHOLDER_IMAGES[Math.floor(Math.random() * PLACEHOLDER_IMAGES.length)];
-      
-      return { 
-        imageLoading: false,
-        imageRequestInProgress: false,
-        contextualImage: randomPlaceholder,
-        imageError: null,
-        imageDescription: data.imageDescription || getDescriptiveImageText(block) || "Picture a world full of wonders!" 
-      };
-    }
-    
-    // Handle successful image generation
-    if (data && data.image) {
-      console.log(`[${requestId}][${block.id}] Image generated successfully`);
-      
-      // Try to cache the image in localStorage for future use
-      try {
-        const cacheKey = `image-cache-${block.id}`;
-        localStorage.setItem(cacheKey, data.image);
-        console.log(`[${requestId}][${block.id}] Image cached successfully`);
-      } catch (e) {
-        console.error('Error caching image in localStorage:', e);
-      }
-      
-      // Return the image and related data
-      return { 
-        imageLoading: false, 
-        imageRequestInProgress: false, 
-        contextualImage: data.image, 
-        imageError: null,
-        imageDescription: data.imageDescription || getDescriptiveImageText(block) || "A magical adventure in learning!" 
-      };
+      // Cache the image
+      localStorage.setItem(imageKey, data.imageUrl);
+      console.log(`[${requestId}][${block.id}] Image cached successfully`);
     } else {
-      // If no image, use a placeholder
-      const randomPlaceholder = PLACEHOLDER_IMAGES[Math.floor(Math.random() * PLACEHOLDER_IMAGES.length)];
-      return { 
-        imageLoading: false,
-        imageRequestInProgress: false,
-        contextualImage: randomPlaceholder,
-        imageError: null,
-        imageDescription: data.imageDescription || getDescriptiveImageText(block) || "A wonderful adventure through knowledge!" 
-      };
+      throw new Error('No image URL in response');
     }
-  } catch (err) {
-    // Handle any other errors with a placeholder image
-    console.error(`[${block.id}] Error generating contextual image:`, err);
-    const randomPlaceholder = PLACEHOLDER_IMAGES[Math.floor(Math.random() * PLACEHOLDER_IMAGES.length)];
-    return { 
-      imageLoading: false, 
-      imageRequestInProgress: false, 
-      contextualImage: randomPlaceholder, 
-      imageError: null,
-      imageDescription: getDescriptiveImageText(block) || "Imagine a colorful world of discovery!" 
-    };
+  } catch (error) {
+    console.error(`[${requestId}][${block.id}] Error generating image:`, error);
+    result.imageError = 'Could not generate image';
+    
+    // If retry count is below threshold, we'll let the component retry
+    if (retryCountRef.current < 2) {
+      result.imageRequestInProgress = false;
+    }
+  } finally {
+    result.imageLoading = false;
   }
+  
+  return result;
 };
 
 export const checkImageCache = (blockId: string) => {

@@ -63,12 +63,19 @@ serve(async (req) => {
       }
       
       const responseData = await geminiResponse.json();
+      console.log('Gemini API response received');
       
       // Extract image data from the response
       let imageUrl = '';
+      let textResponse = '';
       
       if (responseData?.candidates?.[0]?.content?.parts) {
         for (const part of responseData.candidates[0].content.parts) {
+          if (part.text) {
+            textResponse = part.text;
+            console.log('Text response:', textResponse);
+          }
+          
           if (part.inline_data && part.inline_data.mime_type.startsWith('image/')) {
             // Convert base64 to image URL
             const imageData = part.inline_data.data;
@@ -76,6 +83,7 @@ serve(async (req) => {
             
             // Return the base64 image data to be displayed
             imageUrl = `data:${mimeType};base64,${imageData}`;
+            console.log('Image URL generated from inline data');
             break;
           }
         }
@@ -89,7 +97,8 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           success: true, 
-          imageUrl: imageUrl
+          imageUrl: imageUrl,
+          textResponse: textResponse
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },

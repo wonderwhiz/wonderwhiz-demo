@@ -20,6 +20,8 @@ export function useGeminiImageGeneration({ childAge = 10 }: UseGeminiImageGenera
       const adaptedPrompt = adaptPromptForChildAge(prompt, childAge);
       const imageStyle = style || getDefaultStyleForAge(childAge);
       
+      console.log(`Calling generate-gemini-image with prompt: "${adaptedPrompt}" and style: ${imageStyle}`);
+      
       const { data, error } = await supabase.functions.invoke('generate-gemini-image', {
         body: { 
           prompt: adaptedPrompt,
@@ -27,12 +29,24 @@ export function useGeminiImageGeneration({ childAge = 10 }: UseGeminiImageGenera
         }
       });
       
-      if (error) throw new Error(error.message);
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw new Error(error.message);
+      }
       
-      if (data?.imageUrl) {
+      if (!data) {
+        console.error('No data returned from image generation function');
+        throw new Error('No data returned from image generation');
+      }
+      
+      console.log('Image generation response:', data);
+      
+      if (data.imageUrl) {
+        console.log('Setting image URL from response');
         setImageUrl(data.imageUrl);
         return data.imageUrl;
       } else {
+        console.error('No image URL in response:', data);
         throw new Error('No image URL returned');
       }
     } catch (err) {
@@ -40,7 +54,9 @@ export function useGeminiImageGeneration({ childAge = 10 }: UseGeminiImageGenera
       setGenerationError(err instanceof Error ? err.message : 'Unknown error generating image');
       
       // Return fallback image based on topic
-      return getFallbackImage(prompt);
+      const fallbackUrl = getFallbackImage(prompt);
+      setImageUrl(fallbackUrl);
+      return fallbackUrl;
     } finally {
       setIsGenerating(false);
     }
@@ -103,7 +119,6 @@ export function useGeminiImageGeneration({ childAge = 10 }: UseGeminiImageGenera
     );
     
     const image = relevantTopic ? fallbackImages[relevantTopic as keyof typeof fallbackImages] : fallbackImages.science;
-    setImageUrl(image);
     return image;
   };
 

@@ -61,6 +61,12 @@ const ContextualImage: React.FC<ContextualImageProps> = ({
            description.includes('planet') || description.includes('space');
   };
 
+  console.log("ContextualImage - Image state:", { 
+    isLoading: imageLoading, 
+    hasImage: !!contextualImage, 
+    error: imageError 
+  });
+
   return (
     <AnimatePresence mode="wait">
       {imageLoading && (

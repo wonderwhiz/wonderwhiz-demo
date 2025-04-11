@@ -67,7 +67,15 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
       
       // Generate a prompt based on the topic
       const prompt = `Educational illustration about ${topic}${stylePrompt}`;
-      await generateImage(prompt, currentStyle);
+      console.log(`Generating image with prompt: ${prompt}`);
+      
+      const generatedImageUrl = await generateImage(prompt, currentStyle);
+      if (generatedImageUrl) {
+        console.log('Image generated successfully:', generatedImageUrl.substring(0, 50) + '...');
+      } else {
+        console.error('No image URL returned from generateImage');
+        toast.error('Could not generate image');
+      }
     } catch (error) {
       console.error('Failed to generate image:', error);
       toast.error('Could not generate image at this time');
@@ -118,7 +126,7 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
             <Button
               variant="outline"
               size="icon"
-              onClick={handleRefreshCw}
+              onClick={handleGenerateImage}
               disabled={isGenerating}
               className="h-8 w-8 rounded-full bg-white/10 border-white/20 text-white/70"
             >
@@ -197,10 +205,6 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
       </div>
     </motion.div>
   );
-  
-  function handleRefreshCw() {
-    handleGenerateImage();
-  }
 };
 
 export default InteractiveImageBlock;
