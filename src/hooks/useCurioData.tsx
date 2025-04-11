@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -56,19 +55,19 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
     if (!curioId) return null;
     
     try {
-      const { data, error } = await supabase
-        .from('content_blocks')
-        .insert({
-          ...newBlock,
-          curio_id: curioId,
-        })
-        .select()
-        .single();
+      const { data, error } = await supabase.functions.invoke('save-content-block', {
+        body: {
+          block: {
+            ...newBlock,
+            curio_id: curioId,
+          }
+        }
+      });
         
       if (error) throw error;
       
-      if (data) {
-        const mappedBlock = convertToContentBlocks([data])[0];
+      if (data && data.block) {
+        const mappedBlock = convertToContentBlocks([data.block])[0];
         setBlocks(prevBlocks => [mappedBlock, ...prevBlocks]);
         setTotalBlocksLoaded(prev => prev + 1);
         return mappedBlock;
@@ -264,11 +263,35 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
             return tryGenerateBlocks(retryAttempt + 1);
           }
           
-          throw err;
+          return [
+            {
+              id: crypto.randomUUID(),
+              type: 'fact',
+              specialist_id: 'whizzy',
+              content: {
+                fact: `Here's information about "${query}". This is a fallback response since we couldn't generate custom content right now.`,
+                rabbitHoles: [`Tell me more about ${query}`, `What's interesting about ${query}?`]
+              },
+              liked: false,
+              bookmarked: false,
+              created_at: new Date().toISOString()
+            },
+            {
+              id: crypto.randomUUID(),
+              type: 'fact',
+              specialist_id: 'nova',
+              content: {
+                fact: `Would you like to learn more about ${query}? Try asking a more specific question!`,
+                rabbitHoles: [`What are the key facts about ${query}?`, `Why is ${query} important?`]
+              },
+              liked: false,
+              bookmarked: false,
+              created_at: new Date().toISOString()
+            }
+          ];
         }
       };
       
-      // Try to generate blocks with retry logic
       const initialBlocks = await tryGenerateBlocks();
       
       console.log(`Generated initial ${initialBlocks.length} blocks in ${(Date.now() - initialApiStartTime) / 1000} seconds`);
@@ -282,15 +305,16 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
         setBlocks(convertToContentBlocks(initialBlocksWithCurioId));
         setTotalBlocksLoaded(initialBlocksWithCurioId.length);
         
-        // Save blocks to database
         const savePromises = initialBlocksWithCurioId.map(async (block: any) => {
           try {
-            await supabase
-              .from('content_blocks')
-              .insert({
-                ...block,
-                curio_id: curioId
-              });
+            await supabase.functions.invoke('save-content-block', {
+              body: {
+                block: {
+                  ...block,
+                  curio_id: curioId
+                }
+              }
+            });
           } catch (insertError) {
             console.error('Error saving block to database:', insertError);
           }
@@ -299,7 +323,6 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
         await Promise.all(savePromises);
       }
       
-      // Generate remaining blocks
       setTimeout(async () => {
         try {
           const remainingApiStartTime = Date.now();
@@ -335,11 +358,21 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
                 return tryGenerateRemainingBlocks(retryAttempt + 1);
               }
               
-              throw err;
+              return Array(3).fill(0).map(() => ({
+                id: crypto.randomUUID(),
+                type: Math.random() > 0.5 ? 'fact' : 'funFact',
+                specialist_id: ['prism', 'spark', 'atlas'][Math.floor(Math.random() * 3)],
+                content: {
+                  fact: `Here's another interesting aspect of ${query}. We're providing some fallback content.`,
+                  rabbitHoles: [`How does ${query} work?`, `What are examples of ${query}?`]
+                },
+                liked: false,
+                bookmarked: false,
+                created_at: new Date().toISOString()
+              }));
             }
           };
           
-          // Try to generate remaining blocks with retry logic
           const remainingBlocks = await tryGenerateRemainingBlocks();
           
           console.log(`Generated remaining ${remainingBlocks.length} blocks in ${(Date.now() - remainingApiStartTime) / 1000} seconds`);
@@ -376,7 +409,7 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
       toast.error(error instanceof Error ? error.message : "Could not generate content blocks");
       
       setBlocks([{
-        id: `error-${Date.now()}`,
+        id: crypto.randomUUID(),
         curio_id: curioId,
         specialist_id: 'nova',
         type: 'fact',
@@ -426,33 +459,23 @@ export const useCurioData = (curioId?: string, profileId?: string) => {
         
         setHasMoreBlocks(currentIndex < generatedBlocks.length - 1);
         
-        try {
-          const { error } = await supabase.from('content_blocks').insert({
-            ...nextBlock,
-            curio_id: curioId
-          });
-          
-          if (error) {
-            console.error(`Error saving block ${currentIndex + 1}:`, error);
-          } else {
-            console.log(`Successfully saved block ${currentIndex + 1}/${generatedBlocks.length}`);
+        await supabase.functions.invoke('save-content-block', {
+          body: {
+            block: {
+              ...nextBlock,
+              curio_id: curioId
+            }
           }
-        } catch (insertError) {
-          console.error(`Error saving block ${currentIndex + 1}:`, insertError);
-        }
-        
-        currentIndex++;
-        
-        const nextDelay = currentIndex <= 3 ? 400 : 600;
-        blockLoadingTimerRef.current = setTimeout(loadNextBlock, nextDelay);
+        });
       } catch (error) {
-        console.error('Error during progressive block loading:', error);
-        currentIndex++;
-        blockLoadingTimerRef.current = setTimeout(loadNextBlock, 300);
+        console.error(`Error loading block ${currentIndex + 1}:`, error);
       }
+      
+      currentIndex++;
+      blockLoadingTimerRef.current = setTimeout(loadNextBlock, PROGRESSIVE_LOADING_DELAY);
     };
     
-    blockLoadingTimerRef.current = setTimeout(loadNextBlock, 300);
+    loadNextBlock();
   };
 
   const loadMoreBlocks = useCallback(async () => {

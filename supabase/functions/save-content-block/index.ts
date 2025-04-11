@@ -22,26 +22,36 @@ serve(async (req) => {
   try {
     const { block } = await req.json();
     
-    if (!block || !block.type || !block.specialist_id || !block.content || !block.curio_id) {
+    if (!block || !block.type || !block.specialist_id || !block.content) {
       throw new Error('Missing required block properties');
     }
     
-    // Generate a new UUID for the block
-    const blockId = crypto.randomUUID();
+    // Generate a new UUID for the block if it doesn't have a valid one
+    // Check if the block ID is in a valid UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     
-    // Create a new object without the generated id
+    let blockId;
+    if (!block.id || !uuidRegex.test(block.id) || block.id.startsWith('generated-') || block.id.startsWith('error-')) {
+      blockId = crypto.randomUUID();
+      console.log(`Generated new UUID: ${blockId} for block that had ID: ${block.id || 'undefined'}`);
+    } else {
+      blockId = block.id;
+      console.log(`Using existing ID: ${blockId}`);
+    }
+    
+    // Create a new object with proper properties for insertion
     const blockToInsert = {
       id: blockId,
       type: block.type,
       specialist_id: block.specialist_id,
       content: block.content,
-      curio_id: block.curio_id,
+      curio_id: block.curio_id || null,
       liked: block.liked || false,
       bookmarked: block.bookmarked || false,
       created_at: new Date().toISOString()
     };
 
-    console.log(`Saving content block of type ${block.type} for curio ${block.curio_id}`);
+    console.log(`Saving content block of type ${block.type} for curio ${block.curio_id || 'none'}`);
     
     const { data, error } = await supabaseClient
       .from('content_blocks')
@@ -49,6 +59,7 @@ serve(async (req) => {
       .select();
     
     if (error) {
+      console.error('Supabase error:', error);
       throw error;
     }
     

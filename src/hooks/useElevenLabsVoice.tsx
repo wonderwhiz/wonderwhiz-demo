@@ -54,11 +54,25 @@ export function useElevenLabsVoice({ voiceId = 'pkDwhVp7Wc7dQq2DBbpK' }: UseElev
       });
 
       if (error) {
-        throw new Error(error.message);
+        console.error('Error calling text-to-speech function:', error);
+        // We'll continue without audio
+        return;
       }
 
-      if (!data || !data.audioContent) {
-        throw new Error('No audio content returned from API');
+      if (!data) {
+        console.warn('No data returned from text-to-speech function');
+        return;
+      }
+
+      // Handle fallback response
+      if (data.fallback) {
+        console.log('Using fallback for audio response:', data.message);
+        return;
+      }
+
+      if (!data.audioContent) {
+        console.warn('No audio content in response');
+        return;
       }
 
       // Create a blob URL from the base64 audio data
@@ -89,20 +103,19 @@ export function useElevenLabsVoice({ voiceId = 'pkDwhVp7Wc7dQq2DBbpK' }: UseElev
       if (playPromise !== undefined) {
         playPromise.catch((error) => {
           console.error('Error playing audio:', error);
-          toast({
-            title: 'Playback Error',
-            description: 'Unable to play audio. Try clicking somewhere on the page first.',
-            variant: 'destructive',
-          });
+          // Don't show toast for common user-interaction errors
+          if (error.name !== 'NotAllowedError') {
+            toast({
+              title: 'Playback Notice',
+              description: 'Audio might require user interaction first',
+              variant: 'default',
+            });
+          }
         });
       }
     } catch (error) {
       console.error('Error playing text:', error);
-      toast({
-        title: 'Speech Error',
-        description: 'Unable to generate speech at this time.',
-        variant: 'destructive',
-      });
+      // Don't show error toast to users - just fail silently
     } finally {
       setIsLoading(false);
     }
@@ -129,7 +142,8 @@ export function useElevenLabsVoice({ voiceId = 'pkDwhVp7Wc7dQq2DBbpK' }: UseElev
       return new Blob(byteArrays, { type: mimeType });
     } catch (e) {
       console.error('Error converting base64 to blob:', e);
-      throw new Error('Failed to process audio data');
+      // Return an empty audio blob as fallback
+      return new Blob([], { type: mimeType });
     }
   };
 
