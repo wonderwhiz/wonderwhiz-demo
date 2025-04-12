@@ -1,87 +1,103 @@
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Search, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { Search, X, ArrowLeft } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 
 interface CurioSearchBarProps {
-  searchQuery: string;
-  setSearchQuery: (query: string) => void;
-  handleSearch: (e: React.FormEvent) => void;
-  placeholder?: string;
-  variant?: 'default' | 'minimal';
+  query: string;
+  setQuery: (query: string) => void;
+  onSearch: () => void;
+  backToDashboard?: () => void;
+  isSearching?: boolean;
 }
 
 const CurioSearchBar: React.FC<CurioSearchBarProps> = ({
-  searchQuery,
-  setSearchQuery,
-  handleSearch,
-  placeholder = "What are you curious about?",
-  variant = 'default'
+  query,
+  setQuery,
+  onSearch,
+  backToDashboard,
+  isSearching = false
 }) => {
-  // Define styles based on variant
-  const getStyles = () => {
-    switch(variant) {
-      case 'minimal':
-        return {
-          container: "mb-2",
-          input: "py-1.5 text-xs",
-          button: "text-xs px-2 py-1",
-          icon: "h-3.5 w-3.5" 
-        };
-      default:
-        return {
-          container: "mb-3",
-          input: "py-2",
-          button: "text-sm",
-          icon: "h-4 w-4"
-        };
+  const [isFocused, setIsFocused] = useState(false);
+  
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (query.trim() && !isSearching) {
+      onSearch();
     }
   };
   
-  const styles = getStyles();
-
   return (
-    <motion.form
-      onSubmit={handleSearch}
-      className={styles.container}
-      initial={{ opacity: 0, y: 5 }}
+    <motion.div 
+      className="relative z-10 w-full"
+      initial={{ opacity: 0, y: -5 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <div className="relative group">
-        <Search className={`absolute left-3 top-1/2 -translate-y-1/2 ${styles.icon} text-white/40 group-hover:text-white/60 transition-colors duration-300`} />
-        
-        <Input
-          type="text"
-          placeholder={placeholder}
-          className={`pl-9 pr-12 ${styles.input} rounded-full bg-white/10 border-white/10 text-white placeholder:text-white/40 font-inter transition-all duration-300 focus:bg-white/15 focus:border-wonderwhiz-bright-pink/30 focus:ring-1 focus:ring-wonderwhiz-bright-pink/20`}
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-        
-        {searchQuery && (
-          <button 
-            type="button" 
-            className="absolute right-12 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/80 transition-colors"
-            onClick={() => setSearchQuery('')}
-            aria-label="Clear search"
+      <form onSubmit={handleSubmit} className="relative flex items-center gap-2">
+        {backToDashboard && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={backToDashboard}
+            className="bg-white/5 hover:bg-white/10 text-white rounded-full h-10 w-10 flex-shrink-0"
           >
-            <X className={`${styles.icon} transition-transform hover:scale-110`} />
-          </button>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
         )}
         
-        <Button 
-          type="submit" 
-          className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-full bg-wonderwhiz-bright-pink/90 hover:bg-wonderwhiz-bright-pink text-white h-7 px-3 transition-all duration-300 shadow-sm shadow-wonderwhiz-bright-pink/20"
-          size="sm"
-          aria-label="Search"
+        <div 
+          className={`
+            relative flex flex-1 items-center overflow-hidden transition-all duration-300
+            ${isFocused ? 'bg-white/10 shadow-lg ring-1 ring-indigo-500/30' : 'bg-white/5 hover:bg-white/8'}
+            rounded-full border border-white/10
+          `}
         >
-          <Search className="h-3.5 w-3.5" />
-        </Button>
-      </div>
-    </motion.form>
+          <Search className="absolute left-3 text-white/60 h-4 w-4" />
+          
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setTimeout(() => setIsFocused(false), 100)}
+            placeholder="Search in this exploration..."
+            className="h-10 w-full pl-10 pr-12 bg-transparent text-white placeholder:text-white/50 focus:outline-none text-sm"
+            disabled={isSearching}
+          />
+          
+          {query && (
+            <button
+              type="button"
+              className="absolute right-10 text-white/50 hover:text-white/80 transition-colors"
+              onClick={() => setQuery('')}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+          
+          <button
+            type="submit"
+            className={`
+              absolute right-2 h-6 w-6 flex items-center justify-center rounded-full
+              ${isSearching 
+                ? 'bg-indigo-600/50 cursor-not-allowed' 
+                : 'bg-indigo-600 hover:bg-indigo-500'}
+              text-white transition-colors
+            `}
+            disabled={isSearching || !query.trim()}
+          >
+            {isSearching ? (
+              <div className="h-3 w-3 rounded-full border-2 border-white/30 border-t-white animate-spin"></div>
+            ) : (
+              <Search className="h-3 w-3" />
+            )}
+          </button>
+        </div>
+      </form>
+    </motion.div>
   );
 };
 

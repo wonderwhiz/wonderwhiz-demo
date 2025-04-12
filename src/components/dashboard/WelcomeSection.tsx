@@ -32,29 +32,30 @@ const WelcomeSection: React.FC<WelcomeSectionProps> = ({
 }) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-indigo-900 to-purple-950 pb-16">
-      <WelcomeView
-        childId={childId}
-        childProfile={childProfile}
-        curioSuggestions={curioSuggestions}
-        pastCurios={pastCurios}
-        query={query}
-        setQuery={setQuery}
-        handleSubmitQuery={handleSubmitQuery}
-        isGenerating={isGenerating}
-        onCurioSuggestionClick={handleCurioSuggestionClick}
-        onRefreshSuggestions={handleRefreshSuggestions}
-        isLoadingSuggestions={isLoadingSuggestions}
-      />
-      
-      {/* Integrated discovery section with improved visuals */}
-      <DiscoverySection 
-        childId={childId} 
-        sparksBalance={childProfile?.sparks_balance || 0}
-        onSparkEarned={(amount) => {
-          // Handle earned sparks in parent component
-          console.log(`Earned ${amount} sparks`);
-        }}
-      />
+      <div className="px-4 pb-8 max-w-7xl mx-auto">
+        <WelcomeView
+          childId={childId}
+          childProfile={childProfile}
+          curioSuggestions={curioSuggestions}
+          pastCurios={pastCurios}
+          query={query}
+          setQuery={setQuery}
+          handleSubmitQuery={handleSubmitQuery}
+          isGenerating={isGenerating}
+          onCurioSuggestionClick={handleCurioSuggestionClick}
+          onRefreshSuggestions={handleRefreshSuggestions}
+          isLoadingSuggestions={isLoadingSuggestions}
+        />
+        
+        {/* Integrated discovery section with improved visuals */}
+        <DiscoverySection 
+          childId={childId} 
+          sparksBalance={childProfile?.sparks_balance || 0}
+          onSparkEarned={(amount) => {
+            console.log(`Earned ${amount} sparks`);
+          }}
+        />
+      </div>
     </div>
   );
 };

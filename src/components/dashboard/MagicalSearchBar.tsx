@@ -1,18 +1,16 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Search, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, X, Sparkles, History } from 'lucide-react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from '@/components/ui/button';
 
 interface MagicalSearchBarProps {
   query: string;
   setQuery: (query: string) => void;
   handleSubmitQuery: () => void;
   isGenerating: boolean;
-  recentQueries?: string[];
   placeholder?: string;
-  autoFocus?: boolean;
+  recentQueries?: string[];
 }
 
 const MagicalSearchBar: React.FC<MagicalSearchBarProps> = ({
@@ -20,15 +18,54 @@ const MagicalSearchBar: React.FC<MagicalSearchBarProps> = ({
   setQuery,
   handleSubmitQuery,
   isGenerating,
-  recentQueries = [],
-  placeholder = "What are you curious about today?",
-  autoFocus = false
+  placeholder = "What would you like to learn about?",
+  recentQueries = []
 }) => {
-  const [focused, setFocused] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
   
-  // Handle form submission
+  useEffect(() => {
+    if (isFocused && query.length > 0) {
+      // Filter recent queries that match the current input
+      const matchingQueries = recentQueries.filter(q => 
+        q.toLowerCase().includes(query.toLowerCase())
+      ).slice(0, 3);
+      
+      // Add some intelligent suggestions based on the query
+      const intelligentSuggestions = generateSuggestions(query);
+      
+      // Combine both, remove duplicates, and take up to 5
+      const allSuggestions = [...matchingQueries, ...intelligentSuggestions]
+        .filter((v, i, a) => a.indexOf(v) === i)
+        .slice(0, 5);
+        
+      setSuggestions(allSuggestions);
+      setShowSuggestions(allSuggestions.length > 0);
+    } else {
+      setShowSuggestions(false);
+    }
+  }, [query, isFocused, recentQueries]);
+  
+  const generateSuggestions = (input: string): string[] => {
+    const lowercaseInput = input.toLowerCase();
+    
+    // Simple but effective suggestion system
+    if (lowercaseInput.includes('space')) {
+      return ['How big is the universe?', 'Why is Mars red?', 'What are black holes?'];
+    } else if (lowercaseInput.includes('animal')) {
+      return ['Which animal sleeps the most?', 'How do animals communicate?', 'What are the fastest animals?'];
+    } else if (lowercaseInput.includes('dinosaur')) {
+      return ['When did dinosaurs live?', 'Why did dinosaurs go extinct?', 'Were there flying dinosaurs?'];
+    } else if (lowercaseInput.includes('how')) {
+      return [`How does ${lowercaseInput.replace('how', '').trim() || 'gravity'} work?`];
+    } else if (lowercaseInput.includes('why')) {
+      return [`Why do ${lowercaseInput.replace('why', '').trim() || 'rainbows'} exist?`];
+    }
+    
+    return [];
+  };
+  
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim() && !isGenerating) {
@@ -36,115 +73,91 @@ const MagicalSearchBar: React.FC<MagicalSearchBarProps> = ({
       setShowSuggestions(false);
     }
   };
-
-  // Focus the input on component mount if autoFocus is true
-  useEffect(() => {
-    if (autoFocus && inputRef.current) {
-      // Slight delay to ensure animations complete first
-      setTimeout(() => {
-        inputRef.current?.focus();
-      }, 100);
-    }
-  }, [autoFocus]);
-
-  // Handle suggestion click
+  
   const handleSuggestionClick = (suggestion: string) => {
     setQuery(suggestion);
-    setTimeout(() => {
-      handleSubmitQuery();
-      setShowSuggestions(false);
-    }, 100);
+    setShowSuggestions(false);
+    if (!isGenerating) {
+      setTimeout(() => handleSubmitQuery(), 100);
+    }
   };
 
   return (
-    <div className="relative z-10 w-full max-w-2xl mx-auto">
-      <motion.form
-        className="relative"
-        onSubmit={handleSubmit}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-      >
-        <div className="relative group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/40 group-hover:text-white/60 transition-colors" />
+    <div className="relative z-10 w-full max-w-3xl mx-auto">
+      <form onSubmit={handleSubmit} className="relative">
+        <div 
+          className={`
+            relative flex items-center overflow-hidden transition-all duration-300
+            ${isFocused ? 'bg-white/10 shadow-lg ring-2 ring-indigo-500/30' : 'bg-white/5 hover:bg-white/8'}
+            rounded-full border border-white/10
+          `}
+        >
+          <Search className="absolute left-4 text-white/60 h-5 w-5" />
           
-          <Input
-            ref={inputRef}
+          <input
             type="text"
-            placeholder={placeholder}
-            className="pl-12 pr-20 py-6 w-full rounded-full bg-white/5 border-white/10 text-white placeholder:text-white/50 
-                     focus:border-wonderwhiz-bright-pink/40 focus:ring-1 focus:ring-wonderwhiz-bright-pink/20 focus:bg-white/8 
-                     transition-all duration-300"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            onFocus={() => {
-              setFocused(true);
-              if (recentQueries.length > 0) {
-                setShowSuggestions(true);
-              }
-            }}
-            onBlur={() => {
-              setTimeout(() => {
-                setFocused(false);
-                setShowSuggestions(false);
-              }, 200);
-            }}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setTimeout(() => setIsFocused(false), 200)}
+            placeholder={placeholder}
+            className="h-14 w-full pl-12 pr-32 bg-transparent text-white placeholder:text-white/50 focus:outline-none text-base sm:text-lg"
+            disabled={isGenerating}
           />
           
-          {query && (
-            <button
-              type="button"
-              className="absolute right-20 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/60 transition-colors"
-              onClick={() => setQuery('')}
+          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+            <Button
+              type="submit"
+              className={`
+                h-10 px-4 rounded-full text-white font-medium
+                ${isGenerating 
+                  ? 'bg-indigo-600/50 cursor-not-allowed' 
+                  : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500'}
+              `}
+              disabled={isGenerating || !query.trim()}
             >
-              <X className="h-4 w-4" />
-            </button>
-          )}
-          
-          <Button 
-            type="submit" 
-            disabled={isGenerating || !query.trim()}
-            className="absolute right-3 top-1/2 -translate-y-1/2 bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/90 
-                      text-white font-medium rounded-full px-4 py-1.5 h-auto text-sm transition-all duration-300"
-          >
-            {isGenerating ? (
-              <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
-            ) : (
-              <span className="flex items-center">
-                <Sparkles className="h-3.5 w-3.5 mr-1.5 text-white/80" />
-                Wonder
-              </span>
-            )}
-          </Button>
+              {isGenerating ? (
+                <>
+                  <div className="h-4 w-4 mr-2 rounded-full border-2 border-white/30 border-t-white animate-spin"></div>
+                  Exploring...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Explore
+                </>
+              )}
+            </Button>
+          </div>
         </div>
-      </motion.form>
+      </form>
       
-      {/* Simplified suggestions dropdown */}
+      {/* Intelligent Suggestions */}
       <AnimatePresence>
-        {showSuggestions && focused && recentQueries.length > 0 && (
+        {showSuggestions && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="absolute mt-2 w-full bg-wonderwhiz-deep-purple/80 backdrop-blur-md border border-white/10 rounded-lg shadow-lg overflow-hidden z-50"
+            className="absolute left-0 right-0 mt-2 bg-indigo-900/80 backdrop-blur-md rounded-lg shadow-xl border border-white/10 overflow-hidden z-20"
           >
-            <div className="p-3">
-              <div className="flex items-center mb-2 text-white/60 text-xs">
-                <History className="h-3.5 w-3.5 mr-1.5" />
-                <span>Recent questions</span>
-              </div>
-              <div className="space-y-1">
-                {recentQueries.slice(0, 3).map((item, index) => (
-                  <button
-                    key={`recent-${index}`}
-                    className="w-full text-left px-3 py-2 rounded-md text-white hover:bg-white/10 transition-colors text-sm"
-                    onClick={() => handleSuggestionClick(item)}
-                  >
-                    {item}
-                  </button>
-                ))}
-              </div>
+            <div className="py-2">
+              {suggestions.map((suggestion, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.2, delay: index * 0.05 }}
+                  className="px-4 py-2 hover:bg-white/10 cursor-pointer transition-colors text-white"
+                  onClick={() => handleSuggestionClick(suggestion)}
+                >
+                  <div className="flex items-center">
+                    <Search className="h-3.5 w-3.5 mr-2 opacity-50" />
+                    <span>{suggestion}</span>
+                  </div>
+                </motion.div>
+              ))}
             </div>
           </motion.div>
         )}

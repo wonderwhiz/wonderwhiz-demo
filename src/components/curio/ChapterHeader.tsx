@@ -40,19 +40,19 @@ const ChapterHeader: React.FC<ChapterHeaderProps> = ({
   };
 
   return (
-    <div className="mt-10 mb-6">
-      <Card className="bg-gradient-to-r from-indigo-900/80 to-violet-900/80 border-none p-4 shadow-lg">
+    <div className="mt-8 mb-6">
+      <Card className="bg-gradient-to-r from-indigo-900/70 to-purple-900/70 border-none p-4 shadow-xl rounded-xl">
         <div className="flex items-center">
-          <div className="bg-white/10 p-2 rounded-lg mr-4">
+          <div className="bg-white/10 p-2.5 rounded-lg mr-4 shadow-inner">
             {getChapterIcon(chapterId)}
           </div>
           
           <div className="flex-1">
-            <h2 className="text-xl font-semibold text-white">{title}</h2>
-            <p className="text-white/70 text-sm">{description}</p>
+            <h2 className="text-lg sm:text-xl font-semibold text-white">{title}</h2>
+            <p className="text-white/80 text-sm">{description}</p>
           </div>
           
-          <div className="text-white/50 text-sm font-medium">
+          <div className="text-white/60 text-sm font-medium bg-white/5 px-3 py-1 rounded-full">
             {index + 1} / {totalChapters}
           </div>
         </div>

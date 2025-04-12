@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,19 +8,16 @@ import { useChildProfile } from '@/hooks/use-child-profile';
 import { useCurioBlocks } from '@/hooks/use-curio-blocks';
 import { useSearch } from '@/hooks/use-search';
 import { useBlockInteractions } from '@/hooks/useBlockInteractions';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
-import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import CurioBlockList from '@/components/CurioBlockList';
 import CurioPageSearch from '@/components/curio/CurioPageSearch';
 import CurioLoadingState from '@/components/curio/CurioLoadingState';
 import CurioErrorState from '@/components/curio/CurioErrorState';
 import RabbitHoleSuggestions from '@/components/content-blocks/RabbitHoleSuggestions';
-import NarrativePrompt from '@/components/content-blocks/NarrativePrompt';
-import { getPersonalizedMessage } from '@/components/content-blocks/utils/narrativeUtils';
 import InteractiveImageBlock from '@/components/content-blocks/InteractiveImageBlock';
 import TalkToWhizzy from '@/components/curio/TalkToWhizzy';
+import QuickAnswer from '@/components/curio/QuickAnswer';
 
 const EnhancedCurioPage: React.FC = () => {
   const { childId, curioId } = useParams<{ childId: string, curioId: string }>();
@@ -49,6 +47,7 @@ const EnhancedCurioPage: React.FC = () => {
   const [personalizedMessage, setPersonalizedMessage] = useState('');
   const [specialistIds, setSpecialistIds] = useState<string[]>([]);
   const [showRabbitHoleSuggestions, setShowRabbitHoleSuggestions] = useState(false);
+  const [quickAnswerExpanded, setQuickAnswerExpanded] = useState(false);
   
   const loadTriggerRef = useRef<HTMLDivElement>(null);
 
@@ -98,22 +97,6 @@ const EnhancedCurioPage: React.FC = () => {
       setSpecialistIds(uniqueSpecialists);
     }
   }, [blocks]);
-
-  useEffect(() => {
-    if (childProfile && !showPersonalizedMessage && blocks.length > 0) {
-      const interests = childProfile.interests || [];
-      if (interests.length > 0) {
-        const randomInterest = interests[Math.floor(Math.random() * interests.length)];
-        const message = getPersonalizedMessage(childProfile.name || 'Explorer', randomInterest);
-        setPersonalizedMessage(message);
-        setShowPersonalizedMessage(true);
-        
-        setTimeout(() => {
-          setShowPersonalizedMessage(false);
-        }, 10000);
-      }
-    }
-  }, [childProfile, blocks, showPersonalizedMessage]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -195,22 +178,14 @@ const EnhancedCurioPage: React.FC = () => {
     }
   };
 
+  const handleStartJourney = () => {
+    setQuickAnswerExpanded(false);
+    window.scrollTo({ top: window.innerHeight * 0.5, behavior: 'smooth' });
+  };
+
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-indigo-950 to-purple-900">
-      {/* Back to Dashboard Button */}
-      <div className="fixed top-4 left-4 z-50">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleBackToDashboard}
-          className="bg-white/10 hover:bg-white/20 text-white border-white/20 flex items-center gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          <span className="hidden sm:inline">Back to Dashboard</span>
-        </Button>
-      </div>
-      
-      {/* Search Bar */}
+    <div className="flex flex-col min-h-screen bg-gradient-to-b from-indigo-950 to-purple-950 overflow-hidden">
+      {/* Navigation and Search Bar */}
       <CurioPageSearch
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
@@ -218,12 +193,12 @@ const EnhancedCurioPage: React.FC = () => {
         handleBackToDashboard={handleBackToDashboard}
       />
       
-      <main className="flex-grow py-10">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6">
+      <main className="flex-grow py-6 sm:py-10">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6">
           {/* Curio Title */}
           {curioTitle && (
             <motion.h1
-              className="text-3xl font-bold text-white mb-6 text-center sm:text-left"
+              className="text-2xl sm:text-3xl font-bold text-white mb-5 text-center sm:text-left font-nunito"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
@@ -232,31 +207,32 @@ const EnhancedCurioPage: React.FC = () => {
             </motion.h1>
           )}
           
-          {/* Interactive Image Block */}
+          {/* Quick Answer */}
           {curioTitle && !searchQuery && (
-            <InteractiveImageBlock
-              topic={curioTitle}
-              childId={childId}
-              childAge={childProfile?.age ? Number(childProfile.age) : 10}
-              onShare={() => {
-                toast.success('Image shared with your learning journey!');
-              }}
-            />
+            <div className="mb-6">
+              <QuickAnswer 
+                question={curioTitle}
+                isExpanded={quickAnswerExpanded}
+                onToggleExpand={() => setQuickAnswerExpanded(!quickAnswerExpanded)}
+                onStartJourney={handleStartJourney}
+                childId={childId}
+              />
+            </div>
           )}
           
-          {/* Personalized Message */}
-          <AnimatePresence>
-            {showPersonalizedMessage && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="mb-6 p-3 bg-purple-800/30 border border-purple-500/30 rounded-lg text-white"
-              >
-                <p>{personalizedMessage}</p>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* Interactive Image */}
+          {curioTitle && !searchQuery && (
+            <div className="mb-6">
+              <InteractiveImageBlock
+                topic={curioTitle}
+                childId={childId}
+                childAge={childProfile?.age ? Number(childProfile.age) : 10}
+                onShare={() => {
+                  toast.success('Image shared with your learning journey!');
+                }}
+              />
+            </div>
+          )}
           
           {isLoadingBlocks && <CurioLoadingState />}
           

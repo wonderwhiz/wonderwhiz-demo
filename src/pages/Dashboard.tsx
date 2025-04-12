@@ -12,7 +12,7 @@ const Dashboard = () => {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.4 }}
-      className="min-h-screen bg-gradient-to-br from-indigo-950 to-purple-950 overflow-hidden"
+      className="min-h-screen bg-gradient-to-br from-indigo-950 via-indigo-950 to-purple-950 overflow-hidden"
     >
       <Helmet>
         <title>WonderWhiz - Your Learning Adventure</title>
