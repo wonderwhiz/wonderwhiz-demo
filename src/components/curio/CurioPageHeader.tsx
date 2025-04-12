@@ -1,13 +1,8 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Brain, RefreshCw, User, LogOut, ArrowLeftRight, UserCircle } from 'lucide-react';
+import { ArrowLeft, PieChart, RefreshCcw, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useNavigate, Link } from 'react-router-dom';
-import WonderWhizLogo from '@/components/WonderWhizLogo';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 interface CurioPageHeaderProps {
   curioTitle: string | null;
@@ -30,120 +25,62 @@ const CurioPageHeader: React.FC<CurioPageHeaderProps> = ({
   profileId,
   childName
 }) => {
-  const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate('/login');
-    toast.success('Logged out successfully');
-  };
-
   return (
-    <motion.div 
-      className="py-3 sm:py-6 px-4 sm:px-6 bg-gradient-to-r from-wonderwhiz-deep-purple/80 to-wonderwhiz-deep-purple/60 border-b border-white/10 backdrop-blur-md"
+    <motion.header 
+      className="sticky top-0 z-50 bg-gradient-to-b from-indigo-950/95 to-indigo-950/85 backdrop-blur-sm py-3 px-4 sm:px-6 border-b border-white/10 shadow-md"
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      <div className="max-w-3xl mx-auto">
-        <div className="flex items-center justify-between">
-          <Button 
-            variant="ghost" 
-            size="sm" 
+      <div className="max-w-3xl mx-auto flex items-center justify-between">
+        <div className="flex items-center">
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={handleBackToDashboard}
-            className="text-white/70 hover:text-white -ml-2 group transition-colors"
+            className="mr-3 bg-white/5 hover:bg-white/10 text-white rounded-full h-9 w-9"
           >
-            <ArrowLeft className="w-4 h-4 mr-1 group-hover:-translate-x-1 transition-transform duration-200" />
-            <span className="hidden sm:inline">Back to Dashboard</span>
+            <ArrowLeft className="h-4 w-4" />
           </Button>
           
-          <div className="flex items-center">
-            <Link to="/dashboard" className="flex items-center">
-              <WonderWhizLogo className="h-8 mr-2" />
-              {curioTitle && (
-                <h1 className="text-lg sm:text-xl font-bold text-white leading-tight line-clamp-1 sm:line-clamp-none">
-                  {curioTitle}
-                </h1>
-              )}
-            </Link>
-          </div>
+          {curioTitle && (
+            <h1 className="text-lg sm:text-xl font-bold text-white truncate max-w-[200px] sm:max-w-md">
+              {curioTitle}
+            </h1>
+          )}
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleToggleInsights}
+            className={`bg-white/5 hover:bg-white/10 text-white rounded-full h-9 w-9 ${showInsights ? 'bg-white/15 shadow-inner' : ''}`}
+          >
+            <PieChart className="h-4 w-4" />
+          </Button>
           
-          <div className="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="relative text-white hover:bg-white/10 rounded-full p-1"
-                >
-                  <UserCircle className="h-10 w-10 text-wonderwhiz-purple" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 bg-wonderwhiz-dark/95 border-white/20 backdrop-blur-xl text-white">
-                {childName && (
-                  <DropdownMenuLabel className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-wonderwhiz-gold" />
-                    <span>{childName}</span>
-                  </DropdownMenuLabel>
-                )}
-                
-                <DropdownMenuSeparator className="bg-white/10" />
-                
-                {profileId && (
-                  <DropdownMenuItem 
-                    className="flex items-center gap-2 text-white hover:bg-white/10 focus:bg-white/10 cursor-pointer" 
-                    onClick={() => navigate(`/parent-zone/${profileId}`)}
-                  >
-                    <ArrowLeftRight className="h-4 w-4 text-wonderwhiz-blue" />
-                    <span>Parent Zone</span>
-                  </DropdownMenuItem>
-                )}
-                
-                <DropdownMenuItem 
-                  className="flex items-center gap-2 text-white hover:bg-white/10 focus:bg-white/10 cursor-pointer" 
-                  onClick={() => navigate('/profiles')}
-                >
-                  <User className="h-4 w-4 text-wonderwhiz-bright-pink" />
-                  <span>Switch Profile</span>
-                </DropdownMenuItem>
-                
-                <DropdownMenuSeparator className="bg-white/10" />
-                
-                <DropdownMenuItem 
-                  className="flex items-center gap-2 text-white hover:bg-white/10 focus:bg-white/10 hover:text-red-400 focus:text-red-400 cursor-pointer" 
-                  onClick={handleLogout}
-                >
-                  <LogOut className="h-4 w-4" />
-                  <span>Logout</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleToggleInsights}
-              className={`text-white/90 border-white/20 hover:bg-white/10 bg-white/5 flex items-center backdrop-blur-md ${showInsights ? 'bg-white/10' : ''}`}
-            >
-              <Brain className="w-4 h-4 mr-1.5 text-wonderwhiz-bright-pink" />
-              <span className="hidden sm:inline">Learning Insights</span>
-              <span className="sm:hidden">Insights</span>
-            </Button>
-            
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className="text-white/70 hover:text-white hover:bg-white/10"
-              title="Refresh content"
-            >
-              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="bg-white/5 hover:bg-white/10 text-white rounded-full h-9 w-9"
+          >
+            <RefreshCcw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          </Button>
+          
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleBackToDashboard}
+            className="bg-white/5 hover:bg-white/10 text-white rounded-full h-9 w-9 sm:hidden"
+          >
+            <Home className="h-4 w-4" />
+          </Button>
         </div>
       </div>
-    </motion.div>
+    </motion.header>
   );
 };
 

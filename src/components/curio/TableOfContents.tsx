@@ -1,26 +1,8 @@
 
 import React from 'react';
-import { Card } from '@/components/ui/card';
-import { 
-  BookOpen, 
-  Compass, 
-  Brain, 
-  Sparkles, 
-  Palette, 
-  Lightbulb, 
-  ArrowRight 
-} from 'lucide-react';
-import { Chapter } from '@/types/Chapter';
 import { motion } from 'framer-motion';
-
-export type ChapterIconType = 
-  | 'introduction' 
-  | 'exploration' 
-  | 'understanding' 
-  | 'challenge' 
-  | 'creation' 
-  | 'reflection' 
-  | 'nextSteps';
+import { Chapter } from '@/types/Chapter';
+import { BadgeCheck, ChevronRight } from 'lucide-react';
 
 interface TableOfContentsProps {
   chapters: Chapter[];
@@ -31,86 +13,72 @@ interface TableOfContentsProps {
 export const TableOfContents: React.FC<TableOfContentsProps> = ({ 
   chapters, 
   onChapterClick,
-  ageGroup 
+  ageGroup
 }) => {
-  const getAgeSpecificStyles = () => {
+  const getAgeGroupStyles = () => {
     switch(ageGroup) {
       case '5-7':
         return {
-          title: 'Our Learning Adventure',
-          subtitle: 'Let\'s explore these fun places!',
-          cardStyle: 'bg-gradient-to-r from-cyan-500 to-blue-500 border-none shadow-xl',
-          iconStyle: 'bg-white/20 p-2 rounded-full'
-        };
-      case '8-11':
-        return {
-          title: 'Learning Journey',
-          subtitle: 'Your path through this topic',
-          cardStyle: 'bg-gradient-to-r from-violet-600 to-indigo-600 border-none shadow-lg',
-          iconStyle: 'bg-white/20 p-2 rounded-lg'
+          containerClass: 'bg-gradient-to-r from-emerald-500/20 to-sky-500/20 border-emerald-500/30',
+          titleClass: 'text-emerald-300',
         };
       case '12-16':
         return {
-          title: 'Course Outline',
-          subtitle: 'Topics covered in this exploration',
-          cardStyle: 'bg-gradient-to-r from-slate-800 to-slate-700 border-none shadow-md',
-          iconStyle: 'bg-white/10 p-2 rounded-md'
+          containerClass: 'bg-gradient-to-r from-purple-600/20 to-indigo-600/20 border-purple-500/30',
+          titleClass: 'text-purple-300',
+        };
+      default: // 8-11
+        return {
+          containerClass: 'bg-gradient-to-r from-indigo-600/20 to-purple-600/20 border-indigo-500/30',
+          titleClass: 'text-indigo-300',
         };
     }
   };
-
-  const styles = getAgeSpecificStyles();
-
-  const getChapterIcon = (iconType: string) => {
-    switch(iconType) {
-      case 'introduction': return <BookOpen className="h-5 w-5" />;
-      case 'exploration': return <Compass className="h-5 w-5" />;
-      case 'understanding': return <Brain className="h-5 w-5" />;
-      case 'challenge': return <Sparkles className="h-5 w-5" />; 
-      case 'creation': return <Palette className="h-5 w-5" />;
-      case 'reflection': return <Lightbulb className="h-5 w-5" />;
-      case 'nextSteps': return <ArrowRight className="h-5 w-5" />;
-      default: return <BookOpen className="h-5 w-5" />;
-    }
-  };
-
+  
+  const styles = getAgeGroupStyles();
+  
   return (
-    <Card className={`mb-8 overflow-hidden ${styles.cardStyle}`}>
-      <div className="p-4">
-        <h2 className="text-xl font-semibold text-white mb-1">{styles.title}</h2>
-        <p className="text-white/70 text-sm mb-4">{styles.subtitle}</p>
-        
-        <div className="space-y-2">
-          {chapters.map((chapter) => (
-            <motion.button
-              key={chapter.id}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className={`w-full flex items-center p-2.5 rounded-lg transition-all ${
-                chapter.isActive
-                  ? 'bg-white/20 shadow-md'
-                  : 'bg-white/10 hover:bg-white/15'
-              }`}
+    <motion.div 
+      className={`p-4 rounded-lg ${styles.containerClass} border mb-6 backdrop-blur-sm`}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+    >
+      <h3 className={`text-lg font-bold mb-3 ${styles.titleClass}`}>Learning Journey</h3>
+      
+      <ul className="space-y-2">
+        {chapters.map((chapter) => (
+          <motion.li 
+            key={chapter.id}
+            className="relative"
+            whileHover={{ x: 4 }}
+          >
+            <button
               onClick={() => onChapterClick(chapter.id)}
+              className={`
+                w-full text-left flex items-center gap-2 py-1.5 px-2 rounded-md transition-colors
+                ${chapter.isActive 
+                  ? 'bg-white/10 text-white' 
+                  : 'text-white/70 hover:text-white hover:bg-white/5'}
+              `}
             >
-              <div className={styles.iconStyle}>
-                {getChapterIcon(chapter.icon)}
+              <div className="flex-shrink-0 w-5">
+                {chapter.isCompleted ? (
+                  <BadgeCheck className="h-5 w-5 text-green-400" />
+                ) : (
+                  <div className="h-5 w-5 rounded-full border border-white/30 flex items-center justify-center text-xs text-white/60">
+                    {chapters.findIndex(c => c.id === chapter.id) + 1}
+                  </div>
+                )}
               </div>
               
-              <div className="ml-3 text-left flex-1">
-                <div className="text-white font-medium">{chapter.title}</div>
-                <div className="text-white/60 text-xs">{chapter.description}</div>
-              </div>
+              <span className="flex-1 text-sm font-medium">{chapter.title}</span>
               
-              {chapter.isCompleted && (
-                <div className="bg-green-500/20 text-green-300 text-xs px-2 py-1 rounded">
-                  {ageGroup === '5-7' ? '✓ Done' : 'Completed'}
-                </div>
-              )}
-            </motion.button>
-          ))}
-        </div>
-      </div>
-    </Card>
+              <ChevronRight className={`h-4 w-4 transform transition-transform ${chapter.isActive ? 'rotate-90 text-white' : 'text-white/40'}`} />
+            </button>
+          </motion.li>
+        ))}
+      </ul>
+    </motion.div>
   );
 };
