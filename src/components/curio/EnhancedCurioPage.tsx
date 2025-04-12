@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -215,7 +214,7 @@ const EnhancedCurioPage: React.FC = () => {
                 isExpanded={quickAnswerExpanded}
                 onToggleExpand={() => setQuickAnswerExpanded(!quickAnswerExpanded)}
                 onStartJourney={handleStartJourney}
-                childId={childId}
+                childId={childId || ''}
               />
             </div>
           )}
@@ -225,7 +224,7 @@ const EnhancedCurioPage: React.FC = () => {
             <div className="mb-6">
               <InteractiveImageBlock
                 topic={curioTitle}
-                childId={childId}
+                childId={childId || ''}
                 childAge={childProfile?.age ? Number(childProfile.age) : 10}
                 onShare={() => {
                   toast.success('Image shared with your learning journey!');
@@ -246,11 +245,11 @@ const EnhancedCurioPage: React.FC = () => {
               loadingMoreBlocks={false}
               loadTriggerRef={loadTriggerRef}
               searchQuery={searchQuery}
-              profileId={childId}
+              profileId={childId || ''}
               isFirstLoad={isFirstLoad}
               handleToggleLike={handleToggleLike}
               handleToggleBookmark={handleToggleBookmark}
-              handleReply={handleReply}
+              handleReply={(blockId: string, message: string) => handleReply(blockId, message)}
               handleQuizCorrect={handleQuizCorrect}
               handleNewsRead={handleNewsRead}
               handleCreativeUpload={handleCreativeUpload}
@@ -258,7 +257,7 @@ const EnhancedCurioPage: React.FC = () => {
               handleActivityComplete={handleActivityComplete}
               handleMindfulnessComplete={handleMindfulnessComplete}
               handleRabbitHoleClick={handleRabbitHoleClick}
-              generationError={generationError}
+              generationError={generationError || false}
               onRefresh={handleRefresh}
             />
           )}
@@ -271,7 +270,7 @@ const EnhancedCurioPage: React.FC = () => {
             >
               <RabbitHoleSuggestions
                 curioTitle={curioTitle || ''}
-                profileId={childId}
+                profileId={childId || ''}
                 onSuggestionClick={handleRabbitHoleClick}
                 specialistIds={specialistIds}
               />
@@ -283,7 +282,7 @@ const EnhancedCurioPage: React.FC = () => {
       </main>
 
       <TalkToWhizzy 
-        childId={childId}
+        childId={childId || ''}
         curioTitle={curioTitle || undefined}
         ageGroup={childProfile?.age >= 12 ? '12-16' : childProfile?.age >= 8 ? '8-11' : '5-7'}
         onNewQuestionGenerated={handleRabbitHoleClick}

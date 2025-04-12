@@ -4,9 +4,10 @@ import React from 'react';
 interface SpecialistAvatarProps {
   specialistId: string;
   size?: 'sm' | 'md' | 'lg';
+  className?: string;
 }
 
-const SpecialistAvatar: React.FC<SpecialistAvatarProps> = ({ specialistId, size = 'md' }) => {
+const SpecialistAvatar: React.FC<SpecialistAvatarProps> = ({ specialistId, size = 'md', className = '' }) => {
   const getSizeClasses = () => {
     switch (size) {
       case 'sm': return 'h-8 w-8';
@@ -48,7 +49,7 @@ const SpecialistAvatar: React.FC<SpecialistAvatarProps> = ({ specialistId, size 
   
   return (
     <div 
-      className={`${getSizeClasses()} rounded-full bg-gradient-to-br ${getSpecialistGradient()} flex items-center justify-center shadow-glow-sm`}
+      className={`${getSizeClasses()} rounded-full bg-gradient-to-br ${getSpecialistGradient()} flex items-center justify-center shadow-glow-sm ${className}`}
     >
       <span role="img" aria-label="specialist icon">
         {getSpecialistEmoji()}
