@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -287,15 +288,15 @@ const EnhancedCurioPage: React.FC = () => {
               searchQuery={searchQuery}
               profileId={childId || ''}
               isFirstLoad={isFirstLoad}
-              handleToggleLike={handleToggleLikeWrapper}
-              handleToggleBookmark={handleToggleBookmarkWrapper}
-              handleReply={handleReplyWrapper}
-              handleQuizCorrect={handleQuizCorrectWrapper}
-              handleNewsRead={handleNewsReadWrapper}
-              handleCreativeUpload={handleCreativeUploadWrapper}
-              handleTaskComplete={handleTaskCompleteWrapper}
-              handleActivityComplete={handleActivityCompleteWrapper}
-              handleMindfulnessComplete={handleMindfulnessCompleteWrapper}
+              handleToggleLike={(blockId) => handleToggleLikeWrapper(blockId)}
+              handleToggleBookmark={(blockId) => handleToggleBookmarkWrapper(blockId)}
+              handleReply={(blockId, message) => handleReplyWrapper(blockId, message)}
+              handleQuizCorrect={() => blocks.length > 0 ? handleQuizCorrectWrapper(blocks[0].id) : undefined}
+              handleNewsRead={() => blocks.length > 0 ? handleNewsReadWrapper(blocks[0].id) : undefined}
+              handleCreativeUpload={() => blocks.length > 0 ? handleCreativeUploadWrapper(blocks[0].id) : undefined}
+              handleTaskComplete={() => blocks.length > 0 ? handleTaskCompleteWrapper(blocks[0].id) : undefined}
+              handleActivityComplete={() => blocks.length > 0 ? handleActivityCompleteWrapper(blocks[0].id) : undefined}
+              handleMindfulnessComplete={() => blocks.length > 0 ? handleMindfulnessCompleteWrapper(blocks[0].id) : undefined}
               handleRabbitHoleClick={handleRabbitHoleClick}
               generationError={!!generationError}
               onRefresh={handleRefresh}
