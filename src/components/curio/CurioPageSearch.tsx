@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Search, X } from 'lucide-react';
+import { Search, X, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -25,8 +25,18 @@ const CurioPageSearch: React.FC<CurioPageSearchProps> = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <div className="max-w-3xl mx-auto">
-        <form onSubmit={handleSearch} className="relative">
+      <div className="max-w-3xl mx-auto flex flex-col sm:flex-row gap-3">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleBackToDashboard}
+          className="mr-2 sm:mr-4 bg-white/5 border-white/10 hover:bg-white/10 text-white w-fit"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          <span className="text-sm">Back</span>
+        </Button>
+        
+        <form onSubmit={handleSearch} className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/50" />
           <Input
             type="text"

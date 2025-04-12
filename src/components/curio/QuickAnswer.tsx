@@ -3,6 +3,7 @@ import React from 'react';
 import { ChevronDown, ChevronUp, PlayCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import CurioAudioPlayer from './CurioAudioPlayer';
 
 interface QuickAnswerProps {
   question: string;
@@ -52,6 +53,14 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
             <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-wonderwhiz-deep-purple/80 to-transparent"></div>
           )}
         </motion.div>
+        
+        {/* Audio Player */}
+        {isExpanded && (
+          <CurioAudioPlayer 
+            text={answer} 
+            title={`Listen to answer about ${question}`} 
+          />
+        )}
         
         <Button
           variant="default" 
