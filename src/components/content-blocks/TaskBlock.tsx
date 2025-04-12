@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { Check, Star, Trophy, Sparkles } from 'lucide-react';
@@ -13,9 +14,10 @@ interface TaskBlockProps {
   };
   onTaskComplete?: () => void;
   specialistId?: string;
+  updateHeight?: (height: number) => void;
 }
 
-const TaskBlock: React.FC<TaskBlockProps> = ({ content, onTaskComplete, specialistId }) => {
+const TaskBlock: React.FC<TaskBlockProps> = ({ content, onTaskComplete, specialistId, updateHeight }) => {
   const [completed, setCompleted] = useState(false);
   const [showReward, setShowReward] = useState(false);
   
@@ -31,8 +33,19 @@ const TaskBlock: React.FC<TaskBlockProps> = ({ content, onTaskComplete, speciali
     }
   };
   
+  useEffect(() => {
+    if (updateHeight) {
+      setTimeout(() => {
+        const element = document.getElementById(`task-block-${specialistId || 'default'}`);
+        if (element) {
+          updateHeight(element.offsetHeight);
+        }
+      }, 0);
+    }
+  }, [content, specialistId, updateHeight, completed, showReward]);
+  
   return (
-    <div className="p-4 bg-gradient-to-r from-purple-900/50 to-pink-900/30 rounded-lg border border-wonderwhiz-bright-pink/20">
+    <div id={`task-block-${specialistId || 'default'}`} className="p-4 bg-gradient-to-r from-purple-900/50 to-pink-900/30 rounded-lg border border-wonderwhiz-bright-pink/20">
       <div className="flex items-start space-x-3 mb-3">
         <div className="flex-shrink-0 mt-1">
           <motion.div 
