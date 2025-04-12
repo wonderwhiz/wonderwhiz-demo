@@ -1,21 +1,24 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
-import { Check, Star, Trophy, Sparkles } from 'lucide-react';
 
-interface TaskBlockProps {
+export interface TaskBlockProps {
   content: {
     task: string;
-    reward: string | number;
-    title?: string;
-    description?: string;
-    steps?: string[];
+    reward: number;
+    title: string;
+    description: string;
+    steps: string[];
   };
+  specialistId: string;
   onTaskComplete?: () => void;
-  specialistId?: string;
+  updateHeight?: (height: number) => void;
 }
 
-const TaskBlock: React.FC<TaskBlockProps> = ({ content, onTaskComplete, specialistId }) => {
+const TaskBlock: React.FC<TaskBlockProps> = ({
+  content,
+  specialistId,
+  onTaskComplete,
+  updateHeight
+}) => {
   const [completed, setCompleted] = useState(false);
   const [showReward, setShowReward] = useState(false);
   

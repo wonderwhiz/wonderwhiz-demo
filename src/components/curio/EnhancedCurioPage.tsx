@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -182,6 +183,51 @@ const EnhancedCurioPage: React.FC = () => {
     window.scrollTo({ top: window.innerHeight * 0.5, behavior: 'smooth' });
   };
 
+  // Fixed callback functions to match expected types
+  const handleToggleLikeWrapper = (blockId: string) => {
+    if (handleToggleLike) handleToggleLike(blockId);
+  };
+  
+  const handleToggleBookmarkWrapper = (blockId: string) => {
+    if (handleToggleBookmark) handleToggleBookmark(blockId);
+  };
+  
+  const handleReplyWrapper = (blockId: string, message: string) => {
+    if (handleReply) handleReply(blockId, message);
+  };
+  
+  const handleQuizCorrectWrapper = () => {
+    if (handleQuizCorrect) handleQuizCorrect();
+  };
+  
+  const handleNewsReadWrapper = () => {
+    if (handleNewsRead) handleNewsRead();
+  };
+  
+  const handleCreativeUploadWrapper = () => {
+    if (handleCreativeUpload) handleCreativeUpload();
+  };
+  
+  const handleActivityCompleteWrapper = () => {
+    if (handleActivityComplete) handleActivityComplete();
+  };
+  
+  const handleMindfulnessCompleteWrapper = () => {
+    if (handleMindfulnessComplete) handleMindfulnessComplete();
+  };
+  
+  const handleTaskCompleteWrapper = () => {
+    if (handleTaskComplete) handleTaskComplete();
+  };
+
+  if (profileError) {
+    return <CurioErrorState message="Failed to load profile." />;
+  }
+
+  if (isLoadingProfile) {
+    return <CurioLoadingState message="Loading profile..." />;
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-indigo-950 to-purple-950 overflow-hidden">
       {/* Navigation and Search Bar */}
@@ -247,17 +293,17 @@ const EnhancedCurioPage: React.FC = () => {
               searchQuery={searchQuery}
               profileId={childId || ''}
               isFirstLoad={isFirstLoad}
-              handleToggleLike={handleToggleLike}
-              handleToggleBookmark={handleToggleBookmark}
-              handleReply={(blockId: string, message: string) => handleReply(blockId, message)}
-              handleQuizCorrect={handleQuizCorrect}
-              handleNewsRead={handleNewsRead}
-              handleCreativeUpload={handleCreativeUpload}
-              handleTaskComplete={handleTaskComplete}
-              handleActivityComplete={handleActivityComplete}
-              handleMindfulnessComplete={handleMindfulnessComplete}
+              handleToggleLike={handleToggleLikeWrapper}
+              handleToggleBookmark={handleToggleBookmarkWrapper}
+              handleReply={handleReplyWrapper}
+              handleQuizCorrect={handleQuizCorrectWrapper}
+              handleNewsRead={handleNewsReadWrapper}
+              handleCreativeUpload={handleCreativeUploadWrapper}
+              handleTaskComplete={handleTaskCompleteWrapper}
+              handleActivityComplete={handleActivityCompleteWrapper}
+              handleMindfulnessComplete={handleMindfulnessCompleteWrapper}
               handleRabbitHoleClick={handleRabbitHoleClick}
-              generationError={generationError || false}
+              generationError={!!generationError}
               onRefresh={handleRefresh}
             />
           )}

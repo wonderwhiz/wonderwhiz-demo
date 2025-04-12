@@ -388,10 +388,9 @@ const SimplifiedCurioPage: React.FC = () => {
           
           <div className="mt-3">
             <CurioSearchBar
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              handleSearch={handleSearch}
               placeholder="Search within this exploration..."
+              onSearch={(query) => handleSearch({ preventDefault: () => {} } as React.FormEvent)}
+              onClear={() => setSearchQuery('')}
             />
           </div>
         </div>

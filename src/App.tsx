@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -19,7 +18,6 @@ import CreateProfile from "./pages/CreateProfile";
 import ProfileSelector from "./pages/ProfileSelector";
 import Dashboard from "./pages/Dashboard";
 import ParentZone from "./pages/ParentZone";
-import CurioPage from "./pages/CurioPage";
 import EnhancedCurioPage from '@/components/curio/EnhancedCurioPage';
 import SimplifiedCurioPage from '@/components/curio/SimplifiedCurioPage';
 

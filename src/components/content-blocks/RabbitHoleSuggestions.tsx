@@ -1,7 +1,7 @@
-
-import React, { useState, useEffect } from 'react';
-import { Sparkles, Search } from 'lucide-react';
-import SpecialistAvatar from '../SpecialistAvatar';
+import React from 'react';
+import { motion } from 'framer-motion';
+import { Compass } from 'lucide-react';
+import SpecialistAvatar from '@/components/SpecialistAvatar';
 
 interface RabbitHoleSuggestionsProps {
   curioTitle: string;
@@ -16,68 +16,64 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
   onSuggestionClick,
   specialistIds = []
 }) => {
-  const [suggestions, setSuggestions] = useState<string[]>([]);
+  // Generate related suggestions based on the curio title
+  const generateSuggestions = () => {
+    const basicSuggestions = [
+      `How do ${curioTitle.toLowerCase()} impact our daily lives?`,
+      `What are the most interesting facts about ${curioTitle.toLowerCase()}?`,
+      `The history of ${curioTitle.toLowerCase()} explained`,
+      `What science is behind ${curioTitle.toLowerCase()}?`,
+      `The future of ${curioTitle.toLowerCase()}`
+    ];
+    
+    // Keep a subset of suggestions
+    return basicSuggestions.slice(0, 3);
+  };
   
-  useEffect(() => {
-    if (curioTitle) {
-      // These are hardcoded suggestions based on the curio title
-      // In a real implementation, you might generate these dynamically or fetch from an API
-      const generateSuggestions = () => {
-        const baseSuggestions = [
-          `What causes ${curioTitle}?`,
-          `How does ${curioTitle} work?`,
-          `What are the most interesting facts about ${curioTitle}?`,
-          `What's the history of ${curioTitle}?`,
-          `How does ${curioTitle} impact our daily lives?`,
-          `What are the future developments in ${curioTitle}?`
-        ];
-        
-        // Shuffle and take 3-5 suggestions
-        return baseSuggestions
-          .sort(() => 0.5 - Math.random())
-          .slice(0, Math.floor(Math.random() * 2) + 3);
-      };
-      
-      setSuggestions(generateSuggestions());
-    }
-  }, [curioTitle]);
-  
-  if (!suggestions.length) return null;
+  const suggestions = generateSuggestions();
   
   return (
-    <div className="bg-white/5 backdrop-blur-sm rounded-lg p-5 border border-white/10 mb-8">
-      <div className="flex items-center mb-4">
-        <div className="h-7 w-7 rounded-full bg-indigo-500/30 flex items-center justify-center mr-3">
-          <Sparkles className="h-4 w-4 text-indigo-300" />
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="bg-indigo-600/20 backdrop-blur-md border border-indigo-500/30 rounded-lg p-4 mb-6"
+    >
+      <div className="flex items-center mb-3">
+        <div className="w-8 h-8 rounded-full bg-indigo-600/50 flex items-center justify-center mr-3">
+          <Compass className="h-4 w-4 text-white" />
         </div>
-        <h3 className="text-lg font-medium text-white">Continue your exploration</h3>
+        <h2 className="text-lg font-semibold text-white">Continue Your Exploration</h2>
       </div>
       
       <p className="text-white/70 text-sm mb-4">
-        Curious about related topics? Explore these questions to discover more!
+        What would you like to discover next? Here are some interesting paths to follow.
       </p>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {suggestions.map((suggestion, index) => {
-          // Pick a specialist ID for this suggestion based on the available ones
-          const specialistId = specialistIds.length > 0 
-            ? specialistIds[index % specialistIds.length] 
-            : 'nova';
-            
+          // Get a specialist ID for this suggestion
+          const specialistId = specialistIds[index % specialistIds.length] || 'nova';
+          
           return (
-            <button
+            <motion.button
               key={index}
-              className="flex items-center p-3 bg-indigo-500/10 hover:bg-indigo-500/20 rounded-lg border border-indigo-500/20 transition-colors text-left group"
+              className="flex items-start bg-white/5 hover:bg-white/10 transition-colors p-3 rounded-lg border border-white/10 text-left group"
               onClick={() => onSuggestionClick(suggestion)}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
-              <SpecialistAvatar specialistId={specialistId} size="sm" className="mr-2 flex-shrink-0" />
-              <span className="text-white text-sm">{suggestion}</span>
-              <Search className="h-4 w-4 ml-auto text-white/40 group-hover:text-white/70 transition-colors flex-shrink-0" />
-            </button>
+              <SpecialistAvatar specialistId={specialistId} size="sm" className="mt-0.5 mr-2 flex-shrink-0" />
+              <div>
+                <p className="text-white text-sm group-hover:text-indigo-200 transition-colors">
+                  {suggestion}
+                </p>
+              </div>
+            </motion.button>
           );
         })}
       </div>
-    </div>
+    </motion.div>
   );
 };
 

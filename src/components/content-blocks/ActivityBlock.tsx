@@ -1,123 +1,108 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
-import { Check, Timer, Star } from 'lucide-react';
 
-interface ActivityBlockProps {
+export interface ActivityBlockProps {
   content: {
     activity: string;
-    title?: string;
-    instructions?: string;
-    steps?: string[];
+    title: string;
+    instructions: string;
+    steps: string[];
   };
+  specialistId: string;
   onActivityComplete?: () => void;
-  narrativePosition?: 'beginning' | 'middle' | 'end';
-  specialistId?: string;
+  updateHeight?: (height: number) => void;
 }
 
-const ActivityBlock: React.FC<ActivityBlockProps> = ({ 
-  content, 
-  onActivityComplete, 
-  narrativePosition,
-  specialistId 
+const ActivityBlock: React.FC<ActivityBlockProps> = ({
+  content,
+  specialistId,
+  onActivityComplete,
+  updateHeight
 }) => {
-  const [completed, setCompleted] = useState(false);
-  const [showTimer, setShowTimer] = useState(false);
-  const [timeRemaining, setTimeRemaining] = useState(5); // Short timer for demonstration
+  const [isStarted, setIsStarted] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [containerHeight, setContainerHeight] = useState<number | null>(null);
   
-  const handleComplete = () => {
-    if (!completed) {
-      setCompleted(true);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  
+  React.useEffect(() => {
+    if (containerRef.current && updateHeight) {
+      const height = containerRef.current.offsetHeight;
+      setContainerHeight(height);
+      updateHeight(height);
+    }
+  }, [isStarted, currentStep, isCompleted, updateHeight]);
+  
+  const handleStart = () => {
+    setIsStarted(true);
+  };
+  
+  const handleNextStep = () => {
+    if (currentStep < content.steps.length - 1) {
+      setCurrentStep(currentStep + 1);
+    } else {
+      setIsCompleted(true);
       if (onActivityComplete) {
         onActivityComplete();
       }
     }
   };
   
-  const startTimer = () => {
-    setShowTimer(true);
-    
-    const timer = setInterval(() => {
-      setTimeRemaining(prev => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          setShowTimer(false);
-          handleComplete();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  };
-  
   return (
-    <div>
-      <motion.p 
-        className="text-white text-sm sm:text-base mb-2 sm:mb-3"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        {content.activity}
-      </motion.p>
-      
-      {!completed && !showTimer ? (
-        <div className="flex flex-wrap gap-2">
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <Button 
-              onClick={handleComplete}
-              className="bg-wonderwhiz-purple hover:bg-wonderwhiz-purple/80 text-white text-xs sm:text-sm"
+    <div ref={containerRef} className="p-3 bg-indigo-500/10 backdrop-blur-md rounded-lg">
+      <div className="p-4 border border-indigo-500/20 rounded-lg">
+        <h3 className="text-white font-medium mb-2">{content.title || 'Fun Activity'}</h3>
+        
+        {!isStarted ? (
+          <>
+            <p className="text-white/90 mb-4">{content.instructions || content.activity}</p>
+            <button
+              onClick={handleStart}
+              className="w-full py-2 bg-indigo-500/60 hover:bg-indigo-500/80 text-white text-sm rounded-md transition-colors"
             >
-              I Did This Activity
-            </Button>
-          </motion.div>
-          
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <Button 
-              onClick={startTimer}
-              variant="outline"
-              className="border-wonderwhiz-gold/40 bg-wonderwhiz-gold/10 text-wonderwhiz-gold hover:bg-wonderwhiz-gold/20 text-xs sm:text-sm"
-            >
-              <Timer className="mr-1 h-4 w-4" />
-              Time This Activity
-            </Button>
-          </motion.div>
-        </div>
-      ) : showTimer ? (
-        <motion.div 
-          className="bg-wonderwhiz-deep-purple/40 backdrop-blur-sm rounded-lg p-3 border border-white/10"
-          initial={{ scale: 0.95, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-        >
-          <div className="text-center">
-            <div className="text-2xl font-bold text-white mb-1">{timeRemaining}</div>
-            <p className="text-white/60 text-xs">Time remaining</p>
-          </div>
-        </motion.div>
-      ) : (
-        <motion.div 
-          className="flex items-center text-wonderwhiz-gold text-xs sm:text-sm p-3 bg-wonderwhiz-gold/10 rounded-lg border border-wonderwhiz-gold/20"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-        >
-          <div className="mr-2 w-8 h-8 rounded-full bg-wonderwhiz-gold/20 flex items-center justify-center">
-            <Star className="h-4 w-4 text-wonderwhiz-gold" />
-          </div>
-          <div>
-            <div className="flex items-center text-wonderwhiz-gold font-medium">
-              <Check className="mr-1 h-4 w-4" />
-              Great job completing this activity!
+              Start Activity
+            </button>
+          </>
+        ) : !isCompleted ? (
+          <div className="space-y-4">
+            <div className="bg-white/10 p-3 rounded-md">
+              <p className="text-white/90">{content.steps[currentStep]}</p>
             </div>
-            <p className="text-white/60 text-xs mt-0.5">You earned 3 sparks for your scientific exploration!</p>
+            
+            <div className="flex items-center justify-between">
+              <div className="text-xs text-white/60">
+                Step {currentStep + 1} of {content.steps.length}
+              </div>
+              <button
+                onClick={handleNextStep}
+                className="px-4 py-1.5 bg-indigo-500/60 hover:bg-indigo-500/80 text-white text-sm rounded-md transition-colors"
+              >
+                {currentStep < content.steps.length - 1 ? 'Next Step' : 'Complete Activity'}
+              </button>
+            </div>
           </div>
-        </motion.div>
-      )}
+        ) : (
+          <div className="text-center py-2">
+            <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h4 className="text-white font-medium mb-1">Activity Completed!</h4>
+            <p className="text-white/70 text-sm mb-3">Great job! You've earned sparks for completing this activity.</p>
+            <button
+              onClick={() => {
+                setIsStarted(false);
+                setIsCompleted(false);
+                setCurrentStep(0);
+              }}
+              className="px-4 py-1.5 bg-white/10 hover:bg-white/20 text-white text-sm rounded-md transition-colors"
+            >
+              Do it again
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

@@ -1,124 +1,73 @@
-
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
-import { Play, Pause, Check, Clock } from 'lucide-react';
-import { MindfulnessBlockProps } from './interfaces';
 
-const MindfulnessBlock: React.FC<MindfulnessBlockProps> = ({ 
-  content, 
+export interface MindfulnessBlockProps {
+  content: {
+    instruction: string;
+    duration: number;
+    title: string;
+    benefit: string;
+  };
+  specialistId: string;
+  onMindfulnessComplete?: () => void;
+  updateHeight?: (height: number) => void;
+}
+
+const MindfulnessBlock: React.FC<MindfulnessBlockProps> = ({
+  content,
+  specialistId,
   onMindfulnessComplete,
-  specialistId 
+  updateHeight
 }) => {
-  const [timerRunning, setTimerRunning] = useState(false);
-  const [secondsLeft, setSecondsLeft] = useState(content.duration || 60);
-  const [completed, setCompleted] = useState(false);
-  
+  const [timer, setTimer] = useState(content.duration);
+  const [isActive, setIsActive] = useState(false);
+
   useEffect(() => {
-    let timer: number;
-    
-    if (timerRunning && secondsLeft > 0) {
-      timer = window.setTimeout(() => {
-        setSecondsLeft(prevSeconds => prevSeconds - 1);
+    let intervalId: NodeJS.Timeout;
+
+    if (isActive && timer > 0) {
+      intervalId = setInterval(() => {
+        setTimer(prevTimer => prevTimer - 1);
       }, 1000);
-    } else if (timerRunning && secondsLeft === 0) {
-      setTimerRunning(false);
-      setCompleted(true);
+    } else if (timer === 0) {
+      setIsActive(false);
       if (onMindfulnessComplete) {
         onMindfulnessComplete();
       }
     }
-    
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [timerRunning, secondsLeft, onMindfulnessComplete]);
-  
+
+    return () => clearInterval(intervalId);
+  }, [isActive, timer, onMindfulnessComplete]);
+
   const toggleTimer = () => {
-    setTimerRunning(prev => !prev);
+    setIsActive(!isActive);
   };
-  
-  const resetTimer = () => {
-    setTimerRunning(false);
-    setSecondsLeft(content.duration || 60);
-    setCompleted(false);
+
+  const formatTime = (time: number): string => {
+    const minutes = Math.floor(time / 60);
+    const seconds = time % 60;
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
-  
-  const progress = 1 - secondsLeft / (content.duration || 60);
   
   return (
-    <div>
-      <motion.p 
-        className="text-white mb-1.5 sm:mb-2 text-sm sm:text-base"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        {content.exercise}
-      </motion.p>
-      
-      {!completed ? (
-        <div className="space-y-2 sm:space-y-3">
-          <p className="text-white/70 text-xs flex items-center">
-            <Clock className="h-3.5 w-3.5 mr-1.5" />
-            {secondsLeft} seconds remaining
-          </p>
-          
-          <div className="w-full bg-white/10 rounded-full h-2.5">
-            <motion.div 
-              className="bg-wonderwhiz-purple h-2.5 rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: `${progress * 100}%` }}
-              transition={{ ease: "linear" }}
-            ></motion.div>
-          </div>
-          
-          <div className="flex space-x-2">
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Button 
-                onClick={toggleTimer}
-                variant="outline"
-                size="sm"
-                className="bg-white/5 border-white/10 text-white hover:bg-white/10 text-xs sm:text-sm"
-              >
-                {timerRunning ? (
-                  <><Pause className="h-3.5 w-3.5 mr-1.5" /> Pause</>
-                ) : (
-                  <><Play className="h-3.5 w-3.5 mr-1.5" /> {secondsLeft === (content.duration || 60) ? 'Start' : 'Resume'}</>
-                )}
-              </Button>
-            </motion.div>
-            
-            {secondsLeft < (content.duration || 60) && (
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Button 
-                  onClick={resetTimer}
-                  variant="outline"
-                  size="sm"
-                  className="bg-white/5 border-white/10 text-white hover:bg-white/10 text-xs sm:text-sm"
-                >
-                  Reset
-                </Button>
-              </motion.div>
-            )}
-          </div>
+    <div className="p-3 bg-white/10 backdrop-blur-md rounded-lg">
+      <div className="p-4 border border-white/20 rounded-lg">
+        <h3 className="text-white font-medium mb-2">{content.title}</h3>
+        <p className="text-white/90 mb-4">{content.instruction}</p>
+        
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-white/70">Time Remaining: {formatTime(timer)}</span>
+          <button
+            onClick={toggleTimer}
+            className="px-4 py-2 bg-indigo-500/60 hover:bg-indigo-500/80 text-white text-sm rounded-md transition-colors"
+          >
+            {isActive ? 'Pause' : 'Start'}
+          </button>
         </div>
-      ) : (
-        <motion.div 
-          className="flex items-center text-green-400 text-xs sm:text-sm"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-        >
-          <Check className="mr-1 h-4 w-4" />
-          Wonderful job! You earned 5 sparks for completing this mindfulness exercise!
-        </motion.div>
-      )}
+        
+        <p className="text-white/70 text-sm">
+          Benefit: {content.benefit}
+        </p>
+      </div>
     </div>
   );
 };
