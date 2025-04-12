@@ -1,4 +1,8 @@
+
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Trophy, Sparkles, Check } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export interface TaskBlockProps {
   content: {
