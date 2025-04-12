@@ -182,7 +182,6 @@ const EnhancedCurioPage: React.FC = () => {
     window.scrollTo({ top: window.innerHeight * 0.5, behavior: 'smooth' });
   };
 
-  // Fixed callback functions to match expected types
   const handleToggleLikeWrapper = (blockId: string) => {
     if (handleToggleLike) handleToggleLike(blockId);
   };
@@ -195,28 +194,28 @@ const EnhancedCurioPage: React.FC = () => {
     if (handleReply) handleReply(blockId, message);
   };
   
-  const handleQuizCorrectWrapper = () => {
-    if (handleQuizCorrect) handleQuizCorrect();
+  const handleQuizCorrectWrapper = (blockId: string) => {
+    if (handleQuizCorrect) handleQuizCorrect(blockId);
   };
   
-  const handleNewsReadWrapper = () => {
-    if (handleNewsRead) handleNewsRead();
+  const handleNewsReadWrapper = (blockId: string) => {
+    if (handleNewsRead) handleNewsRead(blockId);
   };
   
-  const handleCreativeUploadWrapper = () => {
-    if (handleCreativeUpload) handleCreativeUpload();
+  const handleCreativeUploadWrapper = (blockId: string, content: any = null) => {
+    if (handleCreativeUpload) handleCreativeUpload(blockId, content);
   };
   
-  const handleActivityCompleteWrapper = () => {
-    if (handleActivityComplete) handleActivityComplete();
+  const handleActivityCompleteWrapper = (blockId: string) => {
+    if (handleActivityComplete) handleActivityComplete(blockId);
   };
   
-  const handleMindfulnessCompleteWrapper = () => {
-    if (handleMindfulnessComplete) handleMindfulnessComplete();
+  const handleMindfulnessCompleteWrapper = (blockId: string) => {
+    if (handleMindfulnessComplete) handleMindfulnessComplete(blockId);
   };
   
-  const handleTaskCompleteWrapper = () => {
-    if (handleTaskComplete) handleTaskComplete();
+  const handleTaskCompleteWrapper = (blockId: string) => {
+    if (handleTaskComplete) handleTaskComplete(blockId);
   };
 
   if (profileError) {
@@ -229,7 +228,6 @@ const EnhancedCurioPage: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-indigo-950 to-purple-950 overflow-hidden">
-      {/* Navigation and Search Bar */}
       <CurioPageSearch
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
@@ -239,7 +237,6 @@ const EnhancedCurioPage: React.FC = () => {
       
       <main className="flex-grow py-6 sm:py-10">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
-          {/* Curio Title */}
           {curioTitle && (
             <motion.h1
               className="text-2xl sm:text-3xl font-bold text-white mb-5 text-center sm:text-left font-nunito"
@@ -251,7 +248,6 @@ const EnhancedCurioPage: React.FC = () => {
             </motion.h1>
           )}
           
-          {/* Quick Answer */}
           {curioTitle && !searchQuery && (
             <div className="mb-6">
               <QuickAnswer 
@@ -264,7 +260,6 @@ const EnhancedCurioPage: React.FC = () => {
             </div>
           )}
           
-          {/* Interactive Image */}
           {curioTitle && !searchQuery && (
             <div className="mb-6">
               <InteractiveImageBlock
