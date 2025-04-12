@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Sparkles, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import TasksSection from './TasksSection';
-import WonderPathItem from './WonderPathItem';
 
 interface WelcomeViewProps {
   childId: string;
@@ -187,12 +186,19 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
             <h2 className="text-xl font-bold text-white mb-4">Your Recent Explorations</h2>
             <div className="space-y-3">
               {pastCurios.slice(0, 3).map((curio, index) => (
-                <WonderPathItem 
+                <motion.div
                   key={`curio-${curio.id}`}
-                  title={curio.title}
-                  index={index}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3, delay: 0.3 + (index * 0.1) }}
+                  className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg p-4 cursor-pointer transition-all"
                   onClick={() => onCurioSuggestionClick(curio.query || curio.title)}
-                />
+                  whileHover={{ scale: 1.01, backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
+                  whileTap={{ scale: 0.99 }}
+                >
+                  <p className="text-white font-medium">{curio.title}</p>
+                  <p className="text-white/60 text-sm mt-1">{new Date(curio.created_at).toLocaleDateString()}</p>
+                </motion.div>
               ))}
             </div>
           </motion.div>

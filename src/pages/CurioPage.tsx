@@ -19,7 +19,7 @@ import CurioEmptyState from '@/components/curio/CurioEmptyState';
 import CurioErrorState from '@/components/curio/CurioErrorState';
 import CurioBlockList from '@/components/CurioBlockList';
 import QuickAnswer from '@/components/curio/QuickAnswer';
-import TableOfContents from '@/components/curio/TableOfContents';
+import { TableOfContents } from '@/components/curio/TableOfContents';
 import ProgressVisualization from '@/components/curio/ProgressVisualization';
 import LearningCertificate from '@/components/curio/LearningCertificate';
 import ChapterHeader from '@/components/curio/ChapterHeader';
@@ -254,110 +254,7 @@ const CurioPage: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [blocks.length, hasScrolledToBottom]);
 
-  const handleBackToDashboard = () => {
-    navigate(`/dashboard/${childId}`);
-  };
-
-  const handleRefresh = () => {
-    setRefreshing(true);
-    window.location.reload();
-  };
-  
-  const handleToggleInsights = () => {
-    setShowInsights(!showInsights);
-  };
-  
-  const handleChapterClick = (chapterId: string) => {
-    setActiveChapter(chapterId);
-    
-    setChapters(prev => prev.map(chapter => ({
-      ...chapter,
-      isActive: chapter.id === chapterId
-    })));
-    
-    document.getElementById(`chapter-${chapterId}`)?.scrollIntoView({ 
-      behavior: 'smooth', 
-      block: 'start' 
-    });
-  };
-  
-  const handleStartJourney = () => {
-    setIsJourneyStarted(true);
-    setQuickAnswerExpanded(false);
-    
-    document.getElementById('table-of-contents')?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start'
-    });
-  };
-  
-  const handleCertificateDownload = () => {
-    toast.success("Certificate downloaded successfully!");
-  };
-  
-  const handleCertificateShare = () => {
-    toast.success("Certificate shared successfully!");
-  };
-  
-  const handleRabbitHoleClick = async (question: string) => {
-    if (!childId) return;
-    
-    try {
-      toast.loading("Creating new exploration...");
-      
-      const { data: newCurio, error } = await supabase
-        .from('curios')
-        .insert({
-          child_id: childId,
-          title: question,
-          query: question,
-        })
-        .select('id')
-        .single();
-        
-      if (error) throw error;
-      
-      if (newCurio) {
-        toast.success("New exploration created!");
-        
-        try {
-          await supabase.functions.invoke('increment-sparks-balance', {
-            body: JSON.stringify({
-              profileId: childId,
-              amount: 2
-            })
-          });
-          
-          await supabase.from('sparks_transactions').insert({
-            child_id: childId,
-            amount: 2,
-            reason: 'Following curiosity'
-          });
-          
-          toast.success('You earned 2 sparks for exploring your curiosity!', {
-            icon: '✨',
-            position: 'bottom-right',
-            duration: 3000
-          });
-        } catch (err) {
-          console.error('Error awarding sparks:', err);
-        }
-        
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 }
-        });
-        
-        navigate(`/curio/${childId}/${newCurio.id}`);
-      }
-    } catch (error) {
-      console.error('Error creating rabbit hole curio:', error);
-      toast.error("Could not create new exploration. Please try again later.");
-    }
-  };
-
-  const organizeBlocksIntoChapters = (blocks: any[]) => {
+  const handleOrganizeBlocksIntoChapters = (blocks: any[]) => {
     if (!blocks.length) return {};
     
     const chapterMap: Record<string, any[]> = {
@@ -392,8 +289,68 @@ const CurioPage: React.FC = () => {
     
     return chapterMap;
   };
-  
-  const blocksByChapter = organizeBlocksIntoChapters(blocks);
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+  };
+
+  const handleRabbitHoleClick = async (question: string) => {
+    if (!childId) return;
+    
+    try {
+      toast.loading("Creating new exploration...");
+      
+      const { data: newCurio, error } = await supabase
+        .from('curios')
+        .insert({
+          child_id: childId,
+          title: question,
+          query: question,
+        })
+        .select('id')
+        .single();
+        
+      if (error) throw error;
+      
+      if (newCurio) {
+        toast.success("New exploration created!");
+        
+        try {
+          await supabase.functions.invoke('increment-sparks-balance', {
+            body: JSON.stringify({
+              profileId: childId,
+              amount: 2
+            })
+          });
+          
+          await supabase.from('sparks_transactions').insert({
+            child_id: profileId,
+            amount: 2,
+            reason: 'Following curiosity'
+          });
+          
+          toast.success('You earned 2 sparks for exploring your curiosity!', {
+            icon: '✨',
+            position: 'bottom-right',
+            duration: 3000
+          });
+        } catch (err) {
+          console.error('Error awarding sparks:', err);
+        }
+        
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+        
+        navigate(`/curio/${childId}/${newCurio.id}`);
+      }
+    } catch (error) {
+      console.error('Error creating rabbit hole curio:', error);
+      toast.error("Could not create new exploration. Please try again later.");
+    }
+  };
 
   return (
     <div className="flex flex-col h-full">

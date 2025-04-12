@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { BookOpen, ArrowLeft } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import MagicalSearchBar from '@/components/dashboard/MagicalSearchBar';
 
@@ -14,7 +14,6 @@ interface SimplifiedCurioHeaderProps {
   handleSearch: (e: React.FormEvent) => void;
   recentQueries?: string[];
   isGenerating?: boolean;
-  onBackToDashboard: () => void;
 }
 
 const SimplifiedCurioHeader: React.FC<SimplifiedCurioHeaderProps> = ({
@@ -25,8 +24,7 @@ const SimplifiedCurioHeader: React.FC<SimplifiedCurioHeaderProps> = ({
   setQuery,
   handleSearch,
   recentQueries = [],
-  isGenerating = false,
-  onBackToDashboard
+  isGenerating = false
 }) => {
   return (
     <motion.div
@@ -37,19 +35,9 @@ const SimplifiedCurioHeader: React.FC<SimplifiedCurioHeaderProps> = ({
     >
       <div className="max-w-3xl mx-auto">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
-          <div className="flex items-center">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onBackToDashboard}
-              className="mr-2 bg-white/10 hover:bg-white/20 text-white"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <h1 className="text-2xl sm:text-3xl font-bold text-center sm:text-left text-white font-nunito">
-              {title}
-            </h1>
-          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-center sm:text-left text-white font-nunito">
+            {title}
+          </h1>
           
           <Button
             variant="ghost"

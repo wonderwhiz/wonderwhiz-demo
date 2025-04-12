@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,7 +20,6 @@ import NarrativePrompt from '@/components/content-blocks/NarrativePrompt';
 import { getPersonalizedMessage } from '@/components/content-blocks/utils/narrativeUtils';
 import InteractiveImageBlock from '@/components/content-blocks/InteractiveImageBlock';
 import TalkToWhizzy from '@/components/curio/TalkToWhizzy';
-import QuickAnswer from '@/components/curio/QuickAnswer';
 
 const EnhancedCurioPage: React.FC = () => {
   const { childId, curioId } = useParams<{ childId: string, curioId: string }>();
@@ -46,14 +44,11 @@ const EnhancedCurioPage: React.FC = () => {
 
   const [animateBlocks, setAnimateBlocks] = useState(true);
   const [curioTitle, setCurioTitle] = useState<string | null>(null);
-  const [curioAnswer, setCurioAnswer] = useState<string>('');
   const [refreshing, setRefreshing] = useState(false);
   const [showPersonalizedMessage, setShowPersonalizedMessage] = useState(false);
   const [personalizedMessage, setPersonalizedMessage] = useState('');
   const [specialistIds, setSpecialistIds] = useState<string[]>([]);
   const [showRabbitHoleSuggestions, setShowRabbitHoleSuggestions] = useState(false);
-  const [quickAnswerExpanded, setQuickAnswerExpanded] = useState(false);
-  const [journeyStarted, setJourneyStarted] = useState(false);
   
   const loadTriggerRef = useRef<HTMLDivElement>(null);
 
@@ -73,8 +68,6 @@ const EnhancedCurioPage: React.FC = () => {
         .then(({ data, error }) => {
           if (data && !error) {
             setCurioTitle(data.title);
-            // Set a default answer based on the title/query
-            setCurioAnswer(`Here's a quick answer about ${data.title}. This is a brief summary before we explore the topic in depth. I'll help you understand this topic with detailed explanations, fun facts, and interactive exercises.`);
           }
         });
     }
@@ -156,12 +149,6 @@ const EnhancedCurioPage: React.FC = () => {
     window.location.reload();
   };
   
-  const handleStartJourney = () => {
-    setJourneyStarted(true);
-    setQuickAnswerExpanded(false);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-  
   const handleRabbitHoleClick = async (question: string) => {
     if (!childId) return;
     
@@ -210,7 +197,20 @@ const EnhancedCurioPage: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-indigo-950 to-purple-900">
-      {/* Search Bar with Back Button */}
+      {/* Back to Dashboard Button */}
+      <div className="fixed top-4 left-4 z-50">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleBackToDashboard}
+          className="bg-white/10 hover:bg-white/20 text-white border-white/20 flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span className="hidden sm:inline">Back to Dashboard</span>
+        </Button>
+      </div>
+      
+      {/* Search Bar */}
       <CurioPageSearch
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
@@ -218,7 +218,7 @@ const EnhancedCurioPage: React.FC = () => {
         handleBackToDashboard={handleBackToDashboard}
       />
       
-      <main className="flex-grow py-6">
+      <main className="flex-grow py-10">
         <div className="max-w-3xl mx-auto px-4 sm:px-6">
           {/* Curio Title */}
           {curioTitle && (
@@ -230,18 +230,6 @@ const EnhancedCurioPage: React.FC = () => {
             >
               {curioTitle}
             </motion.h1>
-          )}
-          
-          {/* Quick Answer Section */}
-          {curioTitle && !isLoadingBlocks && !searchQuery && (
-            <QuickAnswer 
-              question={curioTitle}
-              answer={curioAnswer}
-              isExpanded={quickAnswerExpanded}
-              onToggleExpand={() => setQuickAnswerExpanded(!quickAnswerExpanded)}
-              onStartJourney={handleStartJourney}
-              childId={childId}
-            />
           )}
           
           {/* Interactive Image Block */}

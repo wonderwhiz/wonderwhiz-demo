@@ -1,71 +1,87 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { Search, X } from 'lucide-react';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 interface CurioSearchBarProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   handleSearch: (e: React.FormEvent) => void;
   placeholder?: string;
+  variant?: 'default' | 'minimal';
 }
 
 const CurioSearchBar: React.FC<CurioSearchBarProps> = ({
   searchQuery,
   setSearchQuery,
   handleSearch,
-  placeholder = "Search within this exploration..."
+  placeholder = "What are you curious about?",
+  variant = 'default'
 }) => {
-  const [isFocused, setIsFocused] = useState(false);
+  // Define styles based on variant
+  const getStyles = () => {
+    switch(variant) {
+      case 'minimal':
+        return {
+          container: "mb-2",
+          input: "py-1.5 text-xs",
+          button: "text-xs px-2 py-1",
+          icon: "h-3.5 w-3.5" 
+        };
+      default:
+        return {
+          container: "mb-3",
+          input: "py-2",
+          button: "text-sm",
+          icon: "h-4 w-4"
+        };
+    }
+  };
   
+  const styles = getStyles();
+
   return (
-    <form 
-      onSubmit={handleSearch} 
-      className="relative w-full mb-6"
+    <motion.form
+      onSubmit={handleSearch}
+      className={styles.container}
+      initial={{ opacity: 0, y: 5 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
     >
-      <motion.div
-        initial={{ opacity: 0, y: 5 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className={`relative rounded-full overflow-hidden transition-all ${
-          isFocused ? 'ring-2 ring-purple-500/30' : ''
-        }`}
-      >
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/50" />
+      <div className="relative group">
+        <Search className={`absolute left-3 top-1/2 -translate-y-1/2 ${styles.icon} text-white/40 group-hover:text-white/60 transition-colors duration-300`} />
+        
         <Input
           type="text"
+          placeholder={placeholder}
+          className={`pl-9 pr-12 ${styles.input} rounded-full bg-white/10 border-white/10 text-white placeholder:text-white/40 font-inter transition-all duration-300 focus:bg-white/15 focus:border-wonderwhiz-bright-pink/30 focus:ring-1 focus:ring-wonderwhiz-bright-pink/20`}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder={placeholder}
-          className="pl-10 pr-20 py-2 bg-white/10 border-white/20 text-white placeholder:text-white/50 rounded-full"
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
         />
         
-        <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center">
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery('')}
-              className="mr-1 text-white/50 hover:text-white/80 p-1"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
-          
-          <Button
-            type="submit"
-            size="sm"
-            className="rounded-full bg-purple-600 hover:bg-purple-700 px-3 py-1"
-            disabled={!searchQuery.trim()}
+        {searchQuery && (
+          <button 
+            type="button" 
+            className="absolute right-12 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/80 transition-colors"
+            onClick={() => setSearchQuery('')}
+            aria-label="Clear search"
           >
-            <Search className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-      </motion.div>
-    </form>
+            <X className={`${styles.icon} transition-transform hover:scale-110`} />
+          </button>
+        )}
+        
+        <Button 
+          type="submit" 
+          className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-full bg-wonderwhiz-bright-pink/90 hover:bg-wonderwhiz-bright-pink text-white h-7 px-3 transition-all duration-300 shadow-sm shadow-wonderwhiz-bright-pink/20"
+          size="sm"
+          aria-label="Search"
+        >
+          <Search className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+    </motion.form>
   );
 };
 

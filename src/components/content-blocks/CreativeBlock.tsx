@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { Upload, CheckCircle, Loader2 } from 'lucide-react';
@@ -16,7 +17,6 @@ interface CreativeBlockProps {
   uploadFeedback?: string | null;
   curioId?: string;
   specialistId?: string;
-  updateHeight?: (height: number) => void;
 }
 
 const CreativeBlock: React.FC<CreativeBlockProps> = ({ 
@@ -24,8 +24,7 @@ const CreativeBlock: React.FC<CreativeBlockProps> = ({
   onCreativeUpload, 
   uploadFeedback,
   curioId,
-  specialistId,
-  updateHeight
+  specialistId
 }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [isUploaded, setIsUploaded] = useState(false);
@@ -33,6 +32,7 @@ const CreativeBlock: React.FC<CreativeBlockProps> = ({
   const [feedback, setFeedback] = useState<string | null>(uploadFeedback || null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
+  // Make sure we update the feedback state if the prop changes
   useEffect(() => {
     if (uploadFeedback) {
       setFeedback(uploadFeedback);
@@ -50,9 +50,11 @@ const CreativeBlock: React.FC<CreativeBlockProps> = ({
           setSelectedImage(imageDataUrl);
           
           try {
+            // Create a form data object to send to the analyze-image function
             const formData = new FormData();
             formData.append('image', e.target.files![0]);
             
+            // Call the analyze-image edge function
             const { data, error } = await supabase.functions.invoke('analyze-image', {
               body: formData,
             });
@@ -61,16 +63,20 @@ const CreativeBlock: React.FC<CreativeBlockProps> = ({
               throw error;
             }
             
+            // Set the feedback from the AI
             if (data.feedback) {
               setFeedback(data.feedback);
             }
             
+            // If we have a new content block from the AI analysis
             if (data.block && curioId) {
+              // Add the curio_id to the block
               const blockWithCurioId = {
                 ...data.block,
                 curio_id: curioId
               };
               
+              // Save the new block to the database
               const { error: saveError } = await supabase
                 .from('content_blocks')
                 .insert(blockWithCurioId);
@@ -83,6 +89,7 @@ const CreativeBlock: React.FC<CreativeBlockProps> = ({
             setIsUploading(false);
             setIsUploaded(true);
             
+            // Call the parent handler which might trigger UI updates
             onCreativeUpload();
             
           } catch (error) {
@@ -105,19 +112,8 @@ const CreativeBlock: React.FC<CreativeBlockProps> = ({
     }
   };
 
-  useEffect(() => {
-    if (updateHeight) {
-      setTimeout(() => {
-        const element = document.getElementById(`creative-block-${curioId || 'default'}`);
-        if (element) {
-          updateHeight(element.offsetHeight);
-        }
-      }, 0);
-    }
-  }, [content, curioId, updateHeight]);
-
   return (
-    <div id={`creative-block-${curioId || 'default'}`}>
+    <div>
       <div className="p-4 rounded-lg bg-gradient-to-br from-wonderwhiz-bright-pink/30 to-wonderwhiz-blue-accent/20 backdrop-blur-sm">
         <h3 className="text-white text-lg font-nunito font-medium mb-2">{content.prompt}</h3>
         {content.guidelines && (

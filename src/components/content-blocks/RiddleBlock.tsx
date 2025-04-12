@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HelpCircle, Check, Lightbulb } from 'lucide-react';
@@ -12,10 +11,9 @@ interface RiddleBlockProps {
     hint?: string;
   };
   specialistId?: string;
-  updateHeight?: (height: number) => void;
 }
 
-const RiddleBlock: React.FC<RiddleBlockProps> = ({ content, specialistId, updateHeight }) => {
+const RiddleBlock: React.FC<RiddleBlockProps> = ({ content, specialistId }) => {
   const [flipCard, setFlipCard] = useState(false);
   const [isRiddleSolved, setIsRiddleSolved] = useState(false);
   
@@ -32,19 +30,8 @@ const RiddleBlock: React.FC<RiddleBlockProps> = ({ content, specialistId, update
     setFlipCard(false);
   };
   
-  useEffect(() => {
-    if (updateHeight) {
-      setTimeout(() => {
-        const element = document.getElementById(`riddle-block-${specialistId || 'default'}`);
-        if (element) {
-          updateHeight(element.offsetHeight);
-        }
-      }, 0);
-    }
-  }, [content, specialistId, updateHeight, flipCard, isRiddleSolved]);
-  
   return (
-    <div id={`riddle-block-${specialistId || 'default'}`} className="relative">
+    <div className="relative">
       <div className="flex items-start space-x-3 mb-3">
         <div className="flex-shrink-0 mt-1">
           <motion.div

@@ -24,21 +24,20 @@ export interface FlashcardBlockProps {
 export interface CreativeBlockProps {
   content: {
     prompt: string;
-    description: string;
-    guidelines: string;
-    examples: string[];
+    description?: string;
+    guidelines?: string;
+    examples?: string[];
   };
   specialistId: string;
   onCreativeUpload?: () => void;
   uploadFeedback?: string | null;
   updateHeight?: (height: number) => void;
-  curioId?: string;
 }
 
 export interface TaskBlockProps {
   content: {
     task: string;
-    reward: string;
+    reward?: string;
     title?: string;
     description?: string;
     steps?: string[];
@@ -87,7 +86,7 @@ export interface ActivityBlockProps {
 export interface MindfulnessBlockProps {
   content: {
     exercise: string;
-    duration: number;
+    duration?: number;
     title?: string;
     instruction?: string;
   };
