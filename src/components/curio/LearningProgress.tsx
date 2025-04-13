@@ -1,14 +1,14 @@
-
 import React from 'react';
 import { Sparkles, Award, Trophy, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface LearningProgressProps {
-  questionCount: number;
+  questionCount?: number;
   explorationDepth: number;
   sparksEarned: number;
   childAge?: number;
   streakDays?: number;
+  blocksExplored?: number;
 }
 
 const LearningProgress: React.FC<LearningProgressProps> = ({
@@ -16,10 +16,12 @@ const LearningProgress: React.FC<LearningProgressProps> = ({
   explorationDepth = 0,
   sparksEarned = 0,
   childAge = 10,
-  streakDays = 0
+  streakDays = 0,
+  blocksExplored = 0
 }) => {
-  // Get the appropriate level based on questions asked
   const getLevelInfo = () => {
+    const count = Math.max(questionCount, blocksExplored);
+    
     const levels = [
       { threshold: 0, name: "New Explorer", color: "text-wonderwhiz-cyan" },
       { threshold: 5, name: "Curious Cat", color: "text-wonderwhiz-bright-pink" },
@@ -31,21 +33,19 @@ const LearningProgress: React.FC<LearningProgressProps> = ({
     
     let currentLevel = levels[0];
     for (const level of levels) {
-      if (questionCount >= level.threshold) {
+      if (count >= level.threshold) {
         currentLevel = level;
       } else {
         break;
       }
     }
     
-    // Find next level
     const currentIndex = levels.findIndex(l => l.name === currentLevel.name);
     const nextLevel = currentIndex < levels.length - 1 ? levels[currentIndex + 1] : null;
     
-    // Calculate progress percentage to next level
     let progressPercentage = 100;
     if (nextLevel) {
-      const currentLevelQuestions = questionCount - currentLevel.threshold;
+      const currentLevelQuestions = count - currentLevel.threshold;
       const questionsToNextLevel = nextLevel.threshold - currentLevel.threshold;
       progressPercentage = Math.min(100, Math.floor((currentLevelQuestions / questionsToNextLevel) * 100));
     }
@@ -59,7 +59,6 @@ const LearningProgress: React.FC<LearningProgressProps> = ({
 
   const levelInfo = getLevelInfo();
   
-  // Simpler display for younger children
   if (childAge < 8) {
     return (
       <div className="bg-wonderwhiz-deep-purple/50 rounded-lg border border-white/10 p-3 mb-4">
@@ -70,7 +69,7 @@ const LearningProgress: React.FC<LearningProgressProps> = ({
         
         <div className="grid grid-cols-3 gap-2 text-center">
           <div className="bg-white/10 rounded-lg p-2">
-            <div className="text-wonderwhiz-bright-pink text-xl font-bold">{questionCount}</div>
+            <div className="text-wonderwhiz-bright-pink text-xl font-bold">{blocksExplored || questionCount}</div>
             <div className="text-white/70 text-xs">Questions</div>
           </div>
           
@@ -130,7 +129,7 @@ const LearningProgress: React.FC<LearningProgressProps> = ({
       
       <div className="grid grid-cols-3 gap-3 text-center">
         <div className="bg-white/5 rounded-lg p-2">
-          <div className="text-wonderwhiz-bright-pink text-lg font-bold">{questionCount}</div>
+          <div className="text-wonderwhiz-bright-pink text-lg font-bold">{blocksExplored || questionCount}</div>
           <div className="text-white/70 text-xs">Questions</div>
         </div>
         

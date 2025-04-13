@@ -19,7 +19,9 @@ export function useGeminiLiveChat({
   const [response, setResponse] = useState<string>('');
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [chatHistory, setChatHistory] = useState<Array<{ role: 'user' | 'model', content: string }>>([]);
-  const { playText, isLoading: isVoiceLoading } = useElevenLabsVoice({ voiceId: 'pkDwhVp7Wc7dQq2DBbpK' });
+  
+  // Use the proper property names based on useElevenLabsVoice hook
+  const { playText, isLoading: isVoiceLoading } = useElevenLabsVoice(); 
   
   // Store audio context and audio elements
   const audioContextRef = useRef<AudioContext | null>(null);

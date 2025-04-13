@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -301,7 +300,10 @@ const EnhancedCurioPage: React.FC = () => {
               <LearningProgress 
                 sparksEarned={earnedSparks}
                 explorationDepth={explorationDepth}
+                questionCount={blocks.length}
                 blocksExplored={blocks.length}
+                childAge={childProfile?.age ? Number(childProfile.age) : 10}
+                streakDays={0}
               />
             </motion.div>
           )}
