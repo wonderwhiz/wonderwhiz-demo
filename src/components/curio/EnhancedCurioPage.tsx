@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,19 +8,22 @@ import { useChildProfile } from '@/hooks/use-child-profile';
 import { useCurioBlocks } from '@/hooks/use-curio-blocks';
 import { useSearch } from '@/hooks/use-search';
 import { useBlockInteractions } from '@/hooks/useBlockInteractions';
+import { useElevenLabsVoice } from '@/hooks/useElevenLabsVoice';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import CurioBlockList from '@/components/CurioBlockList';
 import CurioPageSearch from '@/components/curio/CurioPageSearch';
 import CurioLoadingState from '@/components/curio/CurioLoadingState';
 import CurioErrorState from '@/components/curio/CurioErrorState';
-import RabbitHoleSuggestions from '@/components/content-blocks/RabbitHoleSuggestions';
+import RabbitHoleSuggestions from '@/components/curio/RabbitHoleSuggestions';
 import InteractiveImageBlock from '@/components/content-blocks/InteractiveImageBlock';
 import TalkToWhizzy from '@/components/curio/TalkToWhizzy';
 import QuickAnswer from '@/components/curio/QuickAnswer';
-import VoiceInputButton from '@/components/curio/VoiceInputButton';
 import LearningProgress from '@/components/curio/LearningProgress';
 import ExplorationPath from '@/components/curio/ExplorationPath';
+import ConnectionsVisualizer from '@/components/curio/ConnectionsVisualizer';
+import AgeAdaptiveInterface from '@/components/curio/AgeAdaptiveInterface';
+import EnhancedVoiceInput from '@/components/curio/EnhancedVoiceInput';
 
 const EnhancedCurioPage: React.FC = () => {
   const { childId, curioId } = useParams<{ childId: string, curioId: string }>();
@@ -29,6 +33,7 @@ const EnhancedCurioPage: React.FC = () => {
   const { childProfile, isLoading: isLoadingProfile, error: profileError } = useChildProfile(childId);
   const { searchQuery, setSearchQuery, handleSearch } = useSearch();
   const { blocks, isLoading: isLoadingBlocks, error: blocksError, hasMore, loadMore, isFirstLoad, generationError } = useCurioBlocks(childId, curioId, searchQuery);
+  const { playText, isLoading: isVoiceLoading, stopPlaying } = useElevenLabsVoice();
   
   const { 
     handleToggleLike,
@@ -54,6 +59,8 @@ const EnhancedCurioPage: React.FC = () => {
   const [explorationPath, setExplorationPath] = useState<string[]>([]);
   const [isVoiceActive, setIsVoiceActive] = useState(false);
   const [earnedSparks, setEarnedSparks] = useState(0);
+  const [childAge, setChildAge] = useState(10);
+  const [relatedConnections, setRelatedConnections] = useState<{title: string, description: string, type: 'related' | 'deeper' | 'broader'}[]>([]);
   
   const loadTriggerRef = useRef<HTMLDivElement>(null);
 
@@ -64,10 +71,19 @@ const EnhancedCurioPage: React.FC = () => {
   }, [user, childId, navigate]);
 
   useEffect(() => {
+    if (childProfile?.age) {
+      const age = typeof childProfile.age === 'string' 
+        ? parseInt(childProfile.age, 10) 
+        : childProfile.age;
+      setChildAge(age);
+    }
+  }, [childProfile]);
+
+  useEffect(() => {
     if (curioId) {
       supabase
         .from('curios')
-        .select('title, query')
+        .select('title, query, parent_curio_id')
         .eq('id', curioId)
         .single()
         .then(({ data, error }) => {
@@ -75,10 +91,44 @@ const EnhancedCurioPage: React.FC = () => {
             setCurioTitle(data.title);
             // Initialize exploration path with current curio title
             setExplorationPath([data.title]);
+            
+            // If this curio has a parent, increment exploration depth
+            if (data.parent_curio_id) {
+              setExplorationDepth(1);
+              
+              // Load the parent curio to build the path
+              loadCurioAncestors(data.parent_curio_id);
+            }
           }
         });
     }
   }, [curioId]);
+  
+  // Load the ancestry path for this curio
+  const loadCurioAncestors = async (parentId: string, pathSoFar: string[] = []) => {
+    try {
+      const { data, error } = await supabase
+        .from('curios')
+        .select('title, parent_curio_id')
+        .eq('id', parentId)
+        .single();
+        
+      if (data && !error) {
+        const newPath = [data.title, ...pathSoFar];
+        
+        if (data.parent_curio_id) {
+          // Continue up the ancestry tree
+          await loadCurioAncestors(data.parent_curio_id, newPath);
+        } else {
+          // We've reached the root, set the complete path
+          setExplorationPath([data.title, ...pathSoFar, curioTitle || '']);
+          setExplorationDepth(newPath.length);
+        }
+      }
+    } catch (err) {
+      console.error('Error loading curio ancestors:', err);
+    }
+  };
 
   useEffect(() => {
     if (blocks.length > 0 && isFirstLoad) {
@@ -97,8 +147,44 @@ const EnhancedCurioPage: React.FC = () => {
       toast.success("You earned 2 sparks for your curiosity!", {
         icon: "✨"
       });
+      
+      // Generate related connections based on the topic
+      generateRelatedConnections();
     }
   }, [blocks.length, isFirstLoad]);
+  
+  // Generate related connections for the ConnectionsVisualizer
+  const generateRelatedConnections = () => {
+    if (!curioTitle) return;
+    
+    const title = curioTitle.toLowerCase();
+    
+    // Create connections based on the current topic
+    const connections = [
+      {
+        title: `Why is ${title} important?`,
+        description: `Discover the significance and real-world impact of ${title}.`,
+        type: 'deeper' as 'deeper'
+      },
+      {
+        title: `How does ${title} work?`,
+        description: `Explore the fascinating mechanics and processes behind ${title}.`,
+        type: 'deeper' as 'deeper'
+      },
+      {
+        title: `${title} in history`,
+        description: `Journey through time to see how ${title} has evolved and changed.`,
+        type: 'broader' as 'broader'
+      },
+      {
+        title: `Fun facts about ${title}`,
+        description: `Discover surprising and interesting tidbits about ${title}.`,
+        type: 'related' as 'related'
+      }
+    ];
+    
+    setRelatedConnections(connections);
+  };
 
   useEffect(() => {
     if (blocks.length > 0) {
@@ -158,6 +244,7 @@ const EnhancedCurioPage: React.FC = () => {
           child_id: childId,
           title: question,
           query: question,
+          parent_curio_id: curioId // Track the parent-child relationship for path
         })
         .select('id')
         .single();
@@ -210,54 +297,21 @@ const EnhancedCurioPage: React.FC = () => {
       handleRabbitHoleClick(transcript);
     }
   };
+  
+  const handleExplorationNavigate = (index: number) => {
+    // In a real implementation, this would navigate to the specific curio in the path
+    // For now, we'll just show a message
+    toast.info("Path navigation coming soon!");
+  };
 
-  const handleToggleLikeWrapper = (blockId: string) => {
-    if (handleToggleLike) handleToggleLike(blockId);
-  };
-  
-  const handleToggleBookmarkWrapper = (blockId: string) => {
-    if (handleToggleBookmark) handleToggleBookmark(blockId);
-  };
-  
-  const handleReplyWrapper = (blockId: string, message: string) => {
-    if (handleReply) handleReply(blockId, message);
-  };
-  
-  const handleQuizCorrectWrapper = (blockId: string) => {
-    if (handleQuizCorrect) {
-      handleQuizCorrect(blockId);
-      // Award sparks for answering quiz correctly
-      setEarnedSparks(prev => prev + 3);
-      toast.success("You earned 3 sparks for answering correctly!", {
-        icon: "🎯"
-      });
-    }
-  };
-  
-  const handleNewsReadWrapper = (blockId: string) => {
-    if (handleNewsRead) handleNewsRead(blockId);
-  };
-  
-  const handleCreativeUploadWrapper = (blockId: string, content: any = null) => {
-    if (handleCreativeUpload) handleCreativeUpload(blockId, content);
-  };
-  
-  const handleActivityCompleteWrapper = (blockId: string) => {
-    if (handleActivityComplete) handleActivityComplete(blockId);
-  };
-  
-  const handleMindfulnessCompleteWrapper = (blockId: string) => {
-    if (handleMindfulnessComplete) handleMindfulnessComplete(blockId);
-  };
-  
-  const handleTaskCompleteWrapper = (blockId: string) => {
-    if (handleTaskComplete) {
-      handleTaskComplete(blockId);
-      // Award sparks for completing a task
-      setEarnedSparks(prev => prev + 5);
-      toast.success("You earned 5 sparks for completing a task!", {
-        icon: "✅"
-      });
+  const handlePlayContent = (text: string) => {
+    if (text && playText) {
+      playText(text);
+      
+      // Age-appropriate feedback
+      if (childAge < 8) {
+        toast.success("Reading to you!");
+      }
     }
   };
 
@@ -276,12 +330,9 @@ const EnhancedCurioPage: React.FC = () => {
           {explorationPath.length > 1 && (
             <ExplorationPath 
               path={explorationPath} 
-              onNavigate={(index) => {
-                if (index < explorationPath.length - 1) {
-                  // Navigation logic would go here in a real implementation
-                  toast.info("Navigation to previous explorations would happen here");
-                }
-              }} 
+              onNavigate={handleExplorationNavigate}
+              childAge={childAge}
+              explorationDepth={explorationDepth}
             />
           )}
         
@@ -296,14 +347,14 @@ const EnhancedCurioPage: React.FC = () => {
                 {curioTitle}
               </h1>
               
-              {/* Learning Progress - New Component */}
+              {/* Learning Progress - Enhanced with props for blocksExplored */}
               <LearningProgress 
                 sparksEarned={earnedSparks}
                 explorationDepth={explorationDepth}
                 questionCount={blocks.length}
-                blocksExplored={blocks.length}
-                childAge={childProfile?.age ? Number(childProfile.age) : 10}
+                childAge={childAge}
                 streakDays={0}
+                blocksExplored={blocks.length}
               />
             </motion.div>
           )}
@@ -320,12 +371,21 @@ const EnhancedCurioPage: React.FC = () => {
             </div>
           )}
           
+          {curioTitle && !searchQuery && relatedConnections.length > 0 && (
+            <ConnectionsVisualizer
+              currentTopic={curioTitle}
+              connections={relatedConnections}
+              onConnectionClick={handleRabbitHoleClick}
+              childAge={childAge}
+            />
+          )}
+          
           {curioTitle && !searchQuery && (
             <div className="mb-6">
               <InteractiveImageBlock
                 topic={curioTitle}
                 childId={childId || ''}
-                childAge={childProfile?.age ? Number(childProfile.age) : 10}
+                childAge={childAge}
                 onShare={() => {
                   toast.success('Image shared with your learning journey!');
                 }}
@@ -347,18 +407,20 @@ const EnhancedCurioPage: React.FC = () => {
               searchQuery={searchQuery}
               profileId={childId || ''}
               isFirstLoad={isFirstLoad}
-              handleToggleLike={(blockId) => handleToggleLikeWrapper(blockId)}
-              handleToggleBookmark={(blockId) => handleToggleBookmarkWrapper(blockId)}
-              handleReply={(blockId, message) => handleReplyWrapper(blockId, message)}
-              handleQuizCorrect={() => blocks.length > 0 ? handleQuizCorrectWrapper(blocks[0].id) : undefined}
-              handleNewsRead={() => blocks.length > 0 ? handleNewsReadWrapper(blocks[0].id) : undefined}
-              handleCreativeUpload={() => blocks.length > 0 ? handleCreativeUploadWrapper(blocks[0].id) : undefined}
-              handleTaskComplete={() => blocks.length > 0 ? handleTaskCompleteWrapper(blocks[0].id) : undefined}
-              handleActivityComplete={() => blocks.length > 0 ? handleActivityCompleteWrapper(blocks[0].id) : undefined}
-              handleMindfulnessComplete={() => blocks.length > 0 ? handleMindfulnessCompleteWrapper(blocks[0].id) : undefined}
+              handleToggleLike={(blockId) => handleToggleLike(blockId)}
+              handleToggleBookmark={(blockId) => handleToggleBookmark(blockId)}
+              handleReply={(blockId, message) => handleReply(blockId, message)}
+              handleQuizCorrect={() => blocks.length > 0 ? handleQuizCorrect(blocks[0].id) : undefined}
+              handleNewsRead={() => blocks.length > 0 ? handleNewsRead(blocks[0].id) : undefined}
+              handleCreativeUpload={() => blocks.length > 0 ? handleCreativeUpload(blocks[0].id) : undefined}
+              handleTaskComplete={() => blocks.length > 0 ? handleTaskComplete(blocks[0].id) : undefined}
+              handleActivityComplete={() => blocks.length > 0 ? handleActivityComplete(blocks[0].id) : undefined}
+              handleMindfulnessComplete={() => blocks.length > 0 ? handleMindfulnessComplete(blocks[0].id) : undefined}
               handleRabbitHoleClick={handleRabbitHoleClick}
               generationError={!!generationError}
               onRefresh={handleRefresh}
+              onReadAloud={(text) => handlePlayContent(text)}
+              childAge={childAge}
             />
           )}
           
@@ -369,10 +431,16 @@ const EnhancedCurioPage: React.FC = () => {
               className="mt-8"
             >
               <RabbitHoleSuggestions
-                curioTitle={curioTitle || ''}
-                profileId={childId || ''}
+                currentQuestion={curioTitle || ''}
+                suggestions={[
+                  `Why is ${curioTitle} important to learn about?`,
+                  `What are the most amazing facts about ${curioTitle}?`,
+                  `How does ${curioTitle} affect our world?`,
+                  `Tell me about the history of ${curioTitle}`
+                ]}
                 onSuggestionClick={handleRabbitHoleClick}
-                specialistIds={specialistIds}
+                childAge={childAge}
+                explorationDepth={explorationDepth}
               />
             </motion.div>
           )}
@@ -381,17 +449,19 @@ const EnhancedCurioPage: React.FC = () => {
         </div>
       </main>
 
-      {/* Voice Input Button - New Floating Action Button */}
-      <VoiceInputButton 
+      {/* Enhanced Voice Input with age-adaptive UI */}
+      <EnhancedVoiceInput 
         isActive={isVoiceActive}
         onToggle={(active) => setIsVoiceActive(active)}
         onTranscript={handleVoiceInput}
+        childAge={childAge}
+        isProcessing={isVoiceLoading}
       />
 
       <TalkToWhizzy 
         childId={childId || ''}
         curioTitle={curioTitle || undefined}
-        ageGroup={childProfile?.age >= 12 ? '12-16' : childProfile?.age >= 8 ? '8-11' : '5-7'}
+        ageGroup={childAge >= 12 ? '12-16' : childAge >= 8 ? '8-11' : '5-7'}
         onNewQuestionGenerated={handleRabbitHoleClick}
       />
     </div>

@@ -68,7 +68,7 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
         </div>
       )}
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <div className={`grid grid-cols-1 ${childAge < 8 ? '' : 'sm:grid-cols-2'} gap-2`}>
         {suggestions.map((suggestion, index) => (
           <motion.div
             key={index}
@@ -77,15 +77,30 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
           >
             <Button
               variant="ghost"
-              className="w-full justify-start text-left bg-white/5 hover:bg-white/10 text-white/80 hover:text-white border border-white/10"
+              className={`w-full justify-start text-left bg-white/5 hover:bg-white/10 text-white/80 hover:text-white border border-white/10 ${
+                childAge < 8 ? 'py-3 text-base' : ''
+              }`}
               onClick={() => onSuggestionClick(suggestion)}
             >
               {getThemeIcon(suggestion, index)}
               <span className="truncate">{suggestion}</span>
+              
+              {childAge < 8 && (
+                <span className="ml-auto text-lg">✨</span>
+              )}
             </Button>
           </motion.div>
         ))}
       </div>
+      
+      {/* For younger kids, add more visual cues */}
+      {childAge < 8 && (
+        <div className="mt-3 flex justify-center">
+          {['🔍', '🌟', '🚀', '🧠', '💫'].map((emoji, i) => (
+            <span key={i} className="mx-2 text-xl">{emoji}</span>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

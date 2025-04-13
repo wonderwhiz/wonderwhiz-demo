@@ -1,18 +1,8 @@
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Thumbs } from '@/utilities/Icons';
-import { BookmarkIcon, ThumbsUp, MessageSquare, Share2 } from 'lucide-react';
-import { toast } from 'sonner';
-import SpecialistAvatar from './SpecialistAvatar';
-import FlashcardBlock from './content-blocks/FlashcardBlock';
-import CreativeBlock from './content-blocks/CreativeBlock';
-import TaskBlock from './content-blocks/TaskBlock';
-import RiddleBlock from './content-blocks/RiddleBlock';
-import NewsBlock from './content-blocks/NewsBlock';
-import ActivityBlock from './content-blocks/ActivityBlock';
-import MindfulnessBlock from './content-blocks/MindfulnessBlock';
-import QuizBlock from './QuizBlock';
+import React from 'react';
+import { Heart, Bookmark, MessageCircle, Share, VolumeIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { AgeAdaptiveInterface } from '@/components/curio/AgeAdaptiveInterface';
 
 interface ContentBlockProps {
   block: any;
@@ -26,6 +16,8 @@ interface ContentBlockProps {
   onNewsRead?: () => void;
   onQuizCorrect?: () => void;
   onRabbitHoleClick?: (question: string) => void;
+  onReadAloud?: (text: string) => void;
+  childAge?: number;
   profileId?: string;
 }
 
@@ -41,316 +33,238 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   onNewsRead,
   onQuizCorrect,
   onRabbitHoleClick,
+  onReadAloud,
+  childAge = 10,
   profileId
 }) => {
-  const [height, setHeight] = useState<number | null>(null);
-  const [showReplyForm, setShowReplyForm] = useState(false);
-  const [reply, setReply] = useState('');
-  const [showFeedback, setShowFeedback] = useState(false);
-  const [creativeUploadFeedback, setCreativeUploadFeedback] = useState<string | null>(null);
+  const [showReplyInput, setShowReplyInput] = React.useState(false);
+  const [replyText, setReplyText] = React.useState('');
   
-  const updateHeight = (newHeight: number) => {
-    if (height !== newHeight) {
-      setHeight(newHeight);
+  // Handle sending a reply
+  const handleSendReply = () => {
+    if (replyText.trim() && onReply) {
+      onReply(replyText);
+      setReplyText('');
+      setShowReplyInput(false);
+    }
+  };
+
+  // Extract the main content text from different block types
+  const getBlockContent = () => {
+    if (!block.content) return '';
+    
+    if (block.type === 'fact' || block.type === 'funFact') {
+      return block.content.fact || block.content.text || '';
+    } else if (block.type === 'quiz') {
+      return block.content.question || '';
+    } else if (block.type === 'creative') {
+      return block.content.prompt || '';
+    } else if (block.content.description) {
+      return block.content.description;
+    } else if (typeof block.content === 'string') {
+      return block.content;
+    }
+    
+    return '';
+  };
+  
+  // Get a title for the block based on its type
+  const getBlockTitle = () => {
+    if (block.type === 'fact') return 'Fascinating Fact';
+    if (block.type === 'funFact') return 'Fun Fact';
+    if (block.type === 'quiz') return 'Quiz Question';
+    if (block.type === 'creative') return 'Creative Challenge';
+    if (block.type === 'activity') return 'Activity';
+    if (block.type === 'mindfulness') return 'Reflection';
+    
+    return block.content?.title || 'Discovery';
+  };
+  
+  // Determine the block type for color theming
+  const getBlockType = () => {
+    if (block.type === 'quiz') return 'quiz';
+    if (block.type === 'creative') return 'creative';
+    if (block.type === 'fact' || block.type === 'funFact') return 'fact';
+    return 'question';
+  };
+  
+  // Handle read aloud functionality
+  const handleReadAloud = () => {
+    if (onReadAloud) {
+      const content = getBlockContent();
+      if (content) {
+        onReadAloud(content);
+      }
     }
   };
   
-  const handleSubmitReply = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (reply.trim() && onReply) {
-      onReply(reply);
-      setReply('');
-      setShowReplyForm(false);
-      toast.success("Reply sent!");
-      setShowFeedback(true);
-      
-      setTimeout(() => {
-        setShowFeedback(false);
-      }, 3000);
+  // Generate content section based on block type
+  const renderContent = () => {
+    const content = getBlockContent();
+    
+    // For younger children, simplify complex content
+    if (childAge < 8) {
+      return (
+        <div>
+          <p>{content}</p>
+          
+          {block.type === 'quiz' && block.content?.options && (
+            <div className="mt-4 space-y-2">
+              {block.content.options.map((option: string, idx: number) => (
+                <button
+                  key={idx}
+                  className="w-full text-left p-3 bg-white/10 hover:bg-white/20 rounded-lg transition-colors flex items-center"
+                  onClick={() => idx === block.content.correctIndex && onQuizCorrect?.()}
+                >
+                  <div className="w-8 h-8 rounded-full bg-wonderwhiz-purple flex items-center justify-center mr-3">
+                    {String.fromCharCode(65 + idx)}
+                  </div>
+                  <span>{option}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      );
     }
+    
+    // Default rendering for older children
+    return (
+      <div>
+        <p>{content}</p>
+        
+        {block.type === 'quiz' && block.content?.options && (
+          <div className="mt-4 space-y-2">
+            {block.content.options.map((option: string, idx: number) => (
+              <button
+                key={idx}
+                className="w-full text-left p-3 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+                onClick={() => idx === block.content.correctIndex && onQuizCorrect?.()}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
   };
   
-  const handleCreativeUpload = () => {
-    if (onCreativeUpload) {
-      onCreativeUpload();
-      setCreativeUploadFeedback("Your artwork is amazing! I love the colors and creativity you've shown. You're a wonderful artist!");
+  // Generate suggested follow-up questions if available
+  const getSuggestedQuestions = () => {
+    if (block.content?.rabbitHoles && block.content.rabbitHoles.length > 0) {
+      return block.content.rabbitHoles;
     }
+    
+    // Generate some default follow-up questions based on the content
+    const content = getBlockContent().toLowerCase();
+    if (content) {
+      return [
+        `Why is this important?`,
+        `Tell me more about this`,
+        `What's another interesting fact about this?`
+      ];
+    }
+    
+    return [];
   };
   
   return (
-    <motion.div 
-      className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 p-4 sm:p-5 shadow-sm"
-      initial={{ y: 20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.3 }}
+    <AgeAdaptiveInterface
+      childAge={childAge}
+      title={getBlockTitle()}
+      content={renderContent()}
+      type={getBlockType()}
+      onPrimaryAction={handleReadAloud}
+      primaryActionText="Read Aloud"
+      className="mb-6"
     >
-      <div className="flex mb-3">
-        <SpecialistAvatar specialistId={block.specialist_id} />
-        <div className="ml-3">
-          <h3 className="text-white font-medium">{getSpecialistName(block.specialist_id)}</h3>
-          <p className="text-white/60 text-xs">{getSpecialistTitle(block.specialist_id)}</p>
+      {/* Block actions */}
+      <div className="flex items-center justify-between mt-4 pt-2 border-t border-white/10">
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={onLike}
+            className={`flex items-center text-white/60 hover:text-white/90 ${
+              block.liked ? 'text-wonderwhiz-bright-pink' : ''
+            }`}
+          >
+            <Heart className="h-4 w-4 mr-1" fill={block.liked ? 'currentColor' : 'none'} />
+            <span className="text-xs">Like</span>
+          </button>
+          
+          <button
+            onClick={onBookmark}
+            className={`flex items-center text-white/60 hover:text-white/90 ${
+              block.bookmarked ? 'text-wonderwhiz-gold' : ''
+            }`}
+          >
+            <Bookmark className="h-4 w-4 mr-1" fill={block.bookmarked ? 'currentColor' : 'none'} />
+            <span className="text-xs">Save</span>
+          </button>
+          
+          <button
+            onClick={() => setShowReplyInput(!showReplyInput)}
+            className="flex items-center text-white/60 hover:text-white/90"
+          >
+            <MessageCircle className="h-4 w-4 mr-1" />
+            <span className="text-xs">Discuss</span>
+          </button>
+          
+          <button
+            onClick={handleReadAloud}
+            className="flex items-center text-white/60 hover:text-white/90"
+          >
+            <VolumeIcon className="h-4 w-4 mr-1" />
+            <span className="text-xs">{childAge < 8 ? "Hear It" : "Listen"}</span>
+          </button>
         </div>
       </div>
       
-      <div className="mb-4">
-        {block.type === 'fact' && (
-          <p className="text-white text-sm sm:text-base">{block.content.fact}</p>
-        )}
-        
-        {block.type === 'funFact' && (
-          <div className="p-4 bg-gradient-to-br from-wonderwhiz-bright-pink/20 to-wonderwhiz-blue-accent/20 rounded-lg">
-            <p className="text-white text-sm sm:text-base">{block.content.text}</p>
+      {/* Reply input */}
+      {showReplyInput && (
+        <div className="mt-3 bg-white/5 p-3 rounded-lg">
+          <textarea
+            value={replyText}
+            onChange={(e) => setReplyText(e.target.value)}
+            placeholder="Share your thoughts..."
+            className="w-full bg-white/10 border border-white/20 rounded-lg p-2 text-white placeholder-white/50 text-sm"
+            rows={2}
+          />
+          
+          <div className="flex justify-end mt-2">
+            <Button variant="outline" size="sm" className="mr-2" onClick={() => setShowReplyInput(false)}>
+              Cancel
+            </Button>
+            
+            <Button size="sm" onClick={handleSendReply} disabled={!replyText.trim()}>
+              Send
+            </Button>
           </div>
-        )}
-        
-        {block.type === 'quiz' && (
-          <QuizBlock
-            question={block.content.question}
-            options={block.content.options}
-            correctIndex={block.content.correctIndex}
-            onCorrect={onQuizCorrect}
-            specialistId={block.specialist_id}
-          />
-        )}
-        
-        {block.type === 'flashcard' && (
-          <FlashcardBlock
-            content={block.content}
-            specialistId={block.specialist_id}
-            updateHeight={updateHeight}
-          />
-        )}
-        
-        {block.type === 'creative' && (
-          <CreativeBlock
-            content={block.content}
-            specialistId={block.specialist_id}
-            onCreativeUpload={handleCreativeUpload}
-            uploadFeedback={creativeUploadFeedback}
-            updateHeight={updateHeight}
-            curioId={block.curio_id}
-          />
-        )}
-        
-        {block.type === 'task' && (
-          <TaskBlock
-            content={block.content}
-            specialistId={block.specialist_id}
-            onTaskComplete={onTaskComplete}
-            updateHeight={updateHeight}
-          />
-        )}
-        
-        {block.type === 'riddle' && (
-          <RiddleBlock
-            content={block.content}
-            specialistId={block.specialist_id}
-            updateHeight={updateHeight}
-          />
-        )}
-        
-        {block.type === 'news' && (
-          <NewsBlock
-            content={block.content}
-            specialistId={block.specialist_id}
-            onNewsRead={onNewsRead}
-            updateHeight={updateHeight}
-          />
-        )}
-        
-        {block.type === 'activity' && (
-          <ActivityBlock
-            content={block.content}
-            specialistId={block.specialist_id}
-            onActivityComplete={onActivityComplete}
-            updateHeight={updateHeight}
-          />
-        )}
-        
-        {block.type === 'mindfulness' && (
-          <MindfulnessBlock
-            content={block.content}
-            specialistId={block.specialist_id}
-            onMindfulnessComplete={onMindfulnessComplete}
-            updateHeight={updateHeight}
-          />
-        )}
-      </div>
-      
-      {/* Block interactions: like, bookmark, reply */}
-      <div className="flex flex-wrap gap-3 mt-3">
-        <button 
-          onClick={onLike}
-          className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs ${
-            block.liked 
-              ? 'bg-wonderwhiz-purple text-white' 
-              : 'bg-white/5 hover:bg-white/10 text-white'
-          }`}
-        >
-          <ThumbsUp className="mr-1.5 h-3.5 w-3.5" />
-          {block.liked ? 'Liked' : 'Like'}
-        </button>
-        
-        <button 
-          onClick={onBookmark}
-          className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs ${
-            block.bookmarked 
-              ? 'bg-wonderwhiz-gold text-black' 
-              : 'bg-white/5 hover:bg-white/10 text-white'
-          }`}
-        >
-          <BookmarkIcon className="mr-1.5 h-3.5 w-3.5" />
-          {block.bookmarked ? 'Saved' : 'Save'}
-        </button>
-        
-        {onReply && (
-          <button 
-            onClick={() => setShowReplyForm(prev => !prev)}
-            className="inline-flex items-center rounded-full px-3 py-1.5 text-xs bg-white/5 hover:bg-white/10 text-white"
-          >
-            <MessageSquare className="mr-1.5 h-3.5 w-3.5" />
-            Reply
-          </button>
-        )}
-        
-        <button 
-          onClick={() => {
-            if (navigator.share) {
-              navigator.share({
-                title: 'Check out what I learned!',
-                text: getShareText(block),
-              }).catch((error) => console.log('Error sharing', error));
-            } else {
-              // Fallback
-              navigator.clipboard.writeText(getShareText(block))
-                .then(() => toast.success("Content copied to clipboard!"))
-                .catch(err => console.error('Could not copy text: ', err));
-            }
-          }}
-          className="inline-flex items-center rounded-full px-3 py-1.5 text-xs bg-white/5 hover:bg-white/10 text-white ml-auto"
-        >
-          <Share2 className="mr-1.5 h-3.5 w-3.5" />
-          Share
-        </button>
-      </div>
-      
-      {/* Reply form */}
-      {showReplyForm && (
-        <motion.div 
-          className="mt-4"
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          exit={{ opacity: 0, height: 0 }}
-        >
-          <form onSubmit={handleSubmitReply} className="space-y-3">
-            <textarea
-              value={reply}
-              onChange={(e) => setReply(e.target.value)}
-              placeholder="Share your thoughts..."
-              className="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white text-sm focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/50"
-              rows={3}
-            />
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setShowReplyForm(false)}
-                className="px-3 py-1.5 text-xs bg-white/5 hover:bg-white/10 text-white rounded-md"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={!reply.trim()}
-                className="px-3 py-1.5 text-xs bg-wonderwhiz-purple hover:bg-wonderwhiz-purple/90 text-white rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Send
-              </button>
-            </div>
-          </form>
-        </motion.div>
+        </div>
       )}
       
-      {/* Reply feedback */}
-      {showFeedback && (
-        <motion.div 
-          className="mt-4 p-3 bg-white/5 rounded-lg border border-wonderwhiz-purple/30"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-        >
-          <p className="text-white text-sm">
-            Thank you for sharing your thoughts! Your perspective helps make learning more engaging.
-          </p>
-        </motion.div>
-      )}
-      
-      {/* Related questions for rabbit hole journeys */}
-      {block.content?.rabbitHoles && block.content.rabbitHoles.length > 0 && onRabbitHoleClick && (
-        <div className="mt-4 pt-3 border-t border-white/10">
-          <p className="text-white/70 text-xs mb-2">Related questions to explore:</p>
+      {/* Suggested follow-up questions */}
+      {onRabbitHoleClick && getSuggestedQuestions().length > 0 && (
+        <div className="mt-4 space-y-2">
+          <p className="text-xs text-white/70 mb-1">Follow-up Questions:</p>
+          
           <div className="flex flex-wrap gap-2">
-            {block.content.rabbitHoles.map((question: string, index: number) => (
-              <button
-                key={index}
+            {getSuggestedQuestions().slice(0, 3).map((question, idx) => (
+              <Button
+                key={idx}
+                variant="outline"
+                size="sm"
+                className="bg-white/5 hover:bg-white/10 text-white/80 border-white/10"
                 onClick={() => onRabbitHoleClick(question)}
-                className="text-xs px-3 py-1.5 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 rounded-full transition-colors"
               >
-                {question}
-              </button>
+                <span className="truncate">{question}</span>
+              </Button>
             ))}
           </div>
         </div>
       )}
-    </motion.div>
+    </AgeAdaptiveInterface>
   );
-};
-
-// Helper functions
-const getSpecialistName = (specialistId: string): string => {
-  switch (specialistId) {
-    case 'nova': return 'Nova';
-    case 'spark': return 'Spark';
-    case 'prism': return 'Prism';
-    case 'pixel': return 'Pixel';
-    case 'atlas': return 'Atlas';
-    case 'lotus': return 'Lotus';
-    default: return 'Specialist';
-  }
-};
-
-const getSpecialistTitle = (specialistId: string): string => {
-  switch (specialistId) {
-    case 'nova': return 'Space Explorer';
-    case 'spark': return 'Creative Expert';
-    case 'prism': return 'Science Specialist';
-    case 'pixel': return 'Tech Wizard';
-    case 'atlas': return 'History Guide';
-    case 'lotus': return 'Nature Scholar';
-    default: return 'Knowledge Specialist';
-  }
-};
-
-const getShareText = (block: any): string => {
-  let text = `I learned something cool with WonderWhiz! `;
-  
-  switch (block.type) {
-    case 'fact':
-      text += block.content.fact;
-      break;
-    case 'funFact':
-      text += block.content.text;
-      break;
-    case 'quiz':
-      text += `Quiz: ${block.content.question}`;
-      break;
-    case 'flashcard':
-      text += `Did you know: ${block.content.front} ${block.content.back}`;
-      break;
-    default:
-      text += `Check out this ${block.type} content I discovered!`;
-  }
-  
-  return text;
 };
 
 export default ContentBlock;

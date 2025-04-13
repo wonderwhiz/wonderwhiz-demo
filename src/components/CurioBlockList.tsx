@@ -25,6 +25,8 @@ interface CurioBlockListProps {
   handleMindfulnessComplete: () => void;
   handleRabbitHoleClick: (question: string) => void;
   onRefresh?: () => void;
+  onReadAloud?: (text: string) => void; // New prop for voice readout
+  childAge?: number; // New prop for age adaptation
 }
 
 const CurioBlockList: React.FC<CurioBlockListProps> = ({
@@ -47,7 +49,9 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
   handleActivityComplete,
   handleMindfulnessComplete,
   handleRabbitHoleClick,
-  onRefresh
+  onRefresh,
+  onReadAloud,
+  childAge = 10
 }) => {
   const blockEntryAnimations = {
     hidden: { opacity: 0, y: 20 },
@@ -61,6 +65,22 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
       }
     })
   };
+
+  // Auto-read first block for young children on first load
+  React.useEffect(() => {
+    if (isFirstLoad && blocks.length > 0 && childAge < 8 && onReadAloud) {
+      // For very young children, automatically read the first content block
+      const firstBlockContent = blocks[0]?.content?.fact || 
+                               blocks[0]?.content?.text || 
+                               blocks[0]?.content?.description || '';
+      
+      if (firstBlockContent) {
+        setTimeout(() => {
+          onReadAloud(firstBlockContent);
+        }, 1000); // Small delay to let UI settle
+      }
+    }
+  }, [isFirstLoad, blocks, childAge, onReadAloud]);
 
   if (blocks.length === 0 && searchQuery) {
     return (
@@ -109,6 +129,8 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
             onNewsRead={handleNewsRead}
             onQuizCorrect={handleQuizCorrect}
             onRabbitHoleClick={handleRabbitHoleClick}
+            onReadAloud={onReadAloud}
+            childAge={childAge}
             profileId={profileId}
           />
         </motion.div>
