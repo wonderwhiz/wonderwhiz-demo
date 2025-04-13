@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -83,7 +82,7 @@ const EnhancedCurioPage: React.FC = () => {
     if (curioId) {
       supabase
         .from('curios')
-        .select('title, query, parent_curio_id')
+        .select('title, query')
         .eq('id', curioId)
         .single()
         .then(({ data, error }) => {
@@ -92,38 +91,29 @@ const EnhancedCurioPage: React.FC = () => {
             // Initialize exploration path with current curio title
             setExplorationPath([data.title]);
             
-            // If this curio has a parent, increment exploration depth
-            if (data.parent_curio_id) {
-              setExplorationDepth(1);
-              
-              // Load the parent curio to build the path
-              loadCurioAncestors(data.parent_curio_id);
-            }
+            // For initial implementation, just set a default exploration depth
+            // Later we can modify the database to track parent-child relationships
+            setExplorationDepth(1);
           }
         });
     }
   }, [curioId]);
   
-  // Load the ancestry path for this curio
+  // Simplified function that would normally load the ancestry path for this curio
+  // Currently we're simulating the path since parent_curio_id doesn't exist in the DB structure
   const loadCurioAncestors = async (parentId: string, pathSoFar: string[] = []) => {
     try {
       const { data, error } = await supabase
         .from('curios')
-        .select('title, parent_curio_id')
+        .select('title')
         .eq('id', parentId)
         .single();
         
       if (data && !error) {
         const newPath = [data.title, ...pathSoFar];
-        
-        if (data.parent_curio_id) {
-          // Continue up the ancestry tree
-          await loadCurioAncestors(data.parent_curio_id, newPath);
-        } else {
-          // We've reached the root, set the complete path
-          setExplorationPath([data.title, ...pathSoFar, curioTitle || '']);
-          setExplorationDepth(newPath.length);
-        }
+        // For the simplified version, we'll just consider this the complete path
+        setExplorationPath([data.title, ...pathSoFar, curioTitle || '']);
+        setExplorationDepth(newPath.length);
       }
     } catch (err) {
       console.error('Error loading curio ancestors:', err);
@@ -223,13 +213,18 @@ const EnhancedCurioPage: React.FC = () => {
     return <CurioLoadingState message="Loading profile..." />;
   }
 
+  const handleNavigateToIndex = (index: number) => {
+    // This would typically navigate to a specific path index
+    toast.info(`Navigation to exploration step ${index+1}`);
+  };
+  
   const handleBackToDashboard = () => {
     navigate(`/dashboard/${childId}`);
   };
-
-  const handleRefresh = () => {
-    setRefreshing(true);
-    window.location.reload();
+  
+  const handleStartJourney = () => {
+    setQuickAnswerExpanded(false);
+    window.scrollTo({ top: window.innerHeight * 0.5, behavior: 'smooth' });
   };
   
   const handleRabbitHoleClick = async (question: string) => {
@@ -244,7 +239,8 @@ const EnhancedCurioPage: React.FC = () => {
           child_id: childId,
           title: question,
           query: question,
-          parent_curio_id: curioId // Track the parent-child relationship for path
+          // We'll track the current curio that led to this new one
+          // But we won't reference parent_curio_id since it doesn't exist in the DB yet
         })
         .select('id')
         .single();
@@ -286,11 +282,6 @@ const EnhancedCurioPage: React.FC = () => {
     }
   };
 
-  const handleStartJourney = () => {
-    setQuickAnswerExpanded(false);
-    window.scrollTo({ top: window.innerHeight * 0.5, behavior: 'smooth' });
-  };
-
   const handleVoiceInput = (transcript: string) => {
     if (transcript) {
       setIsVoiceActive(false);
@@ -313,6 +304,11 @@ const EnhancedCurioPage: React.FC = () => {
         toast.success("Reading to you!");
       }
     }
+  };
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    window.location.reload();
   };
 
   return (

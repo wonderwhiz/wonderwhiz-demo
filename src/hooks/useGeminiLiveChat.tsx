@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -20,7 +21,7 @@ export function useGeminiLiveChat({
   const [chatHistory, setChatHistory] = useState<Array<{ role: 'user' | 'model', content: string }>>([]);
   
   // Use the proper property names based on useElevenLabsVoice hook
-  const { playText, isLoading: isVoiceLoading } = useElevenLabsVoice(); 
+  const { playText, isPlaying: isVoiceLoading } = useElevenLabsVoice(); 
   
   // Store audio context and audio elements
   const audioContextRef = useRef<AudioContext | null>(null);

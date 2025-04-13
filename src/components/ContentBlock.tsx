@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Heart, Bookmark, MessageCircle, Share, VolumeIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { AgeAdaptiveInterface } from '@/components/curio/AgeAdaptiveInterface';
+import AgeAdaptiveInterface from '@/components/curio/AgeAdaptiveInterface';
 
 interface ContentBlockProps {
   block: any;
@@ -40,7 +39,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   const [showReplyInput, setShowReplyInput] = React.useState(false);
   const [replyText, setReplyText] = React.useState('');
   
-  // Handle sending a reply
   const handleSendReply = () => {
     if (replyText.trim() && onReply) {
       onReply(replyText);
@@ -49,7 +47,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     }
   };
 
-  // Extract the main content text from different block types
   const getBlockContent = () => {
     if (!block.content) return '';
     
@@ -68,7 +65,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     return '';
   };
   
-  // Get a title for the block based on its type
   const getBlockTitle = () => {
     if (block.type === 'fact') return 'Fascinating Fact';
     if (block.type === 'funFact') return 'Fun Fact';
@@ -80,7 +76,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     return block.content?.title || 'Discovery';
   };
   
-  // Determine the block type for color theming
   const getBlockType = () => {
     if (block.type === 'quiz') return 'quiz';
     if (block.type === 'creative') return 'creative';
@@ -88,7 +83,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     return 'question';
   };
   
-  // Handle read aloud functionality
   const handleReadAloud = () => {
     if (onReadAloud) {
       const content = getBlockContent();
@@ -98,11 +92,9 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     }
   };
   
-  // Generate content section based on block type
   const renderContent = () => {
     const content = getBlockContent();
     
-    // For younger children, simplify complex content
     if (childAge < 8) {
       return (
         <div>
@@ -128,7 +120,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       );
     }
     
-    // Default rendering for older children
     return (
       <div>
         <p>{content}</p>
@@ -150,13 +141,11 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     );
   };
   
-  // Generate suggested follow-up questions if available
   const getSuggestedQuestions = () => {
     if (block.content?.rabbitHoles && block.content.rabbitHoles.length > 0) {
       return block.content.rabbitHoles;
     }
     
-    // Generate some default follow-up questions based on the content
     const content = getBlockContent().toLowerCase();
     if (content) {
       return [
@@ -179,7 +168,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       primaryActionText="Read Aloud"
       className="mb-6"
     >
-      {/* Block actions */}
       <div className="flex items-center justify-between mt-4 pt-2 border-t border-white/10">
         <div className="flex items-center space-x-3">
           <button
@@ -220,7 +208,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         </div>
       </div>
       
-      {/* Reply input */}
       {showReplyInput && (
         <div className="mt-3 bg-white/5 p-3 rounded-lg">
           <textarea
@@ -243,7 +230,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         </div>
       )}
       
-      {/* Suggested follow-up questions */}
       {onRabbitHoleClick && getSuggestedQuestions().length > 0 && (
         <div className="mt-4 space-y-2">
           <p className="text-xs text-white/70 mb-1">Follow-up Questions:</p>
