@@ -2,6 +2,7 @@
 import React from 'react';
 import WelcomeView from './WelcomeView';
 import DiscoverySection from './DiscoverySection';
+import SmartDashboard from './SmartDashboard';
 
 interface WelcomeSectionProps {
   curioSuggestions: string[];
@@ -45,6 +46,17 @@ const WelcomeSection: React.FC<WelcomeSectionProps> = ({
           onCurioSuggestionClick={handleCurioSuggestionClick}
           onRefreshSuggestions={handleRefreshSuggestions}
           isLoadingSuggestions={isLoadingSuggestions}
+        />
+        
+        {/* New SmartDashboard component that implements the WonderWhiz concept */}
+        <SmartDashboard
+          childId={childId}
+          childProfile={childProfile}
+          curioSuggestions={curioSuggestions}
+          isLoadingSuggestions={isLoadingSuggestions}
+          onCurioSuggestionClick={handleCurioSuggestionClick}
+          handleRefreshSuggestions={handleRefreshSuggestions}
+          pastCurios={pastCurios}
         />
         
         {/* Integrated discovery section with improved visuals */}

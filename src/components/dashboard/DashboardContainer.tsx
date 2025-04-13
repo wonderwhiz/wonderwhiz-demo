@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useParams } from 'react-router-dom';
@@ -13,6 +14,7 @@ import { useBlockInteractionHandlers } from '@/hooks/useBlockInteractionHandlers
 import WelcomeSection from '@/components/dashboard/WelcomeSection';
 import TalkToWhizzy from '@/components/curio/TalkToWhizzy';
 import { useElevenLabsVoice } from '@/hooks/useElevenLabsVoice';
+import VoiceInputButton from '@/components/curio/VoiceInputButton';
 
 interface Curio {
   id: string;
@@ -26,6 +28,8 @@ const DashboardContainer = () => {
   const [currentCurio, setCurrentCurio] = useState<Curio | null>(null);
   const { streakDays } = useSparksSystem(profileId);
   const [ageGroup, setAgeGroup] = useState<'5-7' | '8-11' | '12-16'>('8-11');
+  const [childAge, setChildAge] = useState<number>(10);
+  const [isVoiceActive, setIsVoiceActive] = useState(false);
 
   // Fetch profile and curios data
   const {
@@ -84,6 +88,8 @@ const DashboardContainer = () => {
       const age = typeof childProfile.age === 'string' 
         ? parseInt(childProfile.age, 10) 
         : childProfile.age;
+      
+      setChildAge(age);
         
       if (age >= 5 && age <= 7) {
         setAgeGroup('5-7');
@@ -99,10 +105,23 @@ const DashboardContainer = () => {
     setCurrentCurio(curio);
   };
 
+  // Handle voice input transcript
+  const handleVoiceTranscript = (transcript: string) => {
+    if (transcript.trim()) {
+      setQuery(transcript);
+      setIsVoiceActive(false);
+      
+      // Small delay to ensure UI updates before submitting
+      setTimeout(() => {
+        handleSubmitQuery();
+      }, 300);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-wonderwhiz-deep-purple flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-wonderwhiz-bright-pink"></div>
+        <div className="rounded-full h-12 w-12 border-t-2 border-b-2 border-wonderwhiz-bright-pink"></div>
       </div>
     );
   }
@@ -126,6 +145,8 @@ const DashboardContainer = () => {
         <DashboardHeader 
           childName={childProfile?.name || 'Explorer'} 
           profileId={profileId}
+          streakDays={streakDays}
+          childAge={childAge}
         />
         
         <div className="flex-1 overflow-y-auto">
@@ -166,11 +187,21 @@ const DashboardContainer = () => {
                   onNewsRead={handleNewsRead}
                   onCreativeUpload={handleCreativeUpload}
                   generationError={generationError}
+                  playText={playText}
+                  childAge={childAge}
                 />
               )}
             </Card>
           </div>
         </div>
+        
+        {/* Voice Input Button */}
+        <VoiceInputButton 
+          isActive={isVoiceActive}
+          onToggle={setIsVoiceActive}
+          onTranscript={handleVoiceTranscript}
+          childAge={childAge}
+        />
         
         {/* Talk to Whizzy component */}
         {profileId && (

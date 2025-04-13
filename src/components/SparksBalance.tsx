@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Sparkles } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Sparkles, Award } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface SparksBalanceProps {
@@ -10,6 +9,7 @@ interface SparksBalanceProps {
   size?: 'sm' | 'md' | 'lg';
   className?: string;
   showAnimation?: boolean;
+  showLevel?: boolean;
 }
 
 const SparksBalance: React.FC<SparksBalanceProps> = ({ 
@@ -17,12 +17,16 @@ const SparksBalance: React.FC<SparksBalanceProps> = ({
   initialBalance = 0,
   size = 'md',
   className = '',
-  showAnimation = true
+  showAnimation = true,
+  showLevel = true
 }) => {
   const [sparks, setSparks] = useState(initialBalance);
   const [showIncrementAnimation, setShowIncrementAnimation] = useState(false);
   const [previousSparks, setPreviousSparks] = useState(initialBalance);
   const [sparkIncrement, setSparkIncrement] = useState(0);
+  
+  // Calculate level based on sparks
+  const level = Math.floor(sparks / 50) + 1;
   
   // Subscribe to real-time updates for this child's sparks balance
   useEffect(() => {
@@ -30,20 +34,24 @@ const SparksBalance: React.FC<SparksBalanceProps> = ({
     
     // Initial fetch of the current balance
     const fetchSparksBalance = async () => {
-      const { data, error } = await supabase
-        .from('child_profiles')
-        .select('sparks_balance')
-        .eq('id', childId)
-        .single();
-      
-      if (error) {
-        console.error('Error fetching sparks balance:', error);
-        return;
-      }
-      
-      if (data && data.sparks_balance !== undefined) {
-        setSparks(data.sparks_balance);
-        setPreviousSparks(data.sparks_balance);
+      try {
+        const { data, error } = await supabase
+          .from('child_profiles')
+          .select('sparks_balance')
+          .eq('id', childId)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching sparks balance:', error);
+          return;
+        }
+        
+        if (data && data.sparks_balance !== undefined) {
+          setSparks(data.sparks_balance);
+          setPreviousSparks(data.sparks_balance);
+        }
+      } catch (error) {
+        console.error('Error in fetchSparksBalance:', error);
       }
     };
     
@@ -97,50 +105,34 @@ const SparksBalance: React.FC<SparksBalanceProps> = ({
   return (
     <div className={`relative ${className}`}>
       {/* Main balance display */}
-      <motion.div 
+      <div 
         className={`flex items-center px-3 py-1.5 ${size === 'lg' ? 'bg-gradient-to-r from-wonderwhiz-gold/20 to-yellow-500/10' : ''} rounded-full`}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.98 }}
       >
-        <motion.div
-          animate={showIncrementAnimation ? {
-            scale: [1, 1.2, 1],
-            rotate: [0, 5, -5, 0]
-          } : {}}
-          transition={{ duration: 0.5 }}
-          className="mr-1.5"
-        >
+        <div className="mr-1.5">
           <Sparkles className={`${iconSizes[size]} text-wonderwhiz-gold`} />
-        </motion.div>
+        </div>
         
         <span className={`${sizeClasses[size]} text-wonderwhiz-gold font-semibold`}>
           {sparks}
         </span>
-      </motion.div>
-      
-      {/* Increment animation */}
-      <AnimatePresence>
-        {showIncrementAnimation && sparkIncrement > 0 && (
-          <motion.div 
-            className="absolute -top-8 left-1/2 transform -translate-x-1/2 flex items-center justify-center"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: -20 }}
-            exit={{ opacity: 0, y: -40 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-          >
-            <motion.div 
-              className="px-2 py-1 bg-wonderwhiz-gold/20 backdrop-blur-sm rounded-full flex items-center text-wonderwhiz-gold font-bold"
-              animate={{ 
-                scale: [0.8, 1.2, 1],
-              }}
-              transition={{ duration: 0.5 }}
-            >
-              <Sparkles className="w-3 h-3 mr-1" />
-              +{sparkIncrement}
-            </motion.div>
-          </motion.div>
+        
+        {showLevel && (
+          <div className="ml-2 flex items-center text-xs text-white/60 px-1.5 py-0.5 bg-white/10 rounded-full">
+            <Award className="h-3 w-3 mr-1 text-wonderwhiz-gold/70" />
+            <span>Lvl {level}</span>
+          </div>
         )}
-      </AnimatePresence>
+      </div>
+      
+      {/* Increment display - simplified version without animation */}
+      {showIncrementAnimation && sparkIncrement > 0 && (
+        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 flex items-center justify-center">
+          <div className="px-2 py-1 bg-wonderwhiz-gold/20 backdrop-blur-sm rounded-full flex items-center text-wonderwhiz-gold font-bold">
+            <Sparkles className="w-3 h-3 mr-1" />
+            +{sparkIncrement}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
