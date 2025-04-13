@@ -14,6 +14,7 @@ interface AgeAdaptiveInterfaceProps {
   secondaryActionText?: string;
   type?: 'fact' | 'question' | 'creative' | 'quiz';
   className?: string;
+  children?: ReactNode;
 }
 
 const AgeAdaptiveInterface: React.FC<AgeAdaptiveInterfaceProps> = ({
@@ -25,7 +26,8 @@ const AgeAdaptiveInterface: React.FC<AgeAdaptiveInterfaceProps> = ({
   onSecondaryAction,
   secondaryActionText = "Next",
   type = 'fact',
-  className = ""
+  className = "",
+  children
 }) => {
   // Get the appropriate styles and content for the child's age
   const getAgeAppropriateStyles = () => {
@@ -129,6 +131,8 @@ const AgeAdaptiveInterface: React.FC<AgeAdaptiveInterfaceProps> = ({
           )}
         </div>
       )}
+      
+      {children}
     </motion.div>
   );
 };

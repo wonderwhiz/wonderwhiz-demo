@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -297,7 +298,8 @@ const EnhancedCurioPage: React.FC = () => {
 
   const handlePlayContent = (text: string) => {
     if (text && playText) {
-      playText(text);
+      // Fix: Pass the specialist ID as the second argument (using a default value)
+      playText(text, 'whizzy');
       
       // Age-appropriate feedback
       if (childAge < 8) {
@@ -343,7 +345,7 @@ const EnhancedCurioPage: React.FC = () => {
                 {curioTitle}
               </h1>
               
-              {/* Learning Progress - Enhanced with props for blocksExplored */}
+              {/* Learning Progress - Fixed props for blocksExplored */}
               <LearningProgress 
                 sparksEarned={earnedSparks}
                 explorationDepth={explorationDepth}
