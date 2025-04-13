@@ -8,7 +8,7 @@ import { useChildProfile } from '@/hooks/use-child-profile';
 import { useCurioBlocks } from '@/hooks/use-curio-blocks';
 import { useSearch } from '@/hooks/use-search';
 import { useBlockInteractions } from '@/hooks/useBlockInteractions';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import CurioBlockList from '@/components/CurioBlockList';
 import CurioPageSearch from '@/components/curio/CurioPageSearch';
@@ -18,6 +18,9 @@ import RabbitHoleSuggestions from '@/components/content-blocks/RabbitHoleSuggest
 import InteractiveImageBlock from '@/components/content-blocks/InteractiveImageBlock';
 import TalkToWhizzy from '@/components/curio/TalkToWhizzy';
 import QuickAnswer from '@/components/curio/QuickAnswer';
+import VoiceInputButton from '@/components/curio/VoiceInputButton';
+import LearningProgress from '@/components/curio/LearningProgress';
+import ExplorationPath from '@/components/curio/ExplorationPath';
 
 const EnhancedCurioPage: React.FC = () => {
   const { childId, curioId } = useParams<{ childId: string, curioId: string }>();
@@ -48,6 +51,10 @@ const EnhancedCurioPage: React.FC = () => {
   const [specialistIds, setSpecialistIds] = useState<string[]>([]);
   const [showRabbitHoleSuggestions, setShowRabbitHoleSuggestions] = useState(false);
   const [quickAnswerExpanded, setQuickAnswerExpanded] = useState(false);
+  const [explorationDepth, setExplorationDepth] = useState(0);
+  const [explorationPath, setExplorationPath] = useState<string[]>([]);
+  const [isVoiceActive, setIsVoiceActive] = useState(false);
+  const [earnedSparks, setEarnedSparks] = useState(0);
   
   const loadTriggerRef = useRef<HTMLDivElement>(null);
 
@@ -67,6 +74,8 @@ const EnhancedCurioPage: React.FC = () => {
         .then(({ data, error }) => {
           if (data && !error) {
             setCurioTitle(data.title);
+            // Initialize exploration path with current curio title
+            setExplorationPath([data.title]);
           }
         });
     }
@@ -83,6 +92,12 @@ const EnhancedCurioPage: React.FC = () => {
           colors: ['#8b5cf6', '#d946ef', '#3b82f6']
         });
       }, 800);
+      
+      // Award sparks for starting a new exploration
+      setEarnedSparks(prev => prev + 2);
+      toast.success("You earned 2 sparks for your curiosity!", {
+        icon: "✨"
+      });
     }
   }, [blocks.length, isFirstLoad]);
 
@@ -161,6 +176,13 @@ const EnhancedCurioPage: React.FC = () => {
             })
           });
           
+          // Update exploration path
+          setExplorationPath(prev => [...prev, question]);
+          setExplorationDepth(prev => prev + 1);
+          
+          // Award sparks for following a rabbit hole
+          setEarnedSparks(prev => prev + 2);
+          
           confetti({
             particleCount: 100,
             spread: 70,
@@ -183,6 +205,13 @@ const EnhancedCurioPage: React.FC = () => {
     window.scrollTo({ top: window.innerHeight * 0.5, behavior: 'smooth' });
   };
 
+  const handleVoiceInput = (transcript: string) => {
+    if (transcript) {
+      setIsVoiceActive(false);
+      handleRabbitHoleClick(transcript);
+    }
+  };
+
   const handleToggleLikeWrapper = (blockId: string) => {
     if (handleToggleLike) handleToggleLike(blockId);
   };
@@ -196,7 +225,14 @@ const EnhancedCurioPage: React.FC = () => {
   };
   
   const handleQuizCorrectWrapper = (blockId: string) => {
-    if (handleQuizCorrect) handleQuizCorrect(blockId);
+    if (handleQuizCorrect) {
+      handleQuizCorrect(blockId);
+      // Award sparks for answering quiz correctly
+      setEarnedSparks(prev => prev + 3);
+      toast.success("You earned 3 sparks for answering correctly!", {
+        icon: "🎯"
+      });
+    }
   };
   
   const handleNewsReadWrapper = (blockId: string) => {
@@ -216,16 +252,15 @@ const EnhancedCurioPage: React.FC = () => {
   };
   
   const handleTaskCompleteWrapper = (blockId: string) => {
-    if (handleTaskComplete) handleTaskComplete(blockId);
+    if (handleTaskComplete) {
+      handleTaskComplete(blockId);
+      // Award sparks for completing a task
+      setEarnedSparks(prev => prev + 5);
+      toast.success("You earned 5 sparks for completing a task!", {
+        icon: "✅"
+      });
+    }
   };
-
-  if (profileError) {
-    return <CurioErrorState message="Failed to load profile." />;
-  }
-
-  if (isLoadingProfile) {
-    return <CurioLoadingState message="Loading profile..." />;
-  }
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-indigo-950 to-purple-950 overflow-hidden">
@@ -238,15 +273,37 @@ const EnhancedCurioPage: React.FC = () => {
       
       <main className="flex-grow py-6 sm:py-10">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
+          {/* Exploration Path / Breadcrumbs */}
+          {explorationPath.length > 1 && (
+            <ExplorationPath 
+              path={explorationPath} 
+              onNavigate={(index) => {
+                if (index < explorationPath.length - 1) {
+                  // Navigation logic would go here in a real implementation
+                  toast.info("Navigation to previous explorations would happen here");
+                }
+              }} 
+            />
+          )}
+        
           {curioTitle && (
-            <motion.h1
-              className="text-2xl sm:text-3xl font-bold text-white mb-5 text-center sm:text-left font-nunito"
+            <motion.div
+              className="mb-8"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-              {curioTitle}
-            </motion.h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-white mb-5 text-center sm:text-left font-nunito">
+                {curioTitle}
+              </h1>
+              
+              {/* Learning Progress - New Component */}
+              <LearningProgress 
+                sparksEarned={earnedSparks}
+                explorationDepth={explorationDepth}
+                blocksExplored={blocks.length}
+              />
+            </motion.div>
           )}
           
           {curioTitle && !searchQuery && (
@@ -321,6 +378,13 @@ const EnhancedCurioPage: React.FC = () => {
           <div ref={loadTriggerRef} className="h-20" />
         </div>
       </main>
+
+      {/* Voice Input Button - New Floating Action Button */}
+      <VoiceInputButton 
+        isActive={isVoiceActive}
+        onToggle={(active) => setIsVoiceActive(active)}
+        onTranscript={handleVoiceInput}
+      />
 
       <TalkToWhizzy 
         childId={childId || ''}

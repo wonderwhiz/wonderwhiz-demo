@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import SparksBadge from './SparksBadge';
 import { supabase } from '@/integrations/supabase/client';
 
 interface SparksBalanceProps {
@@ -10,17 +9,20 @@ interface SparksBalanceProps {
   initialBalance?: number;
   size?: 'sm' | 'md' | 'lg';
   className?: string;
+  showAnimation?: boolean;
 }
 
 const SparksBalance: React.FC<SparksBalanceProps> = ({ 
   childId, 
   initialBalance = 0,
   size = 'md',
-  className = ''
+  className = '',
+  showAnimation = true
 }) => {
   const [sparks, setSparks] = useState(initialBalance);
-  const [showAnimation, setShowAnimation] = useState(false);
+  const [showIncrementAnimation, setShowIncrementAnimation] = useState(false);
   const [previousSparks, setPreviousSparks] = useState(initialBalance);
+  const [sparkIncrement, setSparkIncrement] = useState(0);
   
   // Subscribe to real-time updates for this child's sparks balance
   useEffect(() => {
@@ -61,10 +63,14 @@ const SparksBalance: React.FC<SparksBalanceProps> = ({
           setPreviousSparks(sparks);
           setSparks(newBalance);
           
-          // Trigger the animation if the balance increased
-          if (newBalance > sparks) {
-            setShowAnimation(true);
-            setTimeout(() => setShowAnimation(false), 2000);
+          // Calculate increment
+          const increment = newBalance - sparks;
+          setSparkIncrement(increment);
+          
+          // Trigger the animation if the balance increased and animations are enabled
+          if (newBalance > sparks && showAnimation) {
+            setShowIncrementAnimation(true);
+            setTimeout(() => setShowIncrementAnimation(false), 3000);
           }
         }
       })
@@ -74,12 +80,12 @@ const SparksBalance: React.FC<SparksBalanceProps> = ({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [childId, sparks]);
+  }, [childId, sparks, showAnimation]);
   
   const sizeClasses = {
     sm: 'text-sm',
     md: 'text-base',
-    lg: 'text-lg font-bold'
+    lg: 'text-xl font-bold'
   };
   
   const iconSizes = {
@@ -89,30 +95,49 @@ const SparksBalance: React.FC<SparksBalanceProps> = ({
   };
   
   return (
-    <div className={`flex items-center ${className}`}>
-      <SparksBadge 
-        sparks={sparks} 
-        size={size === 'sm' ? 'sm' : size === 'md' ? 'md' : 'lg'}
-        showAnimation={showAnimation}
-      />
+    <div className={`relative ${className}`}>
+      {/* Main balance display */}
+      <motion.div 
+        className={`flex items-center px-3 py-1.5 ${size === 'lg' ? 'bg-gradient-to-r from-wonderwhiz-gold/20 to-yellow-500/10' : ''} rounded-full`}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.98 }}
+      >
+        <motion.div
+          animate={showIncrementAnimation ? {
+            scale: [1, 1.2, 1],
+            rotate: [0, 5, -5, 0]
+          } : {}}
+          transition={{ duration: 0.5 }}
+          className="mr-1.5"
+        >
+          <Sparkles className={`${iconSizes[size]} text-wonderwhiz-gold`} />
+        </motion.div>
+        
+        <span className={`${sizeClasses[size]} text-wonderwhiz-gold font-semibold`}>
+          {sparks}
+        </span>
+      </motion.div>
       
-      {/* Show gained sparks animation */}
+      {/* Increment animation */}
       <AnimatePresence>
-        {showAnimation && sparks > previousSparks && (
+        {showIncrementAnimation && sparkIncrement > 0 && (
           <motion.div 
-            className="ml-2 text-wonderwhiz-gold font-medium flex items-center"
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
+            className="absolute -top-8 left-1/2 transform -translate-x-1/2 flex items-center justify-center"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: -20 }}
+            exit={{ opacity: 0, y: -40 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
           >
-            <motion.span
-              initial={{ scale: 0.8 }}
-              animate={{ scale: [0.8, 1.2, 1] }}
+            <motion.div 
+              className="px-2 py-1 bg-wonderwhiz-gold/20 backdrop-blur-sm rounded-full flex items-center text-wonderwhiz-gold font-bold"
+              animate={{ 
+                scale: [0.8, 1.2, 1],
+              }}
               transition={{ duration: 0.5 }}
             >
-              +{sparks - previousSparks}
-            </motion.span>
+              <Sparkles className="w-3 h-3 mr-1" />
+              +{sparkIncrement}
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
