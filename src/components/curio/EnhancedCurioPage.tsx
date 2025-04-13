@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -89,19 +88,13 @@ const EnhancedCurioPage: React.FC = () => {
         .then(({ data, error }) => {
           if (data && !error) {
             setCurioTitle(data.title);
-            // Initialize exploration path with current curio title
             setExplorationPath([data.title]);
-            
-            // For initial implementation, just set a default exploration depth
-            // Later we can modify the database to track parent-child relationships
             setExplorationDepth(1);
           }
         });
     }
   }, [curioId]);
   
-  // Simplified function that would normally load the ancestry path for this curio
-  // Currently we're simulating the path since parent_curio_id doesn't exist in the DB structure
   const loadCurioAncestors = async (parentId: string, pathSoFar: string[] = []) => {
     try {
       const { data, error } = await supabase
@@ -112,7 +105,6 @@ const EnhancedCurioPage: React.FC = () => {
         
       if (data && !error) {
         const newPath = [data.title, ...pathSoFar];
-        // For the simplified version, we'll just consider this the complete path
         setExplorationPath([data.title, ...pathSoFar, curioTitle || '']);
         setExplorationDepth(newPath.length);
       }
@@ -133,24 +125,20 @@ const EnhancedCurioPage: React.FC = () => {
         });
       }, 800);
       
-      // Award sparks for starting a new exploration
       setEarnedSparks(prev => prev + 2);
       toast.success("You earned 2 sparks for your curiosity!", {
         icon: "✨"
       });
       
-      // Generate related connections based on the topic
       generateRelatedConnections();
     }
   }, [blocks.length, isFirstLoad]);
   
-  // Generate related connections for the ConnectionsVisualizer
   const generateRelatedConnections = () => {
     if (!curioTitle) return;
     
     const title = curioTitle.toLowerCase();
     
-    // Create connections based on the current topic
     const connections = [
       {
         title: `Why is ${title} important?`,
@@ -215,7 +203,6 @@ const EnhancedCurioPage: React.FC = () => {
   }
 
   const handleNavigateToIndex = (index: number) => {
-    // This would typically navigate to a specific path index
     toast.info(`Navigation to exploration step ${index+1}`);
   };
   
@@ -240,8 +227,6 @@ const EnhancedCurioPage: React.FC = () => {
           child_id: childId,
           title: question,
           query: question,
-          // We'll track the current curio that led to this new one
-          // But we won't reference parent_curio_id since it doesn't exist in the DB yet
         })
         .select('id')
         .single();
@@ -259,11 +244,9 @@ const EnhancedCurioPage: React.FC = () => {
             })
           });
           
-          // Update exploration path
           setExplorationPath(prev => [...prev, question]);
           setExplorationDepth(prev => prev + 1);
           
-          // Award sparks for following a rabbit hole
           setEarnedSparks(prev => prev + 2);
           
           confetti({
@@ -291,17 +274,13 @@ const EnhancedCurioPage: React.FC = () => {
   };
   
   const handleExplorationNavigate = (index: number) => {
-    // In a real implementation, this would navigate to the specific curio in the path
-    // For now, we'll just show a message
     toast.info("Path navigation coming soon!");
   };
 
   const handlePlayContent = (text: string) => {
     if (text && playText) {
-      // Fix: Pass the specialist ID as the second argument (using a default value)
       playText(text, 'whizzy');
       
-      // Age-appropriate feedback
       if (childAge < 8) {
         toast.success("Reading to you!");
       }
@@ -324,7 +303,6 @@ const EnhancedCurioPage: React.FC = () => {
       
       <main className="flex-grow py-6 sm:py-10">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
-          {/* Exploration Path / Breadcrumbs */}
           {explorationPath.length > 1 && (
             <ExplorationPath 
               path={explorationPath} 
@@ -345,7 +323,6 @@ const EnhancedCurioPage: React.FC = () => {
                 {curioTitle}
               </h1>
               
-              {/* Learning Progress - Fixed props for blocksExplored */}
               <LearningProgress 
                 sparksEarned={earnedSparks}
                 explorationDepth={explorationDepth}
@@ -447,7 +424,6 @@ const EnhancedCurioPage: React.FC = () => {
         </div>
       </main>
 
-      {/* Enhanced Voice Input with age-adaptive UI */}
       <EnhancedVoiceInput 
         isActive={isVoiceActive}
         onToggle={(active) => setIsVoiceActive(active)}
