@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useParams } from 'react-router-dom';
@@ -44,7 +43,7 @@ const DashboardContainer = () => {
   } = useDashboardProfile(profileId);
 
   // Setup Eleven Labs voice
-  const { playText } = useElevenLabsVoice();
+  const { playText, isPlaying, stopPlaying } = useElevenLabsVoice();
 
   // Handle curio creation
   const {

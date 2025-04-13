@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, MicOff, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Mic, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 
 interface VoiceInputButtonProps {
@@ -11,8 +11,8 @@ interface VoiceInputButtonProps {
   childAge?: number;
 }
 
-const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({ 
-  isActive, 
+const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({
+  isActive,
   onToggle,
   onTranscript,
   childAge = 10
@@ -20,14 +20,23 @@ const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({
   const [transcript, setTranscript] = useState('');
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
-  const [isMicSupported, setIsMicSupported] = useState(true);
+
+  // Age-appropriate messages
+  const getPromptMessage = () => {
+    if (childAge < 8) {
+      return "What are you curious about?";
+    } else if (childAge < 13) {
+      return "Ask me anything you're wondering about!";
+    } else {
+      return "Ask your question and I'll find the answer.";
+    }
+  };
 
   useEffect(() => {
-    // Setup Web Speech API
-    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
-    
-    if (SpeechRecognitionAPI) {
-      recognitionRef.current = new SpeechRecognitionAPI();
+    // Check if browser supports speech recognition
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
       recognitionRef.current.continuous = true;
       recognitionRef.current.interimResults = true;
       
@@ -48,24 +57,23 @@ const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({
       
       recognitionRef.current.onerror = (event: any) => {
         console.error('Speech recognition error', event.error);
-        if (event.error === 'not-allowed') {
-          setIsMicSupported(false);
-          toast.error('Microphone access was denied. Please allow microphone access to use this feature.');
+        if (event.error === 'no-speech') {
+          toast.info(childAge < 8 
+            ? "I didn't hear anything. Try again!" 
+            : "No speech detected. Please try again.");
         }
-        setIsListening(false);
-        onToggle(false);
+        stopListening();
       };
       
       recognitionRef.current.onend = () => {
-        if (isListening) {
-          recognitionRef.current.start();
-        } else {
-          onToggle(false);
+        setIsListening(false);
+        if (transcript) {
+          onTranscript(transcript);
+          setTranscript('');
         }
       };
     } else {
-      setIsMicSupported(false);
-      toast.error('Speech recognition is not supported in this browser.');
+      toast.error("Your browser doesn't support voice input.");
     }
     
     return () => {
@@ -73,7 +81,7 @@ const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({
         recognitionRef.current.stop();
       }
     };
-  }, [isListening, onToggle]);
+  }, [transcript, onTranscript, childAge]);
 
   useEffect(() => {
     if (isActive && !isListening) {
@@ -81,144 +89,93 @@ const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({
     } else if (!isActive && isListening) {
       stopListening();
     }
-  }, [isActive]);
+  }, [isActive, isListening]);
 
   const startListening = () => {
-    setTranscript('');
-    setIsListening(true);
-    try {
-      recognitionRef.current?.start();
-      
-      // Age-appropriate messaging
-      let message = "";
-      if (childAge < 7) {
-        message = "I'm listening! What would you like to know about?";
-      } else if (childAge < 12) {
-        message = "I'm listening! What are you curious about today?";
-      } else {
-        message = "Voice input activated. What would you like to explore?";
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.start();
+        setIsListening(true);
+        toast.info(childAge < 8 
+          ? "I'm listening! Tell me what you want to learn!" 
+          : "Listening... Speak your question clearly.");
+      } catch (error) {
+        console.error('Error starting speech recognition:', error);
       }
-      
-      toast.info(message, {
-        position: 'bottom-center',
-        duration: 3000
-      });
-    } catch (error) {
-      console.error('Failed to start listening:', error);
     }
   };
 
   const stopListening = () => {
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch (error) {
+        console.error('Error stopping speech recognition:', error);
+      }
+    }
     setIsListening(false);
-    recognitionRef.current?.stop();
-    
-    if (transcript) {
-      onTranscript(transcript);
-    }
-  };
-
-  const handleButtonClick = () => {
-    if (isListening) {
-      stopListening();
-      onToggle(false);
-    } else {
-      onToggle(true);
-    }
-  };
-
-  const handleCancel = () => {
-    stopListening();
-    setTranscript('');
     onToggle(false);
   };
 
-  if (!isMicSupported) {
-    return (
-      <Button
-        onClick={() => toast.info("Voice input is not available on this device or browser.")}
-        className="fixed bottom-24 right-6 z-40 rounded-full p-0 w-14 h-14 shadow-lg opacity-50 bg-gray-600"
-        aria-label="Voice input not available"
-      >
-        <MicOff className="h-6 w-6 text-white" />
-      </Button>
-    );
-  }
+  const toggleListening = () => {
+    onToggle(!isActive);
+  };
 
   return (
-    <>
-      {/* Floating Action Button */}
-      <div className="fixed bottom-24 right-6 z-40">
-        <Button
-          onClick={handleButtonClick}
-          className={`rounded-full p-0 w-14 h-14 shadow-lg ${
-            isListening
-              ? 'bg-red-500 hover:bg-red-600'
-              : 'bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-purple hover:from-purple-600 hover:to-pink-600'
-          }`}
-          aria-label={isListening ? 'Stop listening' : 'Start voice input'}
-        >
-          {isListening ? (
-            <MicOff className="h-6 w-6 text-white" />
-          ) : (
-            <Mic className="h-6 w-6 text-white" />
-          )}
-        </Button>
-      </div>
-
-      {/* Transcript Dialog */}
-      {isListening && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="relative w-full max-w-md bg-gradient-to-br from-indigo-950 to-purple-900 rounded-xl shadow-2xl p-6">
-            <button
-              onClick={handleCancel}
-              className="absolute top-3 right-3 text-white/70 hover:text-white"
-            >
-              <X className="h-5 w-5" />
-            </button>
-            
-            <div className="text-center mb-4">
-              <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-purple-700/30 mb-4">
-                <Mic className="h-8 w-8 text-purple-400" />
-              </div>
-              <h3 className="text-xl font-bold text-white">What would you like to explore?</h3>
-              <p className="text-white/70 text-sm mt-1">
-                Speak clearly, I'm listening...
-              </p>
+    <div className="fixed right-6 bottom-6 z-30">
+      <AnimatePresence>
+        {isListening && transcript && (
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.8 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.8 }}
+            className="absolute bottom-16 right-0 mb-4 bg-wonderwhiz-deep-purple border border-white/20 rounded-lg p-3 shadow-lg w-64"
+          >
+            <div className="text-xs text-white/60 mb-1">I heard:</div>
+            <div className="text-sm text-white break-words">{transcript}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      <AnimatePresence>
+        {isListening && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0 }}
+            className="absolute -left-16 -translate-x-full bottom-2"
+          >
+            <div className="bg-wonderwhiz-deep-purple text-white text-sm py-2 px-4 rounded-full border border-white/20">
+              {getPromptMessage()}
             </div>
-            
-            <div className="bg-white/10 rounded-lg p-4 min-h-[100px] mb-4">
-              <p className="text-white break-words">
-                {transcript || (
-                  <span className="text-white/50 italic">Listening for your question...</span>
-                )}
-              </p>
-            </div>
-            
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                className="flex-1 border-white/20 text-white"
-                onClick={handleCancel}
-              >
-                Cancel
-              </Button>
-              <Button
-                className="flex-1 bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/80"
-                onClick={() => {
-                  if (transcript) {
-                    stopListening();
-                    onTranscript(transcript);
-                  }
-                }}
-                disabled={!transcript}
-              >
-                Submit
-              </Button>
-            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        className={`rounded-full ${
+          isListening 
+            ? 'bg-wonderwhiz-bright-pink text-white' 
+            : 'bg-wonderwhiz-deep-purple border-2 border-wonderwhiz-bright-pink text-white'
+        } w-14 h-14 flex items-center justify-center shadow-lg`}
+        onClick={toggleListening}
+      >
+        {isListening ? (
+          <div className="relative">
+            <X className="h-6 w-6" />
+            <motion.div
+              className="absolute -inset-4 rounded-full border-2 border-white/40"
+              animate={{ scale: [1, 1.2, 1], opacity: [1, 0.5, 0] }}
+              transition={{ repeat: Infinity, duration: 1.5 }}
+            />
           </div>
-        </div>
-      )}
-    </>
+        ) : (
+          <Mic className="h-6 w-6" />
+        )}
+      </motion.button>
+    </div>
   );
 };
 

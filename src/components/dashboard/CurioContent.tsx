@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -64,9 +63,10 @@ interface CurioContentProps {
   onCreativeUpload: (blockId: string) => void;
   onRefresh?: () => void;
   generationError?: string | null;
+  playText?: (text: string, specialistId: string) => void;
+  childAge?: number;
 }
 
-// Helper function to get specialist information
 const getSpecialistInfo = (specialistId: string) => {
   const specialists = {
     nova: {
@@ -144,7 +144,6 @@ const CurioBlock = ({
     }
   };
 
-  // Function to extract text content based on block type
   const getBlockContent = () => {
     switch (block.type) {
       case 'fact':
@@ -237,7 +236,7 @@ const CurioBlock = ({
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={() => setReplyText(prev => prev ? '' : ' ')} // Toggle reply form
+              onClick={() => setReplyText(prev => prev ? '' : ' ')}
               className="text-white/70 hover:text-white hover:bg-white/10"
             >
               <MessageCircle className="h-4 w-4 mr-1" />
@@ -287,9 +286,10 @@ const CurioContent: React.FC<CurioContentProps> = ({
   onNewsRead,
   onCreativeUpload,
   onRefresh,
-  generationError
+  generationError,
+  playText,
+  childAge
 }) => {
-  // Convert ContentBlock[] to CurioContentBlock[] by adding curio_id if missing
   const convertedBlocks: CurioContentBlock[] = contentBlocks.map(block => ({
     ...block,
     curio_id: block.curio_id || currentCurio?.id || ''
@@ -297,7 +297,9 @@ const CurioContent: React.FC<CurioContentProps> = ({
 
   const handlePlayText = (text: string, specialistId: string) => {
     toast.success("Playing audio...");
-    // This would use the useElevenLabsVoice hook if we integrated it directly here
+    if (playText) {
+      playText(text, specialistId);
+    }
   };
 
   return (
@@ -306,7 +308,6 @@ const CurioContent: React.FC<CurioContentProps> = ({
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-white mb-4">{currentCurio.title}</h2>
           
-          {/* Add the QuickAnswer component */}
           <QuickAnswer 
             question={currentCurio.title}
             isExpanded={false}
@@ -315,7 +316,6 @@ const CurioContent: React.FC<CurioContentProps> = ({
             childId={profileId}
           />
 
-          {/* Interactive Image Block */}
           {profileId && (
             <InteractiveImageBlock
               topic={currentCurio.title}
@@ -361,7 +361,6 @@ const CurioContent: React.FC<CurioContentProps> = ({
         </div>
       )}
       
-      {/* Render individual content blocks */}
       <div className="space-y-6">
         {contentBlocks.map((block) => (
           <CurioBlock 
