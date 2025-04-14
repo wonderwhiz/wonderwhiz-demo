@@ -30,7 +30,6 @@ const DashboardContainer = () => {
   const [childAge, setChildAge] = useState<number>(10);
   const [isVoiceActive, setIsVoiceActive] = useState(false);
 
-  // Fetch profile and curios data
   const {
     childProfile,
     setChildProfile,
@@ -42,10 +41,8 @@ const DashboardContainer = () => {
     handleRefreshSuggestions
   } = useDashboardProfile(profileId);
 
-  // Setup Eleven Labs voice
   const { playText, isPlaying, stopPlaying } = useElevenLabsVoice();
 
-  // Handle curio creation
   const {
     query,
     setQuery,
@@ -55,7 +52,6 @@ const DashboardContainer = () => {
     handleCurioSuggestionClick
   } = useCurioCreation(profileId, childProfile, setPastCurios, setChildProfile, setCurrentCurio);
 
-  // Get content blocks for current curio
   const {
     blocks: contentBlocks,
     isLoading: isLoadingBlocks,
@@ -72,7 +68,6 @@ const DashboardContainer = () => {
     generationError
   } = useCurioData(currentCurio?.id, profileId);
 
-  // Block interaction handlers
   const {
     blockReplies,
     handleBlockReply,
@@ -104,13 +99,11 @@ const DashboardContainer = () => {
     setCurrentCurio(curio);
   };
 
-  // Handle voice input transcript
   const handleVoiceTranscript = (transcript: string) => {
     if (transcript.trim()) {
       setQuery(transcript);
       setIsVoiceActive(false);
       
-      // Small delay to ensure UI updates before submitting
       setTimeout(() => {
         handleSubmitQuery();
       }, 300);
@@ -150,7 +143,6 @@ const DashboardContainer = () => {
         
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-5xl mx-auto space-y-6 p-4">
-            {/* Main content area */}
             <Card className="bg-wonderwhiz-purple/50 backdrop-blur-sm border-white/10 flex-grow relative overflow-hidden shadow-xl rounded-xl">
               {!currentCurio ? (
                 <WelcomeSection 
@@ -194,7 +186,6 @@ const DashboardContainer = () => {
           </div>
         </div>
         
-        {/* Voice Input Button */}
         <VoiceInputButton 
           isActive={isVoiceActive}
           onToggle={setIsVoiceActive}
@@ -202,7 +193,6 @@ const DashboardContainer = () => {
           childAge={childAge}
         />
         
-        {/* Talk to Whizzy component */}
         {profileId && (
           <TalkToWhizzy 
             childId={profileId}

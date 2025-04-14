@@ -59,7 +59,8 @@ interface CurioContentProps {
   onToggleBookmark: (blockId: string) => void;
   onReply: (blockId: string, message: string) => void;
   onSetQuery: (query: string) => void;
-  onRabbitHoleClick: (question: string) => void;
+  // Updated: Rename onRabbitHoleClick to onRabbitHoleFollow for consistency
+  onRabbitHoleFollow: (question: string) => void;
   onQuizCorrect: (blockId: string) => void;
   onNewsRead: (blockId: string) => void;
   onCreativeUpload: (blockId: string) => void;
@@ -343,7 +344,7 @@ const CurioContent: React.FC<CurioContentProps> = ({
   onToggleBookmark,
   onReply,
   onSetQuery,
-  onRabbitHoleClick,
+  onRabbitHoleFollow, // Updated: renamed from onRabbitHoleClick
   onQuizCorrect,
   onNewsRead,
   onCreativeUpload,
