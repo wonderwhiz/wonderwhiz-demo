@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +12,10 @@ import InteractiveImageBlock from '@/components/content-blocks/InteractiveImageB
 import { ContentBlock as CurioContentBlock } from '@/types/curio';
 import { toast } from 'sonner';
 import AgeAdaptiveContent from '@/components/curio/AgeAdaptiveContent';
+import EnhancedSearchBar from '@/components/curio/EnhancedSearchBar';
+import FireflyQuizBlock from '@/components/curio/FireflyQuizBlock';
+import MindfulnessBlock from '@/components/curio/MindfulnessBlock';
+import CreativeBlock from '@/components/curio/CreativeBlock';
 
 interface ContentBlock {
   id: string;
@@ -130,7 +135,8 @@ const CurioBlock = ({
   onToggleBookmark, 
   onReply,
   onReadAloud,
-  childAge = 10
+  childAge = 10,
+  onRabbitHoleFollow
 }: { 
   block: ContentBlock; 
   onToggleLike: (blockId: string) => void;
@@ -138,6 +144,7 @@ const CurioBlock = ({
   onReply: (blockId: string, message: string) => void;
   onReadAloud?: (text: string, specialistId: string) => void;
   childAge?: number;
+  onRabbitHoleFollow?: (question: string) => void;
 }) => {
   const specialist = getSpecialistInfo(block.specialist_id);
   const [replyText, setReplyText] = useState('');
@@ -182,6 +189,44 @@ const CurioBlock = ({
     }
   };
 
+  // For quiz blocks, render the FireflyQuizBlock
+  if (block.type === 'quiz' && block.content?.options) {
+    return (
+      <FireflyQuizBlock
+        question={block.content.question}
+        options={block.content.options}
+        correctIndex={block.content.correctIndex}
+        explanation={block.content.explanation}
+        childAge={childAge}
+      />
+    );
+  }
+
+  // For mindfulness blocks, render the MindfulnessBlock
+  if (block.type === 'mindfulness' && block.content) {
+    return (
+      <MindfulnessBlock
+        title={block.content.title || "Mindfulness Moment"}
+        instructions={block.content.exercise || block.content.text || "Take a moment to breathe and relax."}
+        duration={block.content.duration || 180}
+        benefit={block.content.benefit}
+        childAge={childAge}
+      />
+    );
+  }
+
+  // For creative blocks, render the CreativeBlock
+  if (block.type === 'creative' && block.content) {
+    return (
+      <CreativeBlock
+        prompt={block.content.prompt || "Use your imagination to explore this topic creatively."}
+        examples={block.content.examples || ["Draw a picture", "Write a story", "Make a model"]}
+        specialistId={block.specialist_id}
+        childAge={childAge}
+      />
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -223,38 +268,13 @@ const CurioBlock = ({
             </div>
           )}
           
-          {block.type === 'quiz' && block.content?.options && (
-            <div className="mt-4 space-y-2">
-              {block.content.options.map((option: string, idx: number) => (
-                <button
-                  key={idx}
-                  className={`w-full text-left p-3 ${childAge && childAge < 10 ? 'flex items-center' : ''} 
-                    bg-white/10 hover:bg-white/20 rounded-lg transition-colors`}
-                  onClick={() => {
-                    if (idx === block.content.correctIndex) {
-                      toast.success("Correct answer! 🎉");
-                    } else {
-                      toast.error("Try again!");
-                    }
-                  }}
-                >
-                  {childAge && childAge < 10 && (
-                    <div className="w-8 h-8 rounded-full bg-wonderwhiz-purple flex items-center justify-center mr-3">
-                      {String.fromCharCode(65 + idx)}
-                    </div>
-                  )}
-                  <span>{option}</span>
-                </button>
-              ))}
-            </div>
-          )}
-          
           <div className="flex flex-wrap gap-2 mb-4">
             {block.content?.rabbitHoles?.map((question: string, index: number) => (
               <Badge 
                 key={index} 
                 variant="outline" 
                 className="bg-white/10 hover:bg-white/20 cursor-pointer text-white/90 border-white/20"
+                onClick={() => onRabbitHoleFollow && onRabbitHoleFollow(question)}
               >
                 {question}
               </Badge>
@@ -369,6 +389,14 @@ const CurioContent: React.FC<CurioContentProps> = ({
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-white mb-4">{currentCurio.title}</h2>
           
+          <div className="mb-6">
+            <EnhancedSearchBar
+              onSearch={onSetQuery}
+              placeholder="Ask another question or explore something new..."
+              childAge={childAge}
+            />
+          </div>
+          
           <QuickAnswer 
             question={currentCurio.title}
             isExpanded={false}
@@ -433,6 +461,7 @@ const CurioContent: React.FC<CurioContentProps> = ({
             onReply={onReply}
             onReadAloud={playText}
             childAge={childAge}
+            onRabbitHoleFollow={onRabbitHoleFollow}
           />
         ))}
       </div>

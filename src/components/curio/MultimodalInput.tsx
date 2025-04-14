@@ -2,7 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Mic, Send, Camera, X } from 'lucide-react';
+import { Mic, Send, Camera, X, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface MultimodalInputProps {
@@ -12,6 +12,8 @@ interface MultimodalInputProps {
   childAge?: number;
   initialQuery?: string;
   placeholder?: string;
+  showExploreButton?: boolean;
+  onExplore?: () => void;
 }
 
 const MultimodalInput: React.FC<MultimodalInputProps> = ({
@@ -20,7 +22,9 @@ const MultimodalInput: React.FC<MultimodalInputProps> = ({
   isProcessing = false,
   childAge = 10,
   initialQuery = '',
-  placeholder = 'Ask me anything...'
+  placeholder = 'Ask me anything...',
+  showExploreButton = false,
+  onExplore
 }) => {
   const [query, setQuery] = useState(initialQuery);
   const [isRecording, setIsRecording] = useState(false);
@@ -82,7 +86,7 @@ const MultimodalInput: React.FC<MultimodalInputProps> = ({
             ? (childAge < 8 ? "I'm listening..." : "Listening to your question...") 
             : placeholder
           }
-          className="bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-white placeholder:text-white/50"
+          className="bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-white placeholder:text-white/50 pl-10"
           disabled={isProcessing || isRecording}
         />
         
@@ -123,6 +127,19 @@ const MultimodalInput: React.FC<MultimodalInputProps> = ({
           >
             <Mic className={`h-4 w-4 ${isRecording ? 'animate-pulse' : ''}`} />
           </Button>
+          
+          {showExploreButton && onExplore && (
+            <Button
+              type="button"
+              variant="default"
+              size="sm"
+              onClick={onExplore}
+              className="h-8 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white mr-1 flex items-center"
+            >
+              <Sparkles className="h-3.5 w-3.5 mr-1" />
+              <span className="text-xs">Explore</span>
+            </Button>
+          )}
           
           <Button
             type="submit"

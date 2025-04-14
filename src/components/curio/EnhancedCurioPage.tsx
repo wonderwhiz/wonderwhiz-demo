@@ -24,6 +24,8 @@ import ExplorationPath from '@/components/curio/ExplorationPath';
 import ConnectionsVisualizer from '@/components/curio/ConnectionsVisualizer';
 import AgeAdaptiveInterface from '@/components/curio/AgeAdaptiveInterface';
 import EnhancedVoiceInput from '@/components/curio/EnhancedVoiceInput';
+import EnhancedSearchBar from '@/components/curio/EnhancedSearchBar';
+import EnhancedCurioContent from '@/components/curio/EnhancedCurioContent';
 
 const EnhancedCurioPage: React.FC = () => {
   const { childId, curioId } = useParams<{ childId: string, curioId: string }>();
@@ -293,153 +295,32 @@ const EnhancedCurioPage: React.FC = () => {
     window.location.reload();
   };
 
+  // Use the new EnhancedCurioContent component
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-indigo-950 to-purple-950 overflow-hidden">
-      <CurioPageSearch
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        handleSearch={handleSearch}
-        handleBackToDashboard={handleBackToDashboard}
-      />
-      
-      <main className="flex-grow py-6 sm:py-10">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6">
-          {explorationPath.length > 1 && (
-            <ExplorationPath 
-              path={explorationPath} 
-              onNavigate={handleExplorationNavigate}
-              childAge={childAge}
-              explorationDepth={explorationDepth}
-            />
-          )}
-        
-          {curioTitle && (
-            <motion.div
-              className="mb-8"
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <h1 className="text-2xl sm:text-3xl font-bold text-white mb-5 text-center sm:text-left font-nunito">
-                {curioTitle}
-              </h1>
-              
-              <LearningProgress 
-                sparksEarned={earnedSparks}
-                explorationDepth={explorationDepth}
-                questionCount={blocks.length}
-                childAge={childAge}
-                streakDays={0}
-                blocksExplored={blocks.length}
-              />
-            </motion.div>
-          )}
-          
-          {curioTitle && !searchQuery && (
-            <div className="mb-6">
-              <QuickAnswer 
-                question={curioTitle}
-                isExpanded={quickAnswerExpanded}
-                onToggleExpand={() => setQuickAnswerExpanded(!quickAnswerExpanded)}
-                onStartJourney={handleStartJourney}
-                childId={childId || ''}
-              />
-            </div>
-          )}
-          
-          {curioTitle && !searchQuery && relatedConnections.length > 0 && (
-            <ConnectionsVisualizer
-              currentTopic={curioTitle}
-              connections={relatedConnections}
-              onConnectionClick={handleRabbitHoleClick}
-              childAge={childAge}
-            />
-          )}
-          
-          {curioTitle && !searchQuery && (
-            <div className="mb-6">
-              <InteractiveImageBlock
-                topic={curioTitle}
-                childId={childId || ''}
-                childAge={childAge}
-                onShare={() => {
-                  toast.success('Image shared with your learning journey!');
-                }}
-              />
-            </div>
-          )}
-          
-          {isLoadingBlocks && <CurioLoadingState />}
-          
-          {blocksError && <CurioErrorState message="Failed to load content." />}
-          
-          {blocks.length > 0 && (
-            <CurioBlockList
-              blocks={blocks}
-              animateBlocks={animateBlocks}
-              hasMoreBlocks={hasMore}
-              loadingMoreBlocks={false}
-              loadTriggerRef={loadTriggerRef}
-              searchQuery={searchQuery}
-              profileId={childId || ''}
-              isFirstLoad={isFirstLoad}
-              handleToggleLike={(blockId) => handleToggleLike(blockId)}
-              handleToggleBookmark={(blockId) => handleToggleBookmark(blockId)}
-              handleReply={(blockId, message) => handleReply(blockId, message)}
-              handleQuizCorrect={() => blocks.length > 0 ? handleQuizCorrect(blocks[0].id) : undefined}
-              handleNewsRead={() => blocks.length > 0 ? handleNewsRead(blocks[0].id) : undefined}
-              handleCreativeUpload={() => blocks.length > 0 ? handleCreativeUpload(blocks[0].id) : undefined}
-              handleTaskComplete={() => blocks.length > 0 ? handleTaskComplete(blocks[0].id) : undefined}
-              handleActivityComplete={() => blocks.length > 0 ? handleActivityComplete(blocks[0].id) : undefined}
-              handleMindfulnessComplete={() => blocks.length > 0 ? handleMindfulnessComplete(blocks[0].id) : undefined}
-              handleRabbitHoleClick={handleRabbitHoleClick}
-              generationError={!!generationError}
-              onRefresh={handleRefresh}
-              onReadAloud={(text) => handlePlayContent(text)}
-              childAge={childAge}
-            />
-          )}
-          
-          {showRabbitHoleSuggestions && blocks.length > 0 && !searchQuery && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-8"
-            >
-              <RabbitHoleSuggestions
-                currentQuestion={curioTitle || ''}
-                suggestions={[
-                  `Why is ${curioTitle} important to learn about?`,
-                  `What are the most amazing facts about ${curioTitle}?`,
-                  `How does ${curioTitle} affect our world?`,
-                  `Tell me about the history of ${curioTitle}`
-                ]}
-                onSuggestionClick={handleRabbitHoleClick}
-                childAge={childAge}
-                explorationDepth={explorationDepth}
-              />
-            </motion.div>
-          )}
-          
-          <div ref={loadTriggerRef} className="h-20" />
-        </div>
-      </main>
-
-      <EnhancedVoiceInput 
-        isActive={isVoiceActive}
-        onToggle={(active) => setIsVoiceActive(active)}
-        onTranscript={handleVoiceInput}
-        childAge={childAge}
-        isProcessing={isVoiceLoading}
-      />
-
-      <TalkToWhizzy 
-        childId={childId || ''}
-        curioTitle={curioTitle || undefined}
-        ageGroup={childAge >= 12 ? '12-16' : childAge >= 8 ? '8-11' : '5-7'}
-        onNewQuestionGenerated={handleRabbitHoleClick}
-      />
-    </div>
+    <EnhancedCurioContent
+      title={curioTitle || "Exploring Knowledge"}
+      blocks={blocks}
+      onSearch={(query) => {
+        setSearchQuery(query);
+        handleSearch({ preventDefault: () => {} } as React.FormEvent);
+      }}
+      onVoiceCapture={handleVoiceInput}
+      onImageCapture={(file) => {
+        toast.success("Image received! Analyzing...");
+        // Implement image analysis logic here
+      }}
+      onLike={handleToggleLike}
+      onBookmark={handleToggleBookmark}
+      onReply={handleReply}
+      onReadAloud={(text, specialistId) => {
+        if (playText) {
+          playText(text, specialistId);
+        }
+      }}
+      onExplore={() => toast.info("Explore feature coming soon!")}
+      onRabbitHoleClick={handleRabbitHoleClick}
+      childAge={childAge}
+    />
   );
 };
 
