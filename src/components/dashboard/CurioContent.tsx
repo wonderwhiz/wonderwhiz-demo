@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -59,7 +58,6 @@ interface CurioContentProps {
   onToggleBookmark: (blockId: string) => void;
   onReply: (blockId: string, message: string) => void;
   onSetQuery: (query: string) => void;
-  // Updated: Rename onRabbitHoleClick to onRabbitHoleFollow for consistency
   onRabbitHoleFollow: (question: string) => void;
   onQuizCorrect: (blockId: string) => void;
   onNewsRead: (blockId: string) => void;
@@ -344,7 +342,7 @@ const CurioContent: React.FC<CurioContentProps> = ({
   onToggleBookmark,
   onReply,
   onSetQuery,
-  onRabbitHoleFollow, // Updated: renamed from onRabbitHoleClick
+  onRabbitHoleFollow,
   onQuizCorrect,
   onNewsRead,
   onCreativeUpload,
