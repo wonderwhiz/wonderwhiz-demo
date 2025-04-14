@@ -25,60 +25,26 @@ export function useGeminiImageGeneration({ childAge = 10 }: UseGeminiImageGenera
       
       console.log(`Calling generate-gemini-image with prompt: "${adaptedPrompt}" and style: ${imageStyle}`);
       
-      // Try with the dedicated edge function first
+      // Call the edge function with error handling
       const { data, error } = await supabase.functions.invoke('generate-gemini-image', {
         body: { 
           prompt: adaptedPrompt,
           style: imageStyle,
           childAge: childAge,
-          retryOnFail: true,
-          maxRetries: 2  // Allow multiple retries
+          retryOnFail: true
         }
       });
       
       if (error) {
         console.error('Supabase function error:', error);
-        throw new Error(error.message);
-      }
-      
-      if (!data) {
-        console.error('No data returned from image generation function');
-        
-        // If first function failed, try the contextual image function as backup
-        if (retryCount === 0) {
-          setRetryCount(prev => prev + 1);
-          console.log('Trying alternate image generation endpoint...');
-          
-          const contextualResponse = await supabase.functions.invoke('generate-contextual-image', {
-            body: { 
-              topic: adaptedPrompt,
-              style: imageStyle,
-              childAge: childAge
-            }
-          });
-          
-          if (contextualResponse.error || !contextualResponse.data) {
-            throw new Error(contextualResponse.error?.message || 'Both image generation functions failed');
-          }
-          
-          const contextualData = contextualResponse.data;
-          
-          if (contextualData.imageUrl) {
-            setImageUrl(contextualData.imageUrl);
-            setFallbackSource(contextualData.source || 'alternate');
-            return contextualData.imageUrl;
-          } else {
-            throw new Error('No image URL returned from either function');
-          }
-        } else {
-          throw new Error('Image generation failed on multiple attempts');
-        }
+        throw new Error(error.message || 'Failed to call image generation service');
       }
       
       console.log('Image generation response:', data);
       
-      if (data.success && data.imageUrl) {
-        console.log('Setting image URL from response:', data.imageUrl.substring(0, 50) + '...');
+      // Even if the API had an error, we should get a valid response with success: false
+      // and a fallback image URL
+      if (data?.imageUrl) {
         setImageUrl(data.imageUrl);
         
         if (data.fallback) {
@@ -88,6 +54,13 @@ export function useGeminiImageGeneration({ childAge = 10 }: UseGeminiImageGenera
             toast.info("Using DALL-E image generation", {
               duration: 3000,
               position: "bottom-right"
+            });
+          } else if (data.fallbackSource === 'error') {
+            // This is a placeholder image due to an error
+            setGenerationError('Image generation failed, showing placeholder');
+            toast.error("Couldn't generate image", { 
+              description: data.error || "Please try again later",
+              duration: 3000
             });
           }
         } else if (data.source === 'gemini') {
@@ -99,7 +72,7 @@ export function useGeminiImageGeneration({ childAge = 10 }: UseGeminiImageGenera
         }
         
         return data.imageUrl;
-      } else if (data.error) {
+      } else if (data?.error) {
         throw new Error(data.error);
       } else {
         console.error('No image URL or unsuccessful generation:', data);
@@ -109,15 +82,16 @@ export function useGeminiImageGeneration({ childAge = 10 }: UseGeminiImageGenera
       console.error('Error generating image:', err);
       setGenerationError(err instanceof Error ? err.message : 'Unknown error generating image');
       
-      // Only show toast for final error (not during retry attempts)
-      if (retryCount > 0) {
-        toast.error("Couldn't generate image", {
-          description: "Image generation failed. Please try again later.",
-          duration: 3000
-        });
-      }
+      toast.error("Couldn't generate image", {
+        description: "Image generation failed. Please try again later.",
+        duration: 3000
+      });
       
-      return null;
+      // Set a placeholder image as fallback
+      const placeholderUrl = 'https://placehold.co/600x400/252238/FFFFFF?text=Image+Generation+Failed';
+      setImageUrl(placeholderUrl);
+      setFallbackSource('error');
+      return placeholderUrl;
     } finally {
       setIsGenerating(false);
       // Reset retry count after complete attempt (success or final failure)

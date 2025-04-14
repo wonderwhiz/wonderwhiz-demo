@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Image, RefreshCw, Download, Share2, Wand2 } from 'lucide-react';
+import { Image, RefreshCw, Download, Share2, Wand2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useGeminiImageGeneration } from '@/hooks/useGeminiImageGeneration';
 import { toast } from 'sonner';
@@ -30,6 +30,7 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
 }) => {
   const [currentStyle, setCurrentStyle] = useState('cartoon');
   const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const [imageLoadError, setImageLoadError] = useState(false);
   const { 
     generateImage, 
     isGenerating, 
@@ -49,6 +50,7 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
     try {
       resetImage();
       setIsImageLoaded(false);
+      setImageLoadError(false);
       
       // Create style-specific prompt
       let stylePrompt = '';
@@ -74,17 +76,14 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
       
       // Generate a prompt based on the topic
       const prompt = `Educational illustration about ${topic}${stylePrompt}`;
-      console.log(`Generating image with prompt: ${prompt}`);
       
       const generatedImageUrl = await generateImage(prompt, currentStyle);
-      if (generatedImageUrl) {
-        console.log('Image generated successfully:', generatedImageUrl.substring(0, 50) + '...');
-      } else {
-        console.error('No image URL returned from generateImage');
-        toast.error('Could not generate image');
+      if (!generatedImageUrl) {
+        setImageLoadError(true);
       }
     } catch (error) {
       console.error('Failed to generate image:', error);
+      setImageLoadError(true);
       toast.error('Could not generate image at this time');
     }
   };
@@ -94,16 +93,43 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
     handleGenerateImage();
   };
   
+  const handleImageError = () => {
+    setImageLoadError(true);
+    setIsImageLoaded(false);
+  };
+  
   const handleDownload = () => {
     if (imageUrl) {
-      const link = document.createElement('a');
-      link.href = imageUrl;
-      link.download = `${topic.replace(/\s+/g, '-').toLowerCase()}-${currentStyle}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      // For placeholder images or data URLs, we need to handle differently
+      if (imageUrl.startsWith('data:')) {
+        // For data URLs
+        const link = document.createElement('a');
+        link.href = imageUrl;
+        link.download = `${topic.replace(/\s+/g, '-').toLowerCase()}-${currentStyle}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        // For remote URLs, fetch the image first
+        fetch(imageUrl)
+          .then(response => response.blob())
+          .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${topic.replace(/\s+/g, '-').toLowerCase()}-${currentStyle}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+          })
+          .catch(err => {
+            console.error('Failed to download image:', err);
+            toast.error('Could not download image');
+          });
+      }
       
-      toast.success('Image downloaded successfully!');
+      toast.success('Image downloading...');
     }
   };
   
@@ -144,7 +170,7 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
               variant="outline"
               size="icon"
               onClick={handleDownload}
-              disabled={!imageUrl || isGenerating}
+              disabled={!imageUrl || isGenerating || imageLoadError}
               className="h-8 w-8 rounded-full bg-white/10 border-white/20 text-white/70"
             >
               <Download className="h-4 w-4" />
@@ -154,7 +180,7 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
               variant="outline"
               size="icon"
               onClick={handleShare}
-              disabled={!imageUrl || isGenerating}
+              disabled={!imageUrl || isGenerating || imageLoadError}
               className="h-8 w-8 rounded-full bg-white/10 border-white/20 text-white/70"
             >
               <Share2 className="h-4 w-4" />
@@ -164,7 +190,7 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
         
         <div className="relative aspect-[16/9] sm:aspect-[21/9] rounded-lg overflow-hidden bg-gray-900/50 mb-4">
           {isGenerating && (
-            <div className="absolute inset-0 flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center justify-center z-10">
               <div className="flex flex-col items-center space-y-2">
                 <Wand2 className="h-8 w-8 text-purple-400 animate-pulse" />
                 <p className="text-white/70 text-sm">Creating your visualization...</p>
@@ -179,10 +205,34 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
                 alt={`Visualization of ${topic}`}
                 className={`w-full h-full object-cover transition-opacity duration-300 ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`}
                 onLoad={() => setIsImageLoaded(true)}
+                onError={handleImageError}
               />
-              {fallbackSource && fallbackSource !== 'gemini' && (
+              
+              {isImageLoaded && fallbackSource && (
                 <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
-                  {fallbackSource === 'dalle' ? 'DALL-E' : fallbackSource === 'unsplash' ? 'Unsplash' : 'Reference Image'}
+                  {fallbackSource === 'dalle' ? 'DALL-E' : 
+                   fallbackSource === 'gemini' ? 'Gemini AI' : 
+                   fallbackSource === 'error' ? 'Placeholder' : 
+                   fallbackSource}
+                </div>
+              )}
+              
+              {imageLoadError && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-900/70">
+                  <div className="text-center p-4">
+                    <AlertCircle className="h-8 w-8 text-red-400 mx-auto mb-2" />
+                    <p className="text-white/90 font-medium mb-1">Failed to load image</p>
+                    <p className="text-white/60 text-sm mb-3">The image couldn't be generated or loaded</p>
+                    <Button 
+                      variant="outline"
+                      size="sm"
+                      onClick={handleGenerateImage}
+                      className="bg-white/10 hover:bg-white/20 text-white"
+                    >
+                      <RefreshCw className="h-3 w-3 mr-2" />
+                      Try Again
+                    </Button>
+                  </div>
                 </div>
               )}
             </>
