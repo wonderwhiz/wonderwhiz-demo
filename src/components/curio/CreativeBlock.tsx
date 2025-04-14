@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Brush, FileEdit, Cube } from 'lucide-react';
+import { Sparkles, Brush, FileEdit, Box } from 'lucide-react';
 
 interface CreativeBlockProps {
   prompt: string;
@@ -67,7 +66,7 @@ const CreativeBlock: React.FC<CreativeBlockProps> = ({
         />
         
         <CreativeOption 
-          icon={<Cube className="h-5 w-5" />}
+          icon={<Box className="h-5 w-5" />}
           title="Make a model"
           description={childAge < 10
             ? "Build something cool!" 
