@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CircleCheck, MessageCircle, Bookmark, ThumbsUp, Sparkles, Star } from 'lucide-react';
+import { CircleCheck, MessageCircle, Bookmark, ThumbsUp, Sparkles, Star, VolumeIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,7 @@ import QuickAnswer from '@/components/curio/QuickAnswer';
 import InteractiveImageBlock from '@/components/content-blocks/InteractiveImageBlock';
 import { ContentBlock as CurioContentBlock } from '@/types/curio';
 import { toast } from 'sonner';
+import AgeAdaptiveContent from '@/components/curio/AgeAdaptiveContent';
 
 interface ContentBlock {
   id: string;
@@ -57,7 +59,7 @@ interface CurioContentProps {
   onToggleBookmark: (blockId: string) => void;
   onReply: (blockId: string, message: string) => void;
   onSetQuery: (query: string) => void;
-  onRabbitHoleFollow: (question: string) => void;
+  onRabbitHoleClick: (question: string) => void;
   onQuizCorrect: (blockId: string) => void;
   onNewsRead: (blockId: string) => void;
   onCreativeUpload: (blockId: string) => void;
@@ -127,20 +129,26 @@ const CurioBlock = ({
   block, 
   onToggleLike, 
   onToggleBookmark, 
-  onReply 
+  onReply,
+  onReadAloud,
+  childAge = 10
 }: { 
   block: ContentBlock; 
   onToggleLike: (blockId: string) => void;
   onToggleBookmark: (blockId: string) => void;
   onReply: (blockId: string, message: string) => void;
+  onReadAloud?: (text: string, specialistId: string) => void;
+  childAge?: number;
 }) => {
   const specialist = getSpecialistInfo(block.specialist_id);
   const [replyText, setReplyText] = useState('');
+  const [showReplyInput, setShowReplyInput] = useState(false);
   
   const handleSubmitReply = () => {
     if (replyText.trim()) {
       onReply(block.id, replyText);
       setReplyText('');
+      setShowReplyInput(false);
     }
   };
 
@@ -165,6 +173,13 @@ const CurioBlock = ({
         return block.content?.exercise;
       default:
         return "Content not available";
+    }
+  };
+
+  const handleReadContent = () => {
+    const content = getBlockContent();
+    if (content && onReadAloud) {
+      onReadAloud(content, block.specialist_id);
     }
   };
 
@@ -196,9 +211,44 @@ const CurioBlock = ({
             </div>
           </div>
           
-          <div className="text-white mb-5">
-            {getBlockContent()}
-          </div>
+          {childAge && childAge < 12 ? (
+            <AgeAdaptiveContent
+              content={getBlockContent()}
+              childAge={childAge}
+              onReadAloud={handleReadContent}
+              onBookmark={() => onToggleBookmark(block.id)}
+            />
+          ) : (
+            <div className="text-white mb-5">
+              {getBlockContent()}
+            </div>
+          )}
+          
+          {block.type === 'quiz' && block.content?.options && (
+            <div className="mt-4 space-y-2">
+              {block.content.options.map((option: string, idx: number) => (
+                <button
+                  key={idx}
+                  className={`w-full text-left p-3 ${childAge && childAge < 10 ? 'flex items-center' : ''} 
+                    bg-white/10 hover:bg-white/20 rounded-lg transition-colors`}
+                  onClick={() => {
+                    if (idx === block.content.correctIndex) {
+                      toast.success("Correct answer! 🎉");
+                    } else {
+                      toast.error("Try again!");
+                    }
+                  }}
+                >
+                  {childAge && childAge < 10 && (
+                    <div className="w-8 h-8 rounded-full bg-wonderwhiz-purple flex items-center justify-center mr-3">
+                      {String.fromCharCode(65 + idx)}
+                    </div>
+                  )}
+                  <span>{option}</span>
+                </button>
+              ))}
+            </div>
+          )}
           
           <div className="flex flex-wrap gap-2 mb-4">
             {block.content?.rabbitHoles?.map((question: string, index: number) => (
@@ -236,15 +286,27 @@ const CurioBlock = ({
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={() => setReplyText(prev => prev ? '' : ' ')}
+              onClick={() => setShowReplyInput(!showReplyInput)}
               className="text-white/70 hover:text-white hover:bg-white/10"
             >
               <MessageCircle className="h-4 w-4 mr-1" />
               Reply
             </Button>
+            
+            {onReadAloud && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleReadContent}
+                className="text-white/70 hover:text-white hover:bg-white/10"
+              >
+                <VolumeIcon className="h-4 w-4 mr-1" />
+                {childAge && childAge < 8 ? "Read to me" : "Read aloud"}
+              </Button>
+            )}
           </div>
           
-          {replyText !== '' && (
+          {showReplyInput && (
             <div className="mt-3 flex">
               <input
                 type="text"
@@ -281,7 +343,7 @@ const CurioContent: React.FC<CurioContentProps> = ({
   onToggleBookmark,
   onReply,
   onSetQuery,
-  onRabbitHoleFollow,
+  onRabbitHoleClick,
   onQuizCorrect,
   onNewsRead,
   onCreativeUpload,
@@ -320,6 +382,7 @@ const CurioContent: React.FC<CurioContentProps> = ({
             <InteractiveImageBlock
               topic={currentCurio.title}
               childId={profileId}
+              childAge={childAge || 10}
               onShare={() => toast.success("Image shared!")}
             />
           )}
@@ -369,6 +432,8 @@ const CurioContent: React.FC<CurioContentProps> = ({
             onToggleLike={onToggleLike}
             onToggleBookmark={onToggleBookmark}
             onReply={onReply}
+            onReadAloud={playText}
+            childAge={childAge}
           />
         ))}
       </div>
