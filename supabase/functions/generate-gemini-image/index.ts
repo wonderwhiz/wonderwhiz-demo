@@ -20,7 +20,7 @@ serve(async (req) => {
       throw new Error("Invalid request format: Could not parse JSON");
     });
     
-    const { prompt, style = 'cartoon', retryOnFail = true } = requestData;
+    const { prompt, style = 'cartoon', retryOnFail = true, childAge = 10 } = requestData;
 
     if (!prompt) {
       throw new Error('Prompt is required');
@@ -107,30 +107,18 @@ serve(async (req) => {
       try {
         console.log('Using Gemini API for image generation');
         
-        // Try the Flash endpoint first (better for image generation)
-        const geminiFlashUrl = "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash-exp-image-generation:generateContent";
+        // First try the newer Imagen model endpoint
+        const imagen3Url = "https://generativelanguage.googleapis.com/v1/models/imagen3:generateImage";
         
-        const geminiResponse = await fetch(`${geminiFlashUrl}?key=${GEMINI_API_KEY}`, {
+        const geminiResponse = await fetch(`${imagen3Url}?key=${GEMINI_API_KEY}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            contents: [
-              {
-                role: "user",
-                parts: [
-                  {
-                    text: enhancedPrompt
-                  }
-                ]
-              }
-            ],
-            generation_config: {
-              response_modalities: ["TEXT", "IMAGE"],
-              temperature: 0.4,
-              top_p: 1,
-              top_k: 32
+            prompt: enhancedPrompt,
+            responseFormat: {
+              format: "IMAGE" 
             }
           })
         });
@@ -142,24 +130,11 @@ serve(async (req) => {
           
           // Extract image data from the response
           let imageUrl = null;
-          let textResponse = '';
           
-          if (responseData?.candidates?.[0]?.content?.parts) {
-            for (const part of responseData.candidates[0].content.parts) {
-              if (part.text) {
-                textResponse = part.text;
-              }
-              
-              if (part.inline_data && part.inline_data.mime_type.startsWith('image/')) {
-                // Convert base64 to image URL
-                const imageData = part.inline_data.data;
-                const mimeType = part.inline_data.mime_type;
-                
-                imageUrl = `data:${mimeType};base64,${imageData}`;
-                console.log('Image URL generated from Gemini');
-                break; // We found the image, exit the loop
-              }
-            }
+          if (responseData?.image?.data) {
+            // Convert base64 to image URL
+            imageUrl = `data:image/png;base64,${responseData.image.data}`;
+            console.log('Image URL generated from Gemini');
           }
           
           if (imageUrl) {
@@ -167,7 +142,7 @@ serve(async (req) => {
               JSON.stringify({ 
                 success: true, 
                 imageUrl: imageUrl,
-                textResponse: textResponse || "Image created with Gemini AI",
+                textResponse: "Image created with Gemini AI",
                 source: "gemini"
               }),
               { 

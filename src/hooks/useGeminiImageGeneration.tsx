@@ -5,9 +5,10 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface UseGeminiImageGenerationProps {
   childAge?: number;
+  maxRetries?: number;
 }
 
-export function useGeminiImageGeneration({ childAge = 10 }: UseGeminiImageGenerationProps = {}) {
+export function useGeminiImageGeneration({ childAge = 10, maxRetries = 3 }: UseGeminiImageGenerationProps = {}) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
@@ -25,58 +26,95 @@ export function useGeminiImageGeneration({ childAge = 10 }: UseGeminiImageGenera
       
       console.log(`Calling generate-gemini-image with prompt: "${adaptedPrompt}" and style: ${imageStyle}`);
       
-      // Call the edge function with error handling
-      const { data, error } = await supabase.functions.invoke('generate-gemini-image', {
-        body: { 
-          prompt: adaptedPrompt,
-          style: imageStyle,
-          childAge: childAge,
-          retryOnFail: true
-        }
-      });
-      
-      if (error) {
-        console.error('Supabase function error:', error);
-        throw new Error(error.message || 'Failed to call image generation service');
-      }
-      
-      console.log('Image generation response:', data);
-      
-      // Even if the API had an error, we should get a valid response with success: false
-      // and a fallback image URL
-      if (data?.imageUrl) {
-        setImageUrl(data.imageUrl);
+      // First try the primary method - Gemini via edge function
+      try {
+        // Call the gemini edge function with error handling
+        const { data, error } = await supabase.functions.invoke('generate-gemini-image', {
+          body: { 
+            prompt: adaptedPrompt,
+            style: imageStyle,
+            childAge: childAge,
+            retryOnFail: true
+          }
+        });
         
-        if (data.fallback) {
-          setFallbackSource(data.fallbackSource || 'fallback');
+        if (error) {
+          console.error('Supabase function error:', error);
+          throw new Error(error.message || 'Failed to call image generation service');
+        }
+        
+        console.log('Image generation response:', data);
+        
+        if (data?.imageUrl) {
+          setImageUrl(data.imageUrl);
           
-          if (data.fallbackSource === 'dalle') {
-            toast.info("Using DALL-E image generation", {
+          if (data.fallback) {
+            setFallbackSource(data.fallbackSource || 'fallback');
+            
+            if (data.fallbackSource === 'dalle') {
+              toast.info("Using DALL-E image generation", {
+                duration: 3000,
+                position: "bottom-right"
+              });
+            } else if (data.fallbackSource === 'error') {
+              // Try alternate method if primary fails
+              throw new Error('Primary image generation failed, trying alternate method');
+            }
+          } else if (data.source === 'gemini') {
+            setFallbackSource('gemini');
+            toast.success("Image created with Gemini AI", {
               duration: 3000,
               position: "bottom-right"
             });
-          } else if (data.fallbackSource === 'error') {
-            // This is a placeholder image due to an error
-            setGenerationError('Image generation failed, showing placeholder');
-            toast.error("Couldn't generate image", { 
-              description: data.error || "Please try again later",
-              duration: 3000
-            });
           }
-        } else if (data.source === 'gemini') {
-          setFallbackSource('gemini');
-          toast.success("Image created with Gemini AI", {
-            duration: 3000,
-            position: "bottom-right"
-          });
+          
+          return data.imageUrl;
+        } else if (data?.error) {
+          throw new Error(data.error);
+        } else {
+          throw new Error('No image URL returned');
         }
+      } catch (primaryError) {
+        // If primary method fails, try the alternate method
+        console.log('Primary image generation failed, trying alternate method:', primaryError);
         
-        return data.imageUrl;
-      } else if (data?.error) {
-        throw new Error(data.error);
-      } else {
-        console.error('No image URL or unsuccessful generation:', data);
-        throw new Error('No image URL returned');
+        // Try the alternate method - contextual-image function
+        try {
+          // Only proceed with alternate if retry count is less than max
+          if (retryCount < 2) {
+            setRetryCount(retryCount + 1);
+            
+            const { data: contextualData, error: contextualError } = await supabase.functions.invoke('generate-contextual-image', {
+              body: { 
+                topic: adaptedPrompt,
+                style: imageStyle,
+                childAge: childAge
+              }
+            });
+            
+            if (contextualError) {
+              console.error('Alternate function error:', contextualError);
+              throw new Error(contextualError.message || 'Failed to call alternate image service');
+            }
+            
+            if (contextualData?.imageUrl) {
+              setImageUrl(contextualData.imageUrl);
+              setFallbackSource(contextualData.source || 'alternate');
+              
+              toast.info(`Using alternate image service (${contextualData.source || 'fallback'})`, {
+                duration: 3000,
+                position: "bottom-right"
+              });
+              
+              return contextualData.imageUrl;
+            }
+          }
+          
+          throw new Error('Alternate image generation also failed');
+        } catch (alternateError) {
+          console.error('Alternate image generation failed:', alternateError);
+          throw new Error('All image generation methods failed');
+        }
       }
     } catch (err) {
       console.error('Error generating image:', err);
@@ -88,7 +126,7 @@ export function useGeminiImageGeneration({ childAge = 10 }: UseGeminiImageGenera
       });
       
       // Set a placeholder image as fallback
-      const placeholderUrl = 'https://placehold.co/600x400/252238/FFFFFF?text=Image+Generation+Failed';
+      const placeholderUrl = `https://placehold.co/600x400/252238/FFFFFF?text=${encodeURIComponent('Image Generation Failed')}`;
       setImageUrl(placeholderUrl);
       setFallbackSource('error');
       return placeholderUrl;

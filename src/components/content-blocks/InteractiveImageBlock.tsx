@@ -22,6 +22,18 @@ const imageStyles = [
   { id: 'isometric', name: 'Isometric', description: '3D isometric illustration' }
 ];
 
+// Fallback images by topic category
+const fallbackImages = {
+  space: "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=800&auto=format&fit=crop",
+  astronomy: "https://images.unsplash.com/photo-1516339901601-2e1b62dc0c45?w=800&auto=format&fit=crop",
+  stars: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=800&auto=format&fit=crop",
+  night: "https://images.unsplash.com/photo-1534841090574-cba2d662b62e?w=800&auto=format&fit=crop",
+  planets: "https://images.unsplash.com/photo-1614313913007-2b4ae8ce32d6?w=800&auto=format&fit=crop",
+  animals: "https://images.unsplash.com/photo-1474511320723-9a56873867b5?w=800&auto=format&fit=crop",
+  ocean: "https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=800&auto=format&fit=crop",
+  science: "https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=800&auto=format&fit=crop"
+};
+
 const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
   topic,
   childId,
@@ -31,6 +43,8 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
   const [currentStyle, setCurrentStyle] = useState('cartoon');
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [imageLoadError, setImageLoadError] = useState(false);
+  const [consecutiveFailures, setConsecutiveFailures] = useState(0);
+  
   const { 
     generateImage, 
     isGenerating, 
@@ -38,13 +52,41 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
     generationError, 
     resetImage, 
     fallbackSource 
-  } = useGeminiImageGeneration({ childAge });
+  } = useGeminiImageGeneration({ childAge, maxRetries: 3 });
   
   useEffect(() => {
     if (topic) {
       handleGenerateImage();
     }
   }, [topic]);
+  
+  const getTopicCategory = (topic: string): string => {
+    const lowerTopic = topic.toLowerCase();
+    if (lowerTopic.includes('star') || lowerTopic.includes('night sky') || 
+        lowerTopic.includes('constellation') || lowerTopic.includes('astronomy')) {
+      return 'stars';
+    } else if (lowerTopic.includes('planet') || lowerTopic.includes('solar system') || 
+               lowerTopic.includes('galaxy') || lowerTopic.includes('universe')) {
+      return 'planets';
+    } else if (lowerTopic.includes('space') || lowerTopic.includes('cosmos')) {
+      return 'space';
+    } else if (lowerTopic.includes('animal') || lowerTopic.includes('wildlife')) {
+      return 'animals';
+    } else if (lowerTopic.includes('ocean') || lowerTopic.includes('sea') || 
+               lowerTopic.includes('marine')) {
+      return 'ocean';
+    } else if (lowerTopic.includes('science') || lowerTopic.includes('experiment') || 
+               lowerTopic.includes('chemistry') || lowerTopic.includes('physics')) {
+      return 'science';
+    }
+    
+    return 'stars'; // Default to stars for the current topic
+  };
+  
+  const getFallbackImage = () => {
+    const category = getTopicCategory(topic);
+    return fallbackImages[category] || fallbackImages.stars;
+  };
   
   const handleGenerateImage = async () => {
     try {
@@ -79,12 +121,38 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
       
       const generatedImageUrl = await generateImage(prompt, currentStyle);
       if (!generatedImageUrl) {
+        console.log('No image URL returned from generateImage');
         setImageLoadError(true);
+        setConsecutiveFailures(prev => prev + 1);
+        
+        // If we've had multiple failures, use a reliable fallback
+        if (consecutiveFailures >= 2) {
+          const fallback = getFallbackImage();
+          setImageUrl(fallback);
+          setFallbackSource('unsplash');
+          toast.info("Using a reference image instead", {
+            duration: 3000
+          });
+        }
+      } else {
+        setConsecutiveFailures(0);
       }
     } catch (error) {
       console.error('Failed to generate image:', error);
       setImageLoadError(true);
+      setConsecutiveFailures(prev => prev + 1);
+      
       toast.error('Could not generate image at this time');
+      
+      // Use fallback after multiple failures
+      if (consecutiveFailures >= 1) {
+        const fallback = getFallbackImage();
+        setImageUrl(fallback);
+        setFallbackSource('unsplash');
+        toast.info("Using a reference image instead", {
+          duration: 3000
+        });
+      }
     }
   };
   
@@ -96,6 +164,16 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
   const handleImageError = () => {
     setImageLoadError(true);
     setIsImageLoaded(false);
+    
+    // If image loading fails, try a fallback
+    if (!fallbackSource || fallbackSource === 'error') {
+      const fallback = getFallbackImage();
+      setImageUrl(fallback);
+      setFallbackSource('unsplash');
+      toast.info("Using a reference image instead", {
+        duration: 3000
+      });
+    }
   };
   
   const handleDownload = () => {
@@ -212,6 +290,7 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
                 <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
                   {fallbackSource === 'dalle' ? 'DALL-E' : 
                    fallbackSource === 'gemini' ? 'Gemini AI' : 
+                   fallbackSource === 'unsplash' ? 'Reference Image' :
                    fallbackSource === 'error' ? 'Placeholder' : 
                    fallbackSource}
                 </div>
