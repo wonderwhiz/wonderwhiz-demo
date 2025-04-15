@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useChildLearningHistory } from '@/hooks/useChildLearningHistory';
 import { useGroqGeneration } from '@/hooks/useGroqGeneration';
@@ -43,6 +43,18 @@ const FALLBACK_QUESTIONS = [
   "How do plants make their own food?",
 ];
 
+// BANNED_TOPICS list to prevent inappropriate suggestions
+const BANNED_TOPICS = [
+  'chicken',
+  'butter',
+  'food',
+  'recipe',
+  'test',
+  'temporary',
+  'standalone',
+  'curio'
+];
+
 const IntelligentSuggestions: React.FC<IntelligentSuggestionsProps> = ({
   childId,
   childProfile,
@@ -55,6 +67,9 @@ const IntelligentSuggestions: React.FC<IntelligentSuggestionsProps> = ({
   const [categories, setCategories] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [fetchTrigger, setFetchTrigger] = useState(0);
+  
+  // Use a ref to track if we need to fetch new suggestions
+  const shouldFetchRef = useRef<boolean>(true);
   
   // Move the categorization logic outside of the useEffect
   const categorize = useCallback((suggestion: string): string => {
@@ -80,20 +95,11 @@ const IntelligentSuggestions: React.FC<IntelligentSuggestionsProps> = ({
     
     const lowercased = suggestion.toLowerCase();
     
-    // Filter out food items that aren't educational
-    if (lowercased.includes('chicken') || 
-        lowercased.includes('butter') || 
-        lowercased.includes('food') || 
-        lowercased.includes('recipe')) {
-      return false;
-    }
-    
-    // Filter out test/temporary items
-    if (lowercased.includes('test') || 
-        lowercased.includes('temporary') || 
-        lowercased.includes('standalone') || 
-        lowercased.includes('curio')) {
-      return false;
+    // Check against banned topics
+    for (const banned of BANNED_TOPICS) {
+      if (lowercased.includes(banned)) {
+        return false;
+      }
     }
     
     // Ensure it's likely a question or topic
@@ -115,15 +121,18 @@ const IntelligentSuggestions: React.FC<IntelligentSuggestionsProps> = ({
   
   // Get unique suggestions based on learning history, interests, and Groq generation
   useEffect(() => {
-    // Create a function to fetch suggestions that won't trigger state updates
-    // during its execution, preventing infinite loops
+    // Skip if we shouldn't fetch new suggestions yet
+    if (!shouldFetchRef.current) return;
+    
     const fetchSuggestions = async () => {
+      // Once we start fetching, set the ref to false to prevent additional fetches
+      shouldFetchRef.current = false;
       setIsLoading(true);
       
       try {
         // Get personalized suggestions from learning history
         const historyBasedSuggestions = getPersonalizedSuggestions()
-          .filter(isValidSuggestion); // Filter invalid suggestions
+          .filter(isValidSuggestion); 
         
         // Filter out duplicate suggestions and past queries
         const pastQueries = new Set(pastCurios.map(c => c.query?.toLowerCase()));
@@ -150,7 +159,7 @@ const IntelligentSuggestions: React.FC<IntelligentSuggestionsProps> = ({
               .filter(Boolean)
               .map(q => q.trim())
               .filter(q => q.length > 10 && q.includes('?'))
-              .filter(isValidSuggestion); // Filter invalid suggestions
+              .filter(isValidSuggestion);
           }
         } catch (error) {
           console.error('Error generating AI suggestions:', error);
@@ -203,11 +212,25 @@ const IntelligentSuggestions: React.FC<IntelligentSuggestionsProps> = ({
     };
     
     fetchSuggestions();
-    // Add dependencies that should trigger a refresh of suggestions
-  }, [childId, childProfile, getPersonalizedSuggestions, pastCurios, generateQuickAnswer, categorize, fetchTrigger, isValidSuggestion]);
+  }, [
+    childId, 
+    childProfile, 
+    getPersonalizedSuggestions, 
+    pastCurios, 
+    generateQuickAnswer, 
+    categorize, 
+    fetchTrigger, 
+    isValidSuggestion
+  ]);
+
+  // Reset the fetch trigger when certain dependencies change
+  useEffect(() => {
+    shouldFetchRef.current = true;
+  }, [childId, pastCurios.length, fetchTrigger]);
 
   // Function to manually refresh suggestions
   const refreshSuggestions = () => {
+    shouldFetchRef.current = true;
     setFetchTrigger(prev => prev + 1);
   };
   

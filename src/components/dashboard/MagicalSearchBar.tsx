@@ -13,6 +13,18 @@ interface MagicalSearchBarProps {
   recentQueries?: string[];
 }
 
+// BANNED_TOPICS list to prevent inappropriate suggestions
+const BANNED_TOPICS = [
+  'chicken',
+  'butter',
+  'food',
+  'recipe',
+  'test',
+  'temporary',
+  'standalone',
+  'curio'
+];
+
 const MagicalSearchBar: React.FC<MagicalSearchBarProps> = ({
   query,
   setQuery,
@@ -31,23 +43,28 @@ const MagicalSearchBar: React.FC<MagicalSearchBarProps> = ({
     
     const lowercased = suggestion.toLowerCase();
     
-    // Filter out food items that aren't educational
-    if (lowercased.includes('chicken') || 
-        lowercased.includes('butter') || 
-        lowercased.includes('food') || 
-        lowercased.includes('recipe')) {
-      return false;
+    // Check against banned topics
+    for (const banned of BANNED_TOPICS) {
+      if (lowercased.includes(banned)) {
+        return false;
+      }
     }
     
-    // Filter out test/temporary items
-    if (lowercased.includes('test') || 
-        lowercased.includes('temporary') || 
-        lowercased.includes('standalone') || 
-        lowercased.includes('curio')) {
-      return false;
-    }
+    // Ensure it's likely a question or educational
+    if (suggestion.length < 10) return false;
     
-    return true;
+    // Check if it has educational value
+    const educationalTerms = [
+      'how', 'why', 'what', 'when', 'where', 'who', 'which',
+      'learn', 'discover', 'explore', 'understand', 'science', 
+      'history', 'animal', 'space', 'earth', 'work', 'function'
+    ];
+    
+    const hasEducationalTerm = educationalTerms.some(term => 
+      lowercased.includes(term)
+    );
+    
+    return hasEducationalTerm;
   }, []);
   
   // Use useCallback to prevent regenerating this function on every render
@@ -80,7 +97,8 @@ const MagicalSearchBar: React.FC<MagicalSearchBarProps> = ({
         .slice(0, 3);
       
       // Add intelligent suggestions based on the query
-      const intelligentSuggestions = generateSuggestions(query);
+      const intelligentSuggestions = generateSuggestions(query)
+        .filter(isValidSuggestion);
       
       // Combine both, remove duplicates, and take up to 5
       const allSuggestions = [...matchingQueries, ...intelligentSuggestions];
