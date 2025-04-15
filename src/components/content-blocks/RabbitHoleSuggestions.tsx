@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Compass } from 'lucide-react';
+import { Compass, Sparkles, Lightbulb } from 'lucide-react';
 import SpecialistAvatar from '@/components/SpecialistAvatar';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -73,7 +73,7 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
             spread: 80,
             origin: { y: 0.6 },
             zIndex: 1000,
-            colors: ['#8b5cf6', '#d946ef', '#3b82f6']
+            colors: ['#FF5BA3', '#00E2FF', '#4A6FFF'] // Brand colors
           });
           
           toast.success("You earned 2 sparks for your curiosity!", {
@@ -97,21 +97,32 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
     }
   };
   
+  // Determine which icon to use based on suggestion content
+  const getSuggestionIcon = (suggestion: string, index: number) => {
+    if (suggestion.toLowerCase().includes('how') || suggestion.toLowerCase().includes('science')) {
+      return <Compass className="h-4 w-4 text-wonderwhiz-bright-pink flex-shrink-0" />;
+    } else if (suggestion.toLowerCase().includes('facts') || suggestion.toLowerCase().includes('interesting')) {
+      return <Sparkles className="h-4 w-4 text-wonderwhiz-vibrant-yellow flex-shrink-0" />;
+    } else {
+      return <Lightbulb className="h-4 w-4 text-wonderwhiz-cyan flex-shrink-0" />;
+    }
+  };
+  
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="bg-indigo-600/20 backdrop-blur-md border border-indigo-500/30 rounded-lg p-4 mb-6"
+      className="bg-gradient-to-br from-wonderwhiz-deep-purple/40 to-wonderwhiz-light-purple/30 backdrop-blur-md border border-wonderwhiz-light-purple/30 rounded-xl p-4 mb-6"
     >
       <div className="flex items-center mb-3">
-        <div className="w-8 h-8 rounded-full bg-indigo-600/50 flex items-center justify-center mr-3">
+        <div className="w-8 h-8 rounded-full bg-wonderwhiz-light-purple/50 flex items-center justify-center mr-3">
           <Compass className="h-4 w-4 text-white" />
         </div>
-        <h2 className="text-lg font-semibold text-white">Continue Your Exploration</h2>
+        <h2 className="text-lg font-bold text-white font-nunito">Continue Your Exploration</h2>
       </div>
       
-      <p className="text-white/70 text-sm mb-4">
+      <p className="text-white/80 text-sm mb-4 font-inter">
         What would you like to discover next? Here are some interesting paths to follow.
       </p>
       
@@ -130,7 +141,11 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
             >
               <SpecialistAvatar specialistId={specialistId} size="sm" className="mt-0.5 mr-2 flex-shrink-0" />
               <div>
-                <p className="text-white text-sm group-hover:text-indigo-200 transition-colors">
+                <div className="flex items-center mb-1">
+                  {getSuggestionIcon(suggestion, index)}
+                  <span className="ml-1.5 text-wonderwhiz-vibrant-yellow/80 text-xs">Explore</span>
+                </div>
+                <p className="text-white text-sm group-hover:text-wonderwhiz-bright-pink transition-colors font-inter">
                   {suggestion}
                 </p>
               </div>

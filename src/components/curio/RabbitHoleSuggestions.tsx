@@ -47,7 +47,7 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
     return "Amazing depth of exploration!";
   };
 
-  // Group suggestions by theme
+  // Get theme icon based on suggestion content
   const getThemeIcon = (suggestion: string, index: number) => {
     const lowerSuggestion = suggestion.toLowerCase();
     
@@ -106,7 +106,8 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
           confetti({
             particleCount: 100,
             spread: 70,
-            origin: { y: 0.6 }
+            origin: { y: 0.6 },
+            colors: ['#FF5BA3', '#00E2FF', '#FFD54F']  // Brand colors
           });
           
           navigate(`/curio/${childId}/${newCurio.id}`);
@@ -119,17 +120,17 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
   };
 
   return (
-    <div className="mt-8 bg-gradient-to-br from-wonderwhiz-deep-purple/40 to-wonderwhiz-purple/30 border border-white/10 rounded-lg p-4">
+    <div className="mt-8 bg-gradient-to-br from-wonderwhiz-deep-purple/40 to-wonderwhiz-light-purple/30 border border-wonderwhiz-light-purple/30 rounded-xl p-4 font-nunito">
       <div className="flex items-center mb-3">
         <Lightbulb className="h-5 w-5 text-wonderwhiz-bright-pink mr-2" />
-        <h3 className="text-lg font-semibold text-white">{getHeaderText()}</h3>
+        <h3 className="text-lg font-bold text-white">{getHeaderText()}</h3>
       </div>
       
       {explorationDepth > 1 && (
-        <div className="mb-3 bg-white/5 px-3 py-2 rounded border border-white/10">
+        <div className="mb-3 bg-white/5 px-3 py-2 rounded-lg border border-white/10">
           <div className="flex items-center text-sm text-white/80">
-            <Compass className="h-4 w-4 mr-2 text-wonderwhiz-gold" />
-            <span>Exploration Depth: {explorationDepth} • {getExplorationMessage()}</span>
+            <Compass className="h-4 w-4 mr-2 text-wonderwhiz-vibrant-yellow" />
+            <span className="font-inter">Exploration Depth: {explorationDepth} • {getExplorationMessage()}</span>
           </div>
         </div>
       )}
@@ -145,7 +146,7 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
               variant="ghost"
               className={`w-full justify-start text-left bg-white/5 hover:bg-white/10 text-white/80 hover:text-white border border-white/10 ${
                 childAge < 8 ? 'py-3 text-base' : ''
-              }`}
+              } font-inter`}
               onClick={() => handleSuggestionClick(suggestion)}
             >
               {getThemeIcon(suggestion, index)}
@@ -163,7 +164,7 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
       {childAge < 8 && (
         <div className="mt-3 flex justify-center">
           {['🔍', '🌟', '🚀', '🧠', '💫'].map((emoji, i) => (
-            <span key={i} className="mx-2 text-xl">{emoji}</span>
+            <span key={i} className="mx-2 text-xl animate-bounce-gentle">{emoji}</span>
           ))}
         </div>
       )}
