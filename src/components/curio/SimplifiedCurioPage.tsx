@@ -357,7 +357,7 @@ const SimplifiedCurioPage: React.FC = () => {
           origin: { y: 0.6 }
         });
         
-        navigate(`/simple-curio/${childId}/${newCurio.id}`);
+        navigate(`/curio/${childId}/${newCurio.id}`);
       }
     } catch (error) {
       console.error('Error creating rabbit hole curio:', error);

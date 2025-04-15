@@ -29,10 +29,10 @@ serve(async (req) => {
     console.log(`Processing image generation request for prompt: "${prompt.substring(0, 50)}..."`);
 
     // Check API keys
-    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
     const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
     
-    if (!GEMINI_API_KEY && !OPENAI_API_KEY) {
+    if (!OPENAI_API_KEY && !GEMINI_API_KEY) {
       console.error('Missing required API keys for image generation');
       throw new Error('Configuration error: No image generation APIs are configured');
     }
@@ -79,7 +79,7 @@ serve(async (req) => {
               success: true, 
               imageUrl: dalleImageUrl,
               textResponse: "Image created just for you!",
-              fallback: true,
+              fallback: false,
               fallbackSource: "dalle"
             }),
             { 

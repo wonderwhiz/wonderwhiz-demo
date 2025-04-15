@@ -1,7 +1,12 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Compass } from 'lucide-react';
 import SpecialistAvatar from '@/components/SpecialistAvatar';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import confetti from 'canvas-confetti';
 
 interface RabbitHoleSuggestionsProps {
   curioTitle: string;
@@ -16,6 +21,8 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
   onSuggestionClick,
   specialistIds = []
 }) => {
+  const navigate = useNavigate();
+  
   // Generate related suggestions based on the curio title
   const generateSuggestions = () => {
     const basicSuggestions = [
@@ -31,6 +38,64 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
   };
   
   const suggestions = generateSuggestions();
+  
+  const handleSuggestionClick = async (question: string) => {
+    toast.loading("Creating new exploration...");
+    
+    try {
+      // Create a new curio with the question
+      const { data: newCurio, error } = await supabase
+        .from('curios')
+        .insert({
+          child_id: profileId,
+          title: question,
+          query: question,
+        })
+        .select('id')
+        .single();
+      
+      if (error) throw error;
+      
+      if (newCurio && newCurio.id) {
+        toast.success("New exploration created!");
+        
+        // Award sparks for following curiosity
+        try {
+          await supabase.functions.invoke('increment-sparks-balance', {
+            body: JSON.stringify({
+              profileId: profileId,
+              amount: 2
+            })
+          });
+          
+          confetti({
+            particleCount: 70,
+            spread: 80,
+            origin: { y: 0.6 },
+            zIndex: 1000,
+            colors: ['#8b5cf6', '#d946ef', '#3b82f6']
+          });
+          
+          toast.success("You earned 2 sparks for your curiosity!", {
+            icon: "✨"
+          });
+        } catch (err) {
+          console.error('Error awarding sparks:', err);
+        }
+        
+        // Call the onSuggestionClick prop first
+        if (onSuggestionClick) {
+          onSuggestionClick(question);
+        }
+        
+        // Navigate to the new curio page
+        navigate(`/curio/${profileId}/${newCurio.id}`);
+      }
+    } catch (error) {
+      console.error('Error creating new curio:', error);
+      toast.error("Could not create new exploration");
+    }
+  };
   
   return (
     <motion.div
@@ -59,7 +124,7 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
             <motion.button
               key={index}
               className="flex items-start bg-white/5 hover:bg-white/10 transition-colors p-3 rounded-lg border border-white/10 text-left group"
-              onClick={() => onSuggestionClick(suggestion)}
+              onClick={() => handleSuggestionClick(suggestion)}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >

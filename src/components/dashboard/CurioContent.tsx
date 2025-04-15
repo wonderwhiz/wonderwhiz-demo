@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -162,23 +161,23 @@ const CurioBlock = ({
     switch (block.type) {
       case 'fact':
       case 'funFact':
-        return block.content?.fact || block.content?.text;
+        return block.content?.fact || block.content?.text || "Learn more about this topic!";
       case 'quiz':
-        return block.content?.question;
+        return block.content?.question || "Test your knowledge with this quiz!";
       case 'creative':
-        return block.content?.prompt;
+        return block.content?.prompt || "Use your creativity to explore this topic!";
       case 'task':
-        return block.content?.task;
+        return block.content?.task || "Complete this task to learn more!";
       case 'riddle':
-        return block.content?.riddle;
+        return block.content?.riddle || "Solve this riddle!";
       case 'news':
-        return block.content?.summary;
+        return block.content?.summary || "Latest news on this topic!";
       case 'activity':
-        return block.content?.activity;
+        return block.content?.activity || "Try this activity to learn more!";
       case 'mindfulness':
-        return block.content?.exercise;
+        return block.content?.exercise || "Take a moment to reflect.";
       default:
-        return "Content not available";
+        return "Discover more about this fascinating topic!";
     }
   };
 
@@ -189,7 +188,6 @@ const CurioBlock = ({
     }
   };
 
-  // For quiz blocks, render the FireflyQuizBlock
   if (block.type === 'quiz' && block.content?.options) {
     return (
       <FireflyQuizBlock
@@ -202,7 +200,6 @@ const CurioBlock = ({
     );
   }
 
-  // For mindfulness blocks, render the MindfulnessBlock
   if (block.type === 'mindfulness' && block.content) {
     return (
       <MindfulnessBlock
@@ -215,7 +212,6 @@ const CurioBlock = ({
     );
   }
 
-  // For creative blocks, render the CreativeBlock
   if (block.type === 'creative' && block.content) {
     return (
       <CreativeBlock

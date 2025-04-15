@@ -31,7 +31,8 @@ const fallbackImages = {
   planets: "https://images.unsplash.com/photo-1614313913007-2b4ae8ce32d6?w=800&auto=format&fit=crop",
   animals: "https://images.unsplash.com/photo-1474511320723-9a56873867b5?w=800&auto=format&fit=crop",
   ocean: "https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=800&auto=format&fit=crop",
-  science: "https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=800&auto=format&fit=crop"
+  science: "https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=800&auto=format&fit=crop",
+  volcanoes: "https://images.unsplash.com/photo-1577131313276-8276f3ffc538?w=800&auto=format&fit=crop"
 };
 
 const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
@@ -64,7 +65,9 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
   
   const getTopicCategory = (topic: string): string => {
     const lowerTopic = topic.toLowerCase();
-    if (lowerTopic.includes('star') || lowerTopic.includes('night sky') || 
+    if (lowerTopic.includes('volcano')) {
+      return 'volcanoes';
+    } else if (lowerTopic.includes('star') || lowerTopic.includes('night sky') || 
         lowerTopic.includes('constellation') || lowerTopic.includes('astronomy')) {
       return 'stars';
     } else if (lowerTopic.includes('planet') || lowerTopic.includes('solar system') || 
@@ -82,12 +85,12 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
       return 'science';
     }
     
-    return 'stars'; // Default to stars for the current topic
+    return 'science'; // Default to science for the current topic
   };
   
   const getFallbackImage = () => {
     const category = getTopicCategory(topic);
-    return fallbackImages[category] || fallbackImages.stars;
+    return fallbackImages[category] || fallbackImages.science;
   };
   
   const handleGenerateImage = async () => {
@@ -128,7 +131,7 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
         setConsecutiveFailures(prev => prev + 1);
         
         // If we've had multiple failures, use a reliable fallback
-        if (consecutiveFailures >= 2) {
+        if (consecutiveFailures >= 1) {
           const fallback = getFallbackImage();
           setImageUrl(fallback);
           setFallbackSource('unsplash');
@@ -146,15 +149,13 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
       
       toast.error('Could not generate image at this time');
       
-      // Use fallback after multiple failures
-      if (consecutiveFailures >= 1) {
-        const fallback = getFallbackImage();
-        setImageUrl(fallback);
-        setFallbackSource('unsplash');
-        toast.info("Using a reference image instead", {
-          duration: 3000
-        });
-      }
+      // Use fallback immediately after failure
+      const fallback = getFallbackImage();
+      setImageUrl(fallback);
+      setFallbackSource('unsplash');
+      toast.info("Using a reference image instead", {
+        duration: 3000
+      });
     }
   };
   

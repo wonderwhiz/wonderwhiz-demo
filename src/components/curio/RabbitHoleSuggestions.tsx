@@ -3,6 +3,10 @@ import React from 'react';
 import { ArrowRight, Lightbulb, Compass, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import confetti from 'canvas-confetti';
 
 interface RabbitHoleSuggestionsProps {
   currentQuestion: string;
@@ -10,6 +14,7 @@ interface RabbitHoleSuggestionsProps {
   onSuggestionClick: (suggestion: string) => void;
   childAge?: number;
   explorationDepth?: number;
+  childId?: string;
 }
 
 const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
@@ -17,8 +22,11 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
   suggestions,
   onSuggestionClick,
   childAge = 10,
-  explorationDepth = 1
+  explorationDepth = 1,
+  childId
 }) => {
+  const navigate = useNavigate();
+  
   // Get age-appropriate header text
   const getHeaderText = () => {
     if (childAge < 8) {
@@ -52,6 +60,64 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
     }
   };
 
+  const handleSuggestionClick = async (suggestion: string) => {
+    // First call the provided callback
+    if (onSuggestionClick) {
+      onSuggestionClick(suggestion);
+    }
+    
+    // If we have a childId, create a new curio and navigate to it
+    if (childId) {
+      toast.loading("Creating new exploration...");
+      
+      try {
+        const { data: newCurio, error } = await supabase
+          .from('curios')
+          .insert({
+            child_id: childId,
+            title: suggestion,
+            query: suggestion,
+          })
+          .select('id')
+          .single();
+          
+        if (error) throw error;
+        
+        if (newCurio) {
+          toast.success("New exploration created!");
+          
+          try {
+            await supabase.functions.invoke('increment-sparks-balance', {
+              body: JSON.stringify({
+                profileId: childId,
+                amount: 2
+              })
+            });
+            
+            toast.success('You earned 2 sparks for exploring your curiosity!', {
+              icon: '✨',
+              position: 'bottom-right',
+              duration: 3000
+            });
+          } catch (err) {
+            console.error('Error awarding sparks:', err);
+          }
+          
+          confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 }
+          });
+          
+          navigate(`/curio/${childId}/${newCurio.id}`);
+        }
+      } catch (error) {
+        console.error('Error creating rabbit hole curio:', error);
+        toast.error("Could not create new exploration. Please try again later.");
+      }
+    }
+  };
+
   return (
     <div className="mt-8 bg-gradient-to-br from-wonderwhiz-deep-purple/40 to-wonderwhiz-purple/30 border border-white/10 rounded-lg p-4">
       <div className="flex items-center mb-3">
@@ -80,7 +146,7 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
               className={`w-full justify-start text-left bg-white/5 hover:bg-white/10 text-white/80 hover:text-white border border-white/10 ${
                 childAge < 8 ? 'py-3 text-base' : ''
               }`}
-              onClick={() => onSuggestionClick(suggestion)}
+              onClick={() => handleSuggestionClick(suggestion)}
             >
               {getThemeIcon(suggestion, index)}
               <span className="truncate">{suggestion}</span>
