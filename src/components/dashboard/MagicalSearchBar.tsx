@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -25,29 +25,8 @@ const MagicalSearchBar: React.FC<MagicalSearchBarProps> = ({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   
-  useEffect(() => {
-    if (isFocused && query.length > 0) {
-      // Filter recent queries that match the current input
-      const matchingQueries = recentQueries.filter(q => 
-        q.toLowerCase().includes(query.toLowerCase())
-      ).slice(0, 3);
-      
-      // Add some intelligent suggestions based on the query
-      const intelligentSuggestions = generateSuggestions(query);
-      
-      // Combine both, remove duplicates, and take up to 5
-      const allSuggestions = [...matchingQueries, ...intelligentSuggestions]
-        .filter((v, i, a) => a.indexOf(v) === i)
-        .slice(0, 5);
-        
-      setSuggestions(allSuggestions);
-      setShowSuggestions(allSuggestions.length > 0);
-    } else {
-      setShowSuggestions(false);
-    }
-  }, [query, isFocused, recentQueries]);
-  
-  const generateSuggestions = (input: string): string[] => {
+  // Use useCallback to prevent regenerating this function on every render
+  const generateSuggestions = useCallback((input: string): string[] => {
     const lowercaseInput = input.toLowerCase();
     
     // Simple but effective suggestion system
@@ -64,7 +43,36 @@ const MagicalSearchBar: React.FC<MagicalSearchBarProps> = ({
     }
     
     return [];
-  };
+  }, []);
+  
+  useEffect(() => {
+    if (isFocused && query.length > 0) {
+      // Filter recent queries that match the current input
+      const matchingQueries = recentQueries.filter(q => 
+        q.toLowerCase().includes(query.toLowerCase())
+      ).slice(0, 3);
+      
+      // Add intelligent suggestions based on the query
+      const intelligentSuggestions = generateSuggestions(query);
+      
+      // Combine both, remove duplicates, and take up to 5
+      const allSuggestions = [...matchingQueries, ...intelligentSuggestions];
+      
+      // Create a Set to track lowercase suggestions we've already seen
+      const seenSuggestions = new Set<string>();
+      const uniqueSuggestions = allSuggestions.filter(suggestion => {
+        const lowercased = suggestion.toLowerCase();
+        if (seenSuggestions.has(lowercased)) return false;
+        seenSuggestions.add(lowercased);
+        return true;
+      }).slice(0, 5);
+        
+      setSuggestions(uniqueSuggestions);
+      setShowSuggestions(uniqueSuggestions.length > 0);
+    } else {
+      setShowSuggestions(false);
+    }
+  }, [query, isFocused, recentQueries, generateSuggestions]);
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -145,7 +153,7 @@ const MagicalSearchBar: React.FC<MagicalSearchBarProps> = ({
             <div className="py-2">
               {suggestions.map((suggestion, index) => (
                 <motion.div
-                  key={index}
+                  key={`search-suggestion-${index}`}
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.2, delay: index * 0.05 }}

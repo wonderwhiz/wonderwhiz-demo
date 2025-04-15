@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useChildLearningHistory } from '@/hooks/useChildLearningHistory';
 import { useGroqGeneration } from '@/hooks/useGroqGeneration';
@@ -44,77 +44,107 @@ const IntelligentSuggestions: React.FC<IntelligentSuggestionsProps> = ({
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [categories, setCategories] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
+  const [fetchTrigger, setFetchTrigger] = useState(0);
+  
+  // Move the categorization logic outside of the useEffect
+  const categorize = useCallback((suggestion: string): string => {
+    const lowercased = suggestion.toLowerCase();
+    if (lowercased.includes('space') || lowercased.includes('star') || lowercased.includes('planet') || lowercased.includes('universe')) {
+      return 'space';
+    } else if (lowercased.includes('animal') || lowercased.includes('dinosaur') || lowercased.includes('creature')) {
+      return 'animals';
+    } else if (lowercased.includes('history') || lowercased.includes('ancient') || lowercased.includes('past')) {
+      return 'history';
+    } else if (lowercased.includes('science') || lowercased.includes('experiment') || lowercased.includes('chemical')) {
+      return 'science';
+    } else if (lowercased.includes('nature') || lowercased.includes('plant') || lowercased.includes('environment')) {
+      return 'nature';
+    } else {
+      return 'general';
+    }
+  }, []);
   
   // Get unique suggestions based on learning history, interests, and Groq generation
   useEffect(() => {
+    // Create a function to fetch suggestions that won't trigger state updates
+    // during its execution, preventing infinite loops
     const fetchSuggestions = async () => {
       setIsLoading(true);
       
-      // Get personalized suggestions from learning history
-      const historyBasedSuggestions = getPersonalizedSuggestions();
-      
-      // Filter out duplicate suggestions and past queries
-      const pastQueries = new Set(pastCurios.map(c => c.query?.toLowerCase()));
-      const uniqueSuggestions = historyBasedSuggestions.filter(
-        suggestion => !pastQueries.has(suggestion.toLowerCase())
-      );
-      
-      // Generate AI-enhanced suggestions using Groq if we have child age
-      let aiSuggestions: string[] = [];
-      const childAge = childProfile?.age || 10;
-      
       try {
-        // Only generate if we have few suggestions from history
-        if (uniqueSuggestions.length < 6) {
-          // Create a prompt based on child's age and interests
-          const interests = childProfile?.interests?.join(', ') || 'science, space, animals';
-          const prompt = `Create ${6 - uniqueSuggestions.length} engaging, educational questions that would fascinate a ${childAge}-year-old child interested in ${interests}. Each question should spark curiosity and be suitable for their age level. Format as a numbered list without descriptions. Make questions specific and diverse - no generic questions.`;
-          
-          const result = await generateQuickAnswer(prompt, childAge);
-          
-          // Parse the result to extract questions
-          aiSuggestions = result
-            .split(/\d+\.\s+/)
-            .filter(Boolean)
-            .map(q => q.trim())
-            .filter(q => q.length > 10 && q.includes('?'));
+        // Get personalized suggestions from learning history
+        const historyBasedSuggestions = getPersonalizedSuggestions();
+        
+        // Filter out duplicate suggestions and past queries
+        const pastQueries = new Set(pastCurios.map(c => c.query?.toLowerCase()));
+        const uniqueSuggestions = historyBasedSuggestions.filter(
+          suggestion => !pastQueries.has(suggestion.toLowerCase())
+        );
+        
+        // Generate AI-enhanced suggestions using Groq if we have child age
+        let aiSuggestions: string[] = [];
+        const childAge = childProfile?.age || 10;
+        
+        try {
+          // Only generate if we have few suggestions from history
+          if (uniqueSuggestions.length < 6) {
+            // Create a prompt based on child's age and interests
+            const interests = childProfile?.interests?.join(', ') || 'science, space, animals';
+            const prompt = `Create ${6 - uniqueSuggestions.length} engaging, educational questions that would fascinate a ${childAge}-year-old child interested in ${interests}. Each question should spark curiosity and be suitable for their age level. Format as a numbered list without descriptions. Make questions specific and diverse - no generic questions.`;
+            
+            const result = await generateQuickAnswer(prompt, childAge);
+            
+            // Parse the result to extract questions
+            aiSuggestions = result
+              .split(/\d+\.\s+/)
+              .filter(Boolean)
+              .map(q => q.trim())
+              .filter(q => q.length > 10 && q.includes('?'));
+          }
+        } catch (error) {
+          console.error('Error generating AI suggestions:', error);
         }
+        
+        // Combine and deduplicate all suggestions
+        const allSuggestions = [...uniqueSuggestions, ...aiSuggestions];
+        
+        // Remove duplicates using Set, ensuring suggestions are unique
+        const lowerCaseSeen = new Set<string>();
+        const finalSuggestions = allSuggestions
+          .filter(suggestion => {
+            const lowerCase = suggestion.toLowerCase();
+            if (lowerCaseSeen.has(lowerCase)) return false;
+            lowerCaseSeen.add(lowerCase);
+            return !pastQueries.has(lowerCase);
+          })
+          .slice(0, 6)
+          .filter(Boolean);
+        
+        // Categorize each suggestion
+        const categoryMap: Record<string, string> = {};
+        finalSuggestions.forEach(suggestion => {
+          categoryMap[suggestion] = categorize(suggestion);
+        });
+        
+        // Set state only once at the end
+        setCategories(categoryMap);
+        setSuggestions(finalSuggestions);
       } catch (error) {
-        console.error('Error generating AI suggestions:', error);
+        console.error('Error fetching suggestions:', error);
+      } finally {
+        setIsLoading(false);
       }
-      
-      // Combine and deduplicate all suggestions
-      const allSuggestions = [...uniqueSuggestions, ...aiSuggestions];
-      const finalSuggestions = Array.from(new Set(allSuggestions))
-        .slice(0, 6)
-        .filter(Boolean);
-      
-      // Categorize each suggestion
-      const categoryMap: Record<string, string> = {};
-      finalSuggestions.forEach(suggestion => {
-        const lowercased = suggestion.toLowerCase();
-        if (lowercased.includes('space') || lowercased.includes('star') || lowercased.includes('planet') || lowercased.includes('universe')) {
-          categoryMap[suggestion] = 'space';
-        } else if (lowercased.includes('animal') || lowercased.includes('dinosaur') || lowercased.includes('creature')) {
-          categoryMap[suggestion] = 'animals';
-        } else if (lowercased.includes('history') || lowercased.includes('ancient') || lowercased.includes('past')) {
-          categoryMap[suggestion] = 'history';
-        } else if (lowercased.includes('science') || lowercased.includes('experiment') || lowercased.includes('chemical')) {
-          categoryMap[suggestion] = 'science';
-        } else if (lowercased.includes('nature') || lowercased.includes('plant') || lowercased.includes('environment')) {
-          categoryMap[suggestion] = 'nature';
-        } else {
-          categoryMap[suggestion] = 'general';
-        }
-      });
-      
-      setCategories(categoryMap);
-      setSuggestions(finalSuggestions);
-      setIsLoading(false);
     };
     
     fetchSuggestions();
-  }, [childId, childProfile, getPersonalizedSuggestions, pastCurios, generateQuickAnswer]);
+    // Add dependencies that should trigger a refresh of suggestions
+    // Include fetchTrigger but NOT any state variables that are set inside this effect
+  }, [childId, childProfile, getPersonalizedSuggestions, pastCurios, generateQuickAnswer, categorize, fetchTrigger]);
+
+  // Function to manually refresh suggestions
+  const refreshSuggestions = () => {
+    setFetchTrigger(prev => prev + 1);
+  };
   
   return (
     <div className="space-y-4">
@@ -126,7 +156,10 @@ const IntelligentSuggestions: React.FC<IntelligentSuggestionsProps> = ({
           <h3 className="text-lg font-semibold text-white font-nunito">Wonder Journeys</h3>
         </div>
         
-        <Badge className="bg-wonderwhiz-bright-pink/20 text-wonderwhiz-bright-pink border-wonderwhiz-bright-pink/20 hover:bg-wonderwhiz-bright-pink/30">
+        <Badge 
+          className="bg-wonderwhiz-bright-pink/20 text-wonderwhiz-bright-pink border-wonderwhiz-bright-pink/20 hover:bg-wonderwhiz-bright-pink/30 cursor-pointer"
+          onClick={refreshSuggestions}
+        >
           {isLoading ? 'Generating wonders...' : `${suggestions.length} new wonders`}
         </Badge>
       </div>
@@ -151,7 +184,7 @@ const IntelligentSuggestions: React.FC<IntelligentSuggestionsProps> = ({
         ) : (
           suggestions.map((suggestion, index) => (
             <motion.div
-              key={suggestion}
+              key={`suggestion-${index}-${suggestion.substring(0, 10)}`}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1, duration: 0.4 }}
