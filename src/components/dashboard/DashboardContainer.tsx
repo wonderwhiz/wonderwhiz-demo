@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useParams } from 'react-router-dom';
@@ -52,7 +53,7 @@ const DashboardContainer = () => {
     isGenerating,
     handleSubmitQuery,
     handleFollowRabbitHole,
-    handleCurioSuggestionClick
+    handleCurioSuggestionClick: curioCreationSuggestionClick
   } = useCurioCreation(profileId, childProfile, setPastCurios, setChildProfile, setCurrentCurio);
 
   const {
@@ -113,13 +114,10 @@ const DashboardContainer = () => {
     }
   };
 
-  const handleCurioSuggestionClick = (suggestion: string) => {
+  // Use the logic from the local function but call the one from useCurioCreation
+  const handleSuggestionClick = (suggestion: string) => {
     setCurrentCurio(null);
-    
-    setQuery(suggestion);
-    setTimeout(() => {
-      handleSubmitQuery();
-    }, 100);
+    curioCreationSuggestionClick(suggestion);
   };
 
   if (isLoading) {
@@ -162,7 +160,7 @@ const DashboardContainer = () => {
                     curioSuggestions={curioSuggestions}
                     isLoadingSuggestions={isLoadingSuggestions}
                     handleRefreshSuggestions={handleRefreshSuggestions}
-                    handleCurioSuggestionClick={handleCurioSuggestionClick}
+                    handleCurioSuggestionClick={handleSuggestionClick}
                     childProfile={childProfile}
                     pastCurios={pastCurios}
                     childId={profileId || ''}
@@ -175,7 +173,7 @@ const DashboardContainer = () => {
                   <IntelligentSuggestions
                     childId={profileId || ''}
                     childProfile={childProfile}
-                    onSuggestionClick={handleCurioSuggestionClick}
+                    onSuggestionClick={handleSuggestionClick}
                     pastCurios={pastCurios}
                   />
                   
@@ -183,7 +181,7 @@ const DashboardContainer = () => {
                     <KnowledgeJourney 
                       childId={profileId || ''}
                       childProfile={childProfile}
-                      onTopicClick={handleCurioSuggestionClick}
+                      onTopicClick={handleSuggestionClick}
                     />
                     <DiscoverySection 
                       childId={profileId || ''} 
