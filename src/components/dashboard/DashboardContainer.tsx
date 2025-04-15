@@ -113,6 +113,15 @@ const DashboardContainer = () => {
     }
   };
 
+  const handleCurioSuggestionClick = (suggestion: string) => {
+    setCurrentCurio(null);
+    
+    setQuery(suggestion);
+    setTimeout(() => {
+      handleSubmitQuery();
+    }, 100);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-wonderwhiz-deep-purple flex items-center justify-center">

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -20,17 +19,31 @@ export function useGroqGeneration() {
     setError(null);
     
     try {
-      // Determine if the query is ocean-related for more targeted generation
+      // Adjust query based on child's age to get age-appropriate content
+      let enhancedQuery = query;
+      
+      // Add age context for better age-appropriate answers
+      if (!query.toLowerCase().includes("year old") && !query.toLowerCase().includes("age")) {
+        enhancedQuery = `${query} (tailored for a ${childAge}-year-old's understanding)`;
+      }
+      
+      // For ocean or space-related queries, enhance them for better answers
       const isOceanQuery = query.toLowerCase().includes('ocean') || 
                            query.toLowerCase().includes('sea') ||
                            query.toLowerCase().includes('marine') ||
                            query.toLowerCase().includes('underwater');
+                           
+      const isSpaceQuery = query.toLowerCase().includes('space') || 
+                           query.toLowerCase().includes('planet') ||
+                           query.toLowerCase().includes('star') ||
+                           query.toLowerCase().includes('universe');
       
-      let enhancedQuery = query;
-      
-      // For vague ocean queries, enhance them for better answers
-      if (isOceanQuery && query.length < 30) {
-        enhancedQuery = `Explain fascinating ocean mysteries and deep sea phenomena for ${childAge}-year-old children`;
+      if ((isOceanQuery || isSpaceQuery) && query.length < 30) {
+        if (isOceanQuery) {
+          enhancedQuery = `Explain fascinating ocean mysteries and deep sea phenomena for ${childAge}-year-old children`;
+        } else if (isSpaceQuery) {
+          enhancedQuery = `Explain fascinating space and astronomy facts for ${childAge}-year-old children`;
+        }
       }
       
       const { data, error } = await supabase.functions.invoke('generate-quick-answer', {
@@ -96,9 +109,7 @@ export function useGroqGeneration() {
     }
   };
   
-  // Helper function to generate fallback answers based on the topic
   const generateFallbackAnswer = (query: string): string => {
-    // Determine if the query is related to oceans
     const isOceanTopic = query.toLowerCase().includes('ocean') || 
                          query.toLowerCase().includes('sea') || 
                          query.toLowerCase().includes('marine') ||
@@ -108,7 +119,6 @@ export function useGroqGeneration() {
       return "The ocean is Earth's last great frontier! Covering over 70% of our planet, oceans are home to millions of species, from microscopic plankton to enormous whales. Scientists estimate we've explored less than 20% of this vast underwater world. Ocean mysteries include deep sea creatures with bioluminescence, underwater volcanoes, and complex current systems that regulate our climate.";
     }
     
-    // Common topics with fallback responses
     const fallbacks = {
       ocean: "The ocean is Earth's last great frontier! Covering over 70% of our planet, oceans are home to millions of species, from microscopic plankton to enormous whales. Scientists estimate we've explored less than 20% of this vast underwater world.",
       volcano: "Volcanoes are Earth's natural pressure valves! They form when hot magma from deep underground rises to the surface. While they can be destructive, volcanoes create new land and release minerals that enrich the soil for plants.",
@@ -121,7 +131,6 @@ export function useGroqGeneration() {
       human: "Humans are remarkable for their capacity to think, create, and adapt. Our unique abilities to use complex language, create art, develop technology, and work together in large societies have allowed us to thrive in environments across the planet."
     };
     
-    // Find the most relevant fallback by checking if the query contains any of our keywords
     const queryLower = query.toLowerCase();
     const relevantTopic = Object.keys(fallbacks).find(topic => 
       queryLower.includes(topic)
@@ -131,11 +140,9 @@ export function useGroqGeneration() {
       return fallbacks[relevantTopic];
     }
     
-    // Default fallback for any topic
     return `${query} is a fascinating topic to explore! As you journey through this exploration, you'll discover key facts, understand important concepts, and engage with fun activities that will deepen your knowledge.`;
   };
   
-  // Helper function to get fallback images based on topic
   const getFallbackImage = (topic: string): string => {
     const fallbackImages = {
       ocean: "https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?q=80&w=1000&auto=format&fit=crop",
@@ -148,7 +155,6 @@ export function useGroqGeneration() {
       earth: "https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?q=80&w=1000&auto=format&fit=crop"
     };
     
-    // Determine if the topic is related to oceans
     const isOceanTopic = topic.toLowerCase().includes('ocean') || 
                          topic.toLowerCase().includes('sea') || 
                          topic.toLowerCase().includes('marine') ||
@@ -158,7 +164,6 @@ export function useGroqGeneration() {
       return fallbackImages.ocean;
     }
     
-    // Find the most relevant image by checking if the topic contains any of our keywords
     const topicLower = topic.toLowerCase();
     const relevantTopic = Object.keys(fallbackImages).find(key => 
       topicLower.includes(key)
