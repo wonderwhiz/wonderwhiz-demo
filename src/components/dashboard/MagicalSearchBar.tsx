@@ -25,6 +25,31 @@ const MagicalSearchBar: React.FC<MagicalSearchBarProps> = ({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   
+  // Function to validate a suggestion's quality
+  const isValidSuggestion = useCallback((suggestion: string): boolean => {
+    if (!suggestion) return false;
+    
+    const lowercased = suggestion.toLowerCase();
+    
+    // Filter out food items that aren't educational
+    if (lowercased.includes('chicken') || 
+        lowercased.includes('butter') || 
+        lowercased.includes('food') || 
+        lowercased.includes('recipe')) {
+      return false;
+    }
+    
+    // Filter out test/temporary items
+    if (lowercased.includes('test') || 
+        lowercased.includes('temporary') || 
+        lowercased.includes('standalone') || 
+        lowercased.includes('curio')) {
+      return false;
+    }
+    
+    return true;
+  }, []);
+  
   // Use useCallback to prevent regenerating this function on every render
   const generateSuggestions = useCallback((input: string): string[] => {
     const lowercaseInput = input.toLowerCase();
@@ -47,10 +72,12 @@ const MagicalSearchBar: React.FC<MagicalSearchBarProps> = ({
   
   useEffect(() => {
     if (isFocused && query.length > 0) {
-      // Filter recent queries that match the current input
-      const matchingQueries = recentQueries.filter(q => 
-        q.toLowerCase().includes(query.toLowerCase())
-      ).slice(0, 3);
+      // Filter recent queries that match the current input and are valid
+      const matchingQueries = recentQueries
+        .filter(q => 
+          q.toLowerCase().includes(query.toLowerCase()) && isValidSuggestion(q)
+        )
+        .slice(0, 3);
       
       // Add intelligent suggestions based on the query
       const intelligentSuggestions = generateSuggestions(query);
@@ -60,19 +87,21 @@ const MagicalSearchBar: React.FC<MagicalSearchBarProps> = ({
       
       // Create a Set to track lowercase suggestions we've already seen
       const seenSuggestions = new Set<string>();
-      const uniqueSuggestions = allSuggestions.filter(suggestion => {
-        const lowercased = suggestion.toLowerCase();
-        if (seenSuggestions.has(lowercased)) return false;
-        seenSuggestions.add(lowercased);
-        return true;
-      }).slice(0, 5);
+      const uniqueSuggestions = allSuggestions
+        .filter(suggestion => {
+          const lowercased = suggestion.toLowerCase();
+          if (seenSuggestions.has(lowercased) || !isValidSuggestion(suggestion)) return false;
+          seenSuggestions.add(lowercased);
+          return true;
+        })
+        .slice(0, 5);
         
       setSuggestions(uniqueSuggestions);
       setShowSuggestions(uniqueSuggestions.length > 0);
     } else {
       setShowSuggestions(false);
     }
-  }, [query, isFocused, recentQueries, generateSuggestions]);
+  }, [query, isFocused, recentQueries, generateSuggestions, isValidSuggestion]);
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

@@ -33,6 +33,16 @@ const cardVariants = [
   "from-violet-500/20 to-purple-600/30 border-violet-500/30 hover:border-violet-400/50"
 ];
 
+// High-quality starter questions
+const FALLBACK_QUESTIONS = [
+  "How do volcanoes work?",
+  "What makes rainbows appear in the sky?",
+  "Why do seasons change throughout the year?",
+  "How do animals communicate with each other?",
+  "What are black holes and how do they form?",
+  "How do plants make their own food?",
+];
+
 const IntelligentSuggestions: React.FC<IntelligentSuggestionsProps> = ({
   childId,
   childProfile,
@@ -63,6 +73,45 @@ const IntelligentSuggestions: React.FC<IntelligentSuggestionsProps> = ({
       return 'general';
     }
   }, []);
+
+  // Function to validate a suggestion's quality
+  const isValidSuggestion = useCallback((suggestion: string): boolean => {
+    if (!suggestion) return false;
+    
+    const lowercased = suggestion.toLowerCase();
+    
+    // Filter out food items that aren't educational
+    if (lowercased.includes('chicken') || 
+        lowercased.includes('butter') || 
+        lowercased.includes('food') || 
+        lowercased.includes('recipe')) {
+      return false;
+    }
+    
+    // Filter out test/temporary items
+    if (lowercased.includes('test') || 
+        lowercased.includes('temporary') || 
+        lowercased.includes('standalone') || 
+        lowercased.includes('curio')) {
+      return false;
+    }
+    
+    // Ensure it's likely a question or topic
+    if (suggestion.length < 10) return false;
+    
+    // Check if it has educational value
+    const educationalTerms = [
+      'how', 'why', 'what', 'when', 'where', 'who', 'which',
+      'learn', 'discover', 'explore', 'understand', 'science', 
+      'history', 'animal', 'space', 'earth', 'work', 'function'
+    ];
+    
+    const hasEducationalTerm = educationalTerms.some(term => 
+      lowercased.includes(term)
+    );
+    
+    return hasEducationalTerm;
+  }, []);
   
   // Get unique suggestions based on learning history, interests, and Groq generation
   useEffect(() => {
@@ -73,7 +122,8 @@ const IntelligentSuggestions: React.FC<IntelligentSuggestionsProps> = ({
       
       try {
         // Get personalized suggestions from learning history
-        const historyBasedSuggestions = getPersonalizedSuggestions();
+        const historyBasedSuggestions = getPersonalizedSuggestions()
+          .filter(isValidSuggestion); // Filter invalid suggestions
         
         // Filter out duplicate suggestions and past queries
         const pastQueries = new Set(pastCurios.map(c => c.query?.toLowerCase()));
@@ -86,7 +136,7 @@ const IntelligentSuggestions: React.FC<IntelligentSuggestionsProps> = ({
         const childAge = childProfile?.age || 10;
         
         try {
-          // Only generate if we have few suggestions from history
+          // Only generate if we need more suggestions
           if (uniqueSuggestions.length < 6) {
             // Create a prompt based on child's age and interests
             const interests = childProfile?.interests?.join(', ') || 'science, space, animals';
@@ -99,10 +149,15 @@ const IntelligentSuggestions: React.FC<IntelligentSuggestionsProps> = ({
               .split(/\d+\.\s+/)
               .filter(Boolean)
               .map(q => q.trim())
-              .filter(q => q.length > 10 && q.includes('?'));
+              .filter(q => q.length > 10 && q.includes('?'))
+              .filter(isValidSuggestion); // Filter invalid suggestions
           }
         } catch (error) {
           console.error('Error generating AI suggestions:', error);
+          // Use fallback questions if AI generation fails
+          aiSuggestions = FALLBACK_QUESTIONS.filter(q => 
+            !pastQueries.has(q.toLowerCase())
+          ).slice(0, 6 - uniqueSuggestions.length);
         }
         
         // Combine and deduplicate all suggestions
@@ -117,8 +172,17 @@ const IntelligentSuggestions: React.FC<IntelligentSuggestionsProps> = ({
             lowerCaseSeen.add(lowerCase);
             return !pastQueries.has(lowerCase);
           })
-          .slice(0, 6)
-          .filter(Boolean);
+          .slice(0, 6);
+        
+        // If we still don't have enough suggestions, add fallback questions
+        if (finalSuggestions.length < 4) {
+          const additionalNeeded = 6 - finalSuggestions.length;
+          const fallbacksToAdd = FALLBACK_QUESTIONS
+            .filter(q => !lowerCaseSeen.has(q.toLowerCase()) && !pastQueries.has(q.toLowerCase()))
+            .slice(0, additionalNeeded);
+          
+          finalSuggestions.push(...fallbacksToAdd);
+        }
         
         // Categorize each suggestion
         const categoryMap: Record<string, string> = {};
@@ -131,6 +195,8 @@ const IntelligentSuggestions: React.FC<IntelligentSuggestionsProps> = ({
         setSuggestions(finalSuggestions);
       } catch (error) {
         console.error('Error fetching suggestions:', error);
+        // Use fallback questions if everything else fails
+        setSuggestions(FALLBACK_QUESTIONS.slice(0, 6));
       } finally {
         setIsLoading(false);
       }
@@ -138,8 +204,7 @@ const IntelligentSuggestions: React.FC<IntelligentSuggestionsProps> = ({
     
     fetchSuggestions();
     // Add dependencies that should trigger a refresh of suggestions
-    // Include fetchTrigger but NOT any state variables that are set inside this effect
-  }, [childId, childProfile, getPersonalizedSuggestions, pastCurios, generateQuickAnswer, categorize, fetchTrigger]);
+  }, [childId, childProfile, getPersonalizedSuggestions, pastCurios, generateQuickAnswer, categorize, fetchTrigger, isValidSuggestion]);
 
   // Function to manually refresh suggestions
   const refreshSuggestions = () => {
