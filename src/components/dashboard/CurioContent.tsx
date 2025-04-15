@@ -60,7 +60,7 @@ interface CurioContentProps {
   hasMoreBlocks: boolean;
   onToggleLike: (blockId: string) => void;
   onToggleBookmark: (blockId: string) => void;
-  onReply: (blockId: string, message: string) => void;
+  onReply: (blockId: string) => void;
   onSetQuery: (query: string) => void;
   onRabbitHoleFollow: (question: string) => void;
   onQuizCorrect: (blockId: string) => void;
@@ -148,80 +148,6 @@ const CurioBlock = ({
   const specialist = getSpecialistInfo(block.specialist_id);
   const [replyText, setReplyText] = useState('');
   const [showReplyInput, setShowReplyInput] = useState(false);
-  
-  const handleSubmitReply = () => {
-    if (replyText.trim()) {
-      onReply(block.id, replyText);
-      setReplyText('');
-      setShowReplyInput(false);
-    }
-  };
-
-  const getBlockContent = () => {
-    switch (block.type) {
-      case 'fact':
-      case 'funFact':
-        return block.content?.fact || block.content?.text || "Learn more about this topic!";
-      case 'quiz':
-        return block.content?.question || "Test your knowledge with this quiz!";
-      case 'creative':
-        return block.content?.prompt || "Use your creativity to explore this topic!";
-      case 'task':
-        return block.content?.task || "Complete this task to learn more!";
-      case 'riddle':
-        return block.content?.riddle || "Solve this riddle!";
-      case 'news':
-        return block.content?.summary || "Latest news on this topic!";
-      case 'activity':
-        return block.content?.activity || "Try this activity to learn more!";
-      case 'mindfulness':
-        return block.content?.exercise || "Take a moment to reflect.";
-      default:
-        return "Discover more about this fascinating topic!";
-    }
-  };
-
-  const handleReadContent = () => {
-    const content = getBlockContent();
-    if (content && onReadAloud) {
-      onReadAloud(content, block.specialist_id);
-    }
-  };
-
-  if (block.type === 'quiz' && block.content?.options) {
-    return (
-      <FireflyQuizBlock
-        question={block.content.question}
-        options={block.content.options}
-        correctIndex={block.content.correctIndex}
-        explanation={block.content.explanation}
-        childAge={childAge}
-      />
-    );
-  }
-
-  if (block.type === 'mindfulness' && block.content) {
-    return (
-      <MindfulnessBlock
-        title={block.content.title || "Mindfulness Moment"}
-        instructions={block.content.exercise || block.content.text || "Take a moment to breathe and relax."}
-        duration={block.content.duration || 180}
-        benefit={block.content.benefit}
-        childAge={childAge}
-      />
-    );
-  }
-
-  if (block.type === 'creative' && block.content) {
-    return (
-      <CreativeBlock
-        prompt={block.content.prompt || "Use your imagination to explore this topic creatively."}
-        examples={block.content.examples || ["Draw a picture", "Write a story", "Make a model"]}
-        specialistId={block.specialist_id}
-        childAge={childAge}
-      />
-    );
-  }
 
   return (
     <motion.div
@@ -230,112 +156,121 @@ const CurioBlock = ({
       transition={{ duration: 0.5 }}
       className="mb-6"
     >
-      <Card className="bg-wonderwhiz-purple border-none overflow-hidden">
-        <div className="p-5">
+      <Card className="bg-gradient-to-br from-wonderwhiz-deep-purple/40 to-wonderwhiz-light-purple/30 backdrop-blur-md border border-wonderwhiz-light-purple/30 overflow-hidden">
+        <div className="p-6">
           <div className="flex items-center mb-4">
-            <Avatar className="h-12 w-12 border-2 border-white/20">
+            <Avatar className="h-12 w-12 border-2 border-white/20 ring-2 ring-wonderwhiz-bright-pink/20">
               <AvatarImage src={specialist.avatar} alt={specialist.name} />
-              <AvatarFallback className={specialist.fallbackColor}>{specialist.fallbackInitial}</AvatarFallback>
+              <AvatarFallback className={`${specialist.fallbackColor} font-nunito`}>
+                {specialist.fallbackInitial}
+              </AvatarFallback>
             </Avatar>
             <div className="ml-3">
               <div className="flex items-center">
-                <h3 className="text-lg font-semibold text-white">{specialist.name}</h3>
-                {block.specialist_id === 'nova' && (
-                  <div className="ml-2 text-xs bg-blue-500/30 text-blue-200 px-1.5 py-0.5 rounded-full">•</div>
-                )}
-                {block.specialist_id === 'spark' && (
-                  <div className="ml-2 text-xs bg-yellow-500/30 text-yellow-200 px-1.5 py-0.5 rounded-full">•</div>
-                )}
+                <h3 className="text-lg font-bold text-white font-nunito">{specialist.name}</h3>
+                <div className={`ml-2 h-2 w-2 rounded-full ${
+                  specialist.id === 'nova' ? 'bg-wonderwhiz-bright-pink' :
+                  specialist.id === 'spark' ? 'bg-wonderwhiz-vibrant-yellow' :
+                  'bg-wonderwhiz-cyan'
+                }`} />
               </div>
-              <p className="text-sm text-white/70">{specialist.title}</p>
+              <p className="text-sm text-white/70 font-inter">{specialist.title}</p>
             </div>
           </div>
-          
-          {childAge && childAge < 12 ? (
-            <AgeAdaptiveContent
-              content={getBlockContent()}
-              childAge={childAge}
-              onReadAloud={handleReadContent}
-              onBookmark={() => onToggleBookmark(block.id)}
-            />
-          ) : (
-            <div className="text-white mb-5">
-              {getBlockContent()}
+
+          <div className="text-white mb-5 font-inter">
+            {block.content?.text || block.content?.fact || 
+             "Explore this fascinating topic with our specialists!"}
+          </div>
+
+          {block.content?.rabbitHoles?.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {block.content.rabbitHoles.map((question, index) => (
+                <Badge 
+                  key={index} 
+                  variant="outline" 
+                  className="bg-white/5 hover:bg-white/10 border-wonderwhiz-bright-pink/30 hover:border-wonderwhiz-bright-pink text-white cursor-pointer transition-all duration-300 font-inter"
+                  onClick={() => onRabbitHoleFollow && onRabbitHoleFollow(question)}
+                >
+                  <Sparkles className="w-3 h-3 mr-1 text-wonderwhiz-vibrant-yellow" />
+                  {question}
+                </Badge>
+              ))}
             </div>
           )}
-          
-          <div className="flex flex-wrap gap-2 mb-4">
-            {block.content?.rabbitHoles?.map((question: string, index: number) => (
-              <Badge 
-                key={index} 
-                variant="outline" 
-                className="bg-white/10 hover:bg-white/20 cursor-pointer text-white/90 border-white/20"
-                onClick={() => onRabbitHoleFollow && onRabbitHoleFollow(question)}
-              >
-                {question}
-              </Badge>
-            ))}
-          </div>
-          
-          <div className="flex space-x-4 pt-2 border-t border-white/10">
+
+          <div className="flex space-x-4 pt-3 border-t border-wonderwhiz-light-purple/20">
             <Button 
               variant="ghost" 
               size="sm" 
               onClick={() => onToggleLike(block.id)}
-              className={`text-white/70 hover:text-white hover:bg-white/10 ${block.liked ? 'text-pink-400 hover:text-pink-400' : ''}`}
+              className={`text-white/70 hover:text-wonderwhiz-bright-pink font-inter ${
+                block.liked ? 'text-wonderwhiz-bright-pink' : ''
+              }`}
             >
               <ThumbsUp className="h-4 w-4 mr-1" />
               Like
             </Button>
-            
+
             <Button 
               variant="ghost" 
               size="sm" 
               onClick={() => onToggleBookmark(block.id)}
-              className={`text-white/70 hover:text-white hover:bg-white/10 ${block.bookmarked ? 'text-yellow-400 hover:text-yellow-400' : ''}`}
+              className={`text-white/70 hover:text-wonderwhiz-vibrant-yellow font-inter ${
+                block.bookmarked ? 'text-wonderwhiz-vibrant-yellow' : ''
+              }`}
             >
               <Bookmark className="h-4 w-4 mr-1" />
               Save
             </Button>
-            
+
             <Button 
               variant="ghost" 
               size="sm" 
               onClick={() => setShowReplyInput(!showReplyInput)}
-              className="text-white/70 hover:text-white hover:bg-white/10"
+              className="text-white/70 hover:text-wonderwhiz-cyan font-inter"
             >
               <MessageCircle className="h-4 w-4 mr-1" />
               Reply
             </Button>
-            
+
             {onReadAloud && (
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={handleReadContent}
-                className="text-white/70 hover:text-white hover:bg-white/10"
+                onClick={() => onReadAloud(block.content?.text || block.content?.fact || '', specialist.id)}
+                className="text-white/70 hover:text-wonderwhiz-blue font-inter"
               >
                 <VolumeIcon className="h-4 w-4 mr-1" />
                 {childAge && childAge < 8 ? "Read to me" : "Read aloud"}
               </Button>
             )}
           </div>
-          
+
           {showReplyInput && (
-            <div className="mt-3 flex">
-              <input
-                type="text"
-                value={replyText}
-                onChange={(e) => setReplyText(e.target.value)}
-                placeholder="Write a reply..."
-                className="flex-1 bg-white/10 border-white/20 rounded-l-md p-2 text-white placeholder:text-white/50 outline-none"
-              />
-              <Button 
-                className="rounded-l-none bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/80"
-                onClick={handleSubmitReply}
-              >
-                Send
-              </Button>
+            <div className="mt-3">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  placeholder="Share your thoughts..."
+                  className="w-full bg-white/5 border border-wonderwhiz-light-purple/30 rounded-lg px-4 py-2 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-wonderwhiz-bright-pink/50 font-inter"
+                />
+                <Button 
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/90"
+                  size="sm"
+                  onClick={() => {
+                    if (replyText.trim()) {
+                      onReply(block.id, replyText);
+                      setReplyText('');
+                      setShowReplyInput(false);
+                    }
+                  }}
+                >
+                  Send
+                </Button>
+              </div>
             </div>
           )}
         </div>

@@ -1,46 +1,53 @@
 
 import React from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Sparkles, Bell } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { motion } from 'framer-motion';
+import { Sparkles, Star } from 'lucide-react';
 
-export interface DashboardHeaderProps {
+interface DashboardHeaderProps {
   childName: string;
-  profileId?: string;
-  streakDays: number; // Added this prop to fix the build error
-  childAge: number;   // Added this prop to fix the build error
+  streakDays?: number;
+  childAge?: number;
 }
 
-const DashboardHeader: React.FC<DashboardHeaderProps> = ({ 
-  childName, 
-  profileId,
-  streakDays,
-  childAge
+const DashboardHeader: React.FC<DashboardHeaderProps> = ({
+  childName,
+  streakDays = 0,
+  childAge = 10
 }) => {
   return (
-    <header className="sticky top-0 z-10 backdrop-blur-md bg-wonderwhiz-deep-purple/80 border-b border-white/10 px-4 py-3">
-      <div className="flex items-center justify-between max-w-5xl mx-auto">
-        <div className="flex items-center space-x-3">
-          <Avatar className="h-9 w-9 border-2 border-white/20">
-            <AvatarImage src={`/avatars/child-${(childAge < 8) ? 'young' : (childAge < 13) ? 'middle' : 'teen'}.png`} alt={childName} />
-            <AvatarFallback className="bg-wonderwhiz-bright-pink text-white">{childName.charAt(0)}</AvatarFallback>
-          </Avatar>
+    <motion.div 
+      className="bg-gradient-to-r from-wonderwhiz-deep-purple via-wonderwhiz-purple to-wonderwhiz-light-purple border-b border-wonderwhiz-light-purple/30 backdrop-blur-md"
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-white font-medium">{childName}</h2>
-            <div className="flex items-center text-xs text-white/60">
-              <Sparkles className="h-3 w-3 mr-1 text-wonderwhiz-gold" />
-              <span>{streakDays} day streak</span>
-            </div>
+            <h1 className="text-2xl md:text-3xl font-bold text-white font-nunito">
+              Welcome back, {childName}!
+            </h1>
+            <p className="text-white/70 mt-1 font-inter">
+              {childAge < 8 ? "Let's explore something amazing today!" :
+               childAge < 12 ? "What would you like to discover?" :
+               "Ready to expand your knowledge?"}
+            </p>
           </div>
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <Button variant="ghost" size="icon" className="text-white/70 hover:text-white hover:bg-white/10 rounded-full">
-            <Bell className="h-5 w-5" />
-          </Button>
+          
+          {streakDays > 0 && (
+            <motion.div 
+              className="flex items-center bg-wonderwhiz-bright-pink/20 px-4 py-2 rounded-full"
+              whileHover={{ scale: 1.05 }}
+            >
+              <Star className="h-5 w-5 text-wonderwhiz-vibrant-yellow mr-2" />
+              <span className="text-white font-nunito">
+                {streakDays} day{streakDays !== 1 ? 's' : ''} streak!
+              </span>
+            </motion.div>
+          )}
         </div>
       </div>
-    </header>
+    </motion.div>
   );
 };
 
