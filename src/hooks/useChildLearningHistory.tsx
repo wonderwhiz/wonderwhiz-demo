@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -237,39 +236,60 @@ export const useChildLearningHistory = (childId?: string) => {
     }
   }, [childId, learningHistory]);
   
-  // Get personalized topic suggestions based on learning history
+  // Calculate memory strength based on interaction date, revisit count, and engagement level
+  const calculateMemoryStrength = (interactionDate: Date, revisitCount: number, engagementLevel: number): number => {
+    const now = new Date();
+    const timeSinceInteraction = now.getTime() - interactionDate.getTime();
+    const daysSinceInteraction = timeSinceInteraction / (1000 * 3600 * 24);
+    
+    let memoryStrength = engagementLevel * 10; // Base memory on engagement
+    memoryStrength += revisitCount * 15; // Boost from revisits
+    memoryStrength -= daysSinceInteraction * 2; // Decay over time
+    
+    return Math.max(0, Math.min(100, memoryStrength)); // Clamp between 0 and 100
+  };
+
+  // Enhanced personalized suggestions
   const getPersonalizedSuggestions = useCallback((): string[] => {
     if (learningHistory.length === 0) return [];
     
-    // Strategy 1: Find topics to revisit (spaced repetition)
-    const now = new Date();
-    const oneMonthAgo = new Date();
-    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    const suggestions = [];
     
+    // Strategy 1: Topics to revisit based on memory strength
     const topicsToRevisit = learningHistory
       .filter(item => {
-        const interactionDate = new Date(item.interaction_date);
-        // Topics from 1-6 months ago that haven't been revisited much
-        return interactionDate > oneMonthAgo && 
-               interactionDate < now && 
-               item.revisit_count < 2;
+        const memory = calculateMemoryStrength(
+          new Date(item.interaction_date),
+          item.revisit_count,
+          item.engagement_level
+        );
+        return memory < 50; // Suggest revisiting topics with low memory retention
       })
-      .map(item => `Learn more about ${item.topic}`);
+      .map(item => `Let's explore more about ${item.topic}`);
+    suggestions.push(...topicsToRevisit.slice(0, 2));
     
-    // Strategy 2: Find connections between topics they've explored
+    // Strategy 2: Connection-based suggestions
     const connectionSuggestions = topicConnections
       .sort((a, b) => b.strength - a.strength)
-      .slice(0, 3)
-      .map(conn => `How are ${conn.from_topic} and ${conn.to_topic} connected?`);
-    
-    // Strategy 3: Suggest deeper exploration of high-engagement topics
-    const deeperSuggestions = strongestTopics
       .slice(0, 2)
-      .map(item => `Tell me something amazing about ${item.topic}`);
+      .map(conn => `What's the connection between ${conn.from_topic} and ${conn.to_topic}?`);
+    suggestions.push(...connectionSuggestions);
     
-    // Combine suggestions
-    return [...topicsToRevisit.slice(0, 2), ...connectionSuggestions.slice(0, 2), ...deeperSuggestions]
-      .slice(0, 5); // Return top 5 suggestions
+    // Strategy 3: Interest-based suggestions
+    const interests = strongestTopics.map(topic => topic.topic);
+    interests.forEach(interest => {
+      const interestQuestions = [
+        `What are the latest discoveries about ${interest}?`,
+        `How does ${interest} affect our daily lives?`,
+        `What mysteries about ${interest} remain unsolved?`
+      ];
+      suggestions.push(interestQuestions[Math.floor(Math.random() * interestQuestions.length)]);
+    });
+    
+    // Make suggestions unique and randomize order
+    return Array.from(new Set(suggestions))
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 6);
   }, [learningHistory, topicConnections, strongestTopics]);
   
   // Helper: Common words to filter out when extracting topics

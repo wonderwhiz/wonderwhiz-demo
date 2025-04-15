@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useParams } from 'react-router-dom';
@@ -15,6 +14,9 @@ import WelcomeSection from '@/components/dashboard/WelcomeSection';
 import TalkToWhizzy from '@/components/curio/TalkToWhizzy';
 import { useElevenLabsVoice } from '@/hooks/useElevenLabsVoice';
 import VoiceInputButton from '@/components/curio/VoiceInputButton';
+import IntelligentSuggestions from '@/components/dashboard/IntelligentSuggestions';
+import KnowledgeJourney from '@/components/dashboard/KnowledgeJourney';
+import DiscoverySection from '@/components/dashboard/DiscoverySection';
 
 interface Curio {
   id: string;
@@ -146,19 +148,48 @@ const DashboardContainer = () => {
           <div className="max-w-5xl mx-auto space-y-6 p-4">
             <Card className="bg-wonderwhiz-purple/50 backdrop-blur-sm border-white/10 flex-grow relative overflow-hidden shadow-xl rounded-xl">
               {!currentCurio ? (
-                <WelcomeSection 
-                  curioSuggestions={curioSuggestions}
-                  isLoadingSuggestions={isLoadingSuggestions}
-                  handleRefreshSuggestions={handleRefreshSuggestions}
-                  handleCurioSuggestionClick={handleCurioSuggestionClick}
-                  childProfile={childProfile}
-                  pastCurios={pastCurios}
-                  childId={profileId || ''}
-                  query={query}
-                  setQuery={setQuery}
-                  handleSubmitQuery={handleSubmitQuery}
-                  isGenerating={isGenerating || isGeneratingContent}
-                />
+                <div className="p-6 space-y-8">
+                  <WelcomeSection 
+                    curioSuggestions={curioSuggestions}
+                    isLoadingSuggestions={isLoadingSuggestions}
+                    handleRefreshSuggestions={handleRefreshSuggestions}
+                    handleCurioSuggestionClick={handleCurioSuggestionClick}
+                    childProfile={childProfile}
+                    pastCurios={pastCurios}
+                    childId={profileId || ''}
+                    query={query}
+                    setQuery={setQuery}
+                    handleSubmitQuery={handleSubmitQuery}
+                    isGenerating={isGenerating || isGeneratingContent}
+                  />
+                  
+                  <IntelligentSuggestions
+                    childId={profileId || ''}
+                    childProfile={childProfile}
+                    onSuggestionClick={handleCurioSuggestionClick}
+                    pastCurios={pastCurios}
+                  />
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <KnowledgeJourney 
+                      childId={profileId || ''}
+                      childProfile={childProfile}
+                      onTopicClick={handleCurioSuggestionClick}
+                    />
+                    <DiscoverySection 
+                      childId={profileId || ''} 
+                      sparksBalance={childProfile?.sparks_balance || 0}
+                      onSparkEarned={(amount) => {
+                        if (childProfile && setChildProfile) {
+                          setChildProfile({
+                            ...childProfile,
+                            sparks_balance: (childProfile.sparks_balance || 0) + amount
+                          });
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
               ) : (
                 <CurioContent
                   currentCurio={currentCurio}
