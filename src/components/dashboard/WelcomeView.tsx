@@ -21,6 +21,33 @@ interface WelcomeViewProps {
   isLoadingSuggestions?: boolean; // Make this optional
 }
 
+// Define a mock task for UI demonstration
+const demoTasks = [
+  {
+    id: '1',
+    title: 'Explore a new topic',
+    completed: false,
+    type: 'explore' as const,
+    duration: '10 min',
+    reward: 5
+  },
+  {
+    id: '2',
+    title: 'Complete a quiz about space',
+    completed: false,
+    type: 'quiz' as const,
+    reward: 10
+  },
+  {
+    id: '3',
+    title: 'Read about dinosaurs',
+    completed: true,
+    type: 'read' as const,
+    duration: '15 min',
+    reward: 8
+  }
+];
+
 const WelcomeView: React.FC<WelcomeViewProps> = ({
   childId,
   childProfile,
@@ -35,6 +62,7 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
   isLoadingSuggestions = false, // Provide default value
 }) => {
   const [pendingTasksCount, setPendingTasksCount] = useState(0);
+  const [tasks, setTasks] = useState(demoTasks);
   
   // Fetch pending tasks count
   useEffect(() => {
@@ -73,6 +101,11 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
       supabase.removeChannel(tasksSubscription);
     };
   }, [childId]);
+
+  const handleTaskClick = (task: any) => {
+    console.log('Task clicked:', task);
+    // In a real implementation, this would navigate to the task or expand it
+  };
 
   return (
     <div className="container mx-auto px-4 pt-8 pb-16">
@@ -128,7 +161,12 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
         
         {/* Tasks Section - Intelligently blended into the experience */}
         {pendingTasksCount > 0 && (
-          <TasksSection childId={childId} pendingTasksCount={pendingTasksCount} />
+          <TasksSection 
+            tasks={tasks} 
+            onTaskClick={handleTaskClick} 
+            childId={childId} 
+            pendingTasksCount={pendingTasksCount} 
+          />
         )}
         
         {/* Curio Suggestions */}

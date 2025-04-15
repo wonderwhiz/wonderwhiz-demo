@@ -16,11 +16,15 @@ interface Task {
 interface TasksSectionProps {
   tasks: Task[];
   onTaskClick: (task: Task) => void;
+  childId?: string; // Added childId as an optional prop
+  pendingTasksCount?: number; // Added pendingTasksCount as an optional prop
 }
 
 const TasksSection: React.FC<TasksSectionProps> = ({
   tasks,
-  onTaskClick
+  onTaskClick,
+  childId, // Include childId in destructuring
+  pendingTasksCount // Include pendingTasksCount in destructuring
 }) => {
   const pendingTasks = tasks.filter(task => !task.completed);
   const completedTasks = tasks.filter(task => task.completed);
@@ -37,8 +41,35 @@ const TasksSection: React.FC<TasksSectionProps> = ({
     })
   };
 
+  // If we have a pendingTasksCount prop but no tasks, we can show a placeholder
+  if (pendingTasksCount && pendingTasksCount > 0 && tasks.length === 0) {
+    return (
+      <div className="bg-gradient-to-br from-green-500/20 to-emerald-600/20 backdrop-blur-sm rounded-xl border border-white/10 p-4 overflow-hidden mb-8">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center mr-3">
+              <CheckCircle className="h-4 w-4 text-white" />
+            </div>
+            <h2 className="text-lg font-medium text-white">Today's Tasks</h2>
+          </div>
+          <div className="text-xs text-white/70 px-2 py-1 bg-white/10 rounded-full">
+            {pendingTasksCount} pending
+          </div>
+        </div>
+        <div className="text-center py-3 text-white/70 text-sm bg-white/5 rounded-lg">
+          Loading your tasks...
+        </div>
+      </div>
+    );
+  }
+
+  // If there are no pending tasks, don't render the section
+  if (pendingTasks.length === 0 && (!pendingTasksCount || pendingTasksCount === 0)) {
+    return null;
+  }
+
   return (
-    <div className="bg-gradient-to-br from-green-500/20 to-emerald-600/20 backdrop-blur-sm rounded-xl border border-white/10 p-4 overflow-hidden">
+    <div className="bg-gradient-to-br from-green-500/20 to-emerald-600/20 backdrop-blur-sm rounded-xl border border-white/10 p-4 overflow-hidden mb-8">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center">
           <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center mr-3">
@@ -92,7 +123,7 @@ const TasksSection: React.FC<TasksSectionProps> = ({
         </div>
       ) : (
         <div className="py-3 text-center text-white/70 text-sm bg-white/5 rounded-lg mb-2">
-          All tasks completed! Great job!
+          {pendingTasksCount ? `${pendingTasksCount} tasks to do!` : "All tasks completed! Great job!"}
         </div>
       )}
       
