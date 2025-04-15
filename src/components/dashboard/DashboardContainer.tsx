@@ -114,7 +114,7 @@ const DashboardContainer = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-wonderwhiz-deep-purple flex items-center justify-center">
-        <div className="rounded-full h-12 w-12 border-t-2 border-b-2 border-wonderwhiz-bright-pink"></div>
+        <div className="rounded-full h-12 w-12 border-t-2 border-b-2 border-wonderwhiz-bright-pink animate-spin"></div>
       </div>
     );
   }
@@ -172,7 +172,7 @@ const DashboardContainer = () => {
                   hasMoreBlocks={hasMoreBlocks}
                   onToggleLike={handleToggleLike}
                   onToggleBookmark={handleToggleBookmark}
-                  onReply={(blockId) => handleBlockReply(blockId, "")} // Fixed function signature mismatch
+                  onReply={(blockId, message) => handleBlockReply(blockId, message)} 
                   onSetQuery={setQuery}
                   onRabbitHoleFollow={handleFollowRabbitHole}
                   onQuizCorrect={handleQuizCorrect}

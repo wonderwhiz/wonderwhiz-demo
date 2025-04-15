@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -60,7 +61,7 @@ interface CurioContentProps {
   hasMoreBlocks: boolean;
   onToggleLike: (blockId: string) => void;
   onToggleBookmark: (blockId: string) => void;
-  onReply: (blockId: string) => void;
+  onReply: (blockId: string, message: string) => void;
   onSetQuery: (query: string) => void;
   onRabbitHoleFollow: (question: string) => void;
   onQuizCorrect: (blockId: string) => void;
@@ -171,6 +172,21 @@ const CurioBlock = ({
   const specialist = getSpecialistInfo(block.specialist_id);
   const [replyText, setReplyText] = useState('');
   const [showReplyInput, setShowReplyInput] = useState(false);
+  
+  // Ensure we have real content, not just placeholders
+  const blockContent = block.content || {};
+  const displayText = blockContent.text || blockContent.fact || 
+    blockContent.description || blockContent.instruction || 
+    blockContent.question || blockContent.front || 
+    "Discover more amazing facts about this topic with our specialists!";
+    
+  const hasRabbitHoles = Array.isArray(blockContent.rabbitHoles) && blockContent.rabbitHoles.length > 0;
+  
+  // If there are no rabbit holes, generate some based on the content
+  const generatedRabbitHoles = hasRabbitHoles ? blockContent.rabbitHoles : [
+    `Tell me more about ${block.type === 'fact' ? 'this fact' : 'this topic'}`,
+    `Why is this ${block.type === 'fact' ? 'fact' : 'information'} important?`
+  ];
 
   return (
     <motion.div
@@ -179,7 +195,7 @@ const CurioBlock = ({
       transition={{ duration: 0.5 }}
       className="mb-6"
     >
-      <Card className="bg-gradient-to-br from-wonderwhiz-deep-purple/40 to-wonderwhiz-light-purple/30 backdrop-blur-md border border-wonderwhiz-light-purple/30 overflow-hidden">
+      <Card className="bg-gradient-to-br from-wonderwhiz-deep-purple/40 to-wonderwhiz-light-purple/30 backdrop-blur-md border border-wonderwhiz-light-purple/30 overflow-hidden shadow-xl rounded-xl">
         <div className="p-6">
           <div className="flex items-center mb-4">
             <Avatar className="h-12 w-12 border-2 border-white/20 ring-2 ring-wonderwhiz-bright-pink/20">
@@ -202,13 +218,12 @@ const CurioBlock = ({
           </div>
 
           <div className="text-white mb-5 font-inter">
-            {block.content?.text || block.content?.fact || 
-             "Explore this fascinating topic with our specialists!"}
+            {displayText}
           </div>
 
-          {block.content?.rabbitHoles?.length > 0 && (
+          {generatedRabbitHoles.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-4">
-              {block.content.rabbitHoles.map((question, index) => (
+              {generatedRabbitHoles.map((question, index) => (
                 <Badge 
                   key={index} 
                   variant="outline" 
@@ -261,7 +276,7 @@ const CurioBlock = ({
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={() => onReadAloud(block.content?.text || block.content?.fact || '', specialist.id)}
+                onClick={() => onReadAloud(displayText, specialist.id || '')}
                 className="text-white/70 hover:text-wonderwhiz-blue font-inter"
               >
                 <VolumeIcon className="h-4 w-4 mr-1" />
@@ -341,7 +356,7 @@ const CurioContent: React.FC<CurioContentProps> = ({
     <div className="space-y-6 px-4 py-4">
       {currentCurio && (
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-white mb-4">{currentCurio.title}</h2>
+          <h2 className="text-2xl font-bold text-white mb-4 font-nunito">{currentCurio.title}</h2>
           
           <div className="mb-6">
             <EnhancedSearchBar
@@ -373,19 +388,19 @@ const CurioContent: React.FC<CurioContentProps> = ({
       {isGenerating && (
         <div className="flex justify-center items-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-wonderwhiz-bright-pink"></div>
-          <span className="ml-3 text-white/70">Generating insights...</span>
+          <span className="ml-3 text-white/70 font-inter">Generating insights...</span>
         </div>
       )}
       
       {generationError && (
         <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-4 text-white">
-          <p>There was an error generating content: {generationError}</p>
+          <p className="font-inter">There was an error generating content: {generationError}</p>
           {onRefresh && (
             <Button 
               variant="outline" 
               size="sm" 
               onClick={onRefresh}
-              className="mt-2 border-red-500/30 text-white hover:bg-red-500/20"
+              className="mt-2 border-red-500/30 text-white hover:bg-red-500/20 font-inter"
             >
               Try Again
             </Button>
@@ -396,10 +411,10 @@ const CurioContent: React.FC<CurioContentProps> = ({
       {contentBlocks.length === 0 && !isGenerating && !generationError && (
         <div className="text-center py-8">
           <div className="bg-wonderwhiz-purple/30 inline-block p-4 rounded-full mb-4">
-            <Sparkles className="h-8 w-8 text-wonderwhiz-yellow" />
+            <Sparkles className="h-8 w-8 text-wonderwhiz-vibrant-yellow" />
           </div>
-          <h3 className="text-xl font-semibold text-white mb-2">No content yet</h3>
-          <p className="text-white/70 max-w-md mx-auto">
+          <h3 className="text-xl font-semibold text-white mb-2 font-nunito">No content yet</h3>
+          <p className="text-white/70 max-w-md mx-auto font-inter">
             Ask a question or choose a suggested topic to start your learning journey.
           </p>
         </div>
@@ -426,7 +441,7 @@ const CurioContent: React.FC<CurioContentProps> = ({
             variant="outline"
             onClick={onLoadMore}
             disabled={loadingBlocks}
-            className="border-white/20 text-white hover:bg-white/10"
+            className="border-white/20 text-white hover:bg-white/10 font-nunito"
           >
             {loadingBlocks ? (
               <>

@@ -25,12 +25,17 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
   
   // Generate related suggestions based on the curio title
   const generateSuggestions = () => {
+    // Remove any "why", "how", "what" prefix to create cleaner related questions
+    const cleanTitle = curioTitle
+      .replace(/^(why|how|what|when|where|who)\s(can|do|does|is|are|did|would|will|should|could|has|have|had)\s/i, '')
+      .replace(/\?$/, '');
+    
     const basicSuggestions = [
-      `How do ${curioTitle.toLowerCase()} impact our daily lives?`,
-      `What are the most interesting facts about ${curioTitle.toLowerCase()}?`,
-      `The history of ${curioTitle.toLowerCase()} explained`,
-      `What science is behind ${curioTitle.toLowerCase()}?`,
-      `The future of ${curioTitle.toLowerCase()}`
+      `How do ${cleanTitle} impact our daily lives?`,
+      `What are the most interesting facts about ${cleanTitle}?`,
+      `The history of ${cleanTitle} explained`,
+      `What science is behind ${cleanTitle}?`,
+      `The future of ${cleanTitle}`
     ];
     
     // Keep a subset of suggestions
