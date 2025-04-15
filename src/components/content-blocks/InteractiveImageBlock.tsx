@@ -49,11 +49,11 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
     generateImage, 
     isGenerating, 
     imageUrl, 
-    setImageUrl,  // Add this line to extract setImageUrl
+    setImageUrl, 
     generationError, 
     resetImage, 
     fallbackSource,
-    setFallbackSource  // Add this line to extract setFallbackSource
+    setFallbackSource 
   } = useGeminiImageGeneration({ childAge, maxRetries: 3 });
   
   useEffect(() => {

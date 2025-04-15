@@ -168,8 +168,10 @@ export function useGeminiImageGeneration({ childAge = 10, maxRetries = 3 }: UseG
     generateImage,
     isGenerating,
     imageUrl,
+    setImageUrl, // Now explicitly exposing this function
     generationError,
     fallbackSource,
+    setFallbackSource, // Now explicitly exposing this function
     resetImage: () => {
       setImageUrl(null);
       setGenerationError(null);
