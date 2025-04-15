@@ -72,9 +72,19 @@ interface CurioContentProps {
   childAge?: number;
 }
 
-const getSpecialistInfo = (specialistId: string) => {
+interface SpecialistInfo {
+  id?: string;
+  name: string;
+  title?: string;
+  avatar: string;
+  fallbackColor: string;
+  fallbackInitial: string;
+}
+
+const getSpecialistInfo = (specialistId: string): SpecialistInfo => {
   const specialists = {
     nova: {
+      id: 'nova',
       name: 'Nova',
       title: 'Space Expert',
       avatar: '/specialists/nova-avatar.png',
@@ -82,6 +92,7 @@ const getSpecialistInfo = (specialistId: string) => {
       fallbackInitial: 'N',
     },
     spark: {
+      id: 'spark',
       name: 'Spark',
       title: 'Creative Genius',
       avatar: '/specialists/spark-avatar.png',
@@ -89,6 +100,7 @@ const getSpecialistInfo = (specialistId: string) => {
       fallbackInitial: 'S',
     },
     prism: {
+      id: 'prism',
       name: 'Prism',
       title: 'Science Wizard',
       avatar: '/specialists/prism-avatar.png',
@@ -96,6 +108,7 @@ const getSpecialistInfo = (specialistId: string) => {
       fallbackInitial: 'P',
     },
     pixel: {
+      id: 'pixel',
       name: 'Pixel',
       title: 'Tech Guru',
       avatar: '/specialists/pixel-avatar.png',
@@ -103,6 +116,7 @@ const getSpecialistInfo = (specialistId: string) => {
       fallbackInitial: 'P',
     },
     atlas: {
+      id: 'atlas',
       name: 'Atlas',
       title: 'History Expert',
       avatar: '/specialists/atlas-avatar.png',
@@ -110,6 +124,7 @@ const getSpecialistInfo = (specialistId: string) => {
       fallbackInitial: 'A',
     },
     lotus: {
+      id: 'lotus',
       name: 'Lotus',
       title: 'Nature Guide',
       avatar: '/specialists/lotus-avatar.png',
@@ -117,6 +132,7 @@ const getSpecialistInfo = (specialistId: string) => {
       fallbackInitial: 'L',
     },
     whizzy: {
+      id: 'whizzy',
       name: 'Whizzy',
       title: 'Assistant',
       avatar: '/specialists/whizzy-avatar.png',
@@ -125,7 +141,14 @@ const getSpecialistInfo = (specialistId: string) => {
     },
   };
 
-  return specialists[specialistId as keyof typeof specialists] || specialists.whizzy;
+  return specialists[specialistId as keyof typeof specialists] || {
+    id: 'default',
+    name: 'Whizzy',
+    title: 'Assistant',
+    avatar: '/specialists/whizzy-avatar.png',
+    fallbackColor: 'bg-purple-600',
+    fallbackInitial: 'W',
+  };
 };
 
 const CurioBlock = ({ 

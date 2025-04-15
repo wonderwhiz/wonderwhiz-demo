@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useParams } from 'react-router-dom';
@@ -171,7 +172,7 @@ const DashboardContainer = () => {
                   hasMoreBlocks={hasMoreBlocks}
                   onToggleLike={handleToggleLike}
                   onToggleBookmark={handleToggleBookmark}
-                  onReply={handleBlockReply}
+                  onReply={(blockId) => handleBlockReply(blockId, "")} // Fixed function signature mismatch
                   onSetQuery={setQuery}
                   onRabbitHoleFollow={handleFollowRabbitHole}
                   onQuizCorrect={handleQuizCorrect}

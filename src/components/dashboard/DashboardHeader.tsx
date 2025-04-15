@@ -7,12 +7,14 @@ interface DashboardHeaderProps {
   childName: string;
   streakDays?: number;
   childAge?: number;
+  profileId?: string; // Added this property to fix the TypeScript error
 }
 
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   childName,
   streakDays = 0,
-  childAge = 10
+  childAge = 10,
+  profileId // Added this to the component props
 }) => {
   return (
     <motion.div 
