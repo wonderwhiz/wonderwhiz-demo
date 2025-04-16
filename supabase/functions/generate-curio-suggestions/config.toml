@@ -1,5 +1,3 @@
 
-allowed_http_methods = [
-  "OPTIONS",
-  "POST"
-]
+[functions.generate-curio-suggestions]
+verify_jwt = false

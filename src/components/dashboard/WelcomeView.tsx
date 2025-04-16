@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import EnhancedSearchInput from './EnhancedSearchInput';
@@ -8,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import TasksSection from './TasksSection';
 import { useWhizzyChat } from '@/hooks/useWhizzyChat';
 import WhizzyChat from '@/components/curio/WhizzyChat';
+import { toast } from 'sonner';
 
 interface WelcomeViewProps {
   childId: string;
@@ -105,6 +105,15 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
     console.log('Task clicked:', task);
   };
 
+  const handleFormSubmit = () => {
+    if (query.trim() && !isGenerating) {
+      console.log('Submitting query:', query);
+      handleSubmitQuery();
+    } else if (!query.trim()) {
+      toast.error("Please enter a question first");
+    }
+  };
+
   const handleImageUpload = async (file: File) => {
     const mockQuery = "What is this beautiful mountain?";
     setQuery(mockQuery);
@@ -113,7 +122,9 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
 
   const handleVoiceInput = (transcript: string) => {
     setQuery(transcript);
-    handleSubmitQuery();
+    if (transcript.trim()) {
+      setTimeout(() => handleSubmitQuery(), 300);
+    }
   };
 
   const {
@@ -152,7 +163,10 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
 
         <div className="mb-10">
           <EnhancedSearchInput
-            onSearch={handleSubmitQuery}
+            onSearch={(q) => {
+              setQuery(q);
+              setTimeout(() => handleSubmitQuery(), 100);
+            }}
             onImageCapture={handleImageUpload}
             onVoiceCapture={handleVoiceInput}
             isProcessing={isGenerating}
@@ -186,7 +200,12 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
               variant="ghost"
               size="sm"
               className="text-white/70 hover:text-white hover:bg-white/10"
-              onClick={onRefreshSuggestions}
+              onClick={() => {
+                if (onRefreshSuggestions) {
+                  toast.loading("Finding new wonders for you...");
+                  onRefreshSuggestions();
+                }
+              }}
               disabled={isLoadingSuggestions}
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingSuggestions ? 'animate-spin' : ''}`} />

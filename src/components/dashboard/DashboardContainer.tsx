@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useParams } from 'react-router-dom';
@@ -18,6 +17,7 @@ import VoiceInputButton from '@/components/curio/VoiceInputButton';
 import IntelligentSuggestions from '@/components/dashboard/IntelligentSuggestions';
 import KnowledgeJourney from '@/components/dashboard/KnowledgeJourney';
 import DiscoverySection from '@/components/dashboard/DiscoverySection';
+import { toast } from 'sonner';
 
 interface Curio {
   id: string;
@@ -114,7 +114,6 @@ const DashboardContainer = () => {
     }
   };
 
-  // Use the logic from the local function but call the one from useCurioCreation
   const handleSuggestionClick = (suggestion: string) => {
     setCurrentCurio(null);
     curioCreationSuggestionClick(suggestion);
@@ -127,6 +126,82 @@ const DashboardContainer = () => {
       </div>
     );
   }
+
+  const handleSubmitQuery = async () => {
+    if (query.trim() === '') {
+      toast.error("Please enter a query first");
+      return;
+    }
+    
+    setIsGenerating(true);
+    
+    try {
+      const { data: newCurio, error } = await supabase
+        .from('curios')
+        .insert({
+          child_id: profileId,
+          title: query,
+          query: query,
+        })
+        .select('id')
+        .single();
+      
+      if (error) throw error;
+      
+      if (newCurio) {
+        toast.success("New exploration created!");
+        setCurrentCurio(null); // Force reset current curio
+        
+        // Redirect to the new curio page
+        navigate(`/curio/${profileId}/${newCurio.id}`);
+        
+        // Add to pastCurios if needed
+        if (setPastCurios) {
+          setPastCurios(prev => [
+            { id: newCurio.id, title: query, query, created_at: new Date().toISOString() },
+            ...prev
+          ]);
+        }
+      }
+    } catch (error) {
+      console.error("Error creating curio:", error);
+      toast.error("Failed to create new exploration");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleRefreshSuggestions = async () => {
+    if (isLoadingSuggestions) return;
+    
+    try {
+      setIsLoadingSuggestions(true);
+      toast.loading("Generating fresh suggestions...");
+      
+      // Call the edge function to get new suggestions
+      const { data, error } = await supabase.functions.invoke('generate-curio-suggestions', {
+        body: JSON.stringify({
+          childProfile,
+          forceRefresh: true, // Add this parameter to force new suggestions
+          timestamp: Date.now() // Add timestamp to prevent caching
+        })
+      });
+      
+      if (error) throw error;
+      
+      if (data && data.suggestions && Array.isArray(data.suggestions)) {
+        setCurioSuggestions(data.suggestions);
+        toast.success("Fresh suggestions loaded!");
+      } else {
+        throw new Error("Invalid response format");
+      }
+    } catch (error) {
+      console.error("Error refreshing suggestions:", error);
+      toast.error("Could not refresh suggestions");
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex w-full bg-gradient-to-b from-wonderwhiz-deep-purple to-wonderwhiz-deep-purple/90">
