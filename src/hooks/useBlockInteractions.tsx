@@ -16,42 +16,29 @@ export const useBlockInteractions = (profileId: string | undefined) => {
     setIsLiking(true);
     
     try {
-      // Check if already liked
-      const { data: existingLike, error: checkError } = await supabase
-        .from('block_likes')
-        .select('*')
-        .eq('block_id', blockId)
-        .eq('child_id', profileId)
+      // Instead of using separate tables for likes, use the content_blocks table's liked field
+      const { data: block, error: fetchError } = await supabase
+        .from('content_blocks')
+        .select('liked')
+        .eq('id', blockId)
         .single();
       
-      if (checkError && checkError.code !== 'PGRST116') {
-        throw checkError;
-      }
+      if (fetchError) throw fetchError;
       
-      if (existingLike) {
-        // Unlike
-        const { error: unlikeError } = await supabase
-          .from('block_likes')
-          .delete()
-          .eq('id', existingLike.id);
+      // Toggle like status
+      const newLikedStatus = !block.liked;
+      
+      const { error: updateError } = await supabase
+        .from('content_blocks')
+        .update({ liked: newLikedStatus })
+        .eq('id', blockId);
           
-        if (unlikeError) throw unlikeError;
-        
-        toast.success("Removed from liked content");
-      } else {
-        // Like
-        const { error: likeError } = await supabase
-          .from('block_likes')
-          .insert({
-            block_id: blockId,
-            child_id: profileId
-          });
-          
-        if (likeError) throw likeError;
-        
-        toast.success("Added to liked content!");
-        
-        // Award spark for first like
+      if (updateError) throw updateError;
+      
+      toast.success(newLikedStatus ? "Added to liked content!" : "Removed from liked content");
+      
+      // Award spark for liking
+      if (newLikedStatus) {
         try {
           await supabase.functions.invoke('increment-sparks-balance', {
             body: JSON.stringify({
@@ -89,42 +76,29 @@ export const useBlockInteractions = (profileId: string | undefined) => {
     setIsBookmarking(true);
     
     try {
-      // Check if already bookmarked
-      const { data: existingBookmark, error: checkError } = await supabase
-        .from('block_bookmarks')
-        .select('*')
-        .eq('block_id', blockId)
-        .eq('child_id', profileId)
+      // Instead of using separate tables for bookmarks, use the content_blocks table's bookmarked field
+      const { data: block, error: fetchError } = await supabase
+        .from('content_blocks')
+        .select('bookmarked')
+        .eq('id', blockId)
         .single();
       
-      if (checkError && checkError.code !== 'PGRST116') {
-        throw checkError;
-      }
+      if (fetchError) throw fetchError;
       
-      if (existingBookmark) {
-        // Remove bookmark
-        const { error: removeError } = await supabase
-          .from('block_bookmarks')
-          .delete()
-          .eq('id', existingBookmark.id);
+      // Toggle bookmark status
+      const newBookmarkedStatus = !block.bookmarked;
+      
+      const { error: updateError } = await supabase
+        .from('content_blocks')
+        .update({ bookmarked: newBookmarkedStatus })
+        .eq('id', blockId);
           
-        if (removeError) throw removeError;
-        
-        toast.success("Removed from bookmarks");
-      } else {
-        // Add bookmark
-        const { error: bookmarkError } = await supabase
-          .from('block_bookmarks')
-          .insert({
-            block_id: blockId,
-            child_id: profileId
-          });
-          
-        if (bookmarkError) throw bookmarkError;
-        
-        toast.success("Added to bookmarks!");
-        
-        // Award spark for first bookmark
+      if (updateError) throw updateError;
+      
+      toast.success(newBookmarkedStatus ? "Added to bookmarks!" : "Removed from bookmarks");
+      
+      // Award spark for first bookmark
+      if (newBookmarkedStatus) {
         try {
           await supabase.functions.invoke('increment-sparks-balance', {
             body: JSON.stringify({
@@ -343,19 +317,20 @@ export const useBlockInteractions = (profileId: string | undefined) => {
 
   // Handle block replies
   const handleReply = async (blockId: string, message: string) => {
-    if (!profileId || !message.trim() || isReplying) return;
+    if (!profileId || !message.trim() || isReplying) return false;
     
     setIsReplying(true);
     
     try {
-      const { error } = await supabase
-        .from('block_replies')
-        .insert({
-          block_id: blockId,
-          child_id: profileId,
-          message: message.trim()
-        });
-        
+      // Send reply through edge function
+      const { data, error } = await supabase.functions.invoke('handle-block-replies', {
+        body: {
+          blockId,
+          message: message.trim(),
+          childId: profileId
+        }
+      });
+      
       if (error) throw error;
       
       toast.success("Your comment was sent!");
@@ -402,6 +377,9 @@ export const useBlockInteractions = (profileId: string | undefined) => {
     handleCreativeUpload,
     handleActivityComplete,
     handleMindfulnessComplete,
-    handleTaskComplete
+    handleTaskComplete,
+    isReplying,
+    isLiking,
+    isBookmarking
   };
 };
