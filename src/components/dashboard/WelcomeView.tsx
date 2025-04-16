@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import MagicalSearchBar from './MagicalSearchBar';
+import MagicalSearchInput from './MagicalSearchInput';
 import { Button } from '@/components/ui/button';
 import { Sparkles, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,8 +16,8 @@ interface WelcomeViewProps {
   handleSubmitQuery: () => void;
   isGenerating: boolean;
   onCurioSuggestionClick: (suggestion: string) => void;
-  onRefreshSuggestions?: () => void; // Make this optional
-  isLoadingSuggestions?: boolean; // Make this optional
+  onRefreshSuggestions?: () => void;
+  isLoadingSuggestions?: boolean;
 }
 
 // Define a mock task for UI demonstration
@@ -59,12 +58,11 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
   isGenerating,
   onCurioSuggestionClick,
   onRefreshSuggestions,
-  isLoadingSuggestions = false, // Provide default value
+  isLoadingSuggestions = false,
 }) => {
   const [pendingTasksCount, setPendingTasksCount] = useState(0);
   const [tasks, setTasks] = useState(demoTasks);
   
-  // Fetch pending tasks count
   useEffect(() => {
     const fetchPendingTasksCount = async () => {
       try {
@@ -104,62 +102,61 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
 
   const handleTaskClick = (task: any) => {
     console.log('Task clicked:', task);
-    // In a real implementation, this would navigate to the task or expand it
+  };
+
+  const handleImageUpload = async (file: File) => {
+    // In a real implementation, this would analyze the image and generate a relevant query
+    const mockQuery = "What is this beautiful mountain?";
+    setQuery(mockQuery);
+    handleSubmitQuery();
+  };
+
+  const handleVoiceInput = (transcript: string) => {
+    setQuery(transcript);
+    handleSubmitQuery();
   };
 
   return (
     <div className="container mx-auto px-4 pt-8 pb-16">
       <div className="max-w-3xl mx-auto">
         {/* Header Section */}
-        <div className="text-center mb-8">
+        <motion.div 
+          className="text-center mb-12"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
           <motion.h1 
-            className="text-3xl md:text-4xl font-bold text-white mb-2 font-nunito"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            className="text-3xl md:text-4xl font-bold text-white mb-2"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
           >
             Hello, {childProfile?.name || 'Explorer'}!
           </motion.h1>
           
           <motion.p 
-            className="text-white/70 mb-4"
+            className="text-white/70"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
+            transition={{ delay: 0.3 }}
           >
             What would you like to discover today?
           </motion.p>
-          
-          {childProfile?.sparks_balance !== undefined && (
-            <motion.div 
-              className="inline-flex items-center bg-white/10 px-4 py-2 rounded-full text-white text-sm mb-6"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3, delay: 0.2 }}
-            >
-              <Sparkles className="h-4 w-4 text-wonderwhiz-vibrant-yellow mr-2" />
-              <span>{childProfile.sparks_balance} Sparks</span>
-            </motion.div>
-          )}
-        </div>
-        
-        {/* Search Section */}
-        <motion.div 
-          className="mb-8"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-        >
-          <MagicalSearchBar
-            query={query}
-            setQuery={setQuery}
-            handleSubmitQuery={handleSubmitQuery}
-            isGenerating={isGenerating}
-            placeholder="What do you want to learn about?"
-          />
         </motion.div>
-        
-        {/* Tasks Section - Intelligently blended into the experience */}
+
+        {/* Search Section */}
+        <div className="mb-12">
+          <MagicalSearchInput
+            onSearch={handleSubmitQuery}
+            onImageUpload={handleImageUpload}
+            onVoiceInput={handleVoiceInput}
+            isProcessing={isGenerating}
+            childAge={childProfile?.age}
+          />
+        </div>
+
+        {/* Tasks Section */}
         {pendingTasksCount > 0 && (
           <TasksSection 
             tasks={tasks} 
@@ -182,13 +179,7 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
               variant="ghost"
               size="sm"
               className="text-white/70 hover:text-white hover:bg-white/10"
-              onClick={() => {
-                if (onRefreshSuggestions) {
-                  onRefreshSuggestions();
-                } else {
-                  onCurioSuggestionClick(curioSuggestions[Math.floor(Math.random() * curioSuggestions.length)]);
-                }
-              }}
+              onClick={onRefreshSuggestions}
               disabled={isLoadingSuggestions}
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingSuggestions ? 'animate-spin' : ''}`} />
@@ -223,19 +214,18 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
           >
             <h2 className="text-xl font-bold text-white mb-4">Your Recent Explorations</h2>
             <div className="space-y-3">
-              {pastCurios.slice(0, 3).map((curio, index) => (
+              {pastCurios.slice(0, 3).map((curio) => (
                 <motion.div
-                  key={`curio-${curio.id}`}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: 0.3 + (index * 0.1) }}
+                  key={curio.id}
                   className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg p-4 cursor-pointer transition-all"
                   onClick={() => onCurioSuggestionClick(curio.query || curio.title)}
-                  whileHover={{ scale: 1.01, backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
+                  whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.99 }}
                 >
                   <p className="text-white font-medium">{curio.title}</p>
-                  <p className="text-white/60 text-sm mt-1">{new Date(curio.created_at).toLocaleDateString()}</p>
+                  <p className="text-white/60 text-sm mt-1">
+                    {new Date(curio.created_at).toLocaleDateString()}
+                  </p>
                 </motion.div>
               ))}
             </div>
