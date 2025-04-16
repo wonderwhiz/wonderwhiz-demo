@@ -231,7 +231,9 @@ export const useDashboardProfile = (profileId?: string) => {
     pastCurios,
     setPastCurios,
     isLoadingSuggestions,
+    setIsLoadingSuggestions,
     curioSuggestions,
+    setCurioSuggestions,
     handleRefreshSuggestions
   };
 };

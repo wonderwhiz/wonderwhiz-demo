@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -141,7 +140,6 @@ export const useCurioCreation = (
   };
 
   const handlePastCurioClick = async (curioQuery: string) => {
-    // Generate a fresh curio based on the past query
     setQuery(curioQuery);
     setTimeout(() => {
       handleSubmitQuery();
@@ -152,6 +150,7 @@ export const useCurioCreation = (
     query,
     setQuery,
     isGenerating,
+    setIsGenerating,
     handleSubmitQuery,
     handleFollowRabbitHole,
     handleCurioSuggestionClick,

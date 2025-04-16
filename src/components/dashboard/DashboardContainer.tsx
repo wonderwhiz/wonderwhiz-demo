@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { useSparksSystem } from '@/hooks/useSparksSystem';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
@@ -18,6 +19,7 @@ import IntelligentSuggestions from '@/components/dashboard/IntelligentSuggestion
 import KnowledgeJourney from '@/components/dashboard/KnowledgeJourney';
 import DiscoverySection from '@/components/dashboard/DiscoverySection';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Curio {
   id: string;
@@ -28,6 +30,7 @@ interface Curio {
 
 const DashboardContainer = () => {
   const { profileId } = useParams<{ profileId: string }>();
+  const navigate = useNavigate();
   const [currentCurio, setCurrentCurio] = useState<Curio | null>(null);
   const { streakDays } = useSparksSystem(profileId);
   const [ageGroup, setAgeGroup] = useState<'5-7' | '8-11' | '12-16'>('8-11');
@@ -41,8 +44,10 @@ const DashboardContainer = () => {
     pastCurios,
     setPastCurios,
     isLoadingSuggestions,
+    setIsLoadingSuggestions,
     curioSuggestions,
-    handleRefreshSuggestions
+    setCurioSuggestions,
+    handleRefreshSuggestions: refreshSuggestions
   } = useDashboardProfile(profileId);
 
   const { playText, isPlaying, stopPlaying } = useElevenLabsVoice();
@@ -51,7 +56,8 @@ const DashboardContainer = () => {
     query,
     setQuery,
     isGenerating,
-    handleSubmitQuery,
+    setIsGenerating,
+    handleSubmitQuery: submitQuery,
     handleFollowRabbitHole,
     handleCurioSuggestionClick: curioCreationSuggestionClick
   } = useCurioCreation(profileId, childProfile, setPastCurios, setChildProfile, setCurrentCurio);
@@ -119,14 +125,6 @@ const DashboardContainer = () => {
     curioCreationSuggestionClick(suggestion);
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-wonderwhiz-deep-purple flex items-center justify-center">
-        <div className="rounded-full h-12 w-12 border-t-2 border-b-2 border-wonderwhiz-bright-pink animate-spin"></div>
-      </div>
-    );
-  }
-
   const handleSubmitQuery = async () => {
     if (query.trim() === '') {
       toast.error("Please enter a query first");
@@ -143,11 +141,11 @@ const DashboardContainer = () => {
           title: query,
           query: query,
         })
-        .select('id')
+        .select()
         .single();
       
       if (error) throw error;
-      
+
       if (newCurio) {
         toast.success("New exploration created!");
         setCurrentCurio(null); // Force reset current curio
@@ -202,6 +200,14 @@ const DashboardContainer = () => {
       setIsLoadingSuggestions(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-wonderwhiz-deep-purple flex items-center justify-center">
+        <div className="rounded-full h-12 w-12 border-t-2 border-b-2 border-wonderwhiz-bright-pink animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex w-full bg-gradient-to-b from-wonderwhiz-deep-purple to-wonderwhiz-deep-purple/90">
