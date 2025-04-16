@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import MagicalSearchInput from './MagicalSearchInput';
 import { Button } from '@/components/ui/button';
-import { Sparkles, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import TasksSection from './TasksSection';
 
@@ -153,6 +154,8 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
             onVoiceInput={handleVoiceInput}
             isProcessing={isGenerating}
             childAge={childProfile?.age}
+            initialQuery={query}
+            placeholder="What are you curious about today?"
           />
         </div>
 
