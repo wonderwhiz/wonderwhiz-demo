@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -41,7 +42,7 @@ export function useBlockInteractions(profileId?: string) {
   };
 
   const handleQuizCorrect = async (blockId: string) => {
-    if (!childId || !blockId) return;
+    if (!profileId || !blockId) return;
     
     setLoading(blockId, true);
     
@@ -50,7 +51,7 @@ export function useBlockInteractions(profileId?: string) {
         body: { 
           type: 'quiz-correct',
           blockId,
-          childId
+          childId: profileId
         }
       });
       
@@ -58,13 +59,13 @@ export function useBlockInteractions(profileId?: string) {
       try {
         await supabase.functions.invoke('increment-sparks-balance', {
           body: JSON.stringify({
-            profileId: childId,
+            profileId: profileId,
             amount: 3
           })
         });
         
         await supabase.from('sparks_transactions').insert({
-          child_id: childId,
+          child_id: profileId,
           amount: 3,
           reason: 'Quiz answered correctly'
         });
@@ -85,7 +86,7 @@ export function useBlockInteractions(profileId?: string) {
   };
   
   const handleNewsRead = async (blockId: string) => {
-    if (!childId || !blockId) return;
+    if (!profileId || !blockId) return;
     
     setLoading(blockId, true);
     
@@ -94,7 +95,7 @@ export function useBlockInteractions(profileId?: string) {
         body: { 
           type: 'news-read',
           blockId,
-          childId
+          childId: profileId
         }
       });
       
@@ -102,13 +103,13 @@ export function useBlockInteractions(profileId?: string) {
       try {
         await supabase.functions.invoke('increment-sparks-balance', {
           body: JSON.stringify({
-            profileId: childId,
+            profileId: profileId,
             amount: 1
           })
         });
         
         await supabase.from('sparks_transactions').insert({
-          child_id: childId,
+          child_id: profileId,
           amount: 1,
           reason: 'Stayed informed with news'
         });
@@ -129,7 +130,7 @@ export function useBlockInteractions(profileId?: string) {
   };
   
   const handleCreativeUpload = async (blockId: string, content: any) => {
-    if (!childId || !blockId) return;
+    if (!profileId || !blockId) return;
     
     setLoading(blockId, true);
     
@@ -138,7 +139,7 @@ export function useBlockInteractions(profileId?: string) {
         body: { 
           type: 'creative-upload',
           blockId,
-          childId,
+          childId: profileId,
           content
         }
       });
@@ -147,13 +148,13 @@ export function useBlockInteractions(profileId?: string) {
       try {
         await supabase.functions.invoke('increment-sparks-balance', {
           body: JSON.stringify({
-            profileId: childId,
+            profileId: profileId,
             amount: 5
           })
         });
         
         await supabase.from('sparks_transactions').insert({
-          child_id: childId,
+          child_id: profileId,
           amount: 5,
           reason: 'Creative submission'
         });
@@ -174,7 +175,7 @@ export function useBlockInteractions(profileId?: string) {
   };
   
   const handleActivityComplete = async (blockId: string) => {
-    if (!childId || !blockId) return;
+    if (!profileId || !blockId) return;
     
     setLoading(blockId, true);
     
@@ -183,7 +184,7 @@ export function useBlockInteractions(profileId?: string) {
         body: { 
           type: 'activity-complete',
           blockId,
-          childId
+          childId: profileId
         }
       });
       
@@ -191,13 +192,13 @@ export function useBlockInteractions(profileId?: string) {
       try {
         await supabase.functions.invoke('increment-sparks-balance', {
           body: JSON.stringify({
-            profileId: childId,
+            profileId: profileId,
             amount: 3
           })
         });
         
         await supabase.from('sparks_transactions').insert({
-          child_id: childId,
+          child_id: profileId,
           amount: 3,
           reason: 'Activity completed'
         });
@@ -218,7 +219,7 @@ export function useBlockInteractions(profileId?: string) {
   };
   
   const handleMindfulnessComplete = async (blockId: string) => {
-    if (!childId || !blockId) return;
+    if (!profileId || !blockId) return;
     
     setLoading(blockId, true);
     
@@ -227,7 +228,7 @@ export function useBlockInteractions(profileId?: string) {
         body: { 
           type: 'mindfulness-complete',
           blockId,
-          childId
+          childId: profileId
         }
       });
       
@@ -235,13 +236,13 @@ export function useBlockInteractions(profileId?: string) {
       try {
         await supabase.functions.invoke('increment-sparks-balance', {
           body: JSON.stringify({
-            profileId: childId,
+            profileId: profileId,
             amount: 2
           })
         });
         
         await supabase.from('sparks_transactions').insert({
-          child_id: childId,
+          child_id: profileId,
           amount: 2,
           reason: 'Mindfulness practice'
         });
@@ -262,7 +263,7 @@ export function useBlockInteractions(profileId?: string) {
   };
   
   const handleTaskComplete = async (blockId: string) => {
-    if (!childId || !blockId) return;
+    if (!profileId || !blockId) return;
     
     setLoading(blockId, true);
     
@@ -271,7 +272,7 @@ export function useBlockInteractions(profileId?: string) {
         body: { 
           type: 'task-complete',
           blockId,
-          childId
+          childId: profileId
         }
       });
       
@@ -279,13 +280,13 @@ export function useBlockInteractions(profileId?: string) {
       try {
         await supabase.functions.invoke('increment-sparks-balance', {
           body: JSON.stringify({
-            profileId: childId,
+            profileId: profileId,
             amount: 1
           })
         });
         
         await supabase.from('sparks_transactions').insert({
-          child_id: childId,
+          child_id: profileId,
           amount: 1,
           reason: 'Task completed'
         });
@@ -306,7 +307,7 @@ export function useBlockInteractions(profileId?: string) {
   };
   
   const handleToggleLike = async (blockId: string) => {
-    if (!childId || !blockId) return;
+    if (!profileId || !blockId) return;
     
     setLoading(blockId, true);
     
@@ -315,7 +316,7 @@ export function useBlockInteractions(profileId?: string) {
         body: { 
           type: 'like',
           blockId,
-          childId
+          childId: profileId
         }
       });
       
@@ -332,7 +333,7 @@ export function useBlockInteractions(profileId?: string) {
   };
   
   const handleToggleBookmark = async (blockId: string) => {
-    if (!childId || !blockId) return;
+    if (!profileId || !blockId) return;
     
     setLoading(blockId, true);
     
@@ -341,7 +342,7 @@ export function useBlockInteractions(profileId?: string) {
         body: { 
           type: 'bookmark',
           blockId,
-          childId
+          childId: profileId
         }
       });
       

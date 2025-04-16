@@ -1,4 +1,3 @@
-
 import React, { ReactNode, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -9,6 +8,7 @@ import FireflyQuizBlock from './FireflyQuizBlock';
 import MindfulnessBlock from './MindfulnessBlock';
 import CreativeBlock from './CreativeBlock';
 import EnhancedSearchBar from './EnhancedSearchBar';
+import QuickAnswer from './QuickAnswer';
 
 interface SpecialistBlockProps {
   specialistId: string;
@@ -58,7 +58,7 @@ const SpecialistBlock: React.FC<SpecialistBlockProps> = ({
         
         <div className="relative p-6">
           <div className="flex items-start gap-4 mb-5">
-            <Avatar className="h-12 w-12 rounded-2xl border-2 border-white/10 ring-2 ring-wonderwhiz-bright-pink/20 shadow-glow-brand-pink">
+            <Avatar className="h-12 w-12 rounded-2xl border-2 border-white/10 ring-2 ring-wonderwhiz-bright-pink">
               <AvatarImage src={specialist.avatar} />
               <AvatarFallback className={specialist.fallbackColor}>
                 {specialist.fallbackInitial}
