@@ -26,18 +26,18 @@ const CurioPageHeader: React.FC<CurioPageHeaderProps> = ({
 }) => {
   return (
     <motion.header 
-      className="sticky top-0 z-50 bg-gradient-to-b from-wonderwhiz-deep-purple/95 to-wonderwhiz-deep-purple/85 backdrop-blur-md py-4 border-b border-white/10"
+      className="sticky top-0 z-50 bg-gradient-to-b from-wonderwhiz-deep-purple to-indigo-950/95 backdrop-blur-md py-4 border-b border-white/10 shadow-md"
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      <div className="max-w-3xl mx-auto px-4 flex items-center justify-between">
+      <div className="max-w-4xl mx-auto px-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
             size="icon"
             onClick={handleBackToDashboard}
-            className="bg-white/5 hover:bg-white/10 text-white rounded-xl h-10 w-10"
+            className="bg-white/10 hover:bg-white/20 text-white rounded-xl h-10 w-10 transition-all duration-300 shadow-glow-brand"
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
@@ -59,8 +59,8 @@ const CurioPageHeader: React.FC<CurioPageHeaderProps> = ({
             variant="ghost"
             size="icon"
             onClick={handleToggleInsights}
-            className={`bg-white/5 hover:bg-white/10 text-white rounded-xl h-10 w-10 transition-all duration-300 ${
-              showInsights ? 'bg-white/15 text-wonderwhiz-bright-pink shadow-glow-brand-pink' : ''
+            className={`bg-white/10 hover:bg-white/20 text-white rounded-xl h-10 w-10 transition-all duration-300 shadow-glow-brand ${
+              showInsights ? 'bg-white/20 text-wonderwhiz-bright-pink shadow-glow-brand-pink' : ''
             }`}
           >
             <PieChart className="h-5 w-5" />
@@ -71,7 +71,7 @@ const CurioPageHeader: React.FC<CurioPageHeaderProps> = ({
             size="icon"
             onClick={handleRefresh}
             disabled={refreshing}
-            className="bg-white/5 hover:bg-white/10 text-white rounded-xl h-10 w-10"
+            className="bg-white/10 hover:bg-white/20 text-white rounded-xl h-10 w-10 transition-all duration-300 shadow-glow-brand"
           >
             <RefreshCcw className={`h-5 w-5 ${refreshing ? 'animate-spin' : ''}`} />
           </Button>
@@ -80,7 +80,7 @@ const CurioPageHeader: React.FC<CurioPageHeaderProps> = ({
             variant="ghost"
             size="icon"
             onClick={handleBackToDashboard}
-            className="bg-white/5 hover:bg-white/10 text-white rounded-xl h-10 w-10 sm:hidden"
+            className="bg-white/10 hover:bg-white/20 text-white rounded-xl h-10 w-10 transition-all duration-300 shadow-glow-brand sm:hidden"
           >
             <Home className="h-5 w-5" />
           </Button>

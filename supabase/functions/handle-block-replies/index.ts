@@ -31,7 +31,7 @@ serve(async (req) => {
     // Check if the block exists first
     const { data: blockData, error: blockCheckError } = await supabase
       .from('content_blocks')
-      .select('id')
+      .select('id, specialist_id')
       .eq('id', block_id)
       .single();
 
@@ -41,26 +41,77 @@ serve(async (req) => {
     }
 
     console.log(`Block ${block_id} exists, proceeding with reply`);
+    
+    // Get the specialist ID from the block for AI response
+    const specialistId = blockData.specialist_id;
 
-    // Now save the reply using the service role to bypass RLS
-    // Remove specialist_id from the insert operation
-    const { data, error } = await supabase
+    // Now save the user reply using the service role to bypass RLS
+    const { data: userReplyData, error: userReplyError } = await supabase
       .from('block_replies')
       .insert({
         block_id,
         content,
-        from_user
+        from_user: true,
+        child_profile_id: child_profile_id || null
       })
       .select();
 
-    if (error) {
-      console.error('Error saving reply:', error);
-      throw error;
+    if (userReplyError) {
+      console.error('Error saving user reply:', userReplyError);
+      throw userReplyError;
     }
     
-    console.log('Reply successfully saved');
+    console.log('User reply successfully saved with ID:', userReplyData?.[0]?.id);
     
-    return new Response(JSON.stringify({ success: true, data }), {
+    // Generate an AI response
+    const { data: aiResponseData, error: aiResponseError } = await supabase.functions.invoke('generate-block-response', {
+      body: { 
+        block_id,
+        user_message: content,
+        specialist_id: specialistId
+      }
+    });
+    
+    if (aiResponseError) {
+      console.error('Error generating AI response:', aiResponseError);
+      // Don't throw here, we still want to return the user reply
+    }
+    
+    // If AI response was generated, save it
+    if (aiResponseData?.response) {
+      const { data: aiReplyData, error: aiReplyError } = await supabase
+        .from('block_replies')
+        .insert({
+          block_id,
+          content: aiResponseData.response,
+          from_user: false,
+          specialist_id: specialistId
+        })
+        .select();
+        
+      if (aiReplyError) {
+        console.error('Error saving AI reply:', aiReplyError);
+        // Don't throw here, we still want to return the user reply
+      } else {
+        console.log('AI reply successfully saved with ID:', aiReplyData?.[0]?.id);
+      }
+    }
+    
+    console.log('Reply process completed successfully');
+    
+    // Return both the user reply and the AI response
+    return new Response(JSON.stringify({ 
+      success: true, 
+      userReply: userReplyData?.[0],
+      aiResponse: aiResponseData?.response ? {
+        id: 'ai-response',
+        block_id,
+        content: aiResponseData.response,
+        from_user: false,
+        specialist_id: specialistId,
+        created_at: new Date().toISOString()
+      } : null
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {

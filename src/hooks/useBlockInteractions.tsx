@@ -1,9 +1,8 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-export function useBlockInteractions(childId?: string) {
+export function useBlockInteractions(profileId?: string) {
   const [loadingStates, setLoadingStates] = useState<{[key: string]: boolean}>({});
 
   const setLoading = (blockId: string, isLoading: boolean) => {
@@ -14,32 +13,33 @@ export function useBlockInteractions(childId?: string) {
   };
 
   const handleReply = async (blockId: string, message: string) => {
-    if (!childId || !blockId || !message) return;
-    
-    setLoading(blockId, true);
-    
+    if (!blockId || !message || !profileId) {
+      toast.error("Cannot send reply");
+      return Promise.reject("Missing required information");
+    }
+
     try {
-      await supabase.functions.invoke('handle-interaction', {
-        body: { 
-          type: 'reply',
-          blockId,
-          childId,
-          message
+      const { data, error } = await supabase.functions.invoke('handle-block-replies', {
+        body: {
+          block_id: blockId,
+          content: message,
+          from_user: true,
+          child_profile_id: profileId
         }
       });
-      
-      toast.success('Comment added!', {
-        position: 'bottom-right',
-        duration: 2000
-      });
-    } catch (error) {
-      console.error('Error adding reply:', error);
-      toast.error("Could not add your comment. Please try again later.");
-    } finally {
-      setLoading(blockId, false);
+
+      if (error) {
+        console.error('Error sending reply:', error);
+        throw error;
+      }
+
+      return data;
+    } catch (err) {
+      console.error('Error processing reply:', err);
+      throw err;
     }
   };
-  
+
   const handleQuizCorrect = async (blockId: string) => {
     if (!childId || !blockId) return;
     

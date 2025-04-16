@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -173,16 +172,14 @@ const CurioBlock = ({
   const [replyText, setReplyText] = useState('');
   const [showReplyInput, setShowReplyInput] = useState(false);
   
-  // Ensure we have real content, not just placeholders
   const blockContent = block.content || {};
   const displayText = blockContent.text || blockContent.fact || 
     blockContent.description || blockContent.instruction || 
     blockContent.question || blockContent.front || 
     "Discover more amazing facts about this topic with our specialists!";
-    
+  
   const hasRabbitHoles = Array.isArray(blockContent.rabbitHoles) && blockContent.rabbitHoles.length > 0;
   
-  // If there are no rabbit holes, generate some based on the content
   const generatedRabbitHoles = hasRabbitHoles ? blockContent.rabbitHoles : [
     `Tell me more about ${block.type === 'fact' ? 'this fact' : 'this topic'}`,
     `Why is this ${block.type === 'fact' ? 'fact' : 'information'} important?`
@@ -345,10 +342,12 @@ const CurioContent: React.FC<CurioContentProps> = ({
     curio_id: block.curio_id || currentCurio?.id || ''
   }));
 
+  const [quickAnswerExpanded, setQuickAnswerExpanded] = useState(true);
+
   const handlePlayText = (text: string, specialistId: string) => {
-    toast.success("Playing audio...");
     if (playText) {
       playText(text, specialistId);
+      toast.success("Playing audio...");
     }
   };
 
@@ -368,10 +367,11 @@ const CurioContent: React.FC<CurioContentProps> = ({
           
           <QuickAnswer 
             question={currentCurio.title}
-            isExpanded={false}
-            onToggleExpand={() => {}}
-            onStartJourney={() => {}}
+            isExpanded={quickAnswerExpanded}
+            onToggleExpand={() => setQuickAnswerExpanded(!quickAnswerExpanded)}
+            onStartJourney={() => setQuickAnswerExpanded(false)}
             childId={profileId}
+            childAge={childAge}
           />
 
           {profileId && (

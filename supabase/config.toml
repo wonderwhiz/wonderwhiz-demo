@@ -1,19 +1,165 @@
 
-project_id = "turexhnvsvmllwitllmg"
+# A string used to distinguish different Supabase projects on the same host. Defaults to the
+# working directory name when running `supabase init`.
+project_id = "wonderwhiz"
+
+[api]
+enabled = true
+# Port to use for the API URL.
+port = 54321
+# Schemas to expose in your API. Tables, views and stored procedures in this schema will get API
+# endpoints. public and storage are always included.
+schemas = ["public", "storage", "graphql_public"]
+# Extra schemas to add to the search_path of every request. public is always included.
+extra_search_path = ["public", "extensions"]
+# Max rows returns in a single response by default
+max_rows = 1000
+
+[db]
+# Port to use for the local database URL.
+port = 54322
+# Port used by db diff command to initialise the shadow database.
+shadow_port = 54320
+# The database major version to use. This has to be the same as your remote database's. Run `SHOW
+# server_version;` on the remote database to check.
+major_version = 15
+
+[db.pooler]
+enabled = false
+# Port to use for the local connection pooler.
+port = 54329
+# Specifies when a server connection can be reused by other clients.
+# Configure one of the supported pooler modes: `transaction`, `session`.
+pool_mode = "transaction"
+# How many server connections to allow per user/database pair.
+default_pool_size = 20
+# Maximum number of client connections allowed.
+max_client_conn = 100
+
+[realtime]
+enabled = true
+# Bind realtime via either IPv4 or IPv6. (default: IPv6)
+# ip_version = "IPv6"
+
+[studio]
+enabled = true
+# Port to use for Supabase Studio.
+port = 54323
+# External URL of the API server that frontend connects to.
+api_url = "http://localhost"
+
+# Email testing server. Emails sent with the local dev setup are not actually sent - rather, they
+# are monitored, and you can view the emails that would have been sent from the web interface.
+[inbucket]
+enabled = true
+# Port to use for the email testing server web interface.
+port = 54324
+# Uncomment to expose additional ports for testing user applications that send emails.
+# smtp_port = 54325
+# pop3_port = 54326
+
+[storage]
+enabled = true
+# The maximum file size allowed (e.g. "5MB", "500KB").
+file_size_limit = "50MiB"
+
+[auth]
+enabled = true
+# The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
+# in emails.
+site_url = "http://localhost:3000"
+# A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
+additional_redirect_urls = ["https://localhost:3000"]
+# How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
+jwt_expiry = 3600
+# If disabled, the refresh token will never expire.
+enable_refresh_token_rotation = true
+# Allows refresh tokens to be reused after expiry, up to the specified interval in seconds.
+# Requires enable_refresh_token_rotation = true.
+refresh_token_reuse_interval = 10
+# Allow/disallow new user signups to your project.
+enable_signup = true
+
+[auth.email]
+# Allow/disallow new user signups via email to your project.
+enable_signup = true
+# If enabled, a user will be required to confirm any email change on both the old, and new email
+# addresses. If disabled, only the new email is required to confirm.
+double_confirm_changes = true
+# If enabled, users need to confirm their email address before signing in.
+enable_confirmations = false
+
+# Configure one of the supported auth providers.
+# [auth.external.apple]
+# enabled = false
+# client_id = ""
+# secret = ""
+# # Overrides the default auth redirectUrl.
+# redirect_uri = ""
+# # Overrides the default auth provider URL. Used to support self-hosted gitlab, single-tenant Azure,
+# # or any other third-party OIDC providers.
+# url = ""
 
 [functions]
+enabled = true
+
+[functions.analyze-image]
+verify_jwt = false
+
+[functions.generate-block-response]
+verify_jwt = false
+
+[functions.generate-contextual-image]
+verify_jwt = false
 
 [functions.generate-gemini-image]
+verify_jwt = false
+
+[functions.generate-openai-image]
+verify_jwt = false
+
+[functions.generate-quick-summary]
+verify_jwt = false
+
+[functions.handle-block-replies]
+verify_jwt = false
+
+[functions.increment-sparks-balance]
 verify_jwt = false
 
 [functions.text-to-speech]
 verify_jwt = false
 
-[functions.generate-curio-suggestions]
-verify_jwt = false
+# Configure these secrets with `supabase secrets set --env-file ./supabase/.env`
+[functions.analyze-image.deployment.env_vars]
+OPENAI_API_KEY = "env(OPENAI_API_KEY)"
+GROQ_API_KEY = "env(GROQ_API_KEY)"
 
-[functions.analyze-image]
-verify_jwt = false
+[functions.generate-block-response.deployment.env_vars]
+OPENAI_API_KEY = "env(OPENAI_API_KEY)"
 
-[functions.generate-contextual-image]
-verify_jwt = false
+[functions.generate-contextual-image.deployment.env_vars]
+OPENAI_API_KEY = "env(OPENAI_API_KEY)"
+UNSPLASH_ACCESS_KEY = "env(UNSPLASH_ACCESS_KEY)"
+
+[functions.generate-gemini-image.deployment.env_vars]
+GOOGLE_API_KEY = "env(GOOGLE_API_KEY)"
+OPENAI_API_KEY = "env(OPENAI_API_KEY)"
+
+[functions.generate-openai-image.deployment.env_vars]
+OPENAI_API_KEY = "env(OPENAI_API_KEY)"
+
+[functions.generate-quick-summary.deployment.env_vars]
+OPENAI_API_KEY = "env(OPENAI_API_KEY)"
+
+[functions.handle-block-replies.deployment.env_vars]
+SUPABASE_URL = "env(SUPABASE_URL)"
+SUPABASE_SERVICE_ROLE_KEY = "env(SUPABASE_SERVICE_ROLE_KEY)"
+OPENAI_API_KEY = "env(OPENAI_API_KEY)"
+
+[functions.increment-sparks-balance.deployment.env_vars]
+SUPABASE_URL = "env(SUPABASE_URL)"
+SUPABASE_SERVICE_ROLE_KEY = "env(SUPABASE_SERVICE_ROLE_KEY)"
+
+[functions.text-to-speech.deployment.env_vars]
+ELEVEN_LABS_API_KEY = "env(ELEVEN_LABS_API_KEY)"

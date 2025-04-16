@@ -24,17 +24,15 @@ export function useGeminiImageGeneration({ childAge = 10, maxRetries = 3 }: UseG
       const adaptedPrompt = adaptPromptForChildAge(prompt, childAge);
       const imageStyle = style || getDefaultStyleForAge(childAge);
       
-      console.log(`Calling generate-gemini-image with prompt: "${adaptedPrompt}" and style: ${imageStyle}`);
+      console.log(`Calling OpenAI image generation with prompt: "${adaptedPrompt}" and style: ${imageStyle}`);
       
-      // First try the primary method - Gemini via edge function
+      // First try OpenAI via edge function (DALL-E 3)
       try {
-        // Call the gemini edge function with error handling
-        const { data, error } = await supabase.functions.invoke('generate-gemini-image', {
+        const { data, error } = await supabase.functions.invoke('generate-openai-image', {
           body: { 
             prompt: adaptedPrompt,
-            style: imageStyle,
-            childAge: childAge,
-            retryOnFail: true
+            style: imageStyle === 'cartoon' ? 'vivid' : 'natural',
+            childAge: childAge
           }
         });
         
@@ -47,26 +45,12 @@ export function useGeminiImageGeneration({ childAge = 10, maxRetries = 3 }: UseG
         
         if (data?.imageUrl) {
           setImageUrl(data.imageUrl);
+          setFallbackSource('openai');
           
-          if (data.fallback) {
-            setFallbackSource(data.fallbackSource || 'fallback');
-            
-            if (data.fallbackSource === 'dalle') {
-              toast.info("Using DALL-E image generation", {
-                duration: 3000,
-                position: "bottom-right"
-              });
-            } else if (data.fallbackSource === 'error') {
-              // Try alternate method if primary fails
-              throw new Error('Primary image generation failed, trying alternate method');
-            }
-          } else if (data.source === 'gemini') {
-            setFallbackSource('gemini');
-            toast.success("Image created with Gemini AI", {
-              duration: 3000,
-              position: "bottom-right"
-            });
-          }
+          toast.success("Image created with DALL-E 3", {
+            duration: 3000,
+            position: "bottom-right"
+          });
           
           return data.imageUrl;
         } else if (data?.error) {
@@ -168,10 +152,10 @@ export function useGeminiImageGeneration({ childAge = 10, maxRetries = 3 }: UseG
     generateImage,
     isGenerating,
     imageUrl,
-    setImageUrl, // Now explicitly exposing this function
+    setImageUrl,
     generationError,
     fallbackSource,
-    setFallbackSource, // Now explicitly exposing this function
+    setFallbackSource,
     resetImage: () => {
       setImageUrl(null);
       setGenerationError(null);

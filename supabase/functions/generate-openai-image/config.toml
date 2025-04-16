@@ -1,0 +1,3 @@
+
+[functions.generate-openai-image]
+verify_jwt = false

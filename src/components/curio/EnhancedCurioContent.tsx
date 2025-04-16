@@ -1,4 +1,5 @@
-import React, { ReactNode } from 'react';
+
+import React, { ReactNode, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -16,7 +17,7 @@ interface SpecialistBlockProps {
   onRabbitHoleClick?: (question: string) => void;
   onLike?: () => void;
   onBookmark?: () => void;
-  onReply?: () => void;
+  onReply?: (message: string) => void;
   onReadAloud?: () => void;
   childAge?: number;
 }
@@ -33,8 +34,17 @@ const SpecialistBlock: React.FC<SpecialistBlockProps> = ({
   childAge = 10
 }) => {
   const specialist = getSpecialistInfo(specialistId);
-  const [showReplyInput, setShowReplyInput] = React.useState(false);
-  const [replyText, setReplyText] = React.useState('');
+  const [showReplyInput, setShowReplyInput] = useState(false);
+  const [replyText, setReplyText] = useState('');
+  
+  const handleSendReply = () => {
+    if (replyText.trim() && onReply) {
+      onReply(replyText);
+      setReplyText('');
+      setShowReplyInput(false);
+      toast.success("Reply sent successfully!");
+    }
+  };
 
   return (
     <motion.div
@@ -43,7 +53,7 @@ const SpecialistBlock: React.FC<SpecialistBlockProps> = ({
       transition={{ duration: 0.5 }}
       className="mb-6"
     >
-      <div className="relative overflow-hidden rounded-2xl backdrop-blur-lg border border-white/10 bg-gradient-to-br from-wonderwhiz-deep-purple/30 to-wonderwhiz-light-purple/20 shadow-lg">
+      <div className="relative overflow-hidden rounded-2xl backdrop-blur-lg border border-white/10 bg-gradient-to-br from-wonderwhiz-deep-purple/50 to-wonderwhiz-light-purple/30 shadow-lg">
         <div className="absolute inset-0 bg-gradient-to-br from-wonderwhiz-bright-pink/5 to-wonderwhiz-cyan/5 pointer-events-none" />
         
         <div className="relative p-6">
@@ -81,13 +91,13 @@ const SpecialistBlock: React.FC<SpecialistBlockProps> = ({
                 {followupQuestions.map((question, idx) => (
                   <motion.button
                     key={idx}
-                    className="w-full text-left p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all duration-300 group"
+                    className="w-full text-left p-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 transition-all duration-300 group"
                     onClick={() => onRabbitHoleClick?.(question)}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-wonderwhiz-bright-pink/10 text-wonderwhiz-bright-pink">
+                      <div className="p-2 rounded-lg bg-wonderwhiz-bright-pink/20 text-wonderwhiz-bright-pink">
                         <Sparkles className="w-4 h-4" />
                       </div>
                       <span className="text-white group-hover:text-wonderwhiz-bright-pink transition-colors">
@@ -122,19 +132,17 @@ const SpecialistBlock: React.FC<SpecialistBlockProps> = ({
                 <span className="font-medium">Save</span>
               </Button>
 
-              {onReadAloud && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={onReadAloud}
-                  className="text-white/70 hover:text-wonderwhiz-cyan hover:bg-wonderwhiz-cyan/10"
-                >
-                  <VolumeIcon className="h-4 w-4 mr-1.5" />
-                  <span className="font-medium">
-                    {childAge && childAge < 8 ? "Read to me" : "Listen"}
-                  </span>
-                </Button>
-              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onReadAloud}
+                className="text-white/70 hover:text-wonderwhiz-cyan hover:bg-wonderwhiz-cyan/10"
+              >
+                <VolumeIcon className="h-4 w-4 mr-1.5" />
+                <span className="font-medium">
+                  {childAge && childAge < 8 ? "Read to me" : "Listen"}
+                </span>
+              </Button>
             </div>
 
             <Button
@@ -164,7 +172,7 @@ const SpecialistBlock: React.FC<SpecialistBlockProps> = ({
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
                     placeholder={childAge && childAge < 8 ? "What do you think?" : "Share your thoughts..."}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-wonderwhiz-bright-pink/50 font-inter resize-none"
+                    className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-wonderwhiz-bright-pink/50 font-inter resize-none"
                     rows={2}
                   />
                   <div className="flex justify-end gap-2 mt-2">
@@ -178,7 +186,7 @@ const SpecialistBlock: React.FC<SpecialistBlockProps> = ({
                     </Button>
                     <Button
                       size="sm"
-                      onClick={onReply}
+                      onClick={handleSendReply}
                       disabled={!replyText.trim()}
                       className="bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/90"
                     >
@@ -259,94 +267,16 @@ const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
   onRabbitHoleClick,
   childAge = 10
 }) => {
-  // Example blocks for the design
-  const exampleBlocks = [
-    {
-      id: '1',
-      type: 'fact',
-      specialist_id: 'nova',
-      content: {
-        fact: "Fireflies, also known as lightning bugs, produce light through a chemical reaction in their bodies. They have a specialized light organ in their abdomen that uses a molecule called luciferin to produce light.",
-        rabbitHoles: [
-          "How do fireflies use their light to communicate?",
-          "What is the purpose of fireflies' bioluminescence?"
-        ]
-      }
-    },
-    {
-      id: '2',
-      type: 'funFact',
-      specialist_id: 'spark',
-      content: {
-        fact: "Did you know that fireflies can flash their lights in a specific pattern to signal to potential mates? It's like a secret language!"
-      }
-    },
-    {
-      id: '3',
-      type: 'quiz',
-      specialist_id: 'prism',
-      content: {
-        question: "What is the main source of light for fireflies?",
-        options: [
-          "The sun",
-          "The moon",
-          "A chemical reaction in their bodies",
-          "Electricity"
-        ],
-        correctIndex: 2,
-        explanation: "Fireflies produce light through a process called bioluminescence, which is a chemical reaction in their bodies that produces light without generating heat."
-      }
-    },
-    {
-      id: '4',
-      type: 'quiz',
-      specialist_id: 'prism',
-      content: {
-        question: "What is the name of the molecule that helps fireflies produce light?",
-        options: [
-          "Luciferase",
-          "Luciferin",
-          "Oxygen",
-          "Enzyme"
-        ],
-        correctIndex: 1,
-        explanation: "Luciferin is the molecule that produces light when it reacts with the enzyme luciferase in the presence of oxygen."
-      }
-    },
-    {
-      id: '5',
-      type: 'mindfulness',
-      specialist_id: 'spark',
-      content: {
-        title: "Firefly Light Meditation",
-        instruction: "Find a quiet and comfortable place to sit. Close your eyes and imagine you are a firefly. Visualize your light organ glowing softly. As you breathe in, imagine fresh air filling your light organ and making it shine brighter. As you breathe out, imagine any worries or stress leaving your body. Continue for 3 minutes.",
-        duration: 180,
-        benefit: "This meditation helps calm the mind and reduce stress by focusing on breathing and visualization."
-      }
-    },
-    {
-      id: '6',
-      type: 'creative',
-      specialist_id: 'spark',
-      content: {
-        prompt: "Use your imagination to explore How do fireflies make light? in a creative way.",
-        examples: [
-          "Draw a picture",
-          "Write a story",
-          "Make a model"
-        ]
-      }
-    }
-  ];
+  const [quickAnswerExpanded, setQuickAnswerExpanded] = useState(true);
   
   // Use provided blocks or example blocks
-  const displayBlocks = blocks.length > 0 ? blocks : exampleBlocks;
+  const displayBlocks = blocks;
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-indigo-950 to-purple-950">
       <div className="sticky top-0 z-40 bg-gradient-to-b from-indigo-950/95 to-indigo-950/90 backdrop-blur-sm py-4 px-4 border-b border-white/10">
         <div className="max-w-3xl mx-auto">
-          <h1 className="text-2xl font-bold text-white mb-4 text-center">{title}</h1>
+          <h1 className="text-2xl font-bold text-white mb-4 text-center font-nunito">{title}</h1>
           <EnhancedSearchBar 
             onSearch={onSearch}
             onVoiceCapture={onVoiceCapture}
@@ -359,6 +289,16 @@ const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
       
       <main className="flex-grow py-6">
         <div className="max-w-3xl mx-auto px-4">
+          {/* Quick Answer Component */}
+          <div className="mb-6">
+            <QuickAnswer
+              question={title}
+              isExpanded={quickAnswerExpanded}
+              onToggleExpand={() => setQuickAnswerExpanded(!quickAnswerExpanded)}
+              childAge={childAge}
+            />
+          </div>
+          
           {displayBlocks.map((block) => {
             if (block.type === 'quiz') {
               return (
@@ -403,10 +343,10 @@ const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
                   specialistId={block.specialist_id}
                   content={content}
                   followupQuestions={followupQuestions}
-                  onRabbitHoleClick={onRabbitHoleClick}
+                  onRabbitHoleClick={(question) => onRabbitHoleClick && onRabbitHoleClick(question)}
                   onLike={() => onLike && onLike(block.id)}
                   onBookmark={() => onBookmark && onBookmark(block.id)}
-                  onReply={() => onReply && onReply(block.id, 'Great explanation!')}
+                  onReply={(message) => onReply && onReply(block.id, message)}
                   onReadAloud={() => onReadAloud && onReadAloud(content, block.specialist_id)}
                   childAge={childAge}
                 />
