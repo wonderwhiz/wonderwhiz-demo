@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import MagicalSearchInput from './MagicalSearchInput';
@@ -6,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import TasksSection from './TasksSection';
+import { useWhizzyChat } from '@/integrations/whizzychat';
 
 interface WelcomeViewProps {
   childId: string;
@@ -21,7 +21,6 @@ interface WelcomeViewProps {
   isLoadingSuggestions?: boolean;
 }
 
-// Define a mock task for UI demonstration
 const demoTasks = [
   {
     id: '1',
@@ -85,7 +84,6 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
       fetchPendingTasksCount();
     }
     
-    // Set up a subscription to listen for task updates
     const tasksSubscription = supabase
       .channel('public:child_tasks')
       .on('postgres_changes', 
@@ -106,7 +104,6 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
   };
 
   const handleImageUpload = async (file: File) => {
-    // In a real implementation, this would analyze the image and generate a relevant query
     const mockQuery = "What is this beautiful mountain?";
     setQuery(mockQuery);
     handleSubmitQuery();
@@ -117,10 +114,24 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
     handleSubmitQuery();
   };
 
+  const {
+    isMuted,
+    toggleMute,
+    isListening,
+    transcript,
+    toggleVoice,
+    isProcessing,
+    chatHistory,
+    voiceSupported
+  } = useWhizzyChat({
+    childAge: childProfile?.age,
+    curioContext: childProfile?.name,
+    onNewQuestionGenerated: (question) => onCurioSuggestionClick(question)
+  });
+
   return (
     <div className="container mx-auto px-4 pt-8 pb-16">
       <div className="max-w-3xl mx-auto">
-        {/* Header Section */}
         <motion.div 
           className="text-center mb-12"
           initial={{ opacity: 0, y: -20 }}
@@ -146,7 +157,6 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
           </motion.p>
         </motion.div>
 
-        {/* Search Section */}
         <div className="mb-12">
           <MagicalSearchInput
             onSearch={handleSubmitQuery}
@@ -159,7 +169,6 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
           />
         </div>
 
-        {/* Tasks Section */}
         {pendingTasksCount > 0 && (
           <TasksSection 
             tasks={tasks} 
@@ -169,7 +178,6 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
           />
         )}
         
-        {/* Curio Suggestions */}
         <motion.div
           className="mb-10"
           initial={{ opacity: 0, y: 20 }}
@@ -208,7 +216,6 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
           </div>
         </motion.div>
         
-        {/* Recent Curios */}
         {pastCurios && pastCurios.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -234,6 +241,18 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
             </div>
           </motion.div>
         )}
+        
+        <WhizzyChat
+          messages={chatHistory}
+          onSend={(message) => onCurioSuggestionClick(message)}
+          isListening={isListening}
+          isProcessing={isProcessing}
+          isMuted={isMuted}
+          onToggleMute={toggleMute}
+          onToggleVoice={toggleVoice}
+          transcript={transcript}
+          childAge={childProfile?.age}
+        />
       </div>
     </div>
   );
