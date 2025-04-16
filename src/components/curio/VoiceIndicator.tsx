@@ -20,15 +20,15 @@ export const VoiceIndicator: React.FC<VoiceIndicatorProps> = ({ isActive, wavefo
       {[...Array(3)].map((_, i) => (
         <motion.div
           key={i}
-          className="w-1 h-4 bg-wonderwhiz-bright-pink rounded-full"
+          className="w-1 h-4 bg-white rounded-full"
           animate={{
-            scaleY: [1, 1.5, 1],
+            scaleY: [1, 1.5 + i * 0.2, 1],
             opacity: [0.5, 1, 0.5]
           }}
           transition={{
-            duration: 1,
+            duration: 0.8,
             repeat: Infinity,
-            delay: i * 0.2
+            delay: i * 0.15
           }}
         />
       ))}

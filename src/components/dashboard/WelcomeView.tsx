@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import MagicalSearchInput from './MagicalSearchInput';
+import EnhancedSearchInput from './EnhancedSearchInput';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import TasksSection from './TasksSection';
 import { useWhizzyChat } from '@/hooks/useWhizzyChat';
@@ -131,16 +132,16 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
   });
 
   return (
-    <div className="container mx-auto px-4 pt-8 pb-16">
+    <div className="container mx-auto px-4 pt-4 pb-16">
       <div className="max-w-3xl mx-auto">
         <motion.div 
-          className="text-center mb-12"
+          className="mb-12"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
           <motion.h1 
-            className="text-3xl md:text-4xl font-bold text-white mb-2"
+            className="text-3xl md:text-4xl font-nunito font-bold bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent text-center mb-8"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
@@ -149,11 +150,11 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
           </motion.h1>
         </motion.div>
 
-        <div className="mb-12">
-          <MagicalSearchInput
+        <div className="mb-10">
+          <EnhancedSearchInput
             onSearch={handleSubmitQuery}
-            onImageUpload={handleImageUpload}
-            onVoiceInput={handleVoiceInput}
+            onImageCapture={handleImageUpload}
+            onVoiceCapture={handleVoiceInput}
             isProcessing={isGenerating}
             childAge={childProfile?.age}
             initialQuery={query}
@@ -177,7 +178,10 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
           transition={{ duration: 0.5, delay: 0.4 }}
         >
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-white">Discover Something New</h2>
+            <h2 className="text-xl font-nunito font-bold text-white flex items-center">
+              <Sparkles className="h-5 w-5 text-wonderwhiz-vibrant-yellow mr-2" />
+              Discover Something New
+            </h2>
             <Button 
               variant="ghost"
               size="sm"
@@ -197,12 +201,12 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: 0.2 + (index * 0.1) }}
-                className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg p-4 cursor-pointer transition-all"
+                className="bg-gradient-to-br from-white/5 to-white/10 hover:from-white/10 hover:to-white/15 border border-white/10 rounded-lg p-4 cursor-pointer transition-all"
                 onClick={() => onCurioSuggestionClick(suggestion)}
                 whileHover={{ scale: 1.02, backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
                 whileTap={{ scale: 0.98 }}
               >
-                <p className="text-white">{suggestion}</p>
+                <p className="text-white font-nunito">{suggestion}</p>
               </motion.div>
             ))}
           </div>
@@ -214,18 +218,24 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.5 }}
           >
-            <h2 className="text-xl font-bold text-white mb-4">Your Recent Explorations</h2>
+            <h2 className="text-xl font-nunito font-bold text-white mb-4 flex items-center">
+              <Sparkles className="h-5 w-5 text-wonderwhiz-vibrant-yellow mr-2" />
+              Your Recent Explorations
+            </h2>
             <div className="space-y-3">
-              {pastCurios.slice(0, 3).map((curio) => (
+              {pastCurios.slice(0, 3).map((curio, index) => (
                 <motion.div
                   key={curio.id}
-                  className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg p-4 cursor-pointer transition-all"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.2 + (index * 0.1) }}
+                  className="bg-gradient-to-br from-white/5 to-white/10 hover:from-white/10 hover:to-white/15 border border-white/10 rounded-lg p-4 cursor-pointer transition-all"
                   onClick={() => onCurioSuggestionClick(curio.query || curio.title)}
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.99 }}
                 >
-                  <p className="text-white font-medium">{curio.title}</p>
-                  <p className="text-white/60 text-sm mt-1">
+                  <p className="text-white font-medium font-nunito">{curio.title}</p>
+                  <p className="text-white/60 text-sm mt-1 font-inter">
                     {new Date(curio.created_at).toLocaleDateString()}
                   </p>
                 </motion.div>
