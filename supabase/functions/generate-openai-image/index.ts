@@ -39,9 +39,11 @@ serve(async (req) => {
     // Adapt prompt based on child's age for safety and appropriateness
     let enhancedPrompt = prompt;
     if (childAge < 8) {
-      enhancedPrompt += ', kid-friendly, colorful, educational, safe for children';
+      enhancedPrompt += ', kid-friendly, colorful, educational, safe for children, Pixar-style illustration';
     } else if (childAge < 12) {
-      enhancedPrompt += ', age-appropriate, educational, colorful';
+      enhancedPrompt += ', age-appropriate, educational, colorful, cartoon style';
+    } else {
+      enhancedPrompt += ', educational, vibrant, stylized';
     }
 
     try {

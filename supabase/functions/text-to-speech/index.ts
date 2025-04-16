@@ -29,7 +29,7 @@ serve(async (req) => {
   }
 
   try {
-    const { text, specialistId, model = 'eleven_turbo_v2_5', optimizeStreamingLatency = true } = await req.json();
+    const { text, specialistId = 'default', model = 'eleven_turbo_v2_5' } = await req.json();
 
     if (!text) {
       throw new Error('Text is required');
@@ -37,10 +37,6 @@ serve(async (req) => {
 
     // Get API key from environment
     const ELEVENLABS_API_KEY = Deno.env.get('ELEVEN_LABS_API_KEY');
-    
-    // Log relevant information for debugging
-    console.log(`Using ElevenLabs API key exists: ${!!ELEVENLABS_API_KEY}`);
-    console.log(`API key length: ${ELEVENLABS_API_KEY ? ELEVENLABS_API_KEY.length : 0}`);
     
     if (!ELEVENLABS_API_KEY) {
       console.error('ELEVEN_LABS_API_KEY is not set in environment variables');
@@ -55,9 +51,8 @@ serve(async (req) => {
     }
 
     // Get voice ID for the specialist
-    const voiceId = specialistId ? getVoiceIdForSpecialist(specialistId) : "pFZP5JQG7iQjIQuC4Bku";
-
-    console.log(`Generating speech for text (length: ${text.length}) with specialist: ${specialistId}, voice: ${voiceId}`);
+    const voiceId = getVoiceIdForSpecialist(specialistId);
+    console.log(`Generating speech with voice ID: ${voiceId}`);
 
     try {
       const response = await fetch(

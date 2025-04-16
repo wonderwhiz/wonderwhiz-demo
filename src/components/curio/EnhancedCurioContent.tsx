@@ -1,3 +1,4 @@
+
 import React, { ReactNode, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -9,6 +10,8 @@ import MindfulnessBlock from './MindfulnessBlock';
 import CreativeBlock from './CreativeBlock';
 import EnhancedSearchBar from './EnhancedSearchBar';
 import QuickAnswer from './QuickAnswer';
+import RabbitHoleSuggestions from './RabbitHoleSuggestions';
+import SpecialistAvatar from '@/components/SpecialistAvatar'; 
 
 interface SpecialistBlockProps {
   specialistId: string;
@@ -58,12 +61,7 @@ const SpecialistBlock: React.FC<SpecialistBlockProps> = ({
         
         <div className="relative p-6">
           <div className="flex items-start gap-4 mb-5">
-            <Avatar className="h-12 w-12 rounded-2xl border-2 border-white/10 ring-2 ring-wonderwhiz-bright-pink">
-              <AvatarImage src={specialist.avatar} />
-              <AvatarFallback className={specialist.fallbackColor}>
-                {specialist.fallbackInitial}
-              </AvatarFallback>
-            </Avatar>
+            <SpecialistAvatar specialistId={specialistId} size="lg" className="rounded-2xl ring-2 ring-wonderwhiz-bright-pink" />
             
             <div>
               <div className="flex items-center gap-2">
@@ -216,6 +214,7 @@ interface EnhancedCurioContentProps {
   onExplore?: () => void;
   onRabbitHoleClick?: (question: string) => void;
   childAge?: number;
+  childId?: string;
 }
 
 const getSpecialistInfo = (specialistId: string) => {
@@ -248,9 +247,48 @@ const getSpecialistInfo = (specialistId: string) => {
       fallbackColor: 'bg-purple-600',
       fallbackInitial: 'W',
     },
+    atlas: {
+      name: 'Atlas',
+      title: 'Explorer',
+      avatar: '/specialists/atlas-avatar.png',
+      fallbackColor: 'bg-amber-700',
+      fallbackInitial: 'A',
+    },
+    pixel: {
+      name: 'Pixel',
+      title: 'Tech Whiz',
+      avatar: '/specialists/pixel-avatar.png',
+      fallbackColor: 'bg-cyan-600',
+      fallbackInitial: 'P',
+    },
+    lotus: {
+      name: 'Lotus',
+      title: 'Mindfulness Guide',
+      avatar: '/specialists/lotus-avatar.png',
+      fallbackColor: 'bg-pink-600',
+      fallbackInitial: 'L',
+    },
   };
 
   return specialists[specialistId as keyof typeof specialists] || specialists.whizzy;
+};
+
+const getRandomRabbitHoleQuestions = (title: string): string[] => {
+  // Generate dynamic follow-up questions based on the curio title
+  const cleanTitle = title
+    .replace(/[?!.]/g, '')
+    .toLowerCase();
+  
+  const questionTemplates = [
+    `How does ${cleanTitle} impact our daily lives?`,
+    `What are fascinating facts about ${cleanTitle}?`,
+    `Why is ${cleanTitle} important to understand?`,
+    `How has ${cleanTitle} changed throughout history?`,
+    `What might the future of ${cleanTitle} look like?`
+  ];
+  
+  // Return a subset of questions to avoid overwhelming the user
+  return questionTemplates.slice(0, 3);
 };
 
 const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
@@ -265,12 +303,16 @@ const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
   onReadAloud,
   onExplore,
   onRabbitHoleClick,
-  childAge = 10
+  childAge = 10,
+  childId
 }) => {
   const [quickAnswerExpanded, setQuickAnswerExpanded] = useState(true);
   
   // Use provided blocks or example blocks
   const displayBlocks = blocks;
+  
+  // Generate dynamic rabbit hole suggestions based on the curio title
+  const dynamicSuggestions = getRandomRabbitHoleQuestions(title);
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-indigo-950 to-purple-950">
@@ -296,10 +338,22 @@ const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
               isExpanded={quickAnswerExpanded}
               onToggleExpand={() => setQuickAnswerExpanded(!quickAnswerExpanded)}
               childAge={childAge}
+              childId={childId}
             />
           </div>
           
+          {/* Dynamic Rabbit Hole Suggestions */}
+          <RabbitHoleSuggestions
+            currentQuestion={title}
+            suggestions={dynamicSuggestions}
+            onSuggestionClick={(suggestion) => onRabbitHoleClick && onRabbitHoleClick(suggestion)}
+            childAge={childAge}
+            childId={childId}
+          />
+          
           {displayBlocks.map((block) => {
+            if (!block || !block.type) return null;
+            
             if (block.type === 'quiz') {
               return (
                 <FireflyQuizBlock
@@ -340,14 +394,14 @@ const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
               return (
                 <SpecialistBlock
                   key={block.id}
-                  specialistId={block.specialist_id}
+                  specialistId={block.specialist_id || 'whizzy'}
                   content={content}
                   followupQuestions={followupQuestions}
                   onRabbitHoleClick={(question) => onRabbitHoleClick && onRabbitHoleClick(question)}
                   onLike={() => onLike && onLike(block.id)}
                   onBookmark={() => onBookmark && onBookmark(block.id)}
                   onReply={(message) => onReply && onReply(block.id, message)}
-                  onReadAloud={() => onReadAloud && onReadAloud(content, block.specialist_id)}
+                  onReadAloud={() => onReadAloud && onReadAloud(content, block.specialist_id || 'whizzy')}
                   childAge={childAge}
                 />
               );

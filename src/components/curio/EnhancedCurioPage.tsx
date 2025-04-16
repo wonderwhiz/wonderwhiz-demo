@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -239,6 +238,7 @@ const EnhancedCurioPage: React.FC = () => {
           onExplore={() => toast.info("Explore feature coming soon!")}
           onRabbitHoleClick={handleRabbitHoleClick}
           childAge={childAge}
+          childId={childId}
         />
       )}
     </div>
