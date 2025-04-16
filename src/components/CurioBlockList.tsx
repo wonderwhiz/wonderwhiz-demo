@@ -82,6 +82,11 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
     }
   }, [isFirstLoad, blocks, childAge, onReadAloud]);
 
+  // Add this debugging Effect
+  React.useEffect(() => {
+    console.log("CurioBlockList rendering with blocks:", blocks.length);
+  }, [blocks]);
+
   if (blocks.length === 0 && searchQuery) {
     return (
       <div className="py-8 text-center">
@@ -104,6 +109,20 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
         message="We had trouble generating content. Please try again." 
         onRetry={onRefresh}
       />
+    );
+  }
+
+  if (blocks.length === 0) {
+    return (
+      <div className="py-8 text-center">
+        <p className="text-white/70">No content blocks found for this exploration.</p>
+        <button 
+          className="mt-2 text-indigo-400 hover:text-indigo-300"
+          onClick={onRefresh}
+        >
+          Refresh
+        </button>
+      </div>
     );
   }
 

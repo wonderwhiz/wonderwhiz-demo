@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -101,6 +102,11 @@ const EnhancedCurioPage: React.FC = () => {
     }
   }, [blocks]);
 
+  // Add this debugging useEffect to log when blocks change
+  useEffect(() => {
+    console.log("Current blocks:", blocks);
+  }, [blocks]);
+
   if (profileError) {
     return <CurioErrorState message="Failed to load profile." />;
   }
@@ -193,8 +199,10 @@ const EnhancedCurioPage: React.FC = () => {
     toast.loading("Sending your reply...");
     
     handleReply(blockId, message)
-      .then(() => {
-        toast.success("Reply sent successfully!");
+      .then((success) => {
+        if (success) {
+          toast.success("Reply sent successfully!");
+        }
       })
       .catch((err) => {
         console.error("Error processing reply:", err);
@@ -217,7 +225,9 @@ const EnhancedCurioPage: React.FC = () => {
       {isLoadingBlocks && blocks.length === 0 ? (
         <CurioLoadingState message="Loading content..." />
       ) : blocksError ? (
-        <CurioErrorState message="Failed to load content." />
+        <CurioErrorState message="Failed to load content." onRetry={handleRefresh} />
+      ) : blocks.length === 0 ? (
+        <CurioErrorState message="No content blocks found. Try refreshing or creating a new exploration." onRetry={handleRefresh} />
       ) : (
         <EnhancedCurioContent
           title={curioTitle || "Exploring Knowledge"}
