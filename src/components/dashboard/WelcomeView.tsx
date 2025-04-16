@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import TasksSection from './TasksSection';
-import { useWhizzyChat } from '@/integrations/whizzychat';
+import { useWhizzyChat } from '@/hooks/useWhizzyChat';
+import WhizzyChat from '@/components/curio/WhizzyChat';
 
 interface WelcomeViewProps {
   childId: string;

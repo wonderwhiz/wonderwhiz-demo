@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Message2, Volume2, VolumeX } from 'lucide-react';
+import { MessageSquare, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { VoiceIndicator } from './VoiceIndicator';
 
@@ -38,7 +38,7 @@ const WhizzyChat: React.FC<WhizzyChatProps> = ({
       <div className="px-4 py-3 bg-black/20 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="bg-gradient-to-br from-wonderwhiz-bright-pink to-wonderwhiz-purple p-2 rounded-full">
-            <Message2 className="h-4 w-4 text-white" />
+            <MessageSquare className="h-4 w-4 text-white" />
           </div>
           <span className="text-white font-medium">Talk to Whizzy</span>
         </div>
