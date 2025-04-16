@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, PieChart, RefreshCcw, Home } from 'lucide-react';
+import { ArrowLeft, PieChart, RefreshCcw, Home, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface CurioPageHeaderProps {
@@ -22,31 +22,35 @@ const CurioPageHeader: React.FC<CurioPageHeaderProps> = ({
   handleRefresh,
   refreshing,
   showInsights,
-  profileId,
   childName
 }) => {
   return (
     <motion.header 
-      className="sticky top-0 z-50 bg-gradient-to-b from-indigo-950/95 to-indigo-950/85 backdrop-blur-sm py-3 px-4 sm:px-6 border-b border-white/10 shadow-md"
+      className="sticky top-0 z-50 bg-gradient-to-b from-wonderwhiz-deep-purple/95 to-wonderwhiz-deep-purple/85 backdrop-blur-md py-4 border-b border-white/10"
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      <div className="max-w-3xl mx-auto flex items-center justify-between">
-        <div className="flex items-center">
+      <div className="max-w-3xl mx-auto px-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
           <Button
             variant="ghost"
             size="icon"
             onClick={handleBackToDashboard}
-            className="mr-3 bg-white/5 hover:bg-white/10 text-white rounded-full h-9 w-9"
+            className="bg-white/5 hover:bg-white/10 text-white rounded-xl h-10 w-10"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-5 w-5" />
           </Button>
           
           {curioTitle && (
-            <h1 className="text-lg sm:text-xl font-bold text-white truncate max-w-[200px] sm:max-w-md">
-              {curioTitle}
-            </h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl font-bold text-white font-nunito truncate max-w-[200px] sm:max-w-md">
+                {curioTitle}
+              </h1>
+              <div className="hidden sm:flex items-center">
+                <Sparkles className="h-4 w-4 text-wonderwhiz-vibrant-yellow animate-pulse" />
+              </div>
+            </div>
           )}
         </div>
         
@@ -55,9 +59,11 @@ const CurioPageHeader: React.FC<CurioPageHeaderProps> = ({
             variant="ghost"
             size="icon"
             onClick={handleToggleInsights}
-            className={`bg-white/5 hover:bg-white/10 text-white rounded-full h-9 w-9 ${showInsights ? 'bg-white/15 shadow-inner' : ''}`}
+            className={`bg-white/5 hover:bg-white/10 text-white rounded-xl h-10 w-10 transition-all duration-300 ${
+              showInsights ? 'bg-white/15 text-wonderwhiz-bright-pink shadow-glow-brand-pink' : ''
+            }`}
           >
-            <PieChart className="h-4 w-4" />
+            <PieChart className="h-5 w-5" />
           </Button>
           
           <Button
@@ -65,18 +71,18 @@ const CurioPageHeader: React.FC<CurioPageHeaderProps> = ({
             size="icon"
             onClick={handleRefresh}
             disabled={refreshing}
-            className="bg-white/5 hover:bg-white/10 text-white rounded-full h-9 w-9"
+            className="bg-white/5 hover:bg-white/10 text-white rounded-xl h-10 w-10"
           >
-            <RefreshCcw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            <RefreshCcw className={`h-5 w-5 ${refreshing ? 'animate-spin' : ''}`} />
           </Button>
           
           <Button
             variant="ghost"
             size="icon"
             onClick={handleBackToDashboard}
-            className="bg-white/5 hover:bg-white/10 text-white rounded-full h-9 w-9 sm:hidden"
+            className="bg-white/5 hover:bg-white/10 text-white rounded-xl h-10 w-10 sm:hidden"
           >
-            <Home className="h-4 w-4" />
+            <Home className="h-5 w-5" />
           </Button>
         </div>
       </div>

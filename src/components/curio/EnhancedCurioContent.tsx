@@ -1,14 +1,199 @@
-
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { ReactNode } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Heart, MessageCircle, Bookmark, Share2, VolumeIcon } from 'lucide-react';
+import { Heart, MessageCircle, Bookmark, Share2, VolumeIcon, Brain, Sparkles, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import FireflyQuizBlock from './FireflyQuizBlock';
 import MindfulnessBlock from './MindfulnessBlock';
 import CreativeBlock from './CreativeBlock';
 import EnhancedSearchBar from './EnhancedSearchBar';
+
+interface SpecialistBlockProps {
+  specialistId: string;
+  content: string;
+  followupQuestions?: string[];
+  onRabbitHoleClick?: (question: string) => void;
+  onLike?: () => void;
+  onBookmark?: () => void;
+  onReply?: () => void;
+  onReadAloud?: () => void;
+  childAge?: number;
+}
+
+const SpecialistBlock: React.FC<SpecialistBlockProps> = ({
+  specialistId,
+  content,
+  followupQuestions = [],
+  onRabbitHoleClick,
+  onLike,
+  onBookmark,
+  onReply,
+  onReadAloud,
+  childAge = 10
+}) => {
+  const specialist = getSpecialistInfo(specialistId);
+  const [showReplyInput, setShowReplyInput] = React.useState(false);
+  const [replyText, setReplyText] = React.useState('');
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="mb-6"
+    >
+      <div className="relative overflow-hidden rounded-2xl backdrop-blur-lg border border-white/10 bg-gradient-to-br from-wonderwhiz-deep-purple/30 to-wonderwhiz-light-purple/20 shadow-lg">
+        <div className="absolute inset-0 bg-gradient-to-br from-wonderwhiz-bright-pink/5 to-wonderwhiz-cyan/5 pointer-events-none" />
+        
+        <div className="relative p-6">
+          <div className="flex items-start gap-4 mb-5">
+            <Avatar className="h-12 w-12 rounded-2xl border-2 border-white/10 ring-2 ring-wonderwhiz-bright-pink/20 shadow-glow-brand-pink">
+              <AvatarImage src={specialist.avatar} />
+              <AvatarFallback className={specialist.fallbackColor}>
+                {specialist.fallbackInitial}
+              </AvatarFallback>
+            </Avatar>
+            
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-bold text-white font-nunito">{specialist.name}</h3>
+                <div className={`h-2 w-2 rounded-full animate-pulse ${
+                  specialistId === 'nova' ? 'bg-wonderwhiz-bright-pink' :
+                  specialistId === 'spark' ? 'bg-wonderwhiz-vibrant-yellow' :
+                  'bg-wonderwhiz-cyan'
+                }`} />
+              </div>
+              <p className="text-sm text-white/70 font-inter">{specialist.title}</p>
+            </div>
+          </div>
+
+          <div className="text-white font-inter leading-relaxed mb-6">
+            {content}
+          </div>
+
+          {followupQuestions.length > 0 && (
+            <div className="space-y-2 mb-6">
+              <p className="text-sm font-medium text-white/70 mb-3 font-nunito">
+                {childAge < 8 ? "Let's explore more!" : "Explore further..."}
+              </p>
+              <div className="grid gap-2">
+                {followupQuestions.map((question, idx) => (
+                  <motion.button
+                    key={idx}
+                    className="w-full text-left p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all duration-300 group"
+                    onClick={() => onRabbitHoleClick?.(question)}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-wonderwhiz-bright-pink/10 text-wonderwhiz-bright-pink">
+                        <Sparkles className="w-4 h-4" />
+                      </div>
+                      <span className="text-white group-hover:text-wonderwhiz-bright-pink transition-colors">
+                        {question}
+                      </span>
+                    </div>
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between pt-4 border-t border-white/10">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onLike}
+                className="text-white/70 hover:text-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/10"
+              >
+                <Heart className="h-4 w-4 mr-1.5" />
+                <span className="font-medium">Like</span>
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onBookmark}
+                className="text-white/70 hover:text-wonderwhiz-vibrant-yellow hover:bg-wonderwhiz-vibrant-yellow/10"
+              >
+                <Bookmark className="h-4 w-4 mr-1.5" />
+                <span className="font-medium">Save</span>
+              </Button>
+
+              {onReadAloud && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onReadAloud}
+                  className="text-white/70 hover:text-wonderwhiz-cyan hover:bg-wonderwhiz-cyan/10"
+                >
+                  <VolumeIcon className="h-4 w-4 mr-1.5" />
+                  <span className="font-medium">
+                    {childAge && childAge < 8 ? "Read to me" : "Listen"}
+                  </span>
+                </Button>
+              )}
+            </div>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowReplyInput(!showReplyInput)}
+              className={`text-white/70 hover:text-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/10 ${
+                showReplyInput ? 'bg-wonderwhiz-bright-pink/10 text-wonderwhiz-bright-pink' : ''
+              }`}
+            >
+              <MessageCircle className="h-4 w-4 mr-1.5" />
+              <span className="font-medium">Reply</span>
+            </Button>
+          </div>
+
+          <AnimatePresence>
+            {showReplyInput && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                className="mt-4"
+              >
+                <div className="relative">
+                  <textarea
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    placeholder={childAge && childAge < 8 ? "What do you think?" : "Share your thoughts..."}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-wonderwhiz-bright-pink/50 font-inter resize-none"
+                    rows={2}
+                  />
+                  <div className="flex justify-end gap-2 mt-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowReplyInput(false)}
+                      className="text-white/70"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={onReply}
+                      disabled={!replyText.trim()}
+                      className="bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/90"
+                    >
+                      Send
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
 
 interface EnhancedCurioContentProps {
   title: string;
@@ -58,169 +243,6 @@ const getSpecialistInfo = (specialistId: string) => {
   };
 
   return specialists[specialistId as keyof typeof specialists] || specialists.whizzy;
-};
-
-const SpecialistBlock: React.FC<{
-  specialistId: string;
-  content: string;
-  followupQuestions?: string[];
-  onRabbitHoleClick?: (question: string) => void;
-  onLike?: () => void;
-  onBookmark?: () => void;
-  onReply?: () => void;
-  onReadAloud?: () => void;
-  childAge?: number;
-}> = ({ 
-  specialistId, 
-  content, 
-  followupQuestions = [],
-  onRabbitHoleClick,
-  onLike,
-  onBookmark,
-  onReply,
-  onReadAloud,
-  childAge = 10
-}) => {
-  const specialist = getSpecialistInfo(specialistId);
-  const [showReplyInput, setShowReplyInput] = useState(false);
-  const [replyText, setReplyText] = useState('');
-  
-  const handleReply = () => {
-    if (replyText.trim() && onReply) {
-      onReply();
-      setReplyText('');
-      setShowReplyInput(false);
-      toast.success("Reply sent!");
-    }
-  };
-  
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="mb-6 bg-wonderwhiz-purple rounded-xl overflow-hidden"
-    >
-      <div className="p-5">
-        <div className="flex items-start gap-3 mb-4">
-          <Avatar className="h-10 w-10 border-2 border-white/20">
-            <AvatarImage src={specialist.avatar} alt={specialist.name} />
-            <AvatarFallback className={specialist.fallbackColor}>{specialist.fallbackInitial}</AvatarFallback>
-          </Avatar>
-          
-          <div>
-            <div className="flex items-center">
-              <h3 className="text-lg font-semibold text-white">{specialist.name}</h3>
-              {specialistId === 'nova' && (
-                <div className="ml-2 h-2 w-2 rounded-full bg-blue-400"></div>
-              )}
-              {specialistId === 'spark' && (
-                <div className="ml-2 h-2 w-2 rounded-full bg-yellow-400"></div>
-              )}
-            </div>
-            <p className="text-sm text-white/60">{specialist.title}</p>
-          </div>
-        </div>
-        
-        <div className="text-white mb-5 whitespace-pre-line">
-          {content}
-          
-          {followupQuestions.length > 0 && (
-            <div className="mt-5 pt-4 border-t border-white/10">
-              <p className="text-white/60 text-sm mb-2">I wonder...</p>
-              <div className="space-y-2">
-                {followupQuestions.map((question, idx) => (
-                  <div 
-                    key={idx}
-                    className="bg-white/10 hover:bg-white/15 rounded-lg px-4 py-3 cursor-pointer text-white/90"
-                    onClick={() => onRabbitHoleClick && onRabbitHoleClick(question)}
-                  >
-                    {question}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-        
-        <div className="flex space-x-3 pt-2 border-t border-white/10">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={onLike}
-            className="text-white/70 hover:text-white hover:bg-white/10"
-          >
-            <Heart className="h-4 w-4 mr-1" />
-            Like
-          </Button>
-          
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={onBookmark}
-            className="text-white/70 hover:text-white hover:bg-white/10"
-          >
-            <Bookmark className="h-4 w-4 mr-1" />
-            Save
-          </Button>
-          
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => setShowReplyInput(!showReplyInput)}
-            className="text-white/70 hover:text-white hover:bg-white/10"
-          >
-            <MessageCircle className="h-4 w-4 mr-1" />
-            Reply
-          </Button>
-          
-          {onReadAloud && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={onReadAloud}
-              className="text-white/70 hover:text-white hover:bg-white/10"
-            >
-              <VolumeIcon className="h-4 w-4 mr-1" />
-              {childAge && childAge < 8 ? "Read to me" : "Read aloud"}
-            </Button>
-          )}
-        </div>
-        
-        {showReplyInput && (
-          <div className="mt-3 bg-white/5 p-3 rounded-lg">
-            <textarea
-              value={replyText}
-              onChange={(e) => setReplyText(e.target.value)}
-              placeholder="Write your reply..."
-              className="w-full bg-white/10 border border-white/20 rounded-lg p-2 text-white placeholder-white/50 text-sm"
-              rows={2}
-            />
-            
-            <div className="flex justify-end mt-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="mr-2 border-white/20 text-white"
-                onClick={() => setShowReplyInput(false)}
-              >
-                Cancel
-              </Button>
-              
-              <Button 
-                size="sm" 
-                className="bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/90"
-                onClick={handleReply}
-                disabled={!replyText.trim()}
-              >
-                Send
-              </Button>
-            </div>
-          </div>
-        )}
-      </div>
-    </motion.div>
-  );
 };
 
 const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
