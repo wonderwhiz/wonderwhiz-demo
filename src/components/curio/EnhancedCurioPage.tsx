@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,7 +22,7 @@ const EnhancedCurioPage: React.FC = () => {
   const { user } = useUser();
   const { childProfile, isLoading: isLoadingProfile, error: profileError } = useChildProfile(childId);
   const { searchQuery, setSearchQuery, handleSearch } = useSearch();
-  const { blocks, isLoading: isLoadingBlocks, error: blocksError, hasMore, loadMore, isFirstLoad, generationError, setBlocks } = useCurioBlocks(childId, curioId, searchQuery);
+  const { blocks, isLoading: isLoadingBlocks, error: blocksError, hasMore, loadMore, isFirstLoad, generationError } = useCurioBlocks(childId, curioId, searchQuery);
   const { playText, isLoading: isVoiceLoading, stopPlaying } = useElevenLabsVoice();
   
   const { 
@@ -77,12 +76,9 @@ const EnhancedCurioPage: React.FC = () => {
             setExplorationPath([data.title]);
             setExplorationDepth(1);
             
-            // If no blocks are loaded after a reasonable time, attempt to generate content
             if (blocks.length === 0 && !isLoadingBlocks) {
-              // This is a placeholder for content generation logic
               console.log("No blocks found for this curio");
               
-              // For very young children, show a friendly message
               if (childAge < 8) {
                 toast.info("I'm creating something special for you! Please wait...", {
                   duration: 4000
@@ -116,7 +112,6 @@ const EnhancedCurioPage: React.FC = () => {
     }
   }, [blocks]);
 
-  // Add this debugging useEffect to log when blocks change
   useEffect(() => {
     console.log("Current blocks:", blocks);
   }, [blocks]);
@@ -180,7 +175,6 @@ const EnhancedCurioPage: React.FC = () => {
             origin: { y: 0.6 }
           });
           
-          // Navigate after a brief delay to allow toast to be seen
           setTimeout(() => {
             navigate(`/curio/${childId}/${newCurio.id}`);
           }, 500);
@@ -236,7 +230,6 @@ const EnhancedCurioPage: React.FC = () => {
       });
   };
 
-  // Special case for empty curio with no blocks
   if (!isLoadingBlocks && blocks.length === 0 && curioTitle) {
     return (
       <div className="flex flex-col min-h-screen bg-gradient-to-b from-indigo-950 to-purple-950">

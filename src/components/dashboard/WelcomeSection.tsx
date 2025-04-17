@@ -1,6 +1,7 @@
 
 import React from 'react';
 import WelcomeView from './WelcomeView';
+import { toast } from 'sonner';
 
 interface WelcomeSectionProps {
   curioSuggestions: string[];
@@ -29,6 +30,31 @@ const WelcomeSection: React.FC<WelcomeSectionProps> = ({
   handleSubmitQuery,
   isGenerating
 }) => {
+  const handleSuggestionClickWithFeedback = (suggestion: string) => {
+    if (isGenerating) {
+      toast.info("Already creating your adventure! Please wait a moment...");
+      return;
+    }
+    
+    console.log(`Suggestion clicked: ${suggestion}`);
+    handleCurioSuggestionClick(suggestion);
+  };
+  
+  const handleSubmitWithValidation = () => {
+    if (isGenerating) {
+      toast.info("Please wait while we create your adventure!");
+      return;
+    }
+    
+    if (!query.trim()) {
+      toast.error("Please tell me what you want to learn about!");
+      return;
+    }
+    
+    console.log(`Submit clicked for query: ${query}`);
+    handleSubmitQuery();
+  };
+
   return (
     <div>
       <WelcomeView
@@ -38,9 +64,9 @@ const WelcomeSection: React.FC<WelcomeSectionProps> = ({
         pastCurios={pastCurios}
         query={query}
         setQuery={setQuery}
-        handleSubmitQuery={handleSubmitQuery}
+        handleSubmitQuery={handleSubmitWithValidation}
         isGenerating={isGenerating}
-        onCurioSuggestionClick={handleCurioSuggestionClick}
+        onCurioSuggestionClick={handleSuggestionClickWithFeedback}
         onRefreshSuggestions={handleRefreshSuggestions}
         isLoadingSuggestions={isLoadingSuggestions}
       />

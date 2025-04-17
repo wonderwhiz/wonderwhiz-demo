@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import MagicalBorder from './MagicalBorder';
 import { useNavigate } from 'react-router-dom';
@@ -31,18 +32,53 @@ const CurioSuggestion: React.FC<CurioSuggestionProps> = ({
   type = 'general',
   loading = false
 }) => {
+  const [isCreating, setIsCreating] = useState(false);
   const colorVariant = COLOR_VARIANTS[index % COLOR_VARIANTS.length];
   const navigate = useNavigate();
   
   const handleClick = async () => {
-    if (loading) return;
+    // Prevent multiple rapid clicks
+    if (loading || isCreating) return;
+    
+    // Always call onClick to ensure the parent knows the suggestion was clicked
+    onClick(suggestion);
     
     if (directGenerate && profileId) {
       try {
+        setIsCreating(true);
+        
         toast.loading("Creating your wonder journey...", {
           id: "create-curio",
           duration: 3000
         });
+        
+        console.log(`Creating curio for suggestion: ${suggestion}`);
+        
+        // Check if this suggestion was recently created
+        const { data: existingCurios, error: checkError } = await supabase
+          .from('curios')
+          .select('id')
+          .eq('child_id', profileId)
+          .eq('title', suggestion)
+          .order('created_at', { ascending: false })
+          .limit(1);
+          
+        if (checkError) {
+          console.error('Error checking for existing curios:', checkError);
+        }
+        
+        // If we found a recent match, just navigate to it
+        if (existingCurios && existingCurios.length > 0) {
+          console.log(`Found existing curio for suggestion: ${suggestion}`);
+          toast.success("Starting your journey!", {
+            id: "create-curio"
+          });
+          
+          setTimeout(() => {
+            navigate(`/curio/${profileId}/${existingCurios[0].id}`);
+          }, 300);
+          return;
+        }
         
         // Create a new curio based on the suggestion
         const { data: newCurio, error } = await supabase
@@ -117,12 +153,8 @@ const CurioSuggestion: React.FC<CurioSuggestionProps> = ({
           id: "create-curio"
         });
       } finally {
-        // Always call onClick to ensure the parent knows the suggestion was clicked
-        onClick(suggestion);
+        setIsCreating(false);
       }
-    } else {
-      // Original behavior
-      onClick(suggestion);
     }
   };
   
@@ -215,10 +247,10 @@ const CurioSuggestion: React.FC<CurioSuggestionProps> = ({
       >
         <button
           onClick={handleClick}
-          className={`w-full h-full p-4 bg-white/10 text-white text-left rounded-2xl border-white/20 hover:bg-white/20 transition-colors font-nunito ${loading ? 'opacity-70' : ''}`}
-          disabled={loading}
+          className={`w-full h-full p-4 bg-white/10 text-white text-left rounded-2xl border-white/20 hover:bg-white/20 transition-colors font-nunito ${(loading || isCreating) ? 'opacity-70' : ''}`}
+          disabled={loading || isCreating}
         >
-          {loading && (
+          {(loading || isCreating) && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-2xl">
               <div className="animate-spin h-5 w-5 border-2 border-white/60 border-t-transparent rounded-full"></div>
             </div>

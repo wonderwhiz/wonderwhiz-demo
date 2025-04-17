@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -37,6 +38,7 @@ const DashboardContainer = () => {
   const [childAge, setChildAge] = useState<number>(10);
   const [isVoiceActive, setIsVoiceActive] = useState(false);
   const [isCreatingCurio, setIsCreatingCurio] = useState(false);
+  const [lastCreatedQuery, setLastCreatedQuery] = useState<string>(''); // Track last created query
 
   const {
     childProfile,
@@ -124,6 +126,7 @@ const DashboardContainer = () => {
   const handleSuggestionClick = (suggestion: string) => {
     if (isCreatingCurio) return;
     
+    // Clear any previous query to avoid confusion
     setQuery(suggestion);
     setCurrentCurio(null);
     
@@ -141,8 +144,15 @@ const DashboardContainer = () => {
       return;
     }
     
+    // Prevent re-submitting the same query back-to-back
+    if (lastCreatedQuery === query.trim()) {
+      toast.info("You're already exploring this topic!");
+      return;
+    }
+    
     setIsCreatingCurio(true);
     setIsGenerating(true);
+    setLastCreatedQuery(query.trim());
     
     try {
       // Show a loading toast
@@ -184,6 +194,7 @@ const DashboardContainer = () => {
       toast.error("Couldn't create your adventure. Let's try again!", {
         id: "creating-curio"
       });
+      setLastCreatedQuery(''); // Reset on error to allow retrying
     } finally {
       setIsGenerating(false);
       setIsCreatingCurio(false);
