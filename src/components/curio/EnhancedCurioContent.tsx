@@ -358,32 +358,40 @@ const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
               return (
                 <FireflyQuizBlock
                   key={block.id}
-                  question={block.content.question}
-                  options={block.content.options}
-                  correctIndex={block.content.correctIndex}
-                  explanation={block.content.explanation}
+                  question={block.content?.question || "Quiz Question"}
+                  options={block.content?.options || []}
+                  correctIndex={block.content?.correctIndex || 0}
+                  explanation={block.content?.explanation || "This is the correct answer."}
+                  specialistId={block.specialist_id || "prism"}
                   childAge={childAge}
+                  onCorrect={() => onLike && onLike(block.id)}
                 />
               );
             } else if (block.type === 'mindfulness') {
               return (
                 <MindfulnessBlock
                   key={block.id}
-                  title={block.content.title}
-                  instructions={block.content.instruction}
-                  duration={block.content.duration}
-                  benefit={block.content.benefit}
+                  title={block.content?.title || "Mindfulness Activity"}
+                  instructions={block.content?.instruction || block.content?.text || "Take a deep breath and focus on your breathing."}
+                  duration={block.content?.duration || 60}
+                  benefit={block.content?.benefit || "Helps you relax and focus"}
+                  specialistId={block.specialist_id || "lotus"}
                   childAge={childAge}
+                  onComplete={() => onLike && onLike(block.id)}
                 />
               );
             } else if (block.type === 'creative') {
               return (
                 <CreativeBlock
                   key={block.id}
-                  prompt={block.content.prompt}
-                  examples={block.content.examples}
-                  specialistId={block.specialist_id}
+                  prompt={block.content?.prompt || "Express your creativity!"}
+                  examples={block.content?.examples || []}
+                  specialistId={block.specialist_id || "spark"}
                   childAge={childAge}
+                  onUpload={(file) => {
+                    if (onImageCapture) onImageCapture(file);
+                    if (onLike) onLike(block.id);
+                  }}
                 />
               );
             } else {

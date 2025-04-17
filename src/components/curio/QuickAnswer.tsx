@@ -57,20 +57,36 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
     setIsError(false);
     
     try {
-      // Enhanced summary generation using direct text summarization
-      // This approach is more reliable than the edge function that was failing
-      let summaryText = '';
+      // Call our edge function to generate the summary
+      const { data, error } = await supabase.functions.invoke('generate-quick-summary', {
+        body: JSON.stringify({
+          query: question,
+          childAge: childAge,
+          maxLength: 300
+        })
+      });
       
-      // Create a simplified version for younger audiences
-      if (childAge && childAge < 8) {
-        summaryText = `${question} is a fascinating topic! Let's explore it together and discover amazing facts about it.`;
-      } else if (childAge && childAge < 12) {
-        summaryText = `${question} is an interesting subject that connects to many parts of our world. As we explore, we'll discover key facts and cool insights.`;
+      if (error) throw error;
+      
+      if (data && data.success && data.summary) {
+        setSummary(data.summary);
+      } else if (data && !data.success) {
+        throw new Error(data.error || 'Failed to generate summary');
       } else {
-        summaryText = `${question} is a complex and fascinating topic. Our exploration will uncover important principles, relationships, and real-world applications.`;
+        // Fallback if we don't get a proper response
+        let fallbackSummary = '';
+        
+        // Create a simple fallback based on child age
+        if (childAge && childAge < 8) {
+          fallbackSummary = `${question} is a fascinating topic! Let's explore it together and discover amazing facts about it.`;
+        } else if (childAge && childAge < 12) {
+          fallbackSummary = `${question} is an interesting subject that connects to many parts of our world. As we explore, we'll discover key facts and cool insights.`;
+        } else {
+          fallbackSummary = `${question} is a complex and fascinating topic. Our exploration will uncover important principles, relationships, and real-world applications.`;
+        }
+        
+        setSummary(fallbackSummary);
       }
-      
-      setSummary(summaryText);
     } catch (err) {
       console.error('Error generating summary:', err);
       setIsError(true);

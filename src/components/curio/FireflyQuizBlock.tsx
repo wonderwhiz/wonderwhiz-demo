@@ -1,19 +1,20 @@
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Check, AlertCircle, Award, Brain, VolumeIcon } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { CheckCircle, XCircle, HelpCircle, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
+import SpecialistAvatar from '@/components/SpecialistAvatar';
 import confetti from 'canvas-confetti';
 
 interface FireflyQuizBlockProps {
   question: string;
   options: string[];
   correctIndex: number;
-  explanation: string;
-  onComplete?: () => void;
+  explanation?: string;
+  specialistId?: string;
   childAge?: number;
-  onReadAloud?: (text: string) => void;
+  onCorrect?: () => void;
 }
 
 const FireflyQuizBlock: React.FC<FireflyQuizBlockProps> = ({
@@ -21,62 +22,84 @@ const FireflyQuizBlock: React.FC<FireflyQuizBlockProps> = ({
   options,
   correctIndex,
   explanation,
-  onComplete,
+  specialistId = 'prism',
   childAge = 10,
-  onReadAloud
+  onCorrect
 }) => {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
-  
+  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+  const [attemptsRemaining, setAttemptsRemaining] = useState(childAge < 8 ? 3 : 1);
+
   const handleOptionSelect = (index: number) => {
-    if (selectedIndex !== null) return; // Already answered
+    if (selectedIndex !== null && !showExplanation) return;
     
     setSelectedIndex(index);
     const correct = index === correctIndex;
     setIsCorrect(correct);
     
     if (correct) {
-      // Celebration animation for correct answer
+      // Celebrate correct answers
       confetti({
-        particleCount: 50,
+        particleCount: 100,
         spread: 70,
-        origin: { y: 0.7 }
+        origin: { y: 0.6 }
       });
       
-      toast.success(
-        childAge < 8 ? "Great job! That's correct! 🎉" : "Correct answer! 🎉",
-        { duration: 3000 }
-      );
+      toast.success('Correct answer! 🎉', {
+        duration: 2000
+      });
       
-      if (onComplete) {
-        onComplete();
+      if (onCorrect) {
+        onCorrect();
       }
+      
+      // Show explanation after a short delay for correct answers
+      setTimeout(() => {
+        setShowExplanation(true);
+      }, 700);
     } else {
-      toast.error(
-        childAge < 8 ? "Not quite right. Try again!" : "That's not correct. Try again!",
-        { duration: 3000 }
-      );
+      // Decrement attempts for incorrect answers
+      setAttemptsRemaining(prev => Math.max(0, prev - 1));
+      
+      if (attemptsRemaining <= 1) {
+        // If this was the last attempt, show the explanation
+        setTimeout(() => {
+          setShowExplanation(true);
+        }, 700);
+      } else {
+        toast.error(`Not quite! Try again. (${attemptsRemaining - 1} attempts left)`, {
+          duration: 2000
+        });
+      }
+    }
+  };
+  
+  const resetQuiz = () => {
+    setSelectedIndex(null);
+    setShowExplanation(false);
+    setIsCorrect(null);
+    setAttemptsRemaining(childAge < 8 ? 3 : 1);
+  };
+
+  const getOptionClassName = (index: number) => {
+    const baseClasses = "w-full text-left p-4 rounded-xl transition-colors flex items-center mb-3";
+    
+    if (selectedIndex === null) {
+      return `${baseClasses} bg-white/10 hover:bg-white/15 text-white border border-white/10`;
     }
     
-    // Show explanation after answer
-    setTimeout(() => {
-      setShowExplanation(true);
-    }, 1000);
-  };
-  
-  const handleReadAloud = () => {
-    if (onReadAloud) {
-      onReadAloud(question + ". " + options.join(". ") + (showExplanation ? ". " + explanation : ""));
+    if (showExplanation && index === correctIndex) {
+      return `${baseClasses} bg-green-500/20 text-green-100 border border-green-500/30`;
     }
-  };
-  
-  const getQuestionText = () => {
-    if (childAge < 8) {
-      // Simpler language for younger children
-      return question.replace(/(\?|\.|\!)+$/, '') + "?";
+    
+    if (index === selectedIndex) {
+      return isCorrect
+        ? `${baseClasses} bg-green-500/20 text-green-100 border border-green-500/30`
+        : `${baseClasses} bg-red-500/20 text-red-100 border border-red-500/30`;
     }
-    return question;
+    
+    return `${baseClasses} bg-white/5 text-white/60 border border-white/5`;
   };
 
   return (
@@ -84,118 +107,112 @@ const FireflyQuizBlock: React.FC<FireflyQuizBlockProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="mb-6"
+      className="mb-8"
     >
-      <div className="relative overflow-hidden rounded-2xl backdrop-blur-lg border border-white/10 bg-gradient-to-br from-wonderwhiz-deep-purple/30 to-indigo-800/20 shadow-lg">
-        <div className="absolute inset-0 bg-gradient-to-br from-wonderwhiz-cyan/5 to-wonderwhiz-bright-pink/5 pointer-events-none" />
-        
-        <div className="relative p-6">
-          <div className="flex items-start gap-3 mb-5">
-            <div className="h-10 w-10 bg-gradient-to-br from-wonderwhiz-cyan to-wonderwhiz-blue rounded-xl flex items-center justify-center flex-shrink-0 shadow-glow-brand-cyan">
-              <Brain className="h-5 w-5 text-white" />
-            </div>
+      <div className="rounded-2xl backdrop-blur-lg border border-white/10 bg-gradient-to-br from-wonderwhiz-deep-purple/40 to-wonderwhiz-light-purple/30 shadow-lg overflow-hidden">
+        <div className="p-6">
+          <div className="flex items-start gap-4 mb-5">
+            <SpecialistAvatar specialistId={specialistId} size="lg" />
             
             <div>
               <div className="flex items-center">
                 <h3 className="text-lg font-bold text-white font-nunito">Quiz Challenge</h3>
-                <div className="ml-2 bg-wonderwhiz-cyan/20 px-2 py-0.5 rounded-full text-xs text-wonderwhiz-cyan font-medium hidden sm:block">
-                  Test your knowledge
+                <div className="ml-2 bg-wonderwhiz-bright-pink/20 px-2 py-0.5 rounded-full">
+                  <span className="text-xs text-wonderwhiz-bright-pink font-medium">
+                    {childAge < 8 ? 'Easy' : childAge < 12 ? 'Medium' : 'Advanced'}
+                  </span>
+                </div>
+              </div>
+              <p className="text-sm text-white/70 font-inter">Test your knowledge</p>
+            </div>
+          </div>
+
+          <div className="text-white font-inter leading-relaxed mb-6">
+            <p className="text-lg font-medium">{question}</p>
+          </div>
+
+          <div className="space-y-1">
+            {Array.isArray(options) && options.length > 0 ? (
+              options.map((option, index) => (
+                <motion.button
+                  key={index}
+                  whileHover={{ scale: selectedIndex === null ? 1.01 : 1 }}
+                  whileTap={{ scale: selectedIndex === null ? 0.99 : 1 }}
+                  className={getOptionClassName(index)}
+                  onClick={() => handleOptionSelect(index)}
+                  disabled={showExplanation || (selectedIndex !== null && attemptsRemaining === 0)}
+                >
+                  {/* Fancy option labels for younger kids */}
+                  {childAge < 10 && (
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-white/20 flex items-center justify-center mr-3 text-sm font-medium">
+                      {String.fromCharCode(65 + index)}
+                    </div>
+                  )}
+                  
+                  <span>{option}</span>
+                  
+                  {/* Show indicators for selected/correct answers */}
+                  {selectedIndex !== null && (
+                    <div className="ml-auto">
+                      {showExplanation && index === correctIndex && (
+                        <CheckCircle className="h-5 w-5 text-green-400" />
+                      )}
+                      {selectedIndex === index && !isCorrect && (
+                        <XCircle className="h-5 w-5 text-red-400" />
+                      )}
+                    </div>
+                  )}
+                </motion.button>
+              ))
+            ) : (
+              <div className="p-4 bg-white/10 rounded-lg text-white/70">
+                No options available for this quiz
+              </div>
+            )}
+          </div>
+
+          {showExplanation && explanation && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              className="mt-6 p-4 bg-white/10 rounded-xl"
+            >
+              <div className="flex items-start">
+                <HelpCircle className="h-5 w-5 text-wonderwhiz-cyan mr-2 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h4 className="text-white font-medium mb-1">Explanation</h4>
+                  <p className="text-white/90 text-sm">{explanation}</p>
                 </div>
               </div>
               
-              <div className="mt-1 flex items-center gap-2">
-                <Button
-                  variant="ghost"
+              <div className="mt-4 flex justify-end">
+                <Button 
+                  variant="outline" 
                   size="sm"
-                  onClick={handleReadAloud}
-                  className="text-white/70 hover:text-wonderwhiz-cyan hover:bg-wonderwhiz-cyan/10 p-1 h-auto"
+                  onClick={resetQuiz}
+                  className="bg-white/10 hover:bg-white/20 text-white"
                 >
-                  <VolumeIcon className="h-3.5 w-3.5" />
-                  <span className="sr-only">Read aloud</span>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Try Again
                 </Button>
-                <p className="text-sm text-white/70 font-inter">
-                  {childAge < 8 ? "Choose the right answer!" : "Select the correct option"}
-                </p>
               </div>
-            </div>
-          </div>
-
-          <div className="mb-5">
-            <p className="text-white text-lg font-medium mb-4 font-nunito">
-              {getQuestionText()}
-            </p>
-            
-            <div className="space-y-3">
-              {options.map((option, idx) => (
-                <motion.button
-                  key={idx}
-                  className={`w-full text-left p-4 rounded-xl border transition-all duration-300 flex items-center gap-3 ${
-                    selectedIndex === idx
-                      ? idx === correctIndex
-                        ? 'bg-green-500/20 border-green-500/50 text-white'
-                        : 'bg-red-500/20 border-red-500/50 text-white'
-                      : 'bg-white/10 hover:bg-white/20 border-white/10 text-white'
-                  }`}
-                  onClick={() => handleOptionSelect(idx)}
-                  disabled={selectedIndex !== null}
-                  whileHover={selectedIndex === null ? { scale: 1.02 } : {}}
-                  whileTap={selectedIndex === null ? { scale: 0.98 } : {}}
-                >
-                  <div className={`h-6 w-6 rounded-full flex items-center justify-center ${
-                    selectedIndex === idx
-                      ? idx === correctIndex
-                        ? 'bg-green-500 text-white'
-                        : 'bg-red-500 text-white'
-                      : 'bg-white/20 text-white'
-                  }`}>
-                    {selectedIndex === idx ? (
-                      idx === correctIndex ? (
-                        <Check className="h-4 w-4" />
-                      ) : (
-                        <AlertCircle className="h-4 w-4" />
-                      )
-                    ) : (
-                      <span>{String.fromCharCode(65 + idx)}</span>
-                    )}
-                  </div>
-                  <span>{option}</span>
-                </motion.button>
-              ))}
-            </div>
-          </div>
-
-          <AnimatePresence>
-            {showExplanation && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.3 }}
-                className="mt-4 pt-4 border-t border-white/10"
+            </motion.div>
+          )}
+          
+          {selectedIndex !== null && !isCorrect && attemptsRemaining === 0 && !showExplanation && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mt-4 text-center"
+            >
+              <Button
+                onClick={() => setShowExplanation(true)}
+                className="bg-wonderwhiz-light-purple hover:bg-wonderwhiz-purple text-white"
               >
-                <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-lg bg-wonderwhiz-vibrant-yellow/20 text-wonderwhiz-vibrant-yellow flex-shrink-0">
-                    <Award className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-white font-medium mb-1 font-nunito">
-                      {isCorrect
-                        ? childAge < 8
-                          ? "You got it right!"
-                          : "Correct Answer Explanation"
-                        : childAge < 8
-                        ? "Let's learn more!"
-                        : "Explanation"
-                      }
-                    </h4>
-                    <p className="text-white/90 font-inter text-sm">
-                      {explanation}
-                    </p>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                See Correct Answer
+              </Button>
+            </motion.div>
+          )}
         </div>
       </div>
     </motion.div>
