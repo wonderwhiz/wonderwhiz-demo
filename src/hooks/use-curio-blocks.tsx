@@ -38,12 +38,14 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
         .from('content_blocks')
         .select('*')
         .eq('curio_id', curioId)
-        .order('created_at', { ascending: false })
-        .range(start, end);
+        .order('created_at', { ascending: false });
 
       if (searchQuery) {
         query = query.textSearch('content', searchQuery);
       }
+      
+      // Add range after all other conditions
+      query = query.range(start, end);
 
       const { data, error: queryError } = await query;
 
@@ -72,7 +74,14 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
         setIsFirstLoad(false);
       } else {
         console.log('No blocks found for this curio');
-        setHasMore(false);
+        
+        // Auto-trigger content generation if no blocks are found
+        if (page === 0 && childId && curioId) {
+          console.log('No blocks found, will attempt to trigger content generation');
+          await triggerContentGeneration(curioId);
+        } else {
+          setHasMore(false);
+        }
       }
     } catch (err) {
       console.error('Error fetching blocks:', err);
@@ -80,7 +89,61 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
     } finally {
       setIsLoading(false);
     }
-  }, [curioId, searchQuery, page]);
+  }, [curioId, searchQuery, page, childId]);
+
+  // Function to trigger content generation
+  const triggerContentGeneration = async (curioId: string) => {
+    try {
+      console.log('Triggering content generation for curioId:', curioId);
+      
+      // Get the curio details
+      const { data: curioData, error: curioError } = await supabase
+        .from('curios')
+        .select('*')
+        .eq('id', curioId)
+        .single();
+      
+      if (curioError) {
+        console.error('Error fetching curio details:', curioError);
+        return;
+      }
+      
+      if (!curioData) {
+        console.error('No curio found with id:', curioId);
+        return;
+      }
+      
+      // Call the edge function to generate content
+      const { data: response, error: fnError } = await supabase.functions.invoke('generate-curiosity-blocks', {
+        body: {
+          query: curioData.query || curioData.title,
+          childProfile: {
+            // Get user details from the profile if needed
+            age: 10, // Default
+            interests: ['science', 'animals', 'space'] // Default
+          },
+          curioId: curioId,
+          blockCount: 5
+        }
+      });
+      
+      if (fnError) {
+        console.error('Error generating content:', fnError);
+        return;
+      }
+      
+      console.log('Content generation triggered successfully:', response);
+      
+      // Fetch blocks again after a short delay to allow for generation
+      setTimeout(() => {
+        setPage(0);
+        fetchBlocks();
+      }, 1000);
+      
+    } catch (err) {
+      console.error('Error in content generation process:', err);
+    }
+  };
 
   useEffect(() => {
     if (curioId) {

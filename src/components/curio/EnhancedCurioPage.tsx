@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,6 +17,9 @@ import EnhancedCurioContent from '@/components/curio/EnhancedCurioContent';
 import CurioLoadingState from '@/components/curio/CurioLoadingState';
 import CurioErrorState from '@/components/curio/CurioErrorState';
 import { useIsMobile } from '@/hooks/use-mobile';
+import TalkToWhizzy from '@/components/curio/TalkToWhizzy';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft, RefreshCw } from 'lucide-react';
 
 const EnhancedCurioPage: React.FC = () => {
   const { childId, curioId } = useParams<{ childId: string, curioId: string }>();
@@ -47,6 +51,7 @@ const EnhancedCurioPage: React.FC = () => {
   const [explorationDepth, setExplorationDepth] = useState(0);
   const [explorationPath, setExplorationPath] = useState<string[]>([]);
   const [childAge, setChildAge] = useState(10);
+  const [manualRefreshAttempted, setManualRefreshAttempted] = useState(false);
   
   const loadTriggerRef = useRef<HTMLDivElement>(null);
 
@@ -106,7 +111,51 @@ const EnhancedCurioPage: React.FC = () => {
 
   useEffect(() => {
     console.log("Current blocks:", blocks);
-  }, [blocks]);
+
+    // If no blocks found and we've done a manual refresh, trigger content generation
+    if (blocks.length === 0 && manualRefreshAttempted && curioId && childId) {
+      const triggerGeneration = async () => {
+        try {
+          toast.loading("Generating content...");
+          
+          // Get the curio details
+          const { data: curioData } = await supabase
+            .from('curios')
+            .select('*')
+            .eq('id', curioId)
+            .single();
+          
+          if (!curioData) return;
+          
+          // Call the edge function to generate content
+          await supabase.functions.invoke('generate-curiosity-blocks', {
+            body: {
+              query: curioData.query || curioData.title,
+              childProfile: {
+                age: childProfile?.age || 10,
+                interests: childProfile?.interests || ['science', 'animals', 'space']
+              },
+              curioId: curioId,
+              blockCount: 5
+            }
+          });
+          
+          toast.success("Content generation started! Refreshing in a moment...");
+          
+          // Wait a bit then reload the page
+          setTimeout(() => {
+            window.location.reload();
+          }, 3000);
+          
+        } catch (err) {
+          console.error('Error in content generation:', err);
+          toast.error("Failed to generate content. Please try again.");
+        }
+      };
+      
+      triggerGeneration();
+    }
+  }, [blocks, manualRefreshAttempted, curioId, childId, childProfile]);
 
   if (profileError) {
     return <CurioErrorState message="Failed to load profile." />;
@@ -165,6 +214,8 @@ const EnhancedCurioPage: React.FC = () => {
           navigate(`/curio/${childId}/${newCurio.id}`);
         } catch (err) {
           console.error('Error awarding sparks:', err);
+          // Still navigate if sparks fail
+          navigate(`/curio/${childId}/${newCurio.id}`);
         }
       }
     } catch (error) {
@@ -191,6 +242,7 @@ const EnhancedCurioPage: React.FC = () => {
 
   const handleRefresh = () => {
     setRefreshing(true);
+    setManualRefreshAttempted(true);
     window.location.reload();
   };
 
@@ -210,6 +262,40 @@ const EnhancedCurioPage: React.FC = () => {
         toast.error("Failed to send reply. Please try again.");
       });
   };
+
+  const renderEmptyState = () => (
+    <div className="flex flex-col items-center justify-center p-8 bg-white/5 rounded-lg border border-white/10 text-center max-w-3xl mx-auto">
+      <div className="mb-6 bg-indigo-900/30 p-6 rounded-full">
+        <RefreshCw className="h-12 w-12 text-indigo-400" />
+      </div>
+      <h2 className="text-2xl font-bold text-white mb-4">
+        {curioTitle ? `Exploring "${curioTitle}"` : "Starting your exploration"}
+      </h2>
+      <p className="text-white/70 mb-6 max-w-md">
+        We're creating amazing content for your curiosity! This might take a moment...
+      </p>
+      
+      <div className="flex flex-col sm:flex-row gap-4">
+        <Button 
+          variant="outline" 
+          className="border-white/20 hover:bg-white/10 text-white"
+          onClick={handleBackToDashboard}
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Dashboard
+        </Button>
+        
+        <Button 
+          onClick={handleRefresh}
+          disabled={refreshing}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white"
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+          {refreshing ? "Refreshing..." : "Refresh Content"}
+        </Button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-indigo-950 to-purple-950">
@@ -235,7 +321,7 @@ const EnhancedCurioPage: React.FC = () => {
       ) : blocksError ? (
         <CurioErrorState message="Failed to load content." onRetry={handleRefresh} />
       ) : blocks.length === 0 ? (
-        <CurioErrorState message="No content blocks found. Try refreshing or creating a new exploration." onRetry={handleRefresh} />
+        renderEmptyState()
       ) : (
         <div className={`container mx-auto ${isMobile ? 'px-2' : 'px-4'}`}>
           <EnhancedCurioContent
@@ -261,6 +347,13 @@ const EnhancedCurioPage: React.FC = () => {
           />
         </div>
       )}
+      
+      <TalkToWhizzy 
+        childId={childId}
+        curioTitle={curioTitle || undefined}
+        ageGroup={childAge < 8 ? '5-7' : childAge < 12 ? '8-11' : '12-16'}
+        onNewQuestionGenerated={handleRabbitHoleClick}
+      />
     </div>
   );
 };
