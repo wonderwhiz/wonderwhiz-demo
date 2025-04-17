@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -148,7 +149,7 @@ const CurioBlock = ({
   block: ContentBlock; 
   onToggleLike: (blockId: string) => void;
   onToggleBookmark: (blockId: string) => void;
-  onReply: (blockId: string) => void;
+  onReply: (blockId: string, message: string) => void;
   onReadAloud?: (text: string, specialistId: string) => void;
   childAge?: number;
   onRabbitHoleFollow?: (question: string) => void;
@@ -384,7 +385,7 @@ const CurioContent: React.FC<CurioContentProps> = ({
             block={block}
             onToggleLike={onToggleLike}
             onToggleBookmark={onToggleBookmark}
-            onReply={onReply}
+            onReply={(blockId, message) => onReply(blockId, message)}
             onReadAloud={handlePlayText}
             childAge={childAge}
             onRabbitHoleFollow={onRabbitHoleFollow}
