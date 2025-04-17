@@ -1,7 +1,7 @@
 
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Mic, Image, X, Sparkles, Send } from 'lucide-react';
+import { Search, Mic, Image, X, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -87,7 +87,7 @@ const EnhancedSearchInput: React.FC<EnhancedSearchInputProps> = ({
   };
   
   return (
-    <div className="relative w-full max-w-2xl mx-auto">
+    <div className="relative w-full max-w-3xl mx-auto">
       <form onSubmit={handleSubmit} className="relative">
         <motion.div 
           className={cn(
@@ -126,7 +126,7 @@ const EnhancedSearchInput: React.FC<EnhancedSearchInputProps> = ({
                 ? "Ask about this image..." 
                 : placeholder
             }
-            className="w-full pl-12 pr-[130px] py-4 bg-transparent text-white placeholder:text-white/50 focus:outline-none text-base font-nunito"
+            className="w-full pl-12 pr-[130px] py-5 bg-transparent text-white placeholder:text-white/50 focus:outline-none text-lg font-nunito"
             disabled={isProcessing || isRecording}
           />
           
@@ -175,14 +175,14 @@ const EnhancedSearchInput: React.FC<EnhancedSearchInputProps> = ({
               type="submit"
               size="sm"
               disabled={!query.trim() || isProcessing}
-              className="rounded-full bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-purple text-white h-9 pl-3 pr-4 shadow-glow-brand-pink"
+              className="rounded-full bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-vibrant-yellow text-wonderwhiz-deep-purple h-10 px-5 shadow-glow-brand-pink font-medium"
             >
               {isProcessing ? (
                 <div className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin"></div>
               ) : (
                 <>
-                  <Send className="h-3.5 w-3.5 mr-1.5" />
-                  <span className="text-xs font-medium">Explore</span>
+                  <Send className="h-3.5 w-3.5 mr-2" />
+                  <span className="text-sm">Explore</span>
                 </>
               )}
             </Button>

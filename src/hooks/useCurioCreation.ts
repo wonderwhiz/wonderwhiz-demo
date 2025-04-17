@@ -37,6 +37,10 @@ export const useCurioCreation = (
         noChildProfile: !childProfile,
         noProfileId: !profileId
       });
+      
+      if (!query.trim()) {
+        toast.error("Please enter a question first");
+      }
       return;
     }
     
@@ -70,11 +74,16 @@ export const useCurioCreation = (
         setCurrentCurio(newCurio);
       }
       
+      toast.success(`Exploring "${query.trim()}"`, {
+        duration: 3000
+      });
+      
       // Navigate to the new curio
       window.location.href = `/curio/${profileId}/${newCurio.id}`;
       
       setQuery('');
       
+      // Award sparks for creating a new curio
       setTimeout(async () => {
         try {
           await supabase.functions.invoke('increment-sparks-balance', {
@@ -109,7 +118,6 @@ export const useCurioCreation = (
     } catch (error) {
       console.error('Error creating curio:', error);
       toast.error("Oops! Something went wrong with your question.");
-    } finally {
       setIsGenerating(false);
     }
   };

@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Sparkles, Star } from 'lucide-react';
+import { ArrowRight, Sparkles, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import EnhancedSearchInput from './EnhancedSearchInput';
 import TasksSection from './TasksSection';
@@ -113,7 +114,7 @@ const WelcomeSection: React.FC<WelcomeSectionProps> = ({
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="max-w-5xl mx-auto">
-        {/* Header with greeting */}
+        {/* Header with greeting - Removed redundant welcome message */}
         <motion.div 
           className="mb-6"
           initial={{ opacity: 0, y: -10 }}
@@ -133,7 +134,7 @@ const WelcomeSection: React.FC<WelcomeSectionProps> = ({
 
         <div className={`grid grid-cols-1 ${isMobile ? '' : 'md:grid-cols-3'} gap-6`}>
           <div className={`${isMobile ? '' : 'md:col-span-2'} space-y-6`}>
-            {/* Main search input */}
+            {/* Enhanced search input - Made larger and more prominent */}
             <div className="mb-6">
               <EnhancedSearchInput
                 onSearch={(q) => {

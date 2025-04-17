@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sparkles, ChevronDown, ChevronUp, Award, Flame, Zap, Brain, Star } from 'lucide-react';
+import { Sparkles, ChevronDown, ChevronUp, Award, Flame, Brain, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SparksBalance from './SparksBalance';
 import SparksHistory from './SparksHistory';
@@ -68,21 +68,13 @@ const SparksOverview: React.FC<SparksOverviewProps> = ({
       </CardHeader>
       
       <CardContent>
-        <div className="flex justify-between items-center mb-5">
+        <div className="flex flex-wrap justify-between items-center mb-5 gap-2">
           <div className="flex items-center space-x-2">
             <SparksBalance 
               childId={childId} 
               initialBalance={sparksBalance} 
               size="lg"
             />
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
-              className="text-white/60 text-xs font-medium"
-            >
-              {nextMilestone}
-            </motion.div>
           </div>
           
           <Badge variant="outline" className="bg-wonderwhiz-gold/20 border-wonderwhiz-gold/30 text-wonderwhiz-gold flex items-center gap-1">
@@ -90,6 +82,15 @@ const SparksOverview: React.FC<SparksOverviewProps> = ({
             {streakDays} day streak
           </Badge>
         </div>
+        
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="text-white/60 text-sm font-medium mb-4"
+        >
+          {nextMilestone}
+        </motion.div>
         
         {/* Primary achievement display */}
         {nextUnachieved && (
