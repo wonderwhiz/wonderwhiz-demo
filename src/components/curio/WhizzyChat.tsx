@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, Volume2, VolumeX, ChevronDown, ChevronUp, Sparkles, Send, PhoneCall } from 'lucide-react';
@@ -21,6 +22,7 @@ interface WhizzyChatProps {
   onToggleVoice: () => void;
   transcript?: string;
   childAge?: number;
+  onClose?: () => void; // Added this prop to fix the type error
 }
 
 const WhizzyChat: React.FC<WhizzyChatProps> = ({
@@ -32,7 +34,8 @@ const WhizzyChat: React.FC<WhizzyChatProps> = ({
   onToggleMute,
   onToggleVoice,
   transcript,
-  childAge = 10
+  childAge = 10,
+  onClose // Added to the destructuring
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
@@ -113,7 +116,7 @@ const WhizzyChat: React.FC<WhizzyChatProps> = ({
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setIsOpen(false)}
+            onClick={() => onClose ? onClose() : setIsOpen(false)} // Use onClose if provided, otherwise use local state
             className="h-8 w-8 rounded-full text-white/70"
           >
             <ChevronDown className="h-4 w-4 text-white/70" />
