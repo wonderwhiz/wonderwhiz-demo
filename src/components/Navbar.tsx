@@ -3,7 +3,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import WonderWhizLogo from '@/components/WonderWhizLogo';
-import { User } from 'lucide-react';
+import { User, Sparkles } from 'lucide-react';
 
 const Navbar = () => {
   return <nav className="py-4 px-6 md:px-10 lg:px-20 flex justify-between items-center relative z-10">
