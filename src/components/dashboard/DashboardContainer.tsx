@@ -102,6 +102,34 @@ const DashboardContainer = () => {
     }
   }, [childProfile]);
 
+  useEffect(() => {
+    const fetchParentAssignedTasks = async () => {
+      if (!profileId) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('child_tasks')
+          .select(`
+            id,
+            status,
+            task:tasks (id, title, description, sparks_reward)
+          `)
+          .eq('child_profile_id', profileId)
+          .eq('status', 'pending');
+        
+        if (error) throw error;
+        
+        if (data) {
+          console.log(`Found ${data.length} parent-assigned tasks`);
+        }
+      } catch (error) {
+        console.error('Error fetching parent-assigned tasks:', error);
+      }
+    };
+    
+    fetchParentAssignedTasks();
+  }, [profileId, childProfile]);
+
   const handleLoadCurio = (curio: Curio) => {
     setCurrentCurio(curio);
   };
@@ -147,10 +175,8 @@ const DashboardContainer = () => {
         toast.success("New exploration created!");
         setCurrentCurio(null); // Force reset current curio
         
-        // Redirect to the new curio page
         navigate(`/curio/${profileId}/${newCurio.id}`);
         
-        // Add to pastCurios if needed
         if (setPastCurios) {
           setPastCurios(prev => [
             { id: newCurio.id, title: query, query, created_at: new Date().toISOString() },
@@ -173,12 +199,11 @@ const DashboardContainer = () => {
       setIsLoadingSuggestions(true);
       toast.loading("Generating fresh suggestions...");
       
-      // Call the edge function to get new suggestions
       const { data, error } = await supabase.functions.invoke('generate-curio-suggestions', {
         body: JSON.stringify({
           childProfile,
-          forceRefresh: true, // Add this parameter to force new suggestions
-          timestamp: Date.now() // Add timestamp to prevent caching
+          forceRefresh: true,
+          timestamp: Date.now()
         })
       });
       

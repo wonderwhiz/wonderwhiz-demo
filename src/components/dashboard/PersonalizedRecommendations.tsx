@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { RefreshCw, Sparkles, Zap, Lightbulb } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface PersonalizedRecommendationsProps {
   childId: string;
@@ -24,6 +25,8 @@ const PersonalizedRecommendations: React.FC<PersonalizedRecommendationsProps> = 
   onRefresh,
   pastCurios
 }) => {
+  const isMobile = useIsMobile();
+  
   // Get topic type to determine visual style
   const getTopicType = (topic: string): 'science' | 'nature' | 'space' | 'history' | 'animals' | 'general' => {
     const topicLower = topic.toLowerCase();
@@ -129,8 +132,8 @@ const PersonalizedRecommendations: React.FC<PersonalizedRecommendationsProps> = 
       
       <p className="text-white/70 mb-4 text-sm">{getPersonalizedMessage()}</p>
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {suggestions.slice(0, 4).map((suggestion, index) => {
+      <div className={`grid grid-cols-1 ${isMobile ? 'sm:grid-cols-1' : 'sm:grid-cols-2'} gap-3`}>
+        {suggestions.slice(0, isMobile ? 2 : 4).map((suggestion, index) => {
           const topicType = getTopicType(suggestion);
           return (
             <motion.div

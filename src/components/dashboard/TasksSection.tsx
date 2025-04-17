@@ -1,174 +1,232 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import { CheckCircle, Sparkles, Star, Clock } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { CheckCircle2, BookOpen, Pencil, Medal, ChevronRight, Brain, CheckCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Task {
   id: string;
   title: string;
-  completed: boolean;
-  type: 'quiz' | 'read' | 'create' | 'explore';
+  completed?: boolean;
+  type: 'explore' | 'quiz' | 'creative' | 'read';
   duration?: string;
-  reward?: number;
+  reward: number;
+}
+
+interface ParentAssignedTask {
+  id: string;
+  status: string;
+  task: {
+    id: string;
+    title: string;
+    description: string | null;
+    sparks_reward: number;
+  };
 }
 
 interface TasksSectionProps {
   tasks: Task[];
   onTaskClick: (task: Task) => void;
-  childId?: string; // Added childId as an optional prop
-  pendingTasksCount?: number; // Added pendingTasksCount as an optional prop
+  childId: string;
+  pendingTasksCount: number;
 }
 
-const TasksSection: React.FC<TasksSectionProps> = ({
-  tasks,
-  onTaskClick,
-  childId, // Include childId in destructuring
-  pendingTasksCount // Include pendingTasksCount in destructuring
+const TasksSection: React.FC<TasksSectionProps> = ({ 
+  tasks, 
+  onTaskClick, 
+  childId,
+  pendingTasksCount
 }) => {
-  const pendingTasks = tasks.filter(task => !task.completed);
-  const completedTasks = tasks.filter(task => task.completed);
+  const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  const [parentTasks, setParentTasks] = useState<ParentAssignedTask[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   
-  const taskVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: (i: number) => ({
-      opacity: 1,
-      y: 0,
-      transition: {
-        delay: i * 0.1,
-        duration: 0.4
+  useEffect(() => {
+    const fetchParentAssignedTasks = async () => {
+      try {
+        setIsLoading(true);
+        const { data, error } = await supabase
+          .from('child_tasks')
+          .select(`
+            id,
+            status,
+            task:tasks (id, title, description, sparks_reward)
+          `)
+          .eq('child_profile_id', childId)
+          .eq('status', 'pending');
+        
+        if (error) throw error;
+        
+        if (data) {
+          setParentTasks(data);
+        }
+      } catch (error) {
+        console.error('Error fetching parent-assigned tasks:', error);
+      } finally {
+        setIsLoading(false);
       }
-    })
+    };
+    
+    if (childId) {
+      fetchParentAssignedTasks();
+    }
+  }, [childId]);
+  
+  const getTaskIcon = (type: string) => {
+    switch(type) {
+      case 'explore':
+        return <BookOpen className="h-4 w-4 text-wonderwhiz-bright-pink" />;
+      case 'quiz':
+        return <Brain className="h-4 w-4 text-wonderwhiz-blue" />;
+      case 'creative':
+        return <Pencil className="h-4 w-4 text-wonderwhiz-gold" />;
+      case 'read':
+        return <BookOpen className="h-4 w-4 text-wonderwhiz-purple" />;
+      default:
+        return <Medal className="h-4 w-4 text-wonderwhiz-vibrant-yellow" />;
+    }
   };
 
-  // If we have a pendingTasksCount prop but no tasks, we can show a placeholder
-  if (pendingTasksCount && pendingTasksCount > 0 && tasks.length === 0) {
-    return (
-      <div className="bg-gradient-to-br from-green-500/20 to-emerald-600/20 backdrop-blur-sm rounded-xl border border-white/10 p-4 overflow-hidden mb-8">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center mr-3">
-              <CheckCircle className="h-4 w-4 text-white" />
-            </div>
-            <h2 className="text-lg font-medium text-white">Today's Tasks</h2>
-          </div>
-          <div className="text-xs text-white/70 px-2 py-1 bg-white/10 rounded-full">
-            {pendingTasksCount} pending
-          </div>
-        </div>
-        <div className="text-center py-3 text-white/70 text-sm bg-white/5 rounded-lg">
-          Loading your tasks...
-        </div>
-      </div>
-    );
-  }
+  const handleCompleteTask = async (taskId: string) => {
+    try {
+      toast.loading("Completing task...");
+      
+      const { data, error } = await supabase
+        .from('child_tasks')
+        .update({ status: 'completed', completed_at: new Date().toISOString() })
+        .eq('id', taskId)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      if (data) {
+        // Remove the task from the list
+        setParentTasks(prev => prev.filter(t => t.id !== taskId));
+        
+        // Try to increment the sparks balance
+        try {
+          await supabase.functions.invoke('increment-sparks-balance', {
+            body: JSON.stringify({
+              profileId: childId,
+              amount: 5 // Default amount if we don't know the actual reward
+            })
+          });
+          
+          toast.success("Task completed! +5 Sparks earned!");
+        } catch (err) {
+          console.error('Error awarding sparks:', err);
+          toast.success("Task completed!");
+        }
+      }
+    } catch (error) {
+      console.error('Error completing task:', error);
+      toast.error("Failed to complete task");
+    }
+  };
 
-  // If there are no pending tasks, don't render the section
-  if (pendingTasks.length === 0 && (!pendingTasksCount || pendingTasksCount === 0)) {
+  const combinedTasks = [
+    ...tasks.map(task => ({
+      id: task.id,
+      title: task.title,
+      isParentTask: false,
+      reward: task.reward,
+      type: task.type,
+      onClick: () => onTaskClick(task)
+    })),
+    ...parentTasks.map(task => ({
+      id: task.id,
+      title: task.task.title,
+      isParentTask: true,
+      reward: task.task.sparks_reward,
+      type: 'parent' as const,
+      onClick: () => handleCompleteTask(task.id)
+    }))
+  ];
+
+  // If no tasks, don't render the section
+  if (combinedTasks.length === 0) {
     return null;
   }
 
   return (
-    <div className="bg-gradient-to-br from-green-500/20 to-emerald-600/20 backdrop-blur-sm rounded-xl border border-white/10 p-4 overflow-hidden mb-8">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center mr-3">
-            <CheckCircle className="h-4 w-4 text-white" />
+    <Card className="bg-white/5 backdrop-blur-md border border-white/10 overflow-hidden">
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-white flex items-center text-xl">
+            <CheckCircle2 className="h-5 w-5 text-wonderwhiz-bright-pink mr-2" />
+            Today's Tasks
+          </CardTitle>
+          <div className="px-2 py-1 bg-white/10 text-white rounded-full text-xs flex items-center">
+            {pendingTasksCount} pending
           </div>
-          <h2 className="text-lg font-medium text-white">Today's Tasks</h2>
         </div>
-        <div className="text-xs text-white/70 px-2 py-1 bg-white/10 rounded-full">
-          {pendingTasks.length} pending
-        </div>
-      </div>
-      
-      {pendingTasks.length > 0 ? (
-        <div className="space-y-2 mb-2">
-          {pendingTasks.map((task, index) => (
+      </CardHeader>
+      <CardContent className={`${isMobile ? 'pt-2 pb-3 px-3' : 'pt-2'}`}>
+        <div className={`space-y-2 ${isMobile ? 'max-h-[180px]' : 'max-h-[250px]'} overflow-y-auto pr-1`}>
+          {combinedTasks.slice(0, isMobile ? 2 : 3).map((task, index) => (
             <motion.div
               key={task.id}
-              custom={index}
-              variants={taskVariants}
-              initial="hidden"
-              animate="visible"
-              className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg p-3 cursor-pointer transition-colors"
-              onClick={() => onTaskClick(task)}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.1 * index }}
+              className="bg-white/10 hover:bg-white/15 border border-white/10 rounded-lg overflow-hidden cursor-pointer"
+              onClick={task.onClick}
             >
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center">
-                  <span className="text-white text-xs">{index + 1}</span>
-                </div>
-                
-                <div className="flex-1">
-                  <p className="text-white font-medium text-sm">{task.title}</p>
-                  <div className="flex items-center mt-1">
-                    {task.duration && (
-                      <>
-                        <Clock className="h-3 w-3 text-white/60 mr-1" />
-                        <span className="text-white/60 text-xs">{task.duration}</span>
-                      </>
-                    )}
-                    
-                    {task.reward && (
-                      <div className="ml-3 flex items-center">
-                        <Sparkles className="h-3 w-3 text-amber-300 mr-1" />
-                        <span className="text-amber-300 text-xs">+{task.reward}</span>
-                      </div>
-                    )}
+              <div className="p-3 flex items-center justify-between relative">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0 h-6 w-6 flex items-center justify-center bg-wonderwhiz-deep-purple rounded-full mr-3">
+                    {task.isParentTask ? 
+                      <Medal className="h-3.5 w-3.5 text-wonderwhiz-gold" /> :
+                      getTaskIcon(task.type)}
                   </div>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      ) : (
-        <div className="py-3 text-center text-white/70 text-sm bg-white/5 rounded-lg mb-2">
-          {pendingTasksCount ? `${pendingTasksCount} tasks to do!` : "All tasks completed! Great job!"}
-        </div>
-      )}
-      
-      {completedTasks.length > 0 && (
-        <>
-          <div className="text-xs text-white/70 font-medium mt-4 mb-2">
-            Completed
-          </div>
-          <div className="space-y-2 opacity-70">
-            {completedTasks.slice(0, 2).map((task) => (
-              <div
-                key={task.id}
-                className="bg-green-500/10 border border-green-500/30 rounded-lg p-3"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
-                    <Star className="h-3 w-3 text-white" />
-                  </div>
-                  
                   <div>
-                    <p className="text-white font-medium text-sm">{task.title}</p>
+                    <p className="text-white font-nunito line-clamp-1">
+                      {index + 1}. {task.title}
+                    </p>
                     <div className="flex items-center mt-1">
-                      <span className="text-white/60 text-xs">Completed</span>
-                      
-                      {task.reward && (
-                        <div className="ml-3 flex items-center">
-                          <Sparkles className="h-3 w-3 text-amber-300 mr-1" />
-                          <span className="text-amber-300 text-xs">+{task.reward} earned</span>
-                        </div>
+                      <div className="text-wonderwhiz-gold text-xs flex items-center">
+                        <Sparkles className="h-3 w-3 mr-1" />
+                        {task.reward}
+                      </div>
+                      {task.isParentTask && (
+                        <span className="ml-2 text-wonderwhiz-bright-pink text-xs">
+                          Parent Task
+                        </span>
                       )}
                     </div>
                   </div>
                 </div>
+                
+                <ChevronRight className="h-4 w-4 text-white/40" />
+                
+                {task.isParentTask && (
+                  <div className="absolute -bottom-0.5 left-0 right-0 h-1 bg-gradient-to-r from-wonderwhiz-gold/30 to-wonderwhiz-bright-pink/30" />
+                )}
               </div>
-            ))}
-            
-            {completedTasks.length > 2 && (
-              <div className="text-center text-xs text-white/60 mt-1">
-                +{completedTasks.length - 2} more completed tasks
-              </div>
-            )}
+            </motion.div>
+          ))}
+        </div>
+        
+        {combinedTasks.length > 3 && (
+          <div className="mt-3 text-center">
+            <Button
+              variant="ghost"
+              className="text-white/60 text-sm hover:text-white hover:bg-white/10"
+              onClick={() => navigate(`/tasks/${childId}`)}
+            >
+              View all {combinedTasks.length} tasks
+            </Button>
           </div>
-        </>
-      )}
-    </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

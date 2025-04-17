@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,10 +15,12 @@ import CurioPageHeader from '@/components/curio/CurioPageHeader';
 import EnhancedCurioContent from '@/components/curio/EnhancedCurioContent';
 import CurioLoadingState from '@/components/curio/CurioLoadingState';
 import CurioErrorState from '@/components/curio/CurioErrorState';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const EnhancedCurioPage: React.FC = () => {
   const { childId, curioId } = useParams<{ childId: string, curioId: string }>();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   const { user } = useUser();
   const { childProfile, isLoading: isLoadingProfile, error: profileError } = useChildProfile(childId);
@@ -103,7 +104,6 @@ const EnhancedCurioPage: React.FC = () => {
     }
   }, [blocks]);
 
-  // Add this debugging useEffect to log when blocks change
   useEffect(() => {
     console.log("Current blocks:", blocks);
   }, [blocks]);
@@ -237,27 +237,29 @@ const EnhancedCurioPage: React.FC = () => {
       ) : blocks.length === 0 ? (
         <CurioErrorState message="No content blocks found. Try refreshing or creating a new exploration." onRetry={handleRefresh} />
       ) : (
-        <EnhancedCurioContent
-          title={curioTitle || "Exploring Knowledge"}
-          blocks={blocks}
-          onSearch={(query) => {
-            setSearchQuery(query);
-            handleSearch({ preventDefault: () => {} } as React.FormEvent);
-          }}
-          onVoiceCapture={handleVoiceInput}
-          onImageCapture={(file) => {
-            toast.success("Image received! Analyzing...");
-            // Implement image analysis logic here
-          }}
-          onLike={handleToggleLike}
-          onBookmark={handleToggleBookmark}
-          onReply={handleProcessReply}
-          onReadAloud={handlePlayContent}
-          onExplore={() => toast.info("Explore feature coming soon!")}
-          onRabbitHoleClick={handleRabbitHoleClick}
-          childAge={childAge}
-          childId={childId}
-        />
+        <div className={`container mx-auto ${isMobile ? 'px-2' : 'px-4'}`}>
+          <EnhancedCurioContent
+            title={curioTitle || "Exploring Knowledge"}
+            blocks={blocks}
+            onSearch={(query) => {
+              setSearchQuery(query);
+              handleSearch({ preventDefault: () => {} } as React.FormEvent);
+            }}
+            onVoiceCapture={handleVoiceInput}
+            onImageCapture={(file) => {
+              toast.success("Image received! Analyzing...");
+              // Implement image analysis logic here
+            }}
+            onLike={handleToggleLike}
+            onBookmark={handleToggleBookmark}
+            onReply={handleProcessReply}
+            onReadAloud={handlePlayContent}
+            onExplore={() => toast.info("Explore feature coming soon!")}
+            onRabbitHoleClick={handleRabbitHoleClick}
+            childAge={childAge}
+            childId={childId}
+          />
+        </div>
       )}
     </div>
   );

@@ -4,6 +4,7 @@ import WelcomeSection from './WelcomeSection';
 import { motion } from 'framer-motion';
 import WhizzyChat from '@/components/curio/WhizzyChat';
 import { useWhizzyChat } from '@/hooks/useWhizzyChat';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface WelcomeViewProps {
   childId: string;
@@ -32,6 +33,8 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
   onRefreshSuggestions,
   isLoadingSuggestions = false,
 }) => {
+  const isMobile = useIsMobile();
+  
   const {
     isMuted,
     toggleMute,
