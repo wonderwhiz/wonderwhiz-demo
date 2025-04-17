@@ -30,11 +30,11 @@ const WelcomeSection: React.FC<WelcomeSectionProps> = ({
   isGenerating
 }) => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-indigo-900 to-purple-950">
+    <div>
       <WelcomeView
         childId={childId}
         childProfile={childProfile}
-        curioSuggestions={curioSuggestions}
+        curioSuggestions={curioSuggestions.slice(0, 4)} // Limit to just 4 suggestions to reduce clutter
         pastCurios={pastCurios}
         query={query}
         setQuery={setQuery}

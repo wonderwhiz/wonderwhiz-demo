@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Book, Wand } from 'lucide-react';
+import { Sparkles, Book, Wand, Home } from 'lucide-react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { motion } from 'framer-motion';
 
@@ -20,8 +20,8 @@ const DashboardControls: React.FC<DashboardControlsProps> = ({
   curioId
 }) => {
   const viewButtons = [
-    { id: 'dashboard', label: 'Home' },
-    { id: 'collections', label: 'My Stories' }
+    { id: 'dashboard', label: 'Home', icon: Home },
+    { id: 'collections', label: 'My Stories', icon: Book }
   ];
 
   return (
@@ -33,19 +33,20 @@ const DashboardControls: React.FC<DashboardControlsProps> = ({
               key={view.id}
               value={view.id} 
               aria-label={`${view.label} View`}
-              className={activeView === view.id ? 'bg-white/15 text-white' : 'text-white/70'}
+              className={`${activeView === view.id ? 'bg-white/15 text-white' : 'text-white/70'} px-4 py-2`}
             >
+              <view.icon className="h-4 w-4 mr-2 inline-block" />
               {view.label}
             </ToggleGroupItem>
           ))}
         </ToggleGroup>
         
         <div className="flex items-center gap-2">
-          <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}>
             <Link to={`/curio/${profileId}/new`}>
-              <Button size="sm" className="bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-vibrant-yellow hover:opacity-90 text-wonderwhiz-deep-purple">
-                <Wand className="w-4 h-4 mr-1.5" />
-                <span>New Adventure</span>
+              <Button size="lg" className="bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-vibrant-yellow hover:opacity-90 text-wonderwhiz-deep-purple font-bold text-lg">
+                <Wand className="w-5 h-5 mr-2" />
+                <span>New Adventure!</span>
               </Button>
             </Link>
           </motion.div>

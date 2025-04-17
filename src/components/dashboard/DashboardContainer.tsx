@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -18,6 +17,7 @@ import VoiceInputButton from '@/components/curio/VoiceInputButton';
 import IntelligentSuggestions from '@/components/dashboard/IntelligentSuggestions';
 import KnowledgeJourney from '@/components/dashboard/KnowledgeJourney';
 import DiscoverySection from '@/components/dashboard/DiscoverySection';
+import ChildDashboardTasks from '@/components/ChildDashboardTasks';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -251,30 +251,30 @@ const DashboardContainer = () => {
                     isGenerating={isGenerating || isGeneratingContent}
                   />
                   
-                  <IntelligentSuggestions
-                    childId={profileId || ''}
-                    childProfile={childProfile}
-                    onSuggestionClick={handleSuggestionClick}
-                    pastCurios={pastCurios}
-                  />
+                  {/* Move tasks section up for more prominence */}
+                  {profileId && (
+                    <div className="mb-6">
+                      <ChildDashboardTasks 
+                        childId={profileId} 
+                        onSparkEarned={handleSparkEarned}
+                      />
+                    </div>
+                  )}
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Simplified content sections with reduced redundancy */}
+                  <div className="grid grid-cols-1 gap-6">
+                    <IntelligentSuggestions
+                      childId={profileId || ''}
+                      childProfile={childProfile}
+                      onSuggestionClick={handleSuggestionClick}
+                      pastCurios={pastCurios}
+                    />
+                    
+                    {/* We'll create a simpler version with fewer repeated topics */}
                     <KnowledgeJourney 
                       childId={profileId || ''}
                       childProfile={childProfile}
                       onTopicClick={handleSuggestionClick}
-                    />
-                    <DiscoverySection 
-                      childId={profileId || ''} 
-                      sparksBalance={childProfile?.sparks_balance || 0}
-                      onSparkEarned={(amount) => {
-                        if (childProfile && setChildProfile) {
-                          setChildProfile({
-                            ...childProfile,
-                            sparks_balance: (childProfile.sparks_balance || 0) + amount
-                          });
-                        }
-                      }}
                     />
                   </div>
                 </div>
