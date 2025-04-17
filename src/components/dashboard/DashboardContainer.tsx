@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -20,6 +19,7 @@ import KnowledgeJourney from '@/components/dashboard/KnowledgeJourney';
 import DiscoverySection from '@/components/dashboard/DiscoverySection';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import Navbar from '@/components/Navbar';
 
 interface Curio {
   id: string;
@@ -210,118 +210,122 @@ const DashboardContainer = () => {
   }
 
   return (
-    <div className="min-h-screen flex w-full bg-gradient-to-b from-wonderwhiz-deep-purple to-wonderwhiz-deep-purple/90">
+    <div className="min-h-screen flex flex-col w-full bg-gradient-to-b from-wonderwhiz-deep-purple to-wonderwhiz-deep-purple/90">
       <Helmet>
         <title>WonderWhiz - Explore & Learn</title>
         <meta name="description" content="Explore topics, ask questions, and learn in a fun, interactive way with WonderWhiz." />
       </Helmet>
       
-      <DashboardSidebar 
-        childId={profileId || ''} 
-        sparksBalance={childProfile?.sparks_balance || 0}
-        pastCurios={pastCurios}
-        currentCurioId={currentCurio?.id}
-        onCurioSelect={handleLoadCurio}
-      />
+      <Navbar profileId={profileId} />
       
-      <main className="flex-1 flex flex-col min-h-screen relative">
-        <DashboardHeader 
-          childName={childProfile?.name || 'Explorer'} 
-          profileId={profileId}
-          streakDays={streakDays}
-          childAge={childAge}
+      <div className="flex flex-1">
+        <DashboardSidebar 
+          childId={profileId || ''} 
+          sparksBalance={childProfile?.sparks_balance || 0}
+          pastCurios={pastCurios}
+          currentCurioId={currentCurio?.id}
+          onCurioSelect={handleLoadCurio}
         />
         
-        <div className="flex-1 overflow-y-auto">
-          <div className="max-w-5xl mx-auto space-y-6 p-4">
-            <Card className="bg-wonderwhiz-purple/50 backdrop-blur-sm border-white/10 flex-grow relative overflow-hidden shadow-xl rounded-xl">
-              {!currentCurio ? (
-                <div className="p-6 space-y-8">
-                  <WelcomeSection 
-                    curioSuggestions={curioSuggestions}
-                    isLoadingSuggestions={isLoadingSuggestions}
-                    handleRefreshSuggestions={handleRefreshSuggestions}
-                    handleCurioSuggestionClick={handleSuggestionClick}
-                    childProfile={childProfile}
-                    pastCurios={pastCurios}
-                    childId={profileId || ''}
-                    query={query}
-                    setQuery={setQuery}
-                    handleSubmitQuery={handleSubmitQuery}
-                    isGenerating={isGenerating || isGeneratingContent}
-                  />
-                  
-                  <IntelligentSuggestions
-                    childId={profileId || ''}
-                    childProfile={childProfile}
-                    onSuggestionClick={handleSuggestionClick}
-                    pastCurios={pastCurios}
-                  />
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <KnowledgeJourney 
+        <main className="flex-1 flex flex-col min-h-screen relative">
+          <DashboardHeader 
+            childName={childProfile?.name || 'Explorer'} 
+            profileId={profileId}
+            streakDays={streakDays}
+            childAge={childAge}
+          />
+          
+          <div className="flex-1 overflow-y-auto">
+            <div className="max-w-5xl mx-auto space-y-6 p-4">
+              <Card className="bg-wonderwhiz-purple/50 backdrop-blur-sm border-white/10 flex-grow relative overflow-hidden shadow-xl rounded-xl">
+                {!currentCurio ? (
+                  <div className="p-6 space-y-8">
+                    <WelcomeSection 
+                      curioSuggestions={curioSuggestions}
+                      isLoadingSuggestions={isLoadingSuggestions}
+                      handleRefreshSuggestions={handleRefreshSuggestions}
+                      handleCurioSuggestionClick={handleSuggestionClick}
+                      childProfile={childProfile}
+                      pastCurios={pastCurios}
+                      childId={profileId || ''}
+                      query={query}
+                      setQuery={setQuery}
+                      handleSubmitQuery={handleSubmitQuery}
+                      isGenerating={isGenerating || isGeneratingContent}
+                    />
+                    
+                    <IntelligentSuggestions
                       childId={profileId || ''}
                       childProfile={childProfile}
-                      onTopicClick={handleSuggestionClick}
+                      onSuggestionClick={handleSuggestionClick}
+                      pastCurios={pastCurios}
                     />
-                    <DiscoverySection 
-                      childId={profileId || ''} 
-                      sparksBalance={childProfile?.sparks_balance || 0}
-                      onSparkEarned={(amount) => {
-                        if (childProfile && setChildProfile) {
-                          setChildProfile({
-                            ...childProfile,
-                            sparks_balance: (childProfile.sparks_balance || 0) + amount
-                          });
-                        }
-                      }}
-                    />
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <KnowledgeJourney 
+                        childId={profileId || ''}
+                        childProfile={childProfile}
+                        onTopicClick={handleSuggestionClick}
+                      />
+                      <DiscoverySection 
+                        childId={profileId || ''} 
+                        sparksBalance={childProfile?.sparks_balance || 0}
+                        onSparkEarned={(amount) => {
+                          if (childProfile && setChildProfile) {
+                            setChildProfile({
+                              ...childProfile,
+                              sparks_balance: (childProfile.sparks_balance || 0) + amount
+                            });
+                          }
+                        }}
+                      />
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <CurioContent
-                  currentCurio={currentCurio}
-                  contentBlocks={contentBlocks}
-                  blockReplies={blockReplies}
-                  isGenerating={isGeneratingContent}
-                  loadingBlocks={loadingMoreBlocks}
-                  visibleBlocksCount={totalBlocksLoaded}
-                  profileId={profileId}
-                  onLoadMore={loadMoreBlocks}
-                  hasMoreBlocks={hasMoreBlocks}
-                  onToggleLike={handleToggleLike}
-                  onToggleBookmark={handleToggleBookmark}
-                  onReply={(blockId, message) => handleBlockReply(blockId, message)} 
-                  onSetQuery={setQuery}
-                  onRabbitHoleFollow={handleFollowRabbitHole}
-                  onQuizCorrect={handleQuizCorrect}
-                  onNewsRead={handleNewsRead}
-                  onCreativeUpload={handleCreativeUpload}
-                  generationError={generationError}
-                  playText={playText}
-                  childAge={childAge}
-                />
-              )}
-            </Card>
+                ) : (
+                  <CurioContent
+                    currentCurio={currentCurio}
+                    contentBlocks={contentBlocks}
+                    blockReplies={blockReplies}
+                    isGenerating={isGeneratingContent}
+                    loadingBlocks={loadingMoreBlocks}
+                    visibleBlocksCount={totalBlocksLoaded}
+                    profileId={profileId}
+                    onLoadMore={loadMoreBlocks}
+                    hasMoreBlocks={hasMoreBlocks}
+                    onToggleLike={handleToggleLike}
+                    onToggleBookmark={handleToggleBookmark}
+                    onReply={(blockId, message) => handleBlockReply(blockId, message)} 
+                    onSetQuery={setQuery}
+                    onRabbitHoleFollow={handleFollowRabbitHole}
+                    onQuizCorrect={handleQuizCorrect}
+                    onNewsRead={handleNewsRead}
+                    onCreativeUpload={handleCreativeUpload}
+                    generationError={generationError}
+                    playText={playText}
+                    childAge={childAge}
+                  />
+                )}
+              </Card>
+            </div>
           </div>
-        </div>
-        
-        <VoiceInputButton 
-          isActive={isVoiceActive}
-          onToggle={setIsVoiceActive}
-          onTranscript={handleVoiceTranscript}
-          childAge={childAge}
-        />
-        
-        {profileId && (
-          <TalkToWhizzy 
-            childId={profileId}
-            curioTitle={currentCurio?.title}
-            ageGroup={ageGroup}
-            onNewQuestionGenerated={handleFollowRabbitHole}
+          
+          <VoiceInputButton 
+            isActive={isVoiceActive}
+            onToggle={setIsVoiceActive}
+            onTranscript={handleVoiceTranscript}
+            childAge={childAge}
           />
-        )}
-      </main>
+          
+          {profileId && (
+            <TalkToWhizzy 
+              childId={profileId}
+              curioTitle={currentCurio?.title}
+              ageGroup={ageGroup}
+              onNewQuestionGenerated={handleFollowRabbitHole}
+            />
+          )}
+        </main>
+      </div>
     </div>
   );
 };

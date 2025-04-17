@@ -11,6 +11,7 @@ import { useBlockInteractions } from '@/hooks/useBlockInteractions';
 import { useElevenLabsVoice } from '@/hooks/useElevenLabsVoice';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
+import Navbar from '@/components/Navbar';
 import CurioPageHeader from '@/components/curio/CurioPageHeader';
 import EnhancedCurioContent from '@/components/curio/EnhancedCurioContent';
 import CurioLoadingState from '@/components/curio/CurioLoadingState';
@@ -212,6 +213,13 @@ const EnhancedCurioPage: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-indigo-950 to-purple-950">
+      <Navbar 
+        profileId={childId} 
+        showBackButton={true} 
+        onBackClick={handleBackToDashboard} 
+        pageTitle={curioTitle || "Exploring Knowledge"}
+      />
+      
       <CurioPageHeader
         curioTitle={curioTitle}
         handleBackToDashboard={handleBackToDashboard}
