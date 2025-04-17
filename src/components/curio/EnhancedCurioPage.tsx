@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -52,6 +53,7 @@ const EnhancedCurioPage: React.FC = () => {
   const [childAge, setChildAge] = useState(10);
   const [manualRefreshAttempted, setManualRefreshAttempted] = useState(false);
   const [contentGenerationFailed, setContentGenerationFailed] = useState(false);
+  const [isLoadingPlaceholder, setIsLoadingPlaceholder] = useState(false);
   
   const loadTriggerRef = useRef<HTMLDivElement>(null);
 
@@ -113,10 +115,11 @@ const EnhancedCurioPage: React.FC = () => {
     console.log("Current blocks:", blocks);
 
     // If no blocks found and we've done a manual refresh, trigger content generation
-    if (blocks.length === 0 && manualRefreshAttempted && curioId && childId && !contentGenerationFailed) {
+    if (blocks.length === 0 && manualRefreshAttempted && curioId && childId && !contentGenerationFailed && !isLoadingPlaceholder) {
       const triggerGeneration = async () => {
         try {
           toast.loading("Generating content...");
+          setIsLoadingPlaceholder(true);
           setContentGenerationFailed(false);
           
           // Get the curio details
@@ -128,6 +131,7 @@ const EnhancedCurioPage: React.FC = () => {
           
           if (!curioData) {
             toast.error("Failed to find exploration details.");
+            setIsLoadingPlaceholder(false);
             return;
           }
           
@@ -161,6 +165,7 @@ const EnhancedCurioPage: React.FC = () => {
             console.error('Error generating content:', fnError);
             toast.error("Failed to generate content. Please try again.");
             setContentGenerationFailed(true);
+            setIsLoadingPlaceholder(false);
             return;
           }
           
@@ -188,18 +193,20 @@ const EnhancedCurioPage: React.FC = () => {
           } else {
             toast.error("No content was generated. Please try again.");
             setContentGenerationFailed(true);
+            setIsLoadingPlaceholder(false);
           }
           
         } catch (err) {
           console.error('Error in content generation:', err);
           toast.error("Failed to generate content. Please try again.");
           setContentGenerationFailed(true);
+          setIsLoadingPlaceholder(false);
         }
       };
       
       triggerGeneration();
     }
-  }, [blocks, manualRefreshAttempted, curioId, childId, childProfile, contentGenerationFailed]);
+  }, [blocks, manualRefreshAttempted, curioId, childId, childProfile, contentGenerationFailed, isLoadingPlaceholder]);
 
   if (profileError) {
     return <CurioErrorState message="Failed to load profile." />;
@@ -331,7 +338,7 @@ const EnhancedCurioPage: React.FC = () => {
   const renderEmptyState = () => (
     <div className="flex flex-col items-center justify-center p-8 bg-white/5 rounded-lg border border-white/10 text-center max-w-3xl mx-auto">
       <div className="mb-6 bg-indigo-900/30 p-6 rounded-full">
-        <RefreshCw className="h-12 w-12 text-indigo-400" />
+        <RefreshCw className={`h-12 w-12 text-indigo-400 ${isLoadingPlaceholder ? 'animate-spin' : ''}`} />
       </div>
       <h2 className="text-2xl font-bold text-white mb-4">
         {curioTitle ? `Exploring "${curioTitle}"` : "Starting your exploration"}
@@ -352,11 +359,11 @@ const EnhancedCurioPage: React.FC = () => {
         
         <Button 
           onClick={handleRefresh}
-          disabled={refreshing || contentGenerationFailed}
+          disabled={refreshing || contentGenerationFailed || isLoadingPlaceholder}
           className="bg-indigo-600 hover:bg-indigo-700 text-white"
         >
-          <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-          {refreshing ? "Generating Content..." : "Generate Content"}
+          <RefreshCw className={`h-4 w-4 mr-2 ${refreshing || isLoadingPlaceholder ? 'animate-spin' : ''}`} />
+          {refreshing || isLoadingPlaceholder ? "Generating Content..." : "Generate Content"}
         </Button>
       </div>
       
@@ -382,12 +389,12 @@ const EnhancedCurioPage: React.FC = () => {
         handleBackToDashboard={handleBackToDashboard}
         handleToggleInsights={handleToggleInsights}
         handleRefresh={handleRefresh}
-        refreshing={refreshing}
+        refreshing={refreshing || isLoadingPlaceholder}
         showInsights={showInsights}
         childName={childProfile?.name}
       />
       
-      {isLoadingBlocks && blocks.length === 0 ? (
+      {(isLoadingBlocks && blocks.length === 0) || isLoadingPlaceholder ? (
         <CurioLoadingState message="Loading content..." />
       ) : blocksError ? (
         <CurioErrorState message="Failed to load content." onRetry={handleRefresh} />

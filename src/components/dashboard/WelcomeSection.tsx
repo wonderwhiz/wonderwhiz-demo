@@ -114,7 +114,7 @@ const WelcomeSection: React.FC<WelcomeSectionProps> = ({
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="max-w-5xl mx-auto">
-        {/* Header with greeting - Removed redundant welcome message */}
+        {/* Header with greeting - Simplified */}
         <motion.div 
           className="mb-6"
           initial={{ opacity: 0, y: -10 }}
@@ -129,7 +129,6 @@ const WelcomeSection: React.FC<WelcomeSectionProps> = ({
           >
             {getTimeBasedGreeting()}, {childProfile?.name || 'Explorer'}!
           </motion.h1>
-          <p className="text-white/70">What would you like to discover today?</p>
         </motion.div>
 
         <div className={`grid grid-cols-1 ${isMobile ? '' : 'md:grid-cols-3'} gap-6`}>
@@ -159,17 +158,15 @@ const WelcomeSection: React.FC<WelcomeSectionProps> = ({
               />
             </div>
 
-            {/* Tasks section - prominently displayed */}
-            {pendingTasksCount > 0 && (
-              <TasksSection 
-                tasks={tasks} 
-                onTaskClick={handleTaskClick} 
-                childId={childId} 
-                pendingTasksCount={pendingTasksCount} 
-              />
-            )}
+            {/* Tasks section - always show even when empty */}
+            <TasksSection 
+              tasks={tasks} 
+              onTaskClick={handleTaskClick} 
+              childId={childId} 
+              pendingTasksCount={pendingTasksCount} 
+            />
             
-            {/* Personalized recommendations - based on user interests, likes, and past curios */}
+            {/* Personalized recommendations */}
             <PersonalizedRecommendations
               childId={childId}
               childProfile={childProfile}
@@ -181,78 +178,35 @@ const WelcomeSection: React.FC<WelcomeSectionProps> = ({
             />
           </div>
           
-          {/* Right sidebar with sparks and progress - Only show on larger screens or at the bottom on mobile */}
-          {!isMobile ? (
-            <div className="space-y-6">
-              <SparksOverview 
-                childId={childId} 
-                sparksBalance={childProfile?.sparks_balance || 0} 
-              />
+          {/* Right sidebar - only show sparks and removed redundant content */}
+          <div className="space-y-6">
+            <SparksOverview 
+              childId={childId} 
+              sparksBalance={childProfile?.sparks_balance || 0} 
+            />
+            
+            {/* Quick actions with actually working links */}
+            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4">
+              <h3 className="text-white font-medium mb-3 flex items-center">
+                <Star className="h-4 w-4 text-wonderwhiz-gold mr-2" />
+                Quick Actions
+              </h3>
               
-              {/* Quick actions */}
-              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4">
-                <h3 className="text-white font-medium mb-3 flex items-center">
-                  <Star className="h-4 w-4 text-wonderwhiz-gold mr-2" />
-                  Quick Actions
-                </h3>
-                
-                <div className="space-y-2">
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start text-white bg-white/10 border-white/10 hover:bg-white/20"
-                    onClick={() => handleCurioSuggestionClick("Tell me a fun fact")}
-                  >
-                    <Sparkles className="h-4 w-4 mr-2 text-wonderwhiz-gold" />
-                    Discover a fun fact
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start text-white bg-white/10 border-white/10 hover:bg-white/20"
-                    onClick={() => navigate('/knowledge-map/' + childId)}
-                  >
-                    <Sparkles className="h-4 w-4 mr-2 text-wonderwhiz-pink" />
-                    View knowledge map
-                  </Button>
-                </div>
+              <div className={isMobile ? "flex space-x-2" : "space-y-2"}>
+                <Button 
+                  variant="outline" 
+                  className={`${isMobile ? "flex-1" : "w-full"} justify-start text-white bg-white/10 border-white/10 hover:bg-white/20`}
+                  onClick={() => {
+                    setQuery("Tell me a fun fact");
+                    setTimeout(() => handleSubmitQuery(), 100);
+                  }}
+                >
+                  <Sparkles className="h-4 w-4 mr-2 text-wonderwhiz-gold" />
+                  {isMobile ? "Fun Fact" : "Discover a fun fact"}
+                </Button>
               </div>
             </div>
-          ) : (
-            <div className="mt-6">
-              <SparksOverview 
-                childId={childId} 
-                sparksBalance={childProfile?.sparks_balance || 0} 
-              />
-              
-              {/* Quick actions for mobile */}
-              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4 mt-4">
-                <h3 className="text-white font-medium mb-3 flex items-center">
-                  <Star className="h-4 w-4 text-wonderwhiz-gold mr-2" />
-                  Quick Actions
-                </h3>
-                
-                <div className="flex space-x-2">
-                  <Button 
-                    variant="outline" 
-                    className="flex-1 justify-center text-white bg-white/10 border-white/10 hover:bg-white/20"
-                    onClick={() => handleCurioSuggestionClick("Tell me a fun fact")}
-                  >
-                    <Sparkles className="h-4 w-4 mr-2 text-wonderwhiz-gold" />
-                    Fun Fact
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    className="flex-1 justify-center text-white bg-white/10 border-white/10 hover:bg-white/20"
-                    onClick={() => navigate('/knowledge-map/' + childId)}
-                  >
-                    <Sparkles className="h-4 w-4 mr-2 text-wonderwhiz-pink" />
-                    Knowledge Map
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import { CheckCircle2, BookOpen, Pencil, Medal, ChevronRight, Brain, CheckCircle, Sparkles } from 'lucide-react';
+import { CheckCircle2, BookOpen, Pencil, Medal, ChevronRight, Brain, CheckCircle, Sparkles as SparklesIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -150,11 +150,7 @@ const TasksSection: React.FC<TasksSectionProps> = ({
     }))
   ];
 
-  // If no tasks, don't render the section
-  if (combinedTasks.length === 0) {
-    return null;
-  }
-
+  // Make sure we always return content, even if no tasks
   return (
     <Card className="bg-white/5 backdrop-blur-md border border-white/10 overflow-hidden">
       <CardHeader className="pb-2">
@@ -169,50 +165,56 @@ const TasksSection: React.FC<TasksSectionProps> = ({
         </div>
       </CardHeader>
       <CardContent className={`${isMobile ? 'pt-2 pb-3 px-3' : 'pt-2'}`}>
-        <div className={`space-y-2 ${isMobile ? 'max-h-[180px]' : 'max-h-[250px]'} overflow-y-auto pr-1`}>
-          {combinedTasks.slice(0, isMobile ? 2 : 3).map((task, index) => (
-            <motion.div
-              key={task.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: 0.1 * index }}
-              className="bg-white/10 hover:bg-white/15 border border-white/10 rounded-lg overflow-hidden cursor-pointer"
-              onClick={task.onClick}
-            >
-              <div className="p-3 flex items-center justify-between relative">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0 h-6 w-6 flex items-center justify-center bg-wonderwhiz-deep-purple rounded-full mr-3">
-                    {task.isParentTask ? 
-                      <Medal className="h-3.5 w-3.5 text-wonderwhiz-gold" /> :
-                      getTaskIcon(task.type)}
-                  </div>
-                  <div>
-                    <p className="text-white font-nunito line-clamp-1">
-                      {index + 1}. {task.title}
-                    </p>
-                    <div className="flex items-center mt-1">
-                      <div className="text-wonderwhiz-gold text-xs flex items-center">
-                        <Sparkles className="h-3 w-3 mr-1" />
-                        {task.reward}
+        {combinedTasks.length === 0 ? (
+          <div className="bg-white/5 hover:bg-white/10 p-4 rounded-lg text-center">
+            <p className="text-white/70">No tasks for today. Check back later!</p>
+          </div>
+        ) : (
+          <div className={`space-y-2 ${isMobile ? 'max-h-[180px]' : 'max-h-[250px]'} overflow-y-auto pr-1`}>
+            {combinedTasks.slice(0, isMobile ? 2 : 3).map((task, index) => (
+              <motion.div
+                key={task.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.1 * index }}
+                className="bg-white/10 hover:bg-white/15 border border-white/10 rounded-lg overflow-hidden cursor-pointer"
+                onClick={task.onClick}
+              >
+                <div className="p-3 flex items-center justify-between relative">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0 h-6 w-6 flex items-center justify-center bg-wonderwhiz-deep-purple rounded-full mr-3">
+                      {task.isParentTask ? 
+                        <Medal className="h-3.5 w-3.5 text-wonderwhiz-gold" /> :
+                        getTaskIcon(task.type)}
+                    </div>
+                    <div>
+                      <p className="text-white font-nunito line-clamp-1">
+                        {index + 1}. {task.title}
+                      </p>
+                      <div className="flex items-center mt-1">
+                        <div className="text-wonderwhiz-gold text-xs flex items-center">
+                          <SparklesIcon className="h-3 w-3 mr-1" />
+                          {task.reward}
+                        </div>
+                        {task.isParentTask && (
+                          <span className="ml-2 text-wonderwhiz-bright-pink text-xs">
+                            Parent Task
+                          </span>
+                        )}
                       </div>
-                      {task.isParentTask && (
-                        <span className="ml-2 text-wonderwhiz-bright-pink text-xs">
-                          Parent Task
-                        </span>
-                      )}
                     </div>
                   </div>
+                  
+                  <ChevronRight className="h-4 w-4 text-white/40" />
+                  
+                  {task.isParentTask && (
+                    <div className="absolute -bottom-0.5 left-0 right-0 h-1 bg-gradient-to-r from-wonderwhiz-gold/30 to-wonderwhiz-bright-pink/30" />
+                  )}
                 </div>
-                
-                <ChevronRight className="h-4 w-4 text-white/40" />
-                
-                {task.isParentTask && (
-                  <div className="absolute -bottom-0.5 left-0 right-0 h-1 bg-gradient-to-r from-wonderwhiz-gold/30 to-wonderwhiz-bright-pink/30" />
-                )}
-              </div>
-            </motion.div>
-          ))}
-        </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
         
         {combinedTasks.length > 3 && (
           <div className="mt-3 text-center">

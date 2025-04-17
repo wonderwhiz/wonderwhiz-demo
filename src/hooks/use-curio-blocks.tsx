@@ -42,8 +42,22 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
         .eq('curio_id', curioId)
         .order('created_at', { ascending: false });
 
-      if (searchQuery) {
-        query = query.textSearch('content', searchQuery);
+      // Only try to apply text search if we have a search query and it's a simple one
+      // This avoids the TextSearch error for complex queries
+      if (searchQuery && searchQuery.trim()) {
+        // Check if this is a basic search or contains special characters
+        const hasSpecialChars = /[&|!():]/.test(searchQuery);
+        
+        if (!hasSpecialChars) {
+          try {
+            // For simple searches, use ilike which is safer than textSearch
+            // Search in the content JSON field as string
+            query = query.or(`content.ilike.%${searchQuery}%`);
+          } catch (err) {
+            console.error('Error applying search filter:', err);
+            // If textSearch fails, we'll just return all results
+          }
+        }
       }
       
       // Add range after all other conditions
