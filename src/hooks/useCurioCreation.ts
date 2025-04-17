@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -30,25 +29,10 @@ export const useCurioCreation = (
   const [query, setQuery] = useState('');
 
   const handleSubmitQuery = async () => {
-    if (!query.trim() || isGenerating || !childProfile || !profileId) {
-      console.error('Cannot submit query: ', {
-        queryEmpty: !query.trim(),
-        isGenerating: isGenerating,
-        noChildProfile: !childProfile,
-        noProfileId: !profileId
-      });
-      
-      if (!query.trim()) {
-        toast.error("Please enter a question first");
-      }
-      return;
-    }
-    
+    if (!query.trim() || isGenerating || !childProfile || !profileId) return;
     setIsGenerating(true);
-    console.log('Submitting curio query:', query, 'for child:', profileId);
     
     try {
-      // Create a new curio
       const { data: newCurio, error: curioError } = await supabase
         .from('curios')
         .insert({
@@ -59,12 +43,7 @@ export const useCurioCreation = (
         .select()
         .single();
         
-      if (curioError) {
-        console.error('Error creating curio:', curioError);
-        throw curioError;
-      }
-
-      console.log('New curio created:', newCurio);
+      if (curioError) throw curioError;
 
       if (setPastCurios) {
         setPastCurios(prev => [newCurio, ...prev]);
@@ -74,16 +53,8 @@ export const useCurioCreation = (
         setCurrentCurio(newCurio);
       }
       
-      toast.success(`Exploring "${query.trim()}"`, {
-        duration: 3000
-      });
-      
-      // Navigate to the new curio
-      window.location.href = `/curio/${profileId}/${newCurio.id}`;
-      
       setQuery('');
       
-      // Award sparks for creating a new curio
       setTimeout(async () => {
         try {
           await supabase.functions.invoke('increment-sparks-balance', {
@@ -162,7 +133,6 @@ export const useCurioCreation = (
   };
 
   const handleCurioSuggestionClick = async (suggestion: string) => {
-    console.log('Handling curio suggestion click:', suggestion);
     setQuery(suggestion);
     setTimeout(() => {
       handleSubmitQuery();
@@ -170,7 +140,6 @@ export const useCurioCreation = (
   };
 
   const handlePastCurioClick = async (curioQuery: string) => {
-    console.log('Handling past curio click:', curioQuery);
     setQuery(curioQuery);
     setTimeout(() => {
       handleSubmitQuery();

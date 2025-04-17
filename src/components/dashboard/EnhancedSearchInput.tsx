@@ -1,250 +1,195 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Search, Sparkles, Mic, Image, X } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { toast } from 'sonner';
+import React, { useState, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Search, Mic, Image, X, Sparkles, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 interface EnhancedSearchInputProps {
   onSearch: (query: string) => void;
-  onVoiceCapture?: (transcript: string) => void;
   onImageCapture?: (file: File) => void;
+  onVoiceCapture?: (transcript: string) => void;
   placeholder?: string;
-  isProcessing?: boolean;
-  showSearchIcon?: boolean;
-  showVoiceIcon?: boolean;
-  showImageIcon?: boolean;
-  childAge?: number;
   initialQuery?: string;
+  isProcessing?: boolean;
+  childAge?: number;
 }
 
 const EnhancedSearchInput: React.FC<EnhancedSearchInputProps> = ({
   onSearch,
-  onVoiceCapture,
   onImageCapture,
-  placeholder = "What are you curious about?",
-  isProcessing = false,
-  showSearchIcon = true,
-  showVoiceIcon = true,
-  showImageIcon = true,
-  childAge = 10,
+  onVoiceCapture,
+  placeholder = "What are you curious about today?",
   initialQuery = '',
+  isProcessing = false,
+  childAge = 10
 }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
   const [query, setQuery] = useState(initialQuery);
   const [isRecording, setIsRecording] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [isImageMode, setIsImageMode] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    // Update query if initialQuery changes
-    setQuery(initialQuery);
-  }, [initialQuery]);
-
-  // Handle click outside to collapse the search box
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsExpanded(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
+  
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!query.trim()) {
-      toast.error("Please enter a question first");
-      return;
-    }
-    
-    if (!isProcessing) {
-      onSearch(query);
+    if (query.trim() && !isProcessing) {
+      onSearch(query.trim());
+      setQuery('');
     }
   };
-
-  const handleFocus = () => {
-    setIsExpanded(true);
-    setTimeout(() => {
-      if (inputRef.current) {
-        inputRef.current.focus();
-      }
-    }, 300);
+  
+  const handleClear = () => {
+    setQuery('');
+    setIsImageMode(false);
   };
-
-  const handleVoiceClick = () => {
-    // In a real implementation, this would use the Web Speech API
-    // For this demo, we'll just simulate a voice input after a delay
-    setIsRecording(true);
-    
-    // Show a toast that we're listening
-    toast.info(childAge < 8 ? "I'm listening!" : "Listening...");
-    
-    // Simulate receiving voice input after 2 seconds
-    setTimeout(() => {
-      setIsRecording(false);
-      
-      // Simulate a transcript
-      const transcript = "How do stars form in space?";
-      setQuery(transcript);
-      
-      if (onVoiceCapture) {
-        onVoiceCapture(transcript);
-      }
-    }, 2000);
-  };
-
+  
   const handleImageClick = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
-
+  
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      
-      // In a real implementation, you would upload and process the image
-      // For this demo, we'll just trigger the callback
-      if (onImageCapture) {
-        onImageCapture(file);
-      }
-      
-      // Reset the input so the same file can be selected again
-      e.target.value = '';
+    if (e.target.files && e.target.files[0] && onImageCapture) {
+      onImageCapture(e.target.files[0]);
+      toast.success(childAge < 10 ? "I got your picture!" : "Image uploaded successfully");
+      setIsImageMode(true);
     }
   };
-
-  const clearQuery = () => {
-    setQuery('');
-    if (inputRef.current) {
-      inputRef.current.focus();
+  
+  const handleVoiceCapture = () => {
+    if (!isRecording) {
+      setIsRecording(true);
+      
+      // Age-appropriate message
+      toast.info(childAge < 10 
+        ? "I'm listening! Tell me what you want to learn about!" 
+        : "Listening... Speak clearly.");
+      
+      // Simulate recording complete after 3 seconds
+      setTimeout(() => {
+        setIsRecording(false);
+        
+        // Simulate a transcript
+        const mockTranscript = "How do volcanoes work?";
+        if (onVoiceCapture) {
+          onVoiceCapture(mockTranscript);
+        } else {
+          setQuery(mockTranscript);
+          toast.success("I heard: " + mockTranscript);
+        }
+      }, 3000);
+    } else {
+      setIsRecording(false);
+      toast.info("Voice capture canceled");
     }
   };
-
+  
   return (
-    <div 
-      className={`relative ${isExpanded ? 'scale-105' : ''} transition-transform duration-300`}
-      ref={containerRef}
-    >
-      <motion.div 
-        initial={{ y: 0, opacity: 1 }}
-        animate={{ 
-          y: isExpanded ? -10 : 0,
-          opacity: isExpanded ? 0 : 1,
-        }}
-        transition={{ duration: 0.2 }}
-        className={`absolute -top-6 left-0 w-full text-center text-white/80 text-sm font-medium ${isExpanded ? 'pointer-events-none' : ''}`}
-      >
-        <span role="img" aria-label="sparkles" className="mr-1">✨</span>
-        {childAge < 8 ? "Let's explore something fun!" : "What are you curious about today?"}
-      </motion.div>
-
+    <div className="relative w-full max-w-2xl mx-auto">
       <form onSubmit={handleSubmit} className="relative">
-        <div 
-          className={`relative flex items-center transition-all duration-300 ${
-            isExpanded 
-              ? 'bg-white/10 border-white/30 shadow-xl' 
-              : 'bg-white/5 border-white/20'
-          } border rounded-full overflow-hidden group hover:bg-white/10 hover:border-white/30`}
-          onClick={handleFocus}
-        >
-          {showSearchIcon && (
-            <div className={`absolute left-4 text-white/60 transition-all duration-300 ${isExpanded ? 'scale-110' : ''}`}>
-              <Search className="w-5 h-5" />
-            </div>
+        <motion.div 
+          className={cn(
+            "flex items-center overflow-hidden transition-all duration-300 backdrop-blur-md border shadow-lg rounded-full",
+            isFocused 
+              ? "ring-2 ring-wonderwhiz-bright-pink border-white/30 bg-white/10" 
+              : "border-white/20 bg-white/5 hover:bg-white/8"
           )}
-
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+        >
+          <div className="absolute left-4 text-white/60">
+            {isRecording ? (
+              <motion.div 
+                animate={{ scale: [1, 1.2, 1] }} 
+                transition={{ duration: 1, repeat: Infinity }}
+              >
+                <Mic className="w-5 h-5 text-wonderwhiz-bright-pink" />
+              </motion.div>
+            ) : (
+              <Search className="w-5 h-5" />
+            )}
+          </div>
+          
           <input
-            ref={inputRef}
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={isRecording ? "Listening..." : placeholder}
-            className={`w-full bg-transparent text-white placeholder-white/60 outline-none transition-all duration-300 ${
-              isExpanded 
-                ? 'py-4 pl-12 pr-32 text-lg' 
-                : 'py-3 pl-12 pr-24 text-base'
-            }`}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            placeholder={
+              isRecording 
+                ? (childAge < 10 ? "I'm listening..." : "Listening...")
+                : isImageMode 
+                ? "Ask about this image..." 
+                : placeholder
+            }
+            className="w-full pl-12 pr-[130px] py-4 bg-transparent text-white placeholder:text-white/50 focus:outline-none text-base font-nunito"
             disabled={isProcessing || isRecording}
           />
-
+          
           <div className="absolute right-3 flex items-center space-x-2">
             {query && (
-              <motion.button
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0, opacity: 0 }}
+              <Button
                 type="button"
-                className="text-white/60 hover:text-white transition-colors p-1.5 rounded-full hover:bg-white/10"
-                onClick={clearQuery}
+                size="icon"
+                variant="ghost"
+                onClick={handleClear}
+                className="h-8 w-8 rounded-full text-white/60 hover:text-white hover:bg-white/10"
               >
                 <X className="h-4 w-4" />
-              </motion.button>
+              </Button>
             )}
-
-            {showImageIcon && (
-              <motion.button
+            
+            {!isImageMode && (
+              <Button
                 type="button"
-                className="text-white/60 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10"
+                size="icon"
+                variant="ghost"
                 onClick={handleImageClick}
+                className="h-8 w-8 rounded-full text-white/60 hover:text-white hover:bg-white/10"
                 disabled={isProcessing || isRecording}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
               >
-                <Image className="h-5 w-5" />
-              </motion.button>
+                <Image className="h-4 w-4" />
+              </Button>
             )}
-
-            {showVoiceIcon && (
-              <motion.button
-                type="button"
-                className={`transition-colors p-2 rounded-full ${
-                  isRecording 
-                    ? 'text-wonderwhiz-bright-pink bg-white/10' 
-                    : 'text-white/60 hover:text-white hover:bg-white/10'
-                }`}
-                onClick={handleVoiceClick}
-                disabled={isProcessing}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Mic className={`h-5 w-5 ${isRecording ? 'animate-pulse' : ''}`} />
-              </motion.button>
-            )}
-
+            
+            <Button
+              type="button"
+              size="icon"
+              variant={isRecording ? "default" : "ghost"}
+              onClick={handleVoiceCapture}
+              className={`h-8 w-8 rounded-full ${
+                isRecording 
+                  ? "bg-wonderwhiz-bright-pink text-white shadow-glow-brand-pink" 
+                  : "text-white/60 hover:text-white hover:bg-white/10"
+              }`}
+              disabled={isProcessing}
+            >
+              <Mic className={`h-4 w-4 ${isRecording ? "animate-pulse" : ""}`} />
+            </Button>
+            
             <Button
               type="submit"
               size="sm"
-              disabled={isProcessing || isRecording || !query.trim()}
-              className={`rounded-full px-4 ${
-                isExpanded 
-                  ? 'bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-purple hover:opacity-90' 
-                  : 'bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-purple'
-              } text-white font-medium transition-all`}
+              disabled={!query.trim() || isProcessing}
+              className="rounded-full bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-purple text-white h-9 pl-3 pr-4 shadow-glow-brand-pink"
             >
               {isProcessing ? (
-                <div className="flex items-center">
-                  <div className="animate-spin mr-2 h-4 w-4 border-2 border-white/80 border-t-transparent rounded-full"></div>
-                  <span>{childAge < 8 ? "Thinking..." : "Processing..."}</span>
-                </div>
+                <div className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin"></div>
               ) : (
-                <div className="flex items-center">
-                  <Sparkles className="mr-1.5 h-4 w-4" />
-                  <span>{childAge < 8 ? "Explore" : "Explore"}</span>
-                </div>
+                <>
+                  <Send className="h-3.5 w-3.5 mr-1.5" />
+                  <span className="text-xs font-medium">Explore</span>
+                </>
               )}
             </Button>
           </div>
-        </div>
+        </motion.div>
       </form>
-
+      
       <input
         type="file"
         ref={fileInputRef}
@@ -252,6 +197,25 @@ const EnhancedSearchInput: React.FC<EnhancedSearchInputProps> = ({
         accept="image/*"
         onChange={handleFileChange}
       />
+      
+      {isRecording && (
+        <motion.div
+          initial={{ opacity: 0, y: 5 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="absolute -bottom-6 left-0 right-0 text-center text-xs text-wonderwhiz-bright-pink font-medium"
+        >
+          <div className="flex items-center justify-center space-x-1">
+            <span className="inline-block h-1.5 w-1.5 bg-wonderwhiz-bright-pink rounded-full animate-pulse"></span>
+            <span className="inline-block h-1.5 w-1.5 bg-wonderwhiz-bright-pink rounded-full animate-pulse delay-75"></span>
+            <span className="inline-block h-1.5 w-1.5 bg-wonderwhiz-bright-pink rounded-full animate-pulse delay-150"></span>
+            <span className="ml-2">
+              {childAge < 10 
+                ? "I'm listening to your question!" 
+                : "Recording... Speak clearly"}
+            </span>
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 };

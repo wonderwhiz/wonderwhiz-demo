@@ -3,7 +3,6 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import ContentBlock from './ContentBlock';
 import CurioErrorState from './curio/CurioErrorState';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 interface CurioBlockListProps {
   blocks: any[];
@@ -54,15 +53,13 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
   onReadAloud,
   childAge = 10
 }) => {
-  const isMobile = useIsMobile();
-
   const blockEntryAnimations = {
     hidden: { opacity: 0, y: 20 },
     visible: (i: number) => ({
       opacity: 1,
       y: 0,
       transition: {
-        delay: isMobile ? 0.05 * i : i * 0.1,
+        delay: i * 0.1,
         duration: 0.5,
         ease: "easeOut"
       }
@@ -138,7 +135,6 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
           initial={animateBlocks ? "hidden" : "visible"}
           animate="visible"
           variants={blockEntryAnimations}
-          className={isMobile ? "px-2" : ""}
         >
           <ContentBlock 
             block={block}

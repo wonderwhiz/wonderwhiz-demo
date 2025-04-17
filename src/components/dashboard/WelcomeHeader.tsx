@@ -65,7 +65,7 @@ const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({
         </motion.h1>
         
         <motion.div 
-          className="flex flex-wrap items-center gap-4 text-sm"
+          className="flex items-center gap-4 text-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.4 }}
