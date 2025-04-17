@@ -23,6 +23,7 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
   const [page, setPage] = useState(0);
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [generationAttempted, setGenerationAttempted] = useState(false);
+  const [isGeneratingContent, setIsGeneratingContent] = useState(false);
 
   const fetchBlocks = useCallback(async () => {
     if (!curioId) return;
@@ -42,21 +43,13 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
         .eq('curio_id', curioId)
         .order('created_at', { ascending: false });
 
-      // Only try to apply text search if we have a search query and it's a simple one
-      // This avoids the TextSearch error for complex queries
+      // Only try to apply text search if we have a search query
       if (searchQuery && searchQuery.trim()) {
-        // Check if this is a basic search or contains special characters
-        const hasSpecialChars = /[&|!():]/.test(searchQuery);
-        
-        if (!hasSpecialChars) {
-          try {
-            // For simple searches, use ilike which is safer than textSearch
-            // Search in the content JSON field as string
-            query = query.or(`content.ilike.%${searchQuery}%`);
-          } catch (err) {
-            console.error('Error applying search filter:', err);
-            // If textSearch fails, we'll just return all results
-          }
+        try {
+          // Use ilike for more reliable text search within JSON
+          query = query.or(`content->fact.ilike.%${searchQuery}%,content->text.ilike.%${searchQuery}%,content->question.ilike.%${searchQuery}%`);
+        } catch (err) {
+          console.error('Error applying search filter:', err);
         }
       }
       
@@ -85,9 +78,19 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
           created_at: block.created_at
         })) as ContentBlock[];
         
-        setBlocks(prevBlocks => [...prevBlocks, ...typedBlocks]);
+        // Only add new blocks, avoid duplicates
+        if (page === 0) {
+          setBlocks(typedBlocks);
+        } else {
+          // Filter out any blocks that already exist in the current blocks array
+          const existingIds = new Set(blocks.map(b => b.id));
+          const newBlocks = typedBlocks.filter(block => !existingIds.has(block.id));
+          setBlocks(prevBlocks => [...prevBlocks, ...newBlocks]);
+        }
+        
         setHasMore(data.length === 10);
         setIsFirstLoad(false);
+        setIsGeneratingContent(false);
       } else {
         console.log('No blocks found for this curio');
         
@@ -95,6 +98,7 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
         if (page === 0 && childId && curioId && !generationAttempted) {
           console.log('No blocks found, will attempt to trigger content generation');
           setGenerationAttempted(true);
+          setIsGeneratingContent(true);
           await triggerContentGeneration(curioId);
         } else {
           setHasMore(false);
@@ -106,7 +110,7 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
     } finally {
       setIsLoading(false);
     }
-  }, [curioId, searchQuery, page, childId, generationAttempted]);
+  }, [curioId, searchQuery, page, childId, generationAttempted, blocks]);
 
   // Function to trigger content generation
   const triggerContentGeneration = async (curioId: string) => {
@@ -124,12 +128,14 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
       if (curioError) {
         console.error('Error fetching curio details:', curioError);
         toast.error("Failed to generate content. Please try again.");
+        setIsGeneratingContent(false);
         return;
       }
       
       if (!curioData) {
         console.error('No curio found with id:', curioId);
         toast.error("Failed to find exploration details.");
+        setIsGeneratingContent(false);
         return;
       }
       
@@ -169,27 +175,27 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
       if (fnError) {
         console.error('Error generating content:', fnError);
         toast.error("Failed to generate content. Please try refreshing.");
+        setIsGeneratingContent(false);
         return;
       }
       
       console.log('Content generation triggered successfully:', response);
-      toast.success("Content generation started! Refreshing...");
       
       // Directly insert the generated blocks
       if (response && Array.isArray(response) && response.length > 0) {
-        // Save blocks to database
-        for (const blockData of response) {
-          try {
-            await supabase.from('content_blocks').insert({
-              curio_id: curioId,
-              specialist_id: blockData.specialist_id || 'nova',
-              type: blockData.type || 'fact',
-              content: blockData.content
-            });
-          } catch (insertError) {
-            console.error('Error inserting block:', insertError);
-          }
-        }
+        // Save blocks to database - we'll only get a notification when this is done
+        const insertPromises = response.map(blockData => 
+          supabase.from('content_blocks').insert({
+            curio_id: curioId,
+            specialist_id: blockData.specialist_id || 'nova',
+            type: blockData.type || 'fact',
+            content: blockData.content
+          })
+        );
+        
+        await Promise.all(insertPromises);
+        
+        toast.success("Content generated successfully!");
         
         // Reset state to force a refetch
         setPage(0);
@@ -203,12 +209,14 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
         // If no response, revert to empty state but mark as not first load
         setIsFirstLoad(false);
         setGenerationError("No content was generated. Please try again.");
+        setIsGeneratingContent(false);
         toast.error("No content was generated. Please try again.");
       }
     } catch (err) {
       console.error('Error in content generation process:', err);
       toast.error("Error generating content. Please try again.");
       setGenerationError("Error generating content. Please try again.");
+      setIsGeneratingContent(false);
     }
   };
 
@@ -218,9 +226,19 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
       setPage(0);
       setIsFirstLoad(true);
       setGenerationAttempted(false);
+      setIsGeneratingContent(false);
       fetchBlocks();
     }
-  }, [curioId, searchQuery, fetchBlocks]);
+  }, [curioId, fetchBlocks]);
+
+  // Clear existing blocks when search query changes
+  useEffect(() => {
+    if (curioId && searchQuery !== undefined) {
+      setBlocks([]);
+      setPage(0);
+      fetchBlocks();
+    }
+  }, [searchQuery, curioId, fetchBlocks]);
 
   // Fetch generation error from curios table
   useEffect(() => {

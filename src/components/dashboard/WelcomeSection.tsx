@@ -137,6 +137,10 @@ const WelcomeSection: React.FC<WelcomeSectionProps> = ({
             <div className="mb-6">
               <EnhancedSearchInput
                 onSearch={(q) => {
+                  if (!q.trim()) {
+                    toast.error("Please enter a question first");
+                    return;
+                  }
                   setQuery(q);
                   setTimeout(() => handleSubmitQuery(), 100);
                 }}
@@ -184,28 +188,6 @@ const WelcomeSection: React.FC<WelcomeSectionProps> = ({
               childId={childId} 
               sparksBalance={childProfile?.sparks_balance || 0} 
             />
-            
-            {/* Quick actions with actually working links */}
-            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4">
-              <h3 className="text-white font-medium mb-3 flex items-center">
-                <Star className="h-4 w-4 text-wonderwhiz-gold mr-2" />
-                Quick Actions
-              </h3>
-              
-              <div className={isMobile ? "flex space-x-2" : "space-y-2"}>
-                <Button 
-                  variant="outline" 
-                  className={`${isMobile ? "flex-1" : "w-full"} justify-start text-white bg-white/10 border-white/10 hover:bg-white/20`}
-                  onClick={() => {
-                    setQuery("Tell me a fun fact");
-                    setTimeout(() => handleSubmitQuery(), 100);
-                  }}
-                >
-                  <Sparkles className="h-4 w-4 mr-2 text-wonderwhiz-gold" />
-                  {isMobile ? "Fun Fact" : "Discover a fun fact"}
-                </Button>
-              </div>
-            </div>
           </div>
         </div>
       </div>

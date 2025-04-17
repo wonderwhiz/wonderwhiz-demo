@@ -54,6 +54,7 @@ const EnhancedCurioPage: React.FC = () => {
   const [manualRefreshAttempted, setManualRefreshAttempted] = useState(false);
   const [contentGenerationFailed, setContentGenerationFailed] = useState(false);
   const [isLoadingPlaceholder, setIsLoadingPlaceholder] = useState(false);
+  const [toastShown, setToastShown] = useState(false);
   
   const loadTriggerRef = useRef<HTMLDivElement>(null);
 
@@ -89,6 +90,14 @@ const EnhancedCurioPage: React.FC = () => {
     }
   }, [curioId]);
 
+  // Clear any "Generating content" toast when component unmounts or curioId changes
+  useEffect(() => {
+    return () => {
+      toast.dismiss();
+      setToastShown(false);
+    };
+  }, [curioId]);
+  
   useEffect(() => {
     if (blocks.length > 0 && isFirstLoad) {
       setTimeout(() => {
@@ -114,11 +123,21 @@ const EnhancedCurioPage: React.FC = () => {
   useEffect(() => {
     console.log("Current blocks:", blocks);
 
+    // If we're actively loading content, dismiss any lingering "generating content" toasts
+    if (!isLoadingBlocks && !isLoadingPlaceholder && blocks.length > 0) {
+      toast.dismiss();
+      setToastShown(false);
+    }
+
     // If no blocks found and we've done a manual refresh, trigger content generation
     if (blocks.length === 0 && manualRefreshAttempted && curioId && childId && !contentGenerationFailed && !isLoadingPlaceholder) {
       const triggerGeneration = async () => {
         try {
-          toast.loading("Generating content...");
+          if (!toastShown) {
+            toast.loading("Generating content...");
+            setToastShown(true);
+          }
+          
           setIsLoadingPlaceholder(true);
           setContentGenerationFailed(false);
           
@@ -173,21 +192,20 @@ const EnhancedCurioPage: React.FC = () => {
             toast.success("Content generated successfully!");
             
             // Save blocks to database
-            for (const blockData of response) {
-              try {
-                await supabase.from('content_blocks').insert({
-                  curio_id: curioId,
-                  specialist_id: blockData.specialist_id || 'nova',
-                  type: blockData.type || 'fact',
-                  content: blockData.content
-                });
-              } catch (insertError) {
-                console.error('Error inserting block:', insertError);
-              }
-            }
+            const insertPromises = response.map(blockData => 
+              supabase.from('content_blocks').insert({
+                curio_id: curioId,
+                specialist_id: blockData.specialist_id || 'nova',
+                type: blockData.type || 'fact',
+                content: blockData.content
+              })
+            );
+            
+            await Promise.all(insertPromises);
             
             // Wait a bit then reload the page
             setTimeout(() => {
+              setToastShown(false);
               window.location.reload();
             }, 1500);
           } else {
@@ -206,7 +224,7 @@ const EnhancedCurioPage: React.FC = () => {
       
       triggerGeneration();
     }
-  }, [blocks, manualRefreshAttempted, curioId, childId, childProfile, contentGenerationFailed, isLoadingPlaceholder]);
+  }, [blocks, manualRefreshAttempted, curioId, childId, childProfile, contentGenerationFailed, isLoadingPlaceholder, isLoadingBlocks, toastShown]);
 
   if (profileError) {
     return <CurioErrorState message="Failed to load profile." />;
@@ -226,6 +244,11 @@ const EnhancedCurioPage: React.FC = () => {
   
   const handleRabbitHoleClick = async (question: string) => {
     if (!childId) return;
+    
+    if (!question.trim()) {
+      toast.error("Please enter a question first");
+      return;
+    }
     
     try {
       toast.loading("Creating new exploration...");
@@ -308,6 +331,10 @@ const EnhancedCurioPage: React.FC = () => {
     setRefreshing(true);
     setManualRefreshAttempted(true);
     setContentGenerationFailed(false);
+    
+    // Dismiss any existing toasts before showing new ones
+    toast.dismiss();
+    setToastShown(false);
     
     // If we have no blocks, force regeneration
     if (blocks.length === 0) {
