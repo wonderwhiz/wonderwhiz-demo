@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -52,6 +51,7 @@ const EnhancedCurioPage: React.FC = () => {
   const [explorationPath, setExplorationPath] = useState<string[]>([]);
   const [childAge, setChildAge] = useState(10);
   const [manualRefreshAttempted, setManualRefreshAttempted] = useState(false);
+  const [contentGenerationFailed, setContentGenerationFailed] = useState(false);
   
   const loadTriggerRef = useRef<HTMLDivElement>(null);
 
@@ -113,10 +113,11 @@ const EnhancedCurioPage: React.FC = () => {
     console.log("Current blocks:", blocks);
 
     // If no blocks found and we've done a manual refresh, trigger content generation
-    if (blocks.length === 0 && manualRefreshAttempted && curioId && childId) {
+    if (blocks.length === 0 && manualRefreshAttempted && curioId && childId && !contentGenerationFailed) {
       const triggerGeneration = async () => {
         try {
           toast.loading("Generating content...");
+          setContentGenerationFailed(false);
           
           // Get the curio details
           const { data: curioData } = await supabase
@@ -125,10 +126,26 @@ const EnhancedCurioPage: React.FC = () => {
             .eq('id', curioId)
             .single();
           
-          if (!curioData) return;
+          if (!curioData) {
+            toast.error("Failed to find exploration details.");
+            return;
+          }
+          
+          // Directly insert a placeholder block to show immediately
+          const placeholderId = crypto.randomUUID();
+          await supabase.from('content_blocks').insert({
+            id: placeholderId,
+            curio_id: curioId,
+            specialist_id: 'nova',
+            type: 'fact',
+            content: { 
+              fact: `We're exploring "${curioData.title || curioData.query}" for you! Gathering fascinating information...`,
+              rabbitHoles: []
+            }
+          });
           
           // Call the edge function to generate content
-          await supabase.functions.invoke('generate-curiosity-blocks', {
+          const { data: response, error: fnError } = await supabase.functions.invoke('generate-curiosity-blocks', {
             body: {
               query: curioData.query || curioData.title,
               childProfile: {
@@ -140,22 +157,49 @@ const EnhancedCurioPage: React.FC = () => {
             }
           });
           
-          toast.success("Content generation started! Refreshing in a moment...");
+          if (fnError) {
+            console.error('Error generating content:', fnError);
+            toast.error("Failed to generate content. Please try again.");
+            setContentGenerationFailed(true);
+            return;
+          }
           
-          // Wait a bit then reload the page
-          setTimeout(() => {
-            window.location.reload();
-          }, 3000);
+          if (response && Array.isArray(response) && response.length > 0) {
+            toast.success("Content generated successfully!");
+            
+            // Save blocks to database
+            for (const blockData of response) {
+              try {
+                await supabase.from('content_blocks').insert({
+                  curio_id: curioId,
+                  specialist_id: blockData.specialist_id || 'nova',
+                  type: blockData.type || 'fact',
+                  content: blockData.content
+                });
+              } catch (insertError) {
+                console.error('Error inserting block:', insertError);
+              }
+            }
+            
+            // Wait a bit then reload the page
+            setTimeout(() => {
+              window.location.reload();
+            }, 1500);
+          } else {
+            toast.error("No content was generated. Please try again.");
+            setContentGenerationFailed(true);
+          }
           
         } catch (err) {
           console.error('Error in content generation:', err);
           toast.error("Failed to generate content. Please try again.");
+          setContentGenerationFailed(true);
         }
       };
       
       triggerGeneration();
     }
-  }, [blocks, manualRefreshAttempted, curioId, childId, childProfile]);
+  }, [blocks, manualRefreshAttempted, curioId, childId, childProfile, contentGenerationFailed]);
 
   if (profileError) {
     return <CurioErrorState message="Failed to load profile." />;
@@ -202,6 +246,19 @@ const EnhancedCurioPage: React.FC = () => {
             })
           });
           
+          // Directly insert a placeholder block to show immediately
+          const placeholderId = crypto.randomUUID();
+          await supabase.from('content_blocks').insert({
+            id: placeholderId,
+            curio_id: newCurio.id,
+            specialist_id: 'nova',
+            type: 'fact',
+            content: { 
+              fact: `We're exploring "${question}" for you! Gathering fascinating information...`,
+              rabbitHoles: []
+            }
+          });
+          
           setExplorationPath(prev => [...prev, question]);
           setExplorationDepth(prev => prev + 1);
           
@@ -243,7 +300,15 @@ const EnhancedCurioPage: React.FC = () => {
   const handleRefresh = () => {
     setRefreshing(true);
     setManualRefreshAttempted(true);
-    window.location.reload();
+    setContentGenerationFailed(false);
+    
+    // If we have no blocks, force regeneration
+    if (blocks.length === 0) {
+      // This will trigger the useEffect to generate content
+    } else {
+      // Otherwise just reload the page
+      window.location.reload();
+    }
   };
 
   const handleProcessReply = (blockId: string, message: string) => {
@@ -287,13 +352,19 @@ const EnhancedCurioPage: React.FC = () => {
         
         <Button 
           onClick={handleRefresh}
-          disabled={refreshing}
+          disabled={refreshing || contentGenerationFailed}
           className="bg-indigo-600 hover:bg-indigo-700 text-white"
         >
           <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-          {refreshing ? "Refreshing..." : "Refresh Content"}
+          {refreshing ? "Generating Content..." : "Generate Content"}
         </Button>
       </div>
+      
+      {contentGenerationFailed && (
+        <div className="mt-6 p-4 bg-red-500/20 rounded-lg text-white">
+          <p>We're having trouble generating content right now. Please try again later or explore a different topic.</p>
+        </div>
+      )}
     </div>
   );
 

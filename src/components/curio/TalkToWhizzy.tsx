@@ -82,14 +82,33 @@ const TalkToWhizzy: React.FC<TalkToWhizzyProps> = ({
             })
           });
           
-          toast.success("You earned 2 sparks for your curiosity!");
+          toast.success("You earned 2 sparks for your curiosity!", {
+            duration: 3000
+          });
+          
+          // Directly insert a placeholder block to show immediately
+          const placeholderId = crypto.randomUUID();
+          await supabase.from('content_blocks').insert({
+            id: placeholderId,
+            curio_id: newCurio.id,
+            specialist_id: 'nova',
+            type: 'fact',
+            content: { 
+              fact: `We're exploring "${message}" for you! Gathering fascinating information...`,
+              rabbitHoles: []
+            }
+          });
           
           // Navigate to the new curio
           navigate(`/curio/${childId}/${newCurio.id}`);
+          
+          // Close the chat window
+          setShowChat(false);
         } catch (err) {
           console.error('Error awarding sparks:', err);
           // Still navigate even if sparks awarding fails
           navigate(`/curio/${childId}/${newCurio.id}`);
+          setShowChat(false);
         }
       }
     } catch (error) {
