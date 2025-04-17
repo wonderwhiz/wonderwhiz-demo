@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Star, Sparkles } from 'lucide-react';
@@ -24,12 +25,12 @@ const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({
   };
   
   const getPersonalizedMessage = () => {
-    if (streakDays > 10) {
+    if (streakDays > 3) {
       return `Amazing ${streakDays}-day streak!`;
     } else if (streakDays > 0) {
       return `${streakDays} day${streakDays > 1 ? 's' : ''} streak!`;
     }
-    return "Welcome back!";
+    return "Let's learn something new!";
   };
   
   const renderAvatar = () => {

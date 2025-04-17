@@ -1,13 +1,13 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import EnhancedSearchInput from './EnhancedSearchInput';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Sparkles } from 'lucide-react';
+import { RefreshCw, Sparkles, BookOpen } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import TasksSection from './TasksSection';
-import { useWhizzyChat } from '@/hooks/useWhizzyChat';
 import WhizzyChat from '@/components/curio/WhizzyChat';
 import { toast } from 'sonner';
+import WelcomeHeader from './WelcomeHeader';
 
 interface WelcomeViewProps {
   childId: string;
@@ -23,32 +23,6 @@ interface WelcomeViewProps {
   isLoadingSuggestions?: boolean;
 }
 
-const demoTasks = [
-  {
-    id: '1',
-    title: 'Explore a new topic',
-    completed: false,
-    type: 'explore' as const,
-    duration: '10 min',
-    reward: 5
-  },
-  {
-    id: '2',
-    title: 'Complete a quiz about space',
-    completed: false,
-    type: 'quiz' as const,
-    reward: 10
-  },
-  {
-    id: '3',
-    title: 'Read about dinosaurs',
-    completed: true,
-    type: 'read' as const,
-    duration: '15 min',
-    reward: 8
-  }
-];
-
 const WelcomeView: React.FC<WelcomeViewProps> = ({
   childId,
   childProfile,
@@ -62,60 +36,17 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
   onRefreshSuggestions,
   isLoadingSuggestions = false,
 }) => {
-  const [pendingTasksCount, setPendingTasksCount] = useState(0);
-  const [tasks, setTasks] = useState(demoTasks);
   
-  useEffect(() => {
-    const fetchPendingTasksCount = async () => {
-      try {
-        const { count, error } = await supabase
-          .from('child_tasks')
-          .select('*', { count: 'exact', head: true })
-          .eq('child_profile_id', childId)
-          .eq('status', 'pending');
-          
-        if (error) throw error;
-        setPendingTasksCount(count || 0);
-      } catch (error) {
-        console.error('Error fetching pending tasks count:', error);
-        setPendingTasksCount(0);
-      }
-    };
-    
-    if (childId) {
-      fetchPendingTasksCount();
-    }
-    
-    const tasksSubscription = supabase
-      .channel('public:child_tasks')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'child_tasks', filter: `child_profile_id=eq.${childId}` },
-        () => {
-          fetchPendingTasksCount();
-        }
-      )
-      .subscribe();
-      
-    return () => {
-      supabase.removeChannel(tasksSubscription);
-    };
-  }, [childId]);
-
-  const handleTaskClick = (task: any) => {
-    console.log('Task clicked:', task);
-  };
-
   const handleFormSubmit = () => {
     if (query.trim() && !isGenerating) {
-      console.log('Submitting query:', query);
       handleSubmitQuery();
     } else if (!query.trim()) {
-      toast.error("Please enter a question first");
+      toast.error("Please tell me what you want to learn about!");
     }
   };
 
   const handleImageUpload = async (file: File) => {
-    const mockQuery = "What is this beautiful mountain?";
+    const mockQuery = "What is this picture?";
     setQuery(mockQuery);
     handleSubmitQuery();
   };
@@ -127,41 +58,33 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
     }
   };
 
-  const {
-    isMuted,
-    toggleMute,
-    isListening,
-    transcript,
-    toggleVoice,
-    isProcessing,
-    chatHistory,
-    voiceSupported
-  } = useWhizzyChat({
-    childAge: childProfile?.age,
-    curioContext: childProfile?.name,
-    onNewQuestionGenerated: (question) => onCurioSuggestionClick(question)
-  });
-
   return (
     <div className="container mx-auto px-4 pt-4 pb-16">
       <div className="max-w-3xl mx-auto">
+        <WelcomeHeader 
+          childName={childProfile?.name || "Explorer"}
+          streakDays={childProfile?.streak_days || 0}
+          sparksBalance={childProfile?.sparks_balance || 0}
+          childAge={childProfile?.age}
+        />
+        
         <motion.div 
-          className="mb-12"
+          className="mb-8"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
           <motion.h1 
-            className="text-3xl md:text-4xl font-nunito font-bold bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent text-center mb-8"
+            className="text-2xl md:text-3xl font-nunito font-bold bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent text-center mb-6"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
           >
-            What would you like to discover today?
+            What would you like to learn today?
           </motion.h1>
         </motion.div>
 
-        <div className="mb-10">
+        <div className="mb-8">
           <EnhancedSearchInput
             onSearch={(q) => {
               setQuery(q);
@@ -172,21 +95,12 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
             isProcessing={isGenerating}
             childAge={childProfile?.age}
             initialQuery={query}
-            placeholder="What are you curious about today?"
+            placeholder="I want to learn about..."
           />
         </div>
-
-        {pendingTasksCount > 0 && (
-          <TasksSection 
-            tasks={tasks} 
-            onTaskClick={handleTaskClick} 
-            childId={childId} 
-            pendingTasksCount={pendingTasksCount} 
-          />
-        )}
         
         <motion.div
-          className="mb-10"
+          className="mb-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
@@ -194,7 +108,7 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-nunito font-bold text-white flex items-center">
               <Sparkles className="h-5 w-5 text-wonderwhiz-vibrant-yellow mr-2" />
-              Discover Something New
+              Fun Things to Explore
             </h2>
             <Button 
               variant="ghost"
@@ -202,14 +116,14 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
               className="text-white/70 hover:text-white hover:bg-white/10"
               onClick={() => {
                 if (onRefreshSuggestions) {
-                  toast.loading("Finding new wonders for you...");
+                  toast.loading("Finding fun topics for you...");
                   onRefreshSuggestions();
                 }
               }}
               disabled={isLoadingSuggestions}
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingSuggestions ? 'animate-spin' : ''}`} />
-              Surprise Me
+              New Topics
             </Button>
           </div>
           
@@ -238,8 +152,8 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
             transition={{ duration: 0.5, delay: 0.5 }}
           >
             <h2 className="text-xl font-nunito font-bold text-white mb-4 flex items-center">
-              <Sparkles className="h-5 w-5 text-wonderwhiz-vibrant-yellow mr-2" />
-              Your Recent Explorations
+              <BookOpen className="h-5 w-5 text-wonderwhiz-vibrant-yellow mr-2" />
+              Your Recent Adventures
             </h2>
             <div className="space-y-3">
               {pastCurios.slice(0, 3).map((curio, index) => (
@@ -262,18 +176,6 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
             </div>
           </motion.div>
         )}
-        
-        <WhizzyChat
-          messages={chatHistory}
-          onSend={(message) => onCurioSuggestionClick(message)}
-          isListening={isListening}
-          isProcessing={isProcessing}
-          isMuted={isMuted}
-          onToggleMute={toggleMute}
-          onToggleVoice={toggleVoice}
-          transcript={transcript}
-          childAge={childProfile?.age}
-        />
       </div>
     </div>
   );

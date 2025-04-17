@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronUp, ArrowRight, Sparkles } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface QuickAnswerProps {
@@ -26,7 +25,6 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
   const [isExpanded, setIsExpanded] = useState(propIsExpanded);
   const [summary, setSummary] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isError, setIsError] = useState(false);
 
   useEffect(() => {
     setIsExpanded(propIsExpanded);
@@ -54,31 +52,21 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
     if (isLoading || summary) return;
     
     setIsLoading(true);
-    setIsError(false);
     
     try {
-      // Enhanced summary generation using direct text summarization
-      // This approach is more reliable than the edge function that was failing
+      // Create a simplified version for younger audiences
       let summaryText = '';
       
-      // Create a simplified version for younger audiences
       if (childAge && childAge < 8) {
-        summaryText = `${question} is a fascinating topic! Let's explore it together and discover amazing facts about it.`;
-      } else if (childAge && childAge < 12) {
-        summaryText = `${question} is an interesting subject that connects to many parts of our world. As we explore, we'll discover key facts and cool insights.`;
+        summaryText = `${question} is something fun to learn about! Let's explore together.`;
       } else {
-        summaryText = `${question} is a complex and fascinating topic. Our exploration will uncover important principles, relationships, and real-world applications.`;
+        summaryText = `${question} is an interesting topic to learn about. Let's discover cool facts!`;
       }
       
       setSummary(summaryText);
     } catch (err) {
       console.error('Error generating summary:', err);
-      setIsError(true);
-      setSummary('Sorry, I couldn\'t generate a quick summary. Please explore the detailed content below!');
-      
-      toast.error('Failed to generate summary', {
-        description: 'Please try again later or explore the detailed content instead.',
-      });
+      setSummary('Let\'s learn about this cool topic together!');
     } finally {
       setIsLoading(false);
     }
@@ -102,10 +90,10 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
           onClick={toggleExpand}
         >
           <div className="flex items-center">
-            <h3 className="text-lg font-bold text-white font-nunito">Quick Summary</h3>
+            <h3 className="text-lg font-bold text-white font-nunito">Quick Start</h3>
             {!isExpanded && (
               <div className="ml-2 bg-wonderwhiz-bright-pink/20 px-2 py-0.5 rounded-full text-xs text-wonderwhiz-bright-pink font-medium hidden sm:block">
-                Tap to expand
+                Tap here
               </div>
             )}
           </div>
@@ -133,12 +121,12 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
               {isLoading ? (
                 <div className="flex items-center justify-center py-4">
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-wonderwhiz-bright-pink"></div>
-                  <span className="ml-2 text-white/70">Generating summary...</span>
+                  <span className="ml-2 text-white/70">Loading...</span>
                 </div>
               ) : (
                 <>
-                  <p className="text-white mb-4 font-inter">
-                    {summary || 'Summary will appear here...'}
+                  <p className="text-white mb-4 font-inter text-lg">
+                    {summary || 'Let\'s learn together!'}
                   </p>
                   
                   <div className="flex items-center justify-end">
@@ -148,7 +136,7 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
                       className="text-white bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-purple hover:from-wonderwhiz-bright-pink/90 hover:to-wonderwhiz-purple/90 shadow-glow-brand-pink transition-all duration-300"
                     >
                       <Sparkles className="mr-2 h-4 w-4" />
-                      <span>Explore Further</span>
+                      <span>Start Learning</span>
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </div>

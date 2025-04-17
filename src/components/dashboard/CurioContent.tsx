@@ -1,20 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CircleCheck, MessageCircle, Bookmark, ThumbsUp, Sparkles, Star, VolumeIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import InteractiveSearchBar from '@/components/dashboard/SearchBar';
+import EnhancedSearchBar from '@/components/curio/EnhancedSearchBar';
 import QuickAnswer from '@/components/curio/QuickAnswer';
 import InteractiveImageBlock from '@/components/content-blocks/InteractiveImageBlock';
 import { ContentBlock as CurioContentBlock } from '@/types/curio';
 import { toast } from 'sonner';
-import AgeAdaptiveContent from '@/components/curio/AgeAdaptiveContent';
-import EnhancedSearchBar from '@/components/curio/EnhancedSearchBar';
-import FireflyQuizBlock from '@/components/curio/FireflyQuizBlock';
-import MindfulnessBlock from '@/components/curio/MindfulnessBlock';
-import CreativeBlock from '@/components/curio/CreativeBlock';
 
 interface ContentBlock {
   id: string;
@@ -33,25 +28,15 @@ interface ContentBlock {
   };
 }
 
-interface BlockReply {
-  id: string;
-  block_id: string;
-  content: string;
-  from_user: boolean;
-  created_at: string;
-}
-
-interface Curio {
-  id: string;
-  title: string;
-  query: string;
-  created_at: string;
-}
-
 interface CurioContentProps {
-  currentCurio: Curio | null;
+  currentCurio: {
+    id: string;
+    title: string;
+    query: string;
+    created_at: string;
+  } | null;
   contentBlocks: ContentBlock[];
-  blockReplies: Record<string, BlockReply[]>;
+  blockReplies: Record<string, any[]>;
   isGenerating: boolean;
   loadingBlocks: boolean;
   visibleBlocksCount: number;
@@ -163,7 +148,7 @@ const CurioBlock = ({
   block: ContentBlock; 
   onToggleLike: (blockId: string) => void;
   onToggleBookmark: (blockId: string) => void;
-  onReply: (blockId: string, message: string) => void;
+  onReply: (blockId: string) => void;
   onReadAloud?: (text: string, specialistId: string) => void;
   childAge?: number;
   onRabbitHoleFollow?: (question: string) => void;
@@ -176,14 +161,23 @@ const CurioBlock = ({
   const displayText = blockContent.text || blockContent.fact || 
     blockContent.description || blockContent.instruction || 
     blockContent.question || blockContent.front || 
-    "Discover more amazing facts about this topic with our specialists!";
+    "Let's learn amazing things together!";
   
   const hasRabbitHoles = Array.isArray(blockContent.rabbitHoles) && blockContent.rabbitHoles.length > 0;
   
   const generatedRabbitHoles = hasRabbitHoles ? blockContent.rabbitHoles : [
-    `Tell me more about ${block.type === 'fact' ? 'this fact' : 'this topic'}`,
-    `Why is this ${block.type === 'fact' ? 'fact' : 'information'} important?`
+    `Tell me more about this`,
+    `Why is this important?`
   ];
+
+  // Auto-read text for young children
+  React.useEffect(() => {
+    if (childAge && childAge < 7 && onReadAloud) {
+      setTimeout(() => {
+        onReadAloud(displayText, specialist.id || '');
+      }, 800);
+    }
+  }, []);
 
   return (
     <motion.div
@@ -214,13 +208,13 @@ const CurioBlock = ({
             </div>
           </div>
 
-          <div className="text-white mb-5 font-inter">
+          <div className="text-white mb-5 font-inter text-lg">
             {displayText}
           </div>
 
-          {generatedRabbitHoles.length > 0 && (
+          {generatedRabbitHoles.length > 0 && childAge && childAge > 7 && (
             <div className="flex flex-wrap gap-2 mb-4">
-              {generatedRabbitHoles.map((question, index) => (
+              {generatedRabbitHoles.slice(0, 2).map((question, index) => (
                 <Badge 
                   key={index} 
                   variant="outline" 
@@ -244,70 +238,33 @@ const CurioBlock = ({
               }`}
             >
               <ThumbsUp className="h-4 w-4 mr-1" />
-              Like
+              {childAge && childAge < 8 ? "Like" : "Like"}
             </Button>
 
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => onToggleBookmark(block.id)}
-              className={`text-white/70 hover:text-wonderwhiz-vibrant-yellow font-inter ${
-                block.bookmarked ? 'text-wonderwhiz-vibrant-yellow' : ''
-              }`}
-            >
-              <Bookmark className="h-4 w-4 mr-1" />
-              Save
-            </Button>
-
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setShowReplyInput(!showReplyInput)}
-              className="text-white/70 hover:text-wonderwhiz-cyan font-inter"
-            >
-              <MessageCircle className="h-4 w-4 mr-1" />
-              Reply
-            </Button>
-
-            {onReadAloud && (
+            {childAge && childAge > 7 && (
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={() => onReadAloud(displayText, specialist.id || '')}
-                className="text-white/70 hover:text-wonderwhiz-blue font-inter"
+                onClick={() => onToggleBookmark(block.id)}
+                className={`text-white/70 hover:text-wonderwhiz-vibrant-yellow font-inter ${
+                  block.bookmarked ? 'text-wonderwhiz-vibrant-yellow' : ''
+                }`}
               >
-                <VolumeIcon className="h-4 w-4 mr-1" />
-                {childAge && childAge < 8 ? "Read to me" : "Read aloud"}
+                <Bookmark className="h-4 w-4 mr-1" />
+                Save
               </Button>
             )}
-          </div>
 
-          {showReplyInput && (
-            <div className="mt-3">
-              <div className="relative">
-                <input
-                  type="text"
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                  placeholder="Share your thoughts..."
-                  className="w-full bg-white/5 border border-wonderwhiz-light-purple/30 rounded-lg px-4 py-2 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-wonderwhiz-bright-pink/50 font-inter"
-                />
-                <Button 
-                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/90"
-                  size="sm"
-                  onClick={() => {
-                    if (replyText.trim()) {
-                      onReply(block.id, replyText);
-                      setReplyText('');
-                      setShowReplyInput(false);
-                    }
-                  }}
-                >
-                  Send
-                </Button>
-              </div>
-            </div>
-          )}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => onReadAloud && onReadAloud(displayText, specialist.id || '')}
+              className="text-white/70 hover:text-wonderwhiz-blue font-inter"
+            >
+              <VolumeIcon className="h-4 w-4 mr-1" />
+              {childAge && childAge < 8 ? "Read to me" : "Read aloud"}
+            </Button>
+          </div>
         </div>
       </Card>
     </motion.div>
@@ -347,7 +304,7 @@ const CurioContent: React.FC<CurioContentProps> = ({
   const handlePlayText = (text: string, specialistId: string) => {
     if (playText) {
       playText(text, specialistId);
-      toast.success("Playing audio...");
+      toast.success("Reading to you...");
     }
   };
 
@@ -360,7 +317,7 @@ const CurioContent: React.FC<CurioContentProps> = ({
           <div className="mb-6">
             <EnhancedSearchBar
               onSearch={onSetQuery}
-              placeholder="Ask another question or explore something new..."
+              placeholder="What else would you like to learn?"
               childAge={childAge}
             />
           </div>
@@ -374,7 +331,7 @@ const CurioContent: React.FC<CurioContentProps> = ({
             childAge={childAge}
           />
 
-          {profileId && (
+          {profileId && childAge && childAge < 8 && (
             <InteractiveImageBlock
               topic={currentCurio.title}
               childId={profileId}
@@ -388,13 +345,13 @@ const CurioContent: React.FC<CurioContentProps> = ({
       {isGenerating && (
         <div className="flex justify-center items-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-wonderwhiz-bright-pink"></div>
-          <span className="ml-3 text-white/70 font-inter">Generating insights...</span>
+          <span className="ml-3 text-white/70 font-inter">Finding cool things to learn...</span>
         </div>
       )}
       
       {generationError && (
         <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-4 text-white">
-          <p className="font-inter">There was an error generating content: {generationError}</p>
+          <p className="font-inter">Oops! Something went wrong. Let's try again!</p>
           {onRefresh && (
             <Button 
               variant="outline" 
@@ -413,9 +370,9 @@ const CurioContent: React.FC<CurioContentProps> = ({
           <div className="bg-wonderwhiz-purple/30 inline-block p-4 rounded-full mb-4">
             <Sparkles className="h-8 w-8 text-wonderwhiz-vibrant-yellow" />
           </div>
-          <h3 className="text-xl font-semibold text-white mb-2 font-nunito">No content yet</h3>
+          <h3 className="text-xl font-semibold text-white mb-2 font-nunito">Let's start exploring!</h3>
           <p className="text-white/70 max-w-md mx-auto font-inter">
-            Ask a question or choose a suggested topic to start your learning journey.
+            Ask a question or pick a topic to begin your learning adventure!
           </p>
         </div>
       )}
@@ -428,7 +385,7 @@ const CurioContent: React.FC<CurioContentProps> = ({
             onToggleLike={onToggleLike}
             onToggleBookmark={onToggleBookmark}
             onReply={onReply}
-            onReadAloud={playText}
+            onReadAloud={handlePlayText}
             childAge={childAge}
             onRabbitHoleFollow={onRabbitHoleFollow}
           />
@@ -449,7 +406,7 @@ const CurioContent: React.FC<CurioContentProps> = ({
                 Loading...
               </>
             ) : (
-              'Load More'
+              'Show More Fun Facts'
             )}
           </Button>
         </div>
