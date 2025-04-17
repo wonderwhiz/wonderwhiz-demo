@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import MagicalBorder from './MagicalBorder';
@@ -36,6 +35,8 @@ const CurioSuggestion: React.FC<CurioSuggestionProps> = ({
   const navigate = useNavigate();
   
   const handleClick = async () => {
+    if (loading) return;
+    
     if (directGenerate && profileId) {
       try {
         toast.loading("Creating your wonder journey...", {
@@ -59,8 +60,6 @@ const CurioSuggestion: React.FC<CurioSuggestionProps> = ({
           toast.error("Oops! Couldn't start your journey", {
             id: "create-curio"
           });
-          // Fallback to just setting the query
-          onClick(suggestion);
           return;
         }
         
@@ -103,20 +102,22 @@ const CurioSuggestion: React.FC<CurioSuggestionProps> = ({
           }
           
           // Navigate to the curio page with the correct path
-          navigate(`/curio/${profileId}/${newCurio.id}`);
+          setTimeout(() => {
+            navigate(`/curio/${profileId}/${newCurio.id}`);
+          }, 300);
         } else {
           console.error('No curio ID returned after creation');
           toast.error("Couldn't create your journey", {
             id: "create-curio"
           });
-          onClick(suggestion);
         }
       } catch (error) {
         console.error('Error creating curio from suggestion:', error);
         toast.error("Couldn't create your journey", {
           id: "create-curio"
         });
-        // Fallback to just setting the query
+      } finally {
+        // Always call onClick to ensure the parent knows the suggestion was clicked
         onClick(suggestion);
       }
     } else {
@@ -125,7 +126,6 @@ const CurioSuggestion: React.FC<CurioSuggestionProps> = ({
     }
   };
   
-  // Extract a key keyword from the suggestion for personalized messaging
   const getKeyword = () => {
     const words = suggestion.toLowerCase().split(' ');
     const keyTopics = ['space', 'animals', 'dinosaurs', 'oceans', 'planets', 'stars', 'robots', 
@@ -144,7 +144,6 @@ const CurioSuggestion: React.FC<CurioSuggestionProps> = ({
   const keyword = getKeyword();
   const hasKeyword = keyword.length > 0;
   
-  // Get engaging prefix based on suggestion content
   const getPrefix = () => {
     if (suggestion.toLowerCase().includes('how')) {
       return "Uncover";
@@ -163,7 +162,6 @@ const CurioSuggestion: React.FC<CurioSuggestionProps> = ({
     return "Wonder about";
   };
   
-  // Get fun emoji for the topic
   const getEmoji = () => {
     if (!keyword) return "✨";
     

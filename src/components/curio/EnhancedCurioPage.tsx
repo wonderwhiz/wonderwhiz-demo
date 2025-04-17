@@ -9,7 +9,7 @@ import { useCurioBlocks } from '@/hooks/use-curio-blocks';
 import { useSearch } from '@/hooks/use-search';
 import { useBlockInteractions } from '@/hooks/useBlockInteractions';
 import { useElevenLabsVoice } from '@/hooks/useElevenLabsVoice';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import CurioPageHeader from '@/components/curio/CurioPageHeader';
 import EnhancedCurioContent from '@/components/curio/EnhancedCurioContent';
@@ -23,7 +23,7 @@ const EnhancedCurioPage: React.FC = () => {
   const { user } = useUser();
   const { childProfile, isLoading: isLoadingProfile, error: profileError } = useChildProfile(childId);
   const { searchQuery, setSearchQuery, handleSearch } = useSearch();
-  const { blocks, isLoading: isLoadingBlocks, error: blocksError, hasMore, loadMore, isFirstLoad, generationError } = useCurioBlocks(childId, curioId, searchQuery);
+  const { blocks, isLoading: isLoadingBlocks, error: blocksError, hasMore, loadMore, isFirstLoad, generationError, setBlocks } = useCurioBlocks(childId, curioId, searchQuery);
   const { playText, isLoading: isVoiceLoading, stopPlaying } = useElevenLabsVoice();
   
   const { 
@@ -45,6 +45,7 @@ const EnhancedCurioPage: React.FC = () => {
   const [explorationDepth, setExplorationDepth] = useState(0);
   const [explorationPath, setExplorationPath] = useState<string[]>([]);
   const [childAge, setChildAge] = useState(10);
+  const [isCreatingRabbitHole, setIsCreatingRabbitHole] = useState(false);
   
   const loadTriggerRef = useRef<HTMLDivElement>(null);
 
@@ -75,10 +76,23 @@ const EnhancedCurioPage: React.FC = () => {
             setCurioTitle(data.title);
             setExplorationPath([data.title]);
             setExplorationDepth(1);
+            
+            // If no blocks are loaded after a reasonable time, attempt to generate content
+            if (blocks.length === 0 && !isLoadingBlocks) {
+              // This is a placeholder for content generation logic
+              console.log("No blocks found for this curio");
+              
+              // For very young children, show a friendly message
+              if (childAge < 8) {
+                toast.info("I'm creating something special for you! Please wait...", {
+                  duration: 4000
+                });
+              }
+            }
           }
         });
     }
-  }, [curioId]);
+  }, [curioId, blocks.length, isLoadingBlocks, childAge]);
 
   useEffect(() => {
     if (blocks.length > 0 && isFirstLoad) {
@@ -124,10 +138,13 @@ const EnhancedCurioPage: React.FC = () => {
   };
   
   const handleRabbitHoleClick = async (question: string) => {
-    if (!childId) return;
+    if (!childId || isCreatingRabbitHole) return;
     
     try {
-      toast.loading("Creating new exploration...");
+      setIsCreatingRabbitHole(true);
+      toast.loading("Creating new exploration...", {
+        id: "rabbit-hole-creation"
+      });
       
       const { data: newCurio, error } = await supabase
         .from('curios')
@@ -142,7 +159,9 @@ const EnhancedCurioPage: React.FC = () => {
       if (error) throw error;
       
       if (newCurio) {
-        toast.success("New exploration created!");
+        toast.success("New exploration created!", {
+          id: "rabbit-hole-creation"
+        });
         
         try {
           await supabase.functions.invoke('increment-sparks-balance', {
@@ -161,14 +180,21 @@ const EnhancedCurioPage: React.FC = () => {
             origin: { y: 0.6 }
           });
           
-          navigate(`/curio/${childId}/${newCurio.id}`);
+          // Navigate after a brief delay to allow toast to be seen
+          setTimeout(() => {
+            navigate(`/curio/${childId}/${newCurio.id}`);
+          }, 500);
         } catch (err) {
           console.error('Error awarding sparks:', err);
         }
       }
     } catch (error) {
       console.error('Error creating rabbit hole curio:', error);
-      toast.error("Could not create new exploration. Please try again later.");
+      toast.error("Could not create new exploration. Let's try again!", {
+        id: "rabbit-hole-creation"
+      });
+    } finally {
+      setIsCreatingRabbitHole(false);
     }
   };
 
@@ -210,6 +236,57 @@ const EnhancedCurioPage: React.FC = () => {
       });
   };
 
+  // Special case for empty curio with no blocks
+  if (!isLoadingBlocks && blocks.length === 0 && curioTitle) {
+    return (
+      <div className="flex flex-col min-h-screen bg-gradient-to-b from-indigo-950 to-purple-950">
+        <CurioPageHeader
+          curioTitle={curioTitle}
+          handleBackToDashboard={handleBackToDashboard}
+          handleToggleInsights={handleToggleInsights}
+          handleRefresh={handleRefresh}
+          refreshing={refreshing}
+          showInsights={showInsights}
+          childName={childProfile?.name}
+        />
+        
+        <div className="flex-grow flex flex-col items-center justify-center px-4 py-10">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="text-center max-w-md"
+          >
+            <div className="mb-6 mx-auto w-24 h-24 rounded-full bg-gradient-to-br from-wonderwhiz-bright-pink to-wonderwhiz-purple flex items-center justify-center">
+              <span className="text-4xl">✨</span>
+            </div>
+            
+            <h2 className="text-2xl font-bold text-white mb-3">
+              {childAge < 8 ? "Making magic for you!" : "Creating your exploration..."}
+            </h2>
+            
+            <p className="text-white/80 mb-6">
+              {childAge < 8 
+                ? "I'm working on something amazing! Let's wait just a moment." 
+                : "We're preparing your content. This shouldn't take long."}
+            </p>
+            
+            <div className="w-full max-w-xs mx-auto bg-white/10 rounded-full h-3 mb-8">
+              <div className="bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-purple h-3 rounded-full animate-pulse"></div>
+            </div>
+            
+            <button
+              onClick={handleBackToDashboard}
+              className="px-6 py-3 bg-white/10 hover:bg-white/20 transition-colors rounded-lg text-white font-semibold"
+            >
+              Go back to dashboard
+            </button>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-indigo-950 to-purple-950">
       <CurioPageHeader
@@ -223,7 +300,7 @@ const EnhancedCurioPage: React.FC = () => {
       />
       
       {isLoadingBlocks && blocks.length === 0 ? (
-        <CurioLoadingState message="Loading content..." />
+        <CurioLoadingState message={childAge < 8 ? "Creating something amazing for you!" : "Loading content..."} />
       ) : blocksError ? (
         <CurioErrorState message="Failed to load content." onRetry={handleRefresh} />
       ) : blocks.length === 0 ? (

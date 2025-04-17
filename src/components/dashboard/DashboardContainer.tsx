@@ -36,6 +36,7 @@ const DashboardContainer = () => {
   const [ageGroup, setAgeGroup] = useState<'5-7' | '8-11' | '12-16'>('8-11');
   const [childAge, setChildAge] = useState<number>(10);
   const [isVoiceActive, setIsVoiceActive] = useState(false);
+  const [isCreatingCurio, setIsCreatingCurio] = useState(false);
 
   const {
     childProfile,
@@ -121,19 +122,35 @@ const DashboardContainer = () => {
   };
 
   const handleSuggestionClick = (suggestion: string) => {
+    if (isCreatingCurio) return;
+    
+    setQuery(suggestion);
     setCurrentCurio(null);
-    curioCreationSuggestionClick(suggestion);
+    
+    // Let the UI update first, then submit
+    setTimeout(() => {
+      handleSubmitQuery();
+    }, 100);
   };
 
   const handleSubmitQuery = async () => {
-    if (query.trim() === '') {
-      toast.error("Please enter a query first");
+    if (query.trim() === '' || isCreatingCurio) {
+      if (query.trim() === '') {
+        toast.error("Please enter a question first");
+      }
       return;
     }
     
+    setIsCreatingCurio(true);
     setIsGenerating(true);
     
     try {
+      // Show a loading toast
+      toast.loading("Creating your adventure...", {
+        id: "creating-curio",
+        duration: 5000
+      });
+      
       const { data: newCurio, error } = await supabase
         .from('curios')
         .insert({
@@ -147,57 +164,29 @@ const DashboardContainer = () => {
       if (error) throw error;
 
       if (newCurio) {
-        toast.success("New exploration created!");
-        setCurrentCurio(null); // Force reset current curio
+        toast.success("New exploration created!", {
+          id: "creating-curio"
+        });
         
-        // Redirect to the new curio page
-        navigate(`/curio/${profileId}/${newCurio.id}`);
-        
-        // Add to pastCurios if needed
+        // Add to pastCurios
         if (setPastCurios) {
           setPastCurios(prev => [
             { id: newCurio.id, title: query, query, created_at: new Date().toISOString() },
             ...prev
           ]);
         }
+        
+        // Redirect to the new curio page
+        navigate(`/curio/${profileId}/${newCurio.id}`);
       }
     } catch (error) {
       console.error("Error creating curio:", error);
-      toast.error("Failed to create new exploration");
+      toast.error("Couldn't create your adventure. Let's try again!", {
+        id: "creating-curio"
+      });
     } finally {
       setIsGenerating(false);
-    }
-  };
-
-  const handleRefreshSuggestions = async () => {
-    if (isLoadingSuggestions) return;
-    
-    try {
-      setIsLoadingSuggestions(true);
-      toast.loading("Generating fresh suggestions...");
-      
-      // Call the edge function to get new suggestions
-      const { data, error } = await supabase.functions.invoke('generate-curio-suggestions', {
-        body: JSON.stringify({
-          childProfile,
-          forceRefresh: true, // Add this parameter to force new suggestions
-          timestamp: Date.now() // Add timestamp to prevent caching
-        })
-      });
-      
-      if (error) throw error;
-      
-      if (data && data.suggestions && Array.isArray(data.suggestions)) {
-        setCurioSuggestions(data.suggestions);
-        toast.success("Fresh suggestions loaded!");
-      } else {
-        throw new Error("Invalid response format");
-      }
-    } catch (error) {
-      console.error("Error refreshing suggestions:", error);
-      toast.error("Could not refresh suggestions");
-    } finally {
-      setIsLoadingSuggestions(false);
+      setIsCreatingCurio(false);
     }
   };
 
@@ -237,21 +226,6 @@ const DashboardContainer = () => {
             <Card className="bg-wonderwhiz-purple/50 backdrop-blur-sm border-white/10 flex-grow relative overflow-hidden shadow-xl rounded-xl">
               {!currentCurio ? (
                 <div className="p-6 space-y-8">
-                  <WelcomeSection 
-                    curioSuggestions={curioSuggestions}
-                    isLoadingSuggestions={isLoadingSuggestions}
-                    handleRefreshSuggestions={handleRefreshSuggestions}
-                    handleCurioSuggestionClick={handleSuggestionClick}
-                    childProfile={childProfile}
-                    pastCurios={pastCurios}
-                    childId={profileId || ''}
-                    query={query}
-                    setQuery={setQuery}
-                    handleSubmitQuery={handleSubmitQuery}
-                    isGenerating={isGenerating || isGeneratingContent}
-                  />
-                  
-                  {/* Move tasks section up for more prominence */}
                   {profileId && (
                     <div className="mb-6">
                       <ChildDashboardTasks 
@@ -261,20 +235,26 @@ const DashboardContainer = () => {
                     </div>
                   )}
                   
-                  {/* Simplified content sections with reduced redundancy */}
+                  <WelcomeSection 
+                    curioSuggestions={curioSuggestions}
+                    isLoadingSuggestions={isLoadingSuggestions}
+                    handleRefreshSuggestions={refreshSuggestions}
+                    handleCurioSuggestionClick={handleSuggestionClick}
+                    childProfile={childProfile}
+                    pastCurios={pastCurios}
+                    childId={profileId || ''}
+                    query={query}
+                    setQuery={setQuery}
+                    handleSubmitQuery={handleSubmitQuery}
+                    isGenerating={isGenerating || isGeneratingContent || isCreatingCurio}
+                  />
+                  
                   <div className="grid grid-cols-1 gap-6">
                     <IntelligentSuggestions
                       childId={profileId || ''}
                       childProfile={childProfile}
                       onSuggestionClick={handleSuggestionClick}
                       pastCurios={pastCurios}
-                    />
-                    
-                    {/* We'll create a simpler version with fewer repeated topics */}
-                    <KnowledgeJourney 
-                      childId={profileId || ''}
-                      childProfile={childProfile}
-                      onTopicClick={handleSuggestionClick}
                     />
                   </div>
                 </div>
@@ -291,7 +271,7 @@ const DashboardContainer = () => {
                   hasMoreBlocks={hasMoreBlocks}
                   onToggleLike={handleToggleLike}
                   onToggleBookmark={handleToggleBookmark}
-                  onReply={(blockId, message) => handleBlockReply(blockId, message)} 
+                  onReply={handleBlockReply}
                   onSetQuery={setQuery}
                   onRabbitHoleFollow={handleFollowRabbitHole}
                   onQuizCorrect={handleQuizCorrect}
