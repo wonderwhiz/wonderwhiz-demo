@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, CheckCircle2, Circle, Trophy } from 'lucide-react';
@@ -6,7 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 
-// Define simple, flat types with no circular references
+// Define simple flat types with no circular references
 interface TaskBase {
   id: string;
   title: string;
@@ -16,12 +17,14 @@ interface TaskBase {
   sparks_reward: number;
 }
 
-// Define a simple interface for the database response
-interface DbChildTask {
+// Define a simple interface matching the actual database response shape
+interface ChildTaskResponse {
   id: string;
   status: string;
-  child_id: string;
+  child_profile_id: string; // Note: using child_profile_id instead of child_id
   task_id: string;
+  assigned_at: string;
+  completed_at: string | null;
   tasks: {
     id: string;
     title: string;
@@ -29,6 +32,8 @@ interface DbChildTask {
     created_at: string;
     type: string;
     sparks_reward: number;
+    parent_user_id: string;
+    status: string;
   };
 }
 
@@ -70,8 +75,8 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
         
         if (error) throw error;
         
-        // Type assertion with simple interface to avoid deep nesting
-        const responseData = data as DbChildTask[];
+        // First cast to unknown to avoid TypeScript's type checking, then to our expected type
+        const responseData = data as unknown as ChildTaskResponse[];
         
         const transformedTasks: TaskRecord[] = responseData.map(item => ({
           id: item.tasks.id,
