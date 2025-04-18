@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 
-// Database types - these reflect what comes from Supabase
+// Basic task record from the database
 interface DbTaskRecord {
   id: string;
   title: string;
@@ -16,23 +16,20 @@ interface DbTaskRecord {
   sparks_reward: number;
 }
 
-// Simplified task representation for the joined data
-interface DbTaskJoin {
-  id: string;
-  title: string;
-  description: string | null;
-  created_at: string;
-  type: string;
-  sparks_reward: number;
-}
-
-// Child task record without nested tasks to prevent circular reference
+// Child task record with a simplified task representation
 interface DbChildTaskRecord {
   id: string;
   status: string;
   child_id: string;
   task_id: string;
-  tasks: DbTaskJoin; // Using the simplified interface
+  tasks: {
+    id: string;
+    title: string;
+    description: string | null;
+    created_at: string;
+    type: string;
+    sparks_reward: number;
+  }; 
 }
 
 // Application types - these are what we use in the component
