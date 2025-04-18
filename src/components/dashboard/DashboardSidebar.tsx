@@ -12,12 +12,30 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/lib/utils';
 
+interface Curio {
+  id: string;
+  title: string;
+  query: string;
+  created_at: string;
+}
+
 interface DashboardSidebarProps {
   profile: any;
   onClose?: () => void;
+  sparksBalance?: number;
+  pastCurios?: Curio[];
+  currentCurioId?: string;
+  onCurioSelect?: (curio: Curio) => void;
 }
 
-const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ profile, onClose }) => {
+const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ 
+  profile, 
+  onClose,
+  sparksBalance,
+  pastCurios = [],
+  currentCurioId,
+  onCurioSelect
+}) => {
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();

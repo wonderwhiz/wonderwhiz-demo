@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -210,6 +211,11 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
     onCurioSuggestionClick(suggestion);
   };
 
+  const handleTaskComplete = (taskId: string) => {
+    toast.success("Task completed!");
+    // Refresh tasks or update UI as needed
+  };
+
   return (
     <div className="relative w-full min-h-screen overflow-hidden flex flex-col items-center">
       <div ref={canvasRef} className="absolute inset-0 pointer-events-none overflow-hidden" />
@@ -324,6 +330,7 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
               <SuggestionsCloud 
                 suggestions={curioSuggestions}
                 onSuggestionClick={handleSuggestionClick}
+                isLoading={false}
               />
             </motion.div>
           ) : (
@@ -478,7 +485,7 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
             <div className="w-12 h-1 bg-white/20 rounded-full mx-auto my-3" />
             <TasksPanel 
               childId={childId}
-              onComplete={onComplete}
+              onComplete={handleTaskComplete}
               onClose={() => setActivePanel('none')}
             />
           </motion.div>
