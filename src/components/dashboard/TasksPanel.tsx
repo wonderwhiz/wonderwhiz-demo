@@ -75,18 +75,22 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
         
         if (error) throw error;
         
-        // First cast to unknown to avoid TypeScript's type checking, then to our expected type
-        const responseData = data as unknown as ChildTaskResponse[];
+        // Convert data to the expected shape without deep nesting of types
+        const transformedTasks: TaskRecord[] = [];
         
-        const transformedTasks: TaskRecord[] = responseData.map(item => ({
-          id: item.tasks.id,
-          title: item.tasks.title,
-          description: item.tasks.description || undefined,
-          status: item.status as 'pending' | 'completed',
-          created_at: item.tasks.created_at,
-          type: item.tasks.type as 'daily' | 'weekly' | 'special',
-          sparks_reward: item.tasks.sparks_reward || 5
-        }));
+        if (data) {
+          for (const item of data) {
+            transformedTasks.push({
+              id: item.tasks.id,
+              title: item.tasks.title,
+              description: item.tasks.description || undefined,
+              status: item.status as 'pending' | 'completed',
+              created_at: item.tasks.created_at,
+              type: item.tasks.type as 'daily' | 'weekly' | 'special',
+              sparks_reward: item.tasks.sparks_reward || 5
+            });
+          }
+        }
         
         setTasks(transformedTasks);
       } catch (error) {
