@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, CheckCircle2, Circle, Trophy } from 'lucide-react';
@@ -11,7 +10,7 @@ interface Task {
   id: string;
   title: string;
   description?: string;
-  completed: boolean;
+  status: 'pending' | 'completed';
   created_at: string;
   type: 'daily' | 'weekly' | 'special';
   sparks_reward: number;
@@ -47,9 +46,9 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
           id: item.tasks.id,
           title: item.tasks.title,
           description: item.tasks.description,
-          completed: item.completed,
+          status: item.status as 'pending' | 'completed',
           created_at: item.tasks.created_at,
-          type: item.tasks.type,
+          type: item.tasks.type as 'daily' | 'weekly' | 'special',
           sparks_reward: item.tasks.sparks_reward || 5
         }));
         
@@ -70,20 +69,20 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
       // Optimistically update UI
       setTasks(prev => 
         prev.map(task => 
-          task.id === taskId ? { ...task, completed: true } : task
+          task.id === taskId ? { ...task, status: 'completed' as const } : task
         )
       );
       
       // Update task status in the database
       const { error } = await supabase
         .from('child_tasks')
-        .update({ completed: true })
+        .update({ status: 'completed' })
         .eq('child_id', childId)
         .eq('task_id', taskId);
       
       if (error) throw error;
       
-      // Award sparks for completing the task
+      // Find task and award sparks
       const task = tasks.find(t => t.id === taskId);
       const sparksReward = task?.sparks_reward || 5;
       
@@ -101,7 +100,6 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
         reason: `Completed task: ${task?.title}`
       });
       
-      // Show success message and confetti
       toast.success(`You earned ${sparksReward} sparks!`, {
         icon: '✨',
         position: 'bottom-right',
@@ -114,7 +112,6 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
         origin: { y: 0.6 }
       });
       
-      // Call the onComplete callback if provided
       if (onComplete) {
         onComplete(taskId);
       }
@@ -126,7 +123,7 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
       // Revert the optimistic update
       setTasks(prev => 
         prev.map(task => 
-          task.id === taskId ? { ...task, completed: false } : task
+          task.id === taskId ? { ...task, status: 'pending' as const } : task
         )
       );
     }
@@ -166,10 +163,10 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
           </div>
         ) : (
           <div>
-            {tasks.some(task => !task.completed) && (
+            {tasks.some(task => !task.status) && (
               <div className="mb-6">
                 <h3 className="text-white/70 text-sm uppercase font-medium mb-2">Available Tasks</h3>
-                {tasks.filter(task => !task.completed).map((task, index) => (
+                {tasks.filter(task => !task.status).map((task, index) => (
                   <motion.div 
                     key={task.id}
                     initial={{ opacity: 0, y: 10 }}
@@ -202,10 +199,10 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
               </div>
             )}
             
-            {tasks.some(task => task.completed) && (
+            {tasks.some(task => task.status) && (
               <div>
                 <h3 className="text-white/70 text-sm uppercase font-medium mb-2">Completed</h3>
-                {tasks.filter(task => task.completed).map((task, index) => (
+                {tasks.filter(task => task.status).map((task, index) => (
                   <motion.div 
                     key={task.id}
                     initial={{ opacity: 0, y: 10 }}
