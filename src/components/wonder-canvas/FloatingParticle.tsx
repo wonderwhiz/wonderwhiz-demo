@@ -7,18 +7,26 @@ interface FloatingParticleProps {
   color?: string;
   duration?: number;
   delay?: number;
+  pattern?: 'float' | 'spiral' | 'pulse' | 'zigzag';
+  interactive?: boolean;
+  onClick?: () => void;
 }
 
 const FloatingParticle: React.FC<FloatingParticleProps> = ({
   size = 4,
   color = 'rgba(255, 255, 255, 0.3)',
   duration = 15,
-  delay = 0
+  delay = 0,
+  pattern = 'float',
+  interactive = false,
+  onClick
 }) => {
   const [position, setPosition] = useState({
     x: Math.random() * 100,
     y: Math.random() * 100
   });
+  
+  const [hovered, setHovered] = useState(false);
   
   useEffect(() => {
     // Set random initial position
@@ -28,22 +36,53 @@ const FloatingParticle: React.FC<FloatingParticleProps> = ({
     });
   }, []);
   
+  // Generate animation properties based on pattern
+  const getAnimationProps = () => {
+    const baseProps = {
+      y: [0, -Math.random() * 100 - 50],
+      opacity: [0, 0.7, 0],
+    };
+    
+    switch (pattern) {
+      case 'spiral':
+        return {
+          ...baseProps,
+          rotate: [0, 360 * (Math.random() > 0.5 ? 1 : -1)],
+          x: [0, Math.sin(Math.random() * Math.PI * 2) * 100],
+        };
+      case 'pulse':
+        return {
+          ...baseProps,
+          scale: [1, 1 + Math.random(), 1],
+          x: [0, (Math.random() - 0.5) * 20],
+        };
+      case 'zigzag':
+        return {
+          ...baseProps,
+          x: [0, 30, -30, 20, -20, 0],
+        };
+      default: // float
+        return {
+          ...baseProps,
+          x: [0, (Math.random() - 0.5) * 30],
+          rotate: [0, Math.random() * 360],
+        };
+    }
+  };
+  
   return (
     <motion.div
-      className="absolute rounded-full pointer-events-none"
+      className={`absolute rounded-full pointer-events-none ${interactive ? 'cursor-pointer pointer-events-auto' : ''}`}
       style={{
         width: size,
         height: size,
-        backgroundColor: color,
+        backgroundColor: hovered ? 'rgba(255,255,255,0.8)' : color,
         left: `${position.x}%`,
         top: `${position.y}%`,
+        boxShadow: hovered ? `0 0 ${size/2}px rgba(255,255,255,0.6)` : 'none',
+        transition: 'background-color 0.3s, box-shadow 0.3s',
       }}
-      animate={{
-        y: [0, -Math.random() * 100 - 50],
-        x: [0, (Math.random() - 0.5) * 30],
-        opacity: [0, 0.7, 0],
-        rotate: [0, Math.random() * 360],
-      }}
+      animate={getAnimationProps()}
       transition={{
         duration: duration + Math.random() * 5,
         delay: delay + Math.random() * 2,
@@ -51,6 +90,10 @@ const FloatingParticle: React.FC<FloatingParticleProps> = ({
         repeat: Infinity,
         repeatType: "loop"
       }}
+      whileHover={interactive ? { scale: 1.5 } : undefined}
+      onHoverStart={interactive ? () => setHovered(true) : undefined}
+      onHoverEnd={interactive ? () => setHovered(false) : undefined}
+      onClick={interactive ? onClick : undefined}
     />
   );
 };
