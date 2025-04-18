@@ -69,7 +69,7 @@ const Authentication = () => {
         description: "You're now signed in.",
       });
       
-      // Navigate to profile selector
+      // Navigate to new dashboard flow instead of profiles
       navigate('/profiles');
     } catch (error: any) {
       toast.error("Login failed", {
