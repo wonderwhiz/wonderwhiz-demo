@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 
 // Database types - these reflect what comes from Supabase
-interface DbTask {
+interface DbTaskRecord {
   id: string;
   title: string;
   description: string | null;
@@ -17,16 +17,16 @@ interface DbTask {
   sparks_reward: number;
 }
 
-interface DbChildTask {
+interface DbChildTaskRecord {
   id: string;
   status: string;
   child_id: string;
   task_id: string;
-  tasks: DbTask;
+  tasks: DbTaskRecord;
 }
 
 // Application types - these are what we use in the component
-interface Task {
+interface TaskRecord {
   id: string;
   title: string;
   description?: string;
@@ -47,7 +47,7 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
   onComplete,
   onClose 
 }) => {
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<TaskRecord[]>([]);
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
@@ -64,9 +64,9 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
         if (error) throw error;
         
         // Explicit type assertion of the response
-        const responseData = data as unknown as DbChildTask[];
+        const responseData = data as unknown as DbChildTaskRecord[];
         
-        const transformedTasks: Task[] = responseData.map(item => ({
+        const transformedTasks: TaskRecord[] = responseData.map(item => ({
           id: item.tasks.id,
           title: item.tasks.title,
           description: item.tasks.description || undefined,

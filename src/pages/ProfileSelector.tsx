@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,33 +6,47 @@ import { toast } from 'sonner';
 
 const ProfileSelector = () => {
   const navigate = useNavigate();
-  const { user } = useUser();
+  const { user, loading: userLoading } = useUser();
   const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadProfiles = async () => {
+      if (userLoading) return; // Wait until user loading is complete
+      
       if (!user) {
+        console.log('No user found, redirecting to login');
         navigate('/login');
         return;
       }
 
       try {
+        console.log('Fetching profiles for user:', user.id);
+        setLoading(true);
+        
         const { data: childProfiles, error } = await supabase
           .from('child_profiles')
           .select('*')
           .eq('parent_user_id', user.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error fetching profiles:', error);
+          throw error;
+        }
 
-        if (childProfiles.length === 0) {
+        console.log('Profiles found:', childProfiles?.length || 0);
+        
+        if (!childProfiles || childProfiles.length === 0) {
           // If no profiles exist, redirect to create profile
+          console.log('No profiles found, redirecting to create profile');
           navigate('/create-profile');
         } else if (childProfiles.length === 1) {
           // If only one profile exists, go directly to new dashboard
+          console.log('Single profile found, redirecting to dashboard');
           navigate(`/new-dashboard/${childProfiles[0].id}`);
         } else {
           // Multiple profiles exist
+          console.log('Multiple profiles found, displaying selector');
           setProfiles(childProfiles);
         }
       } catch (error) {
@@ -45,7 +58,7 @@ const ProfileSelector = () => {
     };
 
     loadProfiles();
-  }, [user, navigate]);
+  }, [user, navigate, userLoading]);
 
   if (loading) {
     return (
@@ -59,38 +72,45 @@ const ProfileSelector = () => {
     <div className="min-h-screen bg-gradient-to-br from-wonderwhiz-deep-purple to-wonderwhiz-purple p-8">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold text-white mb-8">Choose a Profile</h1>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {profiles.map((profile: any) => (
-            <button
-              key={profile.id}
-              onClick={() => navigate(`/new-dashboard/${profile.id}`)}
-              className="bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-colors p-6 rounded-xl border border-white/10 text-left"
-            >
-              <div className="flex items-center gap-4">
-                {profile.avatar_url ? (
-                  <img src={profile.avatar_url} alt="" className="w-16 h-16 rounded-full" />
-                ) : (
-                  <div className="w-16 h-16 rounded-full bg-wonderwhiz-bright-pink/20 flex items-center justify-center">
-                    <span className="text-2xl text-wonderwhiz-bright-pink">
-                      {profile.name[0].toUpperCase()}
-                    </span>
+        
+        {loading ? (
+          <div className="flex justify-center py-8">
+            <div className="rounded-full h-12 w-12 border-t-2 border-b-2 border-wonderwhiz-bright-pink animate-spin"></div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {profiles.map((profile: any) => (
+              <button
+                key={profile.id}
+                onClick={() => navigate(`/new-dashboard/${profile.id}`)}
+                className="bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-colors p-6 rounded-xl border border-white/10 text-left"
+              >
+                <div className="flex items-center gap-4">
+                  {profile.avatar_url ? (
+                    <img src={profile.avatar_url} alt="" className="w-16 h-16 rounded-full" />
+                  ) : (
+                    <div className="w-16 h-16 rounded-full bg-wonderwhiz-bright-pink/20 flex items-center justify-center">
+                      <span className="text-2xl text-wonderwhiz-bright-pink">
+                        {profile.name[0].toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                  <div>
+                    <h3 className="text-xl font-bold text-white">{profile.name}</h3>
+                    <p className="text-white/70">Age: {profile.age}</p>
                   </div>
-                )}
-                <div>
-                  <h3 className="text-xl font-bold text-white">{profile.name}</h3>
-                  <p className="text-white/70">Age: {profile.age}</p>
                 </div>
-              </div>
+              </button>
+            ))}
+            
+            <button
+              onClick={() => navigate('/create-profile')}
+              className="border-2 border-dashed border-white/20 hover:border-white/40 transition-colors p-6 rounded-xl flex items-center justify-center min-h-[144px]"
+            >
+              <span className="text-white/70 hover:text-white transition-colors">Add New Profile</span>
             </button>
-          ))}
-          
-          <button
-            onClick={() => navigate('/create-profile')}
-            className="border-2 border-dashed border-white/20 hover:border-white/40 transition-colors p-6 rounded-xl flex items-center justify-center min-h-[144px]"
-          >
-            <span className="text-white/70 hover:text-white transition-colors">Add New Profile</span>
-          </button>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

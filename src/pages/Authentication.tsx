@@ -20,6 +20,19 @@ const Authentication = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('login');
 
+  // Check if already logged in
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        // User is already logged in, redirect to profiles
+        navigate('/profiles');
+      }
+    };
+    
+    checkSession();
+  }, [navigate]);
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -69,7 +82,7 @@ const Authentication = () => {
         description: "You're now signed in.",
       });
       
-      // Navigate to new dashboard flow instead of profiles
+      // Navigate to profiles page - this is important
       navigate('/profiles');
     } catch (error: any) {
       toast.error("Login failed", {
