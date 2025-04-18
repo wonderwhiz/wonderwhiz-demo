@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, CheckCircle2, Circle, Trophy } from 'lucide-react';
@@ -6,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 
+// Define base types with no circular references
 interface TaskBase {
   id: string;
   title: string;
@@ -15,14 +17,17 @@ interface TaskBase {
   sparks_reward: number;
 }
 
+// Flattened structure for the joined record from the database
 interface ChildTaskRecord {
   id: string;
   status: string;
   child_id: string;
   task_id: string;
-  tasks: TaskBase; 
+  // Use the previously defined TaskBase type
+  tasks: TaskBase;
 }
 
+// The type used within our component
 interface TaskRecord {
   id: string;
   title: string;
@@ -60,6 +65,7 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
         
         if (error) throw error;
         
+        // Use type assertion with our properly defined types
         const responseData = data as unknown as ChildTaskRecord[];
         
         const transformedTasks: TaskRecord[] = responseData.map(item => ({
