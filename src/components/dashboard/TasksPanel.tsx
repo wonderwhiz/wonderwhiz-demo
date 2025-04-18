@@ -48,20 +48,21 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
         // Create simple flat objects to avoid deep type nesting
         const transformedTasks: TaskRecord[] = [];
         
-        if (data) {
-          data.forEach(item => {
+        if (data && Array.isArray(data)) {
+          for (let i = 0; i < data.length; i++) {
+            const item = data[i];
             if (item && item.tasks) {
               transformedTasks.push({
                 id: item.tasks.id,
-                title: item.tasks.title,
+                title: item.tasks.title || 'Untitled Task',
                 description: item.tasks.description || undefined,
-                status: item.status as 'pending' | 'completed',
-                created_at: item.tasks.created_at,
-                type: (item.tasks.type as 'daily' | 'weekly' | 'special') || 'daily',
-                sparks_reward: item.tasks.sparks_reward || 5
+                status: (item.status as 'pending' | 'completed') || 'pending',
+                created_at: item.tasks.created_at || new Date().toISOString(),
+                type: ((item.tasks.type as 'daily' | 'weekly' | 'special') || 'daily'),
+                sparks_reward: Number(item.tasks.sparks_reward || 5)
               });
             }
-          });
+          }
         }
         
         setTasks(transformedTasks);
