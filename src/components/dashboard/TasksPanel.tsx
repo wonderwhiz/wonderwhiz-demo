@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, CheckCircle2, Circle, Trophy } from 'lucide-react';
@@ -6,7 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 
-// Define types without circular references
+// Define a simple flat type with no complex nesting
 interface TaskRecord {
   id: string;
   title: string;
@@ -44,22 +45,23 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
         
         if (error) throw error;
         
-        // Convert data to the expected shape without complex type manipulation
+        // Create simple flat objects to avoid deep type nesting
         const transformedTasks: TaskRecord[] = [];
         
         if (data) {
-          for (const item of data) {
-            const taskObj = {
-              id: item.tasks.id,
-              title: item.tasks.title,
-              description: item.tasks.description || undefined,
-              status: item.status as 'pending' | 'completed',
-              created_at: item.tasks.created_at,
-              type: item.tasks.type as 'daily' | 'weekly' | 'special',
-              sparks_reward: item.tasks.sparks_reward || 5
-            };
-            transformedTasks.push(taskObj);
-          }
+          data.forEach(item => {
+            if (item && item.tasks) {
+              transformedTasks.push({
+                id: item.tasks.id,
+                title: item.tasks.title,
+                description: item.tasks.description || undefined,
+                status: item.status as 'pending' | 'completed',
+                created_at: item.tasks.created_at,
+                type: (item.tasks.type as 'daily' | 'weekly' | 'special') || 'daily',
+                sparks_reward: item.tasks.sparks_reward || 5
+              });
+            }
+          });
         }
         
         setTasks(transformedTasks);
