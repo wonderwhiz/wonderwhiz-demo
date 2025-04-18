@@ -23,6 +23,7 @@ import { usePersonalization } from '@/hooks/usePersonalization';
 import { useWhizzyChat } from '@/hooks/useWhizzyChat';
 import VoiceVisualizer from './VoiceVisualizer';
 import ContentGenerator from './ContentGenerator';
+import { sampleCards, constellationNodes, constellationEdges, sampleTasks } from './constants/sampleData';
 
 interface WonderCanvasProps {
   childId: string;

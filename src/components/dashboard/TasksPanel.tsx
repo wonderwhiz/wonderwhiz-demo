@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, CheckCircle2, Circle, Trophy } from 'lucide-react';
@@ -15,6 +14,21 @@ interface Task {
   created_at: string;
   type: 'daily' | 'weekly' | 'special';
   sparks_reward: number;
+}
+
+// Define a more specific interface for the data structure returned from Supabase
+interface TaskResponse {
+  tasks: {
+    id: string;
+    title: string;
+    description: string | null;
+    created_at: string;
+    type: string;
+    sparks_reward: number;
+  };
+  status: 'pending' | 'completed';
+  child_id: string;
+  task_id: string;
 }
 
 interface TasksPanelProps {
@@ -44,12 +58,15 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
         
         if (error) throw error;
         
-        // Fix: Properly transform the data to match the Task interface
-        const transformedTasks: Task[] = data.map(item => ({
+        // Use the TaskResponse interface to properly type the data
+        const responseData = data as unknown as TaskResponse[];
+        
+        // Transform the data to match the Task interface
+        const transformedTasks: Task[] = responseData.map(item => ({
           id: item.tasks.id,
           title: item.tasks.title,
-          description: item.tasks.description,
-          status: item.status as 'pending' | 'completed',
+          description: item.tasks.description || undefined,
+          status: item.status,
           created_at: item.tasks.created_at,
           type: item.tasks.type as 'daily' | 'weekly' | 'special',
           sparks_reward: item.tasks.sparks_reward || 5

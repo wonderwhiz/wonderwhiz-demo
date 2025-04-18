@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { CheckCircle2, Star, Clock, Book, Play, CheckSquare, Award, Zap } from 'lucide-react';
@@ -31,6 +30,7 @@ const TaskOrbits: React.FC<TaskOrbitsProps> = ({
   const [rotationSpeed, setRotationSpeed] = useState(50); // seconds for a full rotation
   const orbitRef = useRef<HTMLDivElement>(null);
   const orbitControls = useAnimation();
+  const [rotationValue, setRotationValue] = useState(0);
   
   // Adjust radius based on screen size for responsive design
   useEffect(() => {
@@ -50,14 +50,26 @@ const TaskOrbits: React.FC<TaskOrbitsProps> = ({
   // Start orbiting animation when visible
   useEffect(() => {
     if (visible) {
-      orbitControls.start({
-        rotate: 360,
-        transition: {
-          duration: rotationSpeed,
-          ease: "linear",
-          repeat: Infinity
-        }
-      });
+      // Create animation and track rotation value
+      const animate = async () => {
+        await orbitControls.start({
+          rotate: 360,
+          transition: {
+            duration: rotationSpeed,
+            ease: "linear",
+            repeat: Infinity
+          }
+        });
+      };
+      
+      animate();
+      
+      // Track rotation in state
+      const interval = setInterval(() => {
+        setRotationValue((prev) => (prev + 360/rotationSpeed/60) % 360);
+      }, 1000/60);
+      
+      return () => clearInterval(interval);
     } else {
       orbitControls.stop();
     }
@@ -266,7 +278,7 @@ const TaskOrbits: React.FC<TaskOrbitsProps> = ({
                     animate={{ 
                       opacity: 1, 
                       scale: isExpanded ? 1.1 : 1,
-                      rotate: isExpanded ? 0 : -orbitControls.get()?.rotate || 0
+                      rotate: isExpanded ? 0 : -rotationValue
                     }}
                     exit={{ opacity: 0, scale: 0 }}
                     transition={{ 
@@ -293,7 +305,7 @@ const TaskOrbits: React.FC<TaskOrbitsProps> = ({
                         className={`absolute pointer-events-auto rounded-lg ${getTaskColor(task.type, task.completed)} p-4 w-64 z-50 backdrop-blur-md ${getTaskGlow(task.type, task.completed)}`}
                         style={{ translateX: x, translateY: y + 50, transformOrigin: 'top center' }}
                         initial={{ opacity: 0, y: -10, scale: 0.9 }}
-                        animate={{ opacity: 1, y: 0, scale: 1, rotate: -orbitControls.get()?.rotate || 0 }}
+                        animate={{ opacity: 1, y: 0, scale: 1, rotate: -rotationValue }}
                         exit={{ opacity: 0, y: -10, scale: 0.9 }}
                         transition={{ type: "spring", damping: 20 }}
                       >
