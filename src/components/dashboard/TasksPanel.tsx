@@ -1,47 +1,67 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { CheckSquare, Clock, Star, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { CheckCircle, Clock, Award } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import confetti from 'canvas-confetti';
+import { Button } from '@/components/ui/button';
 
-interface TasksPanelProps {
-  childId: string;
-  onClose: () => void;
-}
-
+// Define the Task interface with the required 'completed' property
 interface Task {
   id: string;
   title: string;
   description: string;
-  completed: boolean;
+  status: string;
+  type?: string;
+  parent_user_id: string;
   sparks_reward: number;
-  due_date?: string;
+  created_at: string;
+  completed?: boolean; // Add the missing 'completed' property
 }
 
-const TasksPanel: React.FC<TasksPanelProps> = ({ childId, onClose }) => {
+interface TasksPanelProps {
+  childId: string;
+  onComplete?: (taskId: string) => void;
+}
+
+const TasksPanel: React.FC<TasksPanelProps> = ({ childId, onComplete }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   useEffect(() => {
     const fetchTasks = async () => {
+      if (!childId) return;
+      
       try {
         setLoading(true);
+        
         const { data, error } = await supabase
-          .from('tasks')
-          .select('*')
-          .eq('child_id', childId)
-          .order('completed', { ascending: true })
-          .order('created_at', { ascending: false });
-          
+          .from('child_tasks')
+          .select(`
+            id,
+            status,
+            tasks:task_id(id, title, description, sparks_reward, status, type, parent_user_id, created_at)
+          `)
+          .eq('child_profile_id', childId)
+          .order('assigned_at', { ascending: false });
+        
         if (error) throw error;
         
-        setTasks(data || []);
+        // Transform the nested data into a flat structure and add the completed property
+        const formattedTasks: Task[] = data?.map((item: any) => ({
+          id: item.id,
+          title: item.tasks?.title || 'Untitled Task',
+          description: item.tasks?.description || '',
+          status: item.status,
+          type: item.tasks?.type,
+          parent_user_id: item.tasks?.parent_user_id,
+          sparks_reward: item.tasks?.sparks_reward || 0,
+          created_at: item.tasks?.created_at,
+          completed: item.status === 'completed'
+        })) || [];
+        
+        setTasks(formattedTasks);
       } catch (error) {
         console.error('Error fetching tasks:', error);
-        toast.error('Failed to load tasks');
       } finally {
         setLoading(false);
       }
@@ -50,139 +70,125 @@ const TasksPanel: React.FC<TasksPanelProps> = ({ childId, onClose }) => {
     fetchTasks();
   }, [childId]);
   
-  const handleTaskCompletion = async (taskId: string, completed: boolean) => {
+  const handleCompleteTask = async (taskId: string) => {
     try {
-      const updatedTasks = tasks.map(task => 
-        task.id === taskId ? { ...task, completed } : task
-      );
-      
-      setTasks(updatedTasks);
-      
-      const task = tasks.find(t => t.id === taskId);
-      if (!task) return;
-      
-      // Update in database
       const { error } = await supabase
-        .from('tasks')
-        .update({ completed })
+        .from('child_tasks')
+        .update({ status: 'completed', completed_at: new Date().toISOString() })
         .eq('id', taskId);
-        
+      
       if (error) throw error;
       
-      // If marking as completed, award sparks
-      if (completed && task.sparks_reward > 0) {
-        // Award sparks
-        await supabase.functions.invoke('increment-sparks-balance', {
-          body: JSON.stringify({
-            profileId: childId,
-            amount: task.sparks_reward
-          })
-        });
-        
-        // Record transaction
-        await supabase.from('sparks_transactions').insert({
-          child_id: childId,
-          amount: task.sparks_reward,
-          reason: `Completed task: ${task.title}`
-        });
-        
-        toast.success(`Completed! You earned ${task.sparks_reward} sparks!`, {
-          icon: '✨',
-        });
-        
-        confetti({
-          particleCount: 50,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#FFD700', '#FF5BA3', '#00E2FF']
-        });
+      // Update the local state
+      setTasks(prev => prev.map(task => 
+        task.id === taskId ? { ...task, status: 'completed', completed: true } : task
+      ));
+      
+      if (onComplete) {
+        onComplete(taskId);
       }
     } catch (error) {
-      console.error('Error updating task:', error);
-      toast.error('Failed to update task');
+      console.error('Error completing task:', error);
     }
   };
-
-  return (
-    <div className="p-5 max-h-[70vh] overflow-y-auto">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xl font-bold text-white flex items-center">
-          <CheckSquare className="mr-2 h-5 w-5 text-wonderwhiz-vibrant-yellow" />
-          Your Wonder Tasks
-        </h3>
-        
-        <Button variant="ghost" size="icon" className="text-white/70" onClick={onClose}>
-          <X className="h-5 w-5" />
-        </Button>
+  
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-40">
+        <div className="animate-spin h-8 w-8 border-t-2 border-b-2 border-wonderwhiz-bright-pink rounded-full"></div>
       </div>
-      
-      <div className="space-y-3 mt-4">
-        {loading ? (
-          <div className="flex justify-center py-8">
-            <div className="w-8 h-8 border-2 border-t-transparent border-wonderwhiz-bright-pink rounded-full animate-spin"></div>
-          </div>
-        ) : tasks.length === 0 ? (
-          <div className="text-center py-10">
-            <div className="text-white/60 mb-2">No tasks yet</div>
-            <p className="text-sm text-white/40 max-w-xs mx-auto">
-              Complete your explorations and they'll appear here with special rewards
-            </p>
-          </div>
-        ) : (
-          tasks.map((task, index) => (
-            <motion.div 
-              key={task.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05, duration: 0.3 }}
-              className={`border rounded-xl overflow-hidden transition-colors ${
-                task.completed 
-                  ? 'bg-white/5 border-white/10 opacity-70' 
-                  : 'bg-white/10 border-white/20'
-              }`}
-            >
-              <div className="p-4">
-                <div className="flex items-start">
-                  <div 
-                    className={`flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center mr-3 mt-0.5 cursor-pointer ${
-                      task.completed ? 'bg-wonderwhiz-vibrant-yellow' : 'border-2 border-white/30'
-                    }`}
-                    onClick={() => handleTaskCompletion(task.id, !task.completed)}
-                  >
-                    {task.completed && <CheckSquare className="h-4 w-4 text-wonderwhiz-deep-purple" />}
-                  </div>
-                  
-                  <div className="flex-1">
-                    <h4 className={`font-medium text-base ${task.completed ? 'text-white/70 line-through' : 'text-white'}`}>
-                      {task.title}
-                    </h4>
-                    
-                    {task.description && (
-                      <p className="text-sm text-white/60 mt-1">{task.description}</p>
-                    )}
-                    
-                    <div className="flex items-center justify-between mt-2">
-                      <div className="flex items-center text-white/60 text-xs">
-                        {task.due_date && (
-                          <>
-                            <Clock className="h-3 w-3 mr-1" />
-                            <span>Due {new Date(task.due_date).toLocaleDateString()}</span>
-                          </>
-                        )}
-                      </div>
-                      
-                      <div className="flex items-center bg-wonderwhiz-bright-pink/20 px-2 py-1 rounded-md text-xs">
-                        <Star className="h-3 w-3 mr-1 text-wonderwhiz-vibrant-yellow" />
-                        <span className="text-white font-bold">{task.sparks_reward} sparks</span>
-                      </div>
+    );
+  }
+  
+  if (tasks.length === 0) {
+    return (
+      <div className="text-center p-6 text-white/60">
+        <p>No tasks assigned yet</p>
+      </div>
+    );
+  }
+  
+  const pendingTasks = tasks.filter(task => !task.completed);
+  const completedTasks = tasks.filter(task => task.completed);
+  
+  return (
+    <div className="space-y-4">
+      {pendingTasks.length > 0 && (
+        <div>
+          <h3 className="text-lg font-bold mb-3 flex items-center">
+            <Clock className="mr-2 h-5 w-5 text-amber-400" />
+            Pending Tasks
+          </h3>
+          <div className="space-y-2">
+            {pendingTasks.map(task => (
+              <motion.div
+                key={task.id}
+                className="bg-wonderwhiz-purple/30 rounded-lg p-3 border border-white/10"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h4 className="font-medium">{task.title}</h4>
+                    {task.description && <p className="text-sm text-white/70">{task.description}</p>}
+                    <div className="flex items-center mt-1">
+                      <span className="flex items-center text-xs bg-wonderwhiz-vibrant-yellow/20 text-wonderwhiz-vibrant-yellow px-2 py-0.5 rounded-full">
+                        <Award className="mr-1 h-3 w-3" />
+                        {task.sparks_reward} sparks
+                      </span>
                     </div>
                   </div>
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    className="ml-2 hover:bg-green-500/20 hover:text-green-300"
+                    onClick={() => handleCompleteTask(task.id)}
+                  >
+                    Complete
+                  </Button>
                 </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      )}
+      
+      {completedTasks.length > 0 && (
+        <div className="mt-6">
+          <h3 className="text-lg font-bold mb-3 flex items-center">
+            <CheckCircle className="mr-2 h-5 w-5 text-green-400" />
+            Completed Tasks
+          </h3>
+          <div className="space-y-2">
+            {completedTasks.slice(0, 3).map(task => (
+              <motion.div
+                key={task.id}
+                className="bg-green-500/20 border border-green-500/30 rounded-lg p-3"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <h4 className="font-medium flex items-center">
+                  <CheckCircle className="h-4 w-4 mr-2 text-green-400" />
+                  {task.title}
+                </h4>
+                <div className="mt-1 flex items-center">
+                  <div className="flex items-center bg-wonderwhiz-vibrant-yellow/20 px-2 py-0.5 rounded text-wonderwhiz-vibrant-yellow text-xs">
+                    <Award className="h-3 w-3 mr-1" />
+                    <span>{task.sparks_reward} earned</span>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+            {completedTasks.length > 3 && (
+              <div className="text-center text-white/60 text-sm pt-2">
+                + {completedTasks.length - 3} more completed tasks
               </div>
-            </motion.div>
-          ))
-        )}
-      </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -37,16 +37,18 @@ export const SidebarProvider: React.FC<SidebarProviderProps> = ({ children }) =>
   );
 };
 
-interface SidebarProps {
+export interface SidebarProps {
   children: ReactNode;
   side?: 'left' | 'right';
   width?: string;
+  className?: string;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ 
   children, 
   side = 'left',
-  width = '280px'
+  width = '280px',
+  className = ''
 }) => {
   const { isOpen, closeSidebar } = useSidebar();
   
@@ -80,7 +82,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             animate="open"
             exit="closed"
             variants={variants}
-            className="fixed top-0 bottom-0 z-50 bg-gradient-to-b from-wonderwhiz-deep-purple to-wonderwhiz-light-purple/90 backdrop-blur-md border-r border-white/10 overflow-y-auto"
+            className={`fixed top-0 bottom-0 z-50 bg-gradient-to-b from-wonderwhiz-deep-purple to-wonderwhiz-light-purple/90 backdrop-blur-md border-r border-white/10 overflow-y-auto ${className}`}
             style={{ 
               width,
               [side]: 0,
@@ -100,5 +102,47 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </>
       )}
     </AnimatePresence>
+  );
+};
+
+// Add the missing components that are causing the error
+export const SidebarHeader: React.FC<{ children: ReactNode, className?: string }> = ({ 
+  children, 
+  className = '' 
+}) => {
+  return (
+    <div className={`mb-4 pb-3 border-b border-white/10 ${className}`}>
+      {children}
+    </div>
+  );
+};
+
+export const SidebarContent: React.FC<{ children: ReactNode, className?: string }> = ({ 
+  children,
+  className = ''
+}) => {
+  return (
+    <div className={`mt-3 ${className}`}>
+      {children}
+    </div>
+  );
+};
+
+export const SidebarTrigger: React.FC<{ 
+  children: ReactNode,
+  className?: string 
+}> = ({ 
+  children,
+  className = ''
+}) => {
+  const { toggleSidebar } = useSidebar();
+  
+  return (
+    <button
+      onClick={toggleSidebar}
+      className={`flex items-center justify-center rounded-md hover:bg-white/10 ${className}`}
+    >
+      {children}
+    </button>
   );
 };
