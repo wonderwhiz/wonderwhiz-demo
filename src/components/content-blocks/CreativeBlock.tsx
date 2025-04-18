@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 
 export interface CreativeBlockProps {
@@ -24,31 +25,39 @@ const CreativeBlock: React.FC<CreativeBlockProps> = ({
 }) => {
   const [showUploadButton, setShowUploadButton] = useState(true);
   
+  // Ensure content structure is valid with defaults
+  const safeContent = {
+    prompt: content?.prompt || "Share your creative ideas!",
+    description: content?.description || "Express your creativity",
+    guidelines: content?.guidelines || [],
+    examples: content?.examples || []
+  };
+  
   return (
     <div className="p-3 bg-white/10 backdrop-blur-md rounded-lg">
       <div className="p-4 border border-white/20 rounded-lg">
         <h3 className="text-white font-medium mb-2">Creative Prompt</h3>
-        <p className="text-white/90 mb-4">{content.prompt}</p>
+        <p className="text-white/90 mb-4">{safeContent.prompt}</p>
         
         <h4 className="text-white font-medium mb-2">Description</h4>
-        <p className="text-white/90 mb-4">{content.description}</p>
+        <p className="text-white/90 mb-4">{safeContent.description}</p>
         
-        {content.guidelines && content.guidelines.length > 0 && (
+        {safeContent.guidelines.length > 0 && (
           <>
             <h4 className="text-white font-medium mb-2">Guidelines</h4>
             <ul className="list-disc pl-5 text-white/90 mb-4">
-              {content.guidelines.map((guideline, index) => (
+              {safeContent.guidelines.map((guideline, index) => (
                 <li key={index}>{guideline}</li>
               ))}
             </ul>
           </>
         )}
         
-        {content.examples && content.examples.length > 0 && (
+        {safeContent.examples.length > 0 && (
           <>
             <h4 className="text-white font-medium mb-2">Examples</h4>
             <div className="flex gap-3 overflow-x-auto mb-4">
-              {content.examples.map((example, index) => (
+              {safeContent.examples.map((example, index) => (
                 <div key={index} className="min-w-[150px] h-[100px] bg-white/5 rounded-lg flex items-center justify-center text-white/60">
                   {example}
                 </div>

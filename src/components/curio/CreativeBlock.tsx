@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 
 interface CreativeBlockProps {
   prompt: string;
-  examples: string[];
+  examples?: string[];
   specialistId: string;
   onComplete?: () => void;
   onUpload?: (file: File) => void;
@@ -18,7 +18,7 @@ interface CreativeBlockProps {
 
 const CreativeBlock: React.FC<CreativeBlockProps> = ({
   prompt,
-  examples,
+  examples = [], // Set default empty array
   specialistId,
   onComplete,
   onUpload,
@@ -131,6 +131,9 @@ const CreativeBlock: React.FC<CreativeBlockProps> = ({
     }
   };
 
+  // Default examples if none provided
+  const displayExamples = examples.length > 0 ? examples : ["Write a story", "Draw a picture"];
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -180,7 +183,7 @@ const CreativeBlock: React.FC<CreativeBlockProps> = ({
             
             {!selectedOption ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {examples.map((example, idx) => (
+                {displayExamples.map((example, idx) => (
                   <motion.button
                     key={idx}
                     className="bg-white/10 hover:bg-white/20 border border-white/10 hover:border-white/20 rounded-xl p-4 text-left text-white transition-all duration-300"
