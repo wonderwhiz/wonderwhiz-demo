@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, CheckCircle2, Circle, Trophy } from 'lucide-react';
@@ -17,13 +16,23 @@ interface DbTaskRecord {
   sparks_reward: number;
 }
 
-// Simplified interface for child tasks to avoid circular references
+// Simplified task representation for the joined data
+interface DbTaskJoin {
+  id: string;
+  title: string;
+  description: string | null;
+  created_at: string;
+  type: string;
+  sparks_reward: number;
+}
+
+// Child task record without nested tasks to prevent circular reference
 interface DbChildTaskRecord {
   id: string;
   status: string;
   child_id: string;
   task_id: string;
-  tasks: DbTaskRecord; // Direct reference to task data
+  tasks: DbTaskJoin; // Using the simplified interface
 }
 
 // Application types - these are what we use in the component
