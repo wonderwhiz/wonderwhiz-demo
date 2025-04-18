@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import WonderOrb from './WonderOrb';
 import GestureHandler from './GestureHandler';
@@ -18,6 +17,12 @@ import WebGLBackground from './WebGLBackground';
 import TaskOrbits from './TaskOrbits';
 import { useAppPerformance } from '@/hooks/useAppPerformance';
 import confetti from 'canvas-confetti';
+import { useAmbientSound } from '@/hooks/useAmbientSound';
+import { useAnalytics } from '@/hooks/useAnalytics';
+import { usePersonalization } from '@/hooks/usePersonalization';
+import { useWhizzyChat } from '@/hooks/useWhizzyChat';
+import VoiceVisualizer from './VoiceVisualizer';
+import ContentGenerator from './ContentGenerator';
 
 interface WonderCanvasProps {
   childId: string;
@@ -40,101 +45,100 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
   const [expandedCardIndex, setExpandedCardIndex] = useState<number | null>(null);
   const [timeOfDay, setTimeOfDay] = useState<'morning' | 'afternoon' | 'evening'>('morning');
   const [showTaskOrbits, setShowTaskOrbits] = useState(false);
+  const [voiceTranscript, setVoiceTranscript] = useState('');
+  const [voiceVisualizerActive, setVoiceVisualizerActive] = useState(false);
+  const [audioEnabled, setAudioEnabled] = useState(true);
+  const [lastInteraction, setLastInteraction] = useState(Date.now());
+  
   const { childProfile } = useChildProfile(childId);
   const { streakDays, sparkAnimation } = useSparksSystem(childId);
   const childAge = childProfile?.age ? Number(childProfile.age) : 10;
+  const canvasRef = useRef<HTMLDivElement>(null);
+  
   const { 
     isOnline, 
     isLowPerformanceDevice, 
     shouldUseReducedFeatures,
     storeOfflineData,
-    getOfflineData
-  } = useAppPerformance();
+    getOfflineData,
+    fps
+  } = useAppPerformance({
+    offlineFirst: true,
+    checkInterval: 3000,
+    lowPerformanceThreshold: 25
+  });
   
-  const canvasRef = useRef<HTMLDivElement>(null);
+  const { 
+    playAmbientSound, 
+    playInteractionSound,
+    stopAllSounds,
+    setVolume,
+    isMuted,
+    toggleMute
+  } = useAmbientSound({
+    defaultAmbientTrack: timeOfDay === 'morning' ? 'morning' : 
+                         timeOfDay === 'afternoon' ? 'afternoon' : 'evening',
+    volume: 0.5,
+    initiallyMuted: shouldUseReducedFeatures
+  });
   
-  // Sample constellation data - in a real app, this would come from the API
-  const constellationNodes = [
-    { id: '1', title: 'Space Exploration', x: 25, y: 30, size: 60, color: '#8b5cf6' },
-    { id: '2', title: 'Dinosaurs', x: 70, y: 45, size: 50, color: '#ec4899' },
-    { id: '3', title: 'Ocean Life', x: 40, y: 70, size: 55, color: '#06b6d4' },
-    { id: '4', title: 'Ancient Egypt', x: 80, y: 20, size: 45, color: '#f59e0b' },
-    { id: '5', title: 'Future Technology', x: 15, y: 60, size: 40, color: '#10b981', locked: true },
-  ];
+  const {
+    recordInteraction,
+    learningProgress,
+    topicAffinities,
+    sessionTime,
+    getRecommendedTopics
+  } = useAnalytics(childId);
   
-  const constellationEdges = [
-    { source: '1', target: '2', strength: 0.7 },
-    { source: '1', target: '3', strength: 0.3 },
-    { source: '2', target: '4', strength: 0.5 },
-    { source: '3', target: '4', strength: 0.6 },
-    { source: '2', target: '5', strength: 0.2 },
-  ];
-  
-  // Sample cards data - would come from the API in a real app
-  const sampleCards = [
-    {
-      id: '1',
-      title: 'The Mysterious Black Holes',
-      content: 'Black holes are regions of spacetime where gravity is so strong that nothing can escape from it – not even light! Scientists are still studying these fascinating cosmic objects to understand how they form and behave.',
-      backgroundColor: 'from-indigo-900 to-purple-900',
-      relevanceScore: 0.95,
-      relatedTopics: ['Gravity', 'Stars', 'Space-time'],
-      emotionalTone: 'mysterious'
-    },
-    {
-      id: '2',
-      title: 'Dinosaur Discoveries',
-      content: 'Scientists recently found a new dinosaur species with feathers that could be related to modern birds! This discovery helps us understand how birds evolved from dinosaurs millions of years ago.',
-      backgroundColor: 'from-rose-900 to-pink-800',
-      relevanceScore: 0.87,
-      relatedTopics: ['Fossils', 'Evolution', 'Birds'],
-      emotionalTone: 'exciting'
-    },
-    {
-      id: '3',
-      title: 'Ocean Wonders',
-      content: 'The deep ocean is one of the least explored places on Earth. Scientists estimate we've only discovered about 5% of the ocean! New species are being found all the time in these mysterious waters.',
-      backgroundColor: 'from-blue-900 to-cyan-800',
-      relevanceScore: 0.92,
-      relatedTopics: ['Marine Life', 'Deep Sea', 'Exploration'],
-      emotionalTone: 'calming'
+  const {
+    userPreferences,
+    contentStyle,
+    interactionStyle,
+    colorTheme,
+    updatePreferences,
+    getPersonalizedContent
+  } = usePersonalization(childId);
+
+  const { 
+    isMuted: isWhizzyMuted,
+    toggleMute: toggleWhizzyMute,
+    isListening: isWhizzyListening,
+    transcript: whizzyTranscript,
+    toggleVoice: toggleWhizzyVoice,
+    isProcessing: isWhizzyProcessing,
+    chatHistory
+  } = useWhizzyChat({
+    childAge: childAge,
+    onNewQuestionGenerated: (question) => {
+      toast.info(`Generating content for: ${question}`, { position: "bottom-center" });
     }
-  ];
-  
-  // Sample tasks data
-  const sampleTasks = [
-    {
-      id: '1',
-      title: 'Read about stars',
-      type: 'learning' as const,
-      completed: false,
-      priority: 'high' as const
-    },
-    {
-      id: '2',
-      title: 'Draw a dinosaur',
-      type: 'creative' as const,
-      completed: false,
-      priority: 'medium' as const
-    },
-    {
-      id: '3',
-      title: 'Complete space quiz',
-      type: 'challenge' as const,
-      completed: true,
-      priority: 'low' as const
-    },
-    {
-      id: '4',
-      title: 'Learn 3 ocean facts',
-      type: 'daily' as const,
-      completed: false,
-      priority: 'medium' as const
-    },
-  ];
+  });
+
+  const trackInteraction = useCallback((type: string, data?: any) => {
+    setLastInteraction(Date.now());
+    recordInteraction(type, data);
+    
+    if (audioEnabled) {
+      switch (type) {
+        case 'tap':
+          playInteractionSound('tap');
+          break;
+        case 'swipe':
+          playInteractionSound('swipe');
+          break;
+        case 'collect':
+          playInteractionSound('collect');
+          break;
+        case 'expand':
+          playInteractionSound('expand');
+          break;
+        default:
+          playInteractionSound('interaction');
+      }
+    }
+  }, [audioEnabled, playInteractionSound, recordInteraction]);
 
   useEffect(() => {
-    // Check if we have saved offline data
     const offlineCards = getOfflineData('wonder_cards');
     if (!isOnline && offlineCards) {
       toast.info("Using saved content while offline", {
@@ -143,7 +147,6 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
       });
     }
     
-    // Determine time of day
     const hour = new Date().getHours();
     if (hour >= 5 && hour < 12) {
       setTimeOfDay('morning');
@@ -153,13 +156,12 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
       setTimeOfDay('evening');
     }
     
-    // Save sampleCards for offline use
     storeOfflineData('wonder_cards', sampleCards);
+    storeOfflineData('constellation_data', { nodes: constellationNodes, edges: constellationEdges });
+    storeOfflineData('tasks_data', sampleTasks);
     
-    // Generate fewer particles on low-performance devices
     const particleCount = shouldUseReducedFeatures ? 10 : 25;
     
-    // Generate background particles with different patterns
     const patterns = ['float', 'spiral', 'pulse', 'zigzag'];
     const newParticles = Array(particleCount).fill(0).map((_, index) => ({
       id: index,
@@ -171,21 +173,18 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
     
     setParticles(newParticles);
     
-    // Add interactive particles
-    const canvas = canvasRef.current;
-    if (canvas && !shouldUseReducedFeatures) {
+    if (canvasRef.current && !shouldUseReducedFeatures) {
       const addInteractiveParticle = () => {
         const particle = document.createElement('div');
         const size = Math.random() * 8 + 4;
         
-        // Generate color based on time of day
         let hue;
         if (timeOfDay === 'morning') {
-          hue = Math.random() * 30 + 40; // Yellow-orange
+          hue = Math.random() * 30 + 40;
         } else if (timeOfDay === 'afternoon') {
-          hue = Math.random() * 40 + 200; // Blue
+          hue = Math.random() * 40 + 200;
         } else {
-          hue = Math.random() * 60 + 240; // Purple
+          hue = Math.random() * 60 + 240;
         }
         
         particle.classList.add('absolute', 'rounded-full', 'cursor-pointer');
@@ -195,9 +194,8 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
         particle.style.left = `${Math.random() * 100}%`;
         particle.style.top = `${Math.random() * 100}%`;
         
-        canvas.appendChild(particle);
+        canvasRef.current.appendChild(particle);
         
-        // Animate
         const keyframes = [
           { transform: 'translateY(0) rotate(0deg) scale(1)', opacity: 0.1 },
           { transform: `translateY(-${Math.random() * 50 + 20}px) rotate(${Math.random() * 360}deg) scale(${Math.random() * 0.5 + 1})`, opacity: 0.7 },
@@ -214,7 +212,6 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
           setTimeout(addInteractiveParticle, Math.random() * 5000);
         };
         
-        // Add interactive effect
         particle.addEventListener('mouseover', () => {
           particle.style.transform = 'scale(1.5)';
           particle.style.backgroundColor = `hsla(${hue}, 100%, 70%, 0.8)`;
@@ -228,39 +225,68 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
         });
         
         particle.addEventListener('click', () => {
-          // Collect a spark when clicked
           handleCollectSpark(1);
+          trackInteraction('collect', { source: 'particle' });
           particle.remove();
           setTimeout(addInteractiveParticle, Math.random() * 1000);
         });
       };
       
-      // Add several interactive particles
       for (let i = 0; i < 5; i++) {
         setTimeout(addInteractiveParticle, i * 2000);
       }
     }
     
-    // Network status notification
+    if (audioEnabled && !shouldUseReducedFeatures) {
+      playAmbientSound();
+    }
+    
     if (!isOnline) {
       toast.info("You're currently offline. Some features may be limited.", {
         id: "offline-status",
         duration: 5000
       });
     }
-  }, [timeOfDay, isOnline, shouldUseReducedFeatures, storeOfflineData, getOfflineData]);
+    
+    return () => {
+      stopAllSounds();
+    };
+  }, [timeOfDay, isOnline, shouldUseReducedFeatures, storeOfflineData, getOfflineData, audioEnabled, playAmbientSound, stopAllSounds]);
+
+  useEffect(() => {
+    const checkInactivity = () => {
+      const now = Date.now();
+      const inactiveTime = now - lastInteraction;
+      
+      if (inactiveTime > 5 * 60 * 1000) {
+        setVolume(0.2);
+      }
+    };
+    
+    const interval = setInterval(checkInactivity, 60 * 1000);
+    
+    return () => clearInterval(interval);
+  }, [lastInteraction, setVolume]);
 
   const handleVoiceInput = async (transcript: string) => {
     setIsListening(true);
+    setVoiceTranscript(transcript);
+    setVoiceVisualizerActive(true);
+    
     try {
+      trackInteraction('voice_input', { transcript });
       await onVoiceInput(transcript);
     } finally {
-      setIsListening(false);
+      setTimeout(() => {
+        setIsListening(false);
+        setVoiceVisualizerActive(false);
+      }, 1000);
     }
   };
 
   const handleSwipe = (direction: 'left' | 'right' | 'up' | 'down') => {
-    // Handle swipe navigation
+    trackInteraction('swipe', { direction });
+    
     if (direction === 'up') {
       setShowConstellation(true);
       toast.info("Exploring your knowledge universe", {
@@ -270,14 +296,12 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
     } else if (direction === 'down') {
       setShowConstellation(false);
     } else if (direction === 'left') {
-      // Move to next card
       setActiveCard(prev => (prev < sampleCards.length - 1 ? prev + 1 : 0));
       toast.info("Next topic", {
         icon: '→',
         position: 'bottom-center'
       });
     } else if (direction === 'right') {
-      // Move to previous card
       setActiveCard(prev => (prev > 0 ? prev - 1 : sampleCards.length - 1));
       toast.info("Previous topic", {
         icon: '←',
@@ -287,7 +311,6 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
   };
 
   const handlePinch = (scale: number) => {
-    // Visual feedback for pinch (actual collection happens in PinchCollector)
     const feedback = document.createElement('div');
     feedback.classList.add('fixed', 'inset-0', 'pointer-events-none', 'flex', 'items-center', 'justify-center', 'z-50');
     feedback.innerHTML = `<div class="text-white/40 text-3xl">Collecting knowledge</div>`;
@@ -296,12 +319,14 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
     setTimeout(() => {
       feedback.remove();
     }, 500);
+    
+    trackInteraction('pinch', { scale });
   };
 
   const handleSpread = (scale: number) => {
-    // Handle spread to expand topic
     if (scale > 1.3 && expandedCardIndex === null) {
       setExpandedCardIndex(activeCard);
+      trackInteraction('spread', { scale, cardIndex: activeCard });
       
       toast.success("Topic expanded!", {
         icon: '🔍',
@@ -311,10 +336,8 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
   };
   
   const handleCollectSpark = (amount: number) => {
-    // In a real app, this would update the database
     console.log(`Collected ${amount} sparks`);
     
-    // Create a visual spark collection effect
     const sparkElement = document.createElement('div');
     sparkElement.innerHTML = `<div class="flex items-center"><span class="text-wonderwhiz-vibrant-yellow">+${amount}</span><svg class="w-4 h-4 ml-1 text-wonderwhiz-vibrant-yellow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></div>`;
     sparkElement.className = 'fixed text-xl text-white font-bold pointer-events-none z-50 transition-all duration-1000';
@@ -330,12 +353,14 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
         document.body.removeChild(sparkElement);
       }, 1000);
     }, 10);
+    
+    trackInteraction('collect_spark', { amount });
   };
   
   const handleStarClick = (nodeId: string) => {
     setActiveStarId(nodeId);
+    trackInteraction('star_click', { nodeId });
     
-    // Find the node to get its title
     const node = constellationNodes.find(n => n.id === nodeId);
     if (node) {
       toast.success(`Exploring: ${node.title}`, {
@@ -347,8 +372,8 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
   
   const handleExpandCard = () => {
     setExpandedCardIndex(activeCard);
+    trackInteraction('expand_card', { cardIndex: activeCard });
     
-    // Trigger confetti for excitement
     confetti({
       particleCount: 30,
       spread: 70,
@@ -358,6 +383,7 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
   
   const handleDismissCard = () => {
     setExpandedCardIndex(null);
+    trackInteraction('dismiss_card');
   };
   
   const handleRelatedTopicClick = (topic: string) => {
@@ -366,10 +392,10 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
       position: 'bottom-center'
     });
     
-    // In a real app, this would navigate to the related topic
+    trackInteraction('related_topic', { topic });
+    
     setExpandedCardIndex(null);
     
-    // Award sparks for exploration
     handleCollectSpark(2);
   };
   
@@ -381,13 +407,15 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
         position: 'bottom-center'
       });
       
-      // In a real app, this would navigate to the task
+      trackInteraction('task_click', { taskId, title: task.title });
+      
       setShowTaskOrbits(false);
     }
   };
   
   const handleOrbLongPress = () => {
     setShowTaskOrbits(prev => !prev);
+    trackInteraction('orb_long_press', { action: !showTaskOrbits ? 'show_tasks' : 'hide_tasks' });
     
     if (!showTaskOrbits) {
       toast.info("Your tasks orbit", {
@@ -397,7 +425,19 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
     }
   };
 
-  // Get background gradient based on time of day
+  const handleToggleAudio = () => {
+    setAudioEnabled(!audioEnabled);
+    if (audioEnabled) {
+      stopAllSounds();
+    } else {
+      playAmbientSound();
+    }
+    toast.info(audioEnabled ? "Sound off" : "Sound on", {
+      icon: audioEnabled ? '🔇' : '🔊',
+      position: 'top-right'
+    });
+  };
+
   const getTimeBasedGradient = () => {
     switch (timeOfDay) {
       case 'morning':
@@ -413,7 +453,6 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
 
   return (
     <div ref={canvasRef} className={`relative w-full h-screen overflow-hidden bg-gradient-to-b ${getTimeBasedGradient()}`}>
-      {/* WebGL Background - Only load on high-performance devices or when explicitly required */}
       {!shouldUseReducedFeatures && (
         <WebGLBackground 
           timeOfDay={timeOfDay}
@@ -424,7 +463,6 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
         />
       )}
       
-      {/* Fallback background particles with different patterns */}
       {particles.map((particle) => (
         <FloatingParticle 
           key={particle.id}
@@ -437,7 +475,6 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
         />
       ))}
       
-      {/* Animated background */}
       {!shouldUseReducedFeatures && (
         <motion.div 
           className="absolute inset-0 opacity-20"
@@ -456,7 +493,6 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
         />
       )}
       
-      {/* Offline indicator */}
       {!isOnline && (
         <div className="fixed top-4 left-4 bg-amber-600/90 text-white text-xs px-2 py-1 rounded-full z-50 flex items-center">
           <span className="inline-block w-2 h-2 rounded-full bg-white mr-1 animate-pulse"></span>
@@ -464,14 +500,23 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
         </div>
       )}
       
-      {/* Performance mode indicator */}
       {shouldUseReducedFeatures && (
         <div className="fixed top-4 left-20 bg-gray-600/90 text-white text-xs px-2 py-1 rounded-full z-50">
           Lite Mode
         </div>
       )}
       
-      {/* Sparks animation system with time-based variant */}
+      <div className="fixed top-4 left-40 bg-black/50 text-white text-xs px-2 py-1 rounded-full z-50">
+        {fps} FPS
+      </div>
+      
+      <button 
+        onClick={handleToggleAudio}
+        className="fixed top-4 right-24 bg-black/50 text-white p-2 rounded-full z-50"
+      >
+        {audioEnabled ? '🔊' : '🔇'}
+      </button>
+      
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -487,11 +532,21 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
               position: 'top-right',
               icon: '✨'
             });
+            trackInteraction('spark_click');
           }}
         />
       </motion.div>
       
-      {/* Task orbits */}
+      <AnimatePresence>
+        {voiceVisualizerActive && (
+          <VoiceVisualizer 
+            isActive={isListening}
+            transcript={voiceTranscript}
+            colorScheme={timeOfDay}
+          />
+        )}
+      </AnimatePresence>
+      
       <TaskOrbits
         tasks={sampleTasks}
         visible={showTaskOrbits}
@@ -499,7 +554,6 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
         maxTasks={shouldUseReducedFeatures ? 3 : 5}
       />
       
-      {/* Special gesture handlers */}
       <PinchCollector 
         onPinchCollect={handleCollectSpark}
         childAge={childAge}
@@ -510,26 +564,25 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
         onExpand={() => {
           if (expandedCardIndex === null) {
             setExpandedCardIndex(activeCard);
+            trackInteraction('multi_touch_expand');
           }
         }}
         childAge={childAge}
         enabled={!showConstellation && expandedCardIndex === null}
       />
       
-      {/* Rest reminder for wellbeing */}
       <RestReminder
         childAge={childAge}
-        sessionDuration={20} // Show after 20 minutes
+        sessionDuration={20}
         onRest={() => {
-          // In a real app, this would pause the session or show relaxation content
           toast.success("Taking a break is great for your brain!", {
             icon: "🧠",
             position: "top-center"
           });
+          trackInteraction('take_rest');
         }}
       />
       
-      {/* Family messaging for social connection */}
       <FamilyMessaging
         childId={childId}
         childName={childProfile?.name}
@@ -540,22 +593,30 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
             sender: 'parent',
             content: "How's your learning adventure going today?",
             type: 'text',
-            timestamp: new Date(Date.now() - 3600000) // 1 hour ago
+            timestamp: new Date(Date.now() - 3600000)
           }
         ]}
         onShareDiscovery={(content) => {
-          // Award sparks for sharing
           handleCollectSpark(1);
+          trackInteraction('share_discovery', { content });
         }}
       />
       
-      {/* Main gesture handler */}
+      <ContentGenerator 
+        childId={childId}
+        childAge={childAge}
+        userInterests={topicAffinities}
+        onContentGenerated={(content) => {
+          console.log("New content generated:", content);
+        }}
+        isVisible={false}
+      />
+      
       <GestureHandler
         onSwipe={handleSwipe}
         onPinch={handlePinch}
         onSpread={handleSpread}
       >
-        {/* Knowledge Constellation (shown when swiped up) */}
         <AnimatePresence>
           {showConstellation && (
             <motion.div
@@ -583,11 +644,9 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
           )}
         </AnimatePresence>
       
-        {/* Main content */}
         <motion.div className="relative z-10 w-full h-full">
           {children}
           
-          {/* Card-based content flow */}
           <div className="fixed bottom-32 left-4 right-4 z-30 pointer-events-none">
             <AnimatePresence mode="wait">
               {!showConstellation && (
@@ -617,7 +676,6 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
           </div>
         </motion.div>
 
-        {/* Wonder Orb */}
         <WonderOrb
           onSearch={onSearch}
           onVoiceInput={handleVoiceInput}
@@ -626,7 +684,6 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
           onLongPress={handleOrbLongPress}
         />
         
-        {/* Swipe indicator */}
         <motion.div
           className="fixed bottom-4 left-1/2 transform -translate-x-1/2 text-white/50 text-xs"
           initial={{ opacity: 0 }}
