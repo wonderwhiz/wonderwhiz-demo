@@ -37,36 +37,38 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
       try {
         setLoading(true);
         
-        // Use simple string-based query to avoid type complexities
+        // Use a simpler query approach to avoid complex type inference
         const { data, error } = await supabase
           .from('child_tasks')
           .select('id, status, task_id, completed_at, tasks(id, title, description, type, sparks_reward, created_at)')
-          .eq('child_id', childId)
-          .order('created_at', { ascending: false });
+          .eq('child_id', childId);
         
         if (error) throw error;
         
-        // Build a clean array of task records
+        // Transform the data using a simpler approach
         const transformedTasks: TaskRecord[] = [];
         
         if (data && Array.isArray(data)) {
           data.forEach(item => {
+            // Only process valid items
             if (item && typeof item === 'object' && item.tasks) {
-              // Create a new object with primitive values
+              const taskObj = item.tasks;
+              
+              // Create a new task record with explicit type handling
               const taskRecord: TaskRecord = {
-                id: typeof item.tasks.id === 'string' ? item.tasks.id : String(item.tasks.id || ''),
-                title: typeof item.tasks.title === 'string' ? item.tasks.title : 'Untitled Task',
+                id: String(taskObj.id || ''),
+                title: String(taskObj.title || 'Untitled Task'),
                 status: item.status === 'completed' ? 'completed' : 'pending',
-                created_at: typeof item.tasks.created_at === 'string' ? item.tasks.created_at : new Date().toISOString(),
-                type: ['daily', 'weekly', 'special'].includes(String(item.tasks.type)) 
-                  ? (item.tasks.type as 'daily' | 'weekly' | 'special') 
+                created_at: String(taskObj.created_at || new Date().toISOString()),
+                type: (['daily', 'weekly', 'special'].includes(String(taskObj.type))) 
+                  ? (String(taskObj.type) as 'daily' | 'weekly' | 'special')
                   : 'daily',
-                sparks_reward: typeof item.tasks.sparks_reward === 'number' ? item.tasks.sparks_reward : 5
+                sparks_reward: Number(taskObj.sparks_reward || 5)
               };
               
-              // Add description only if it exists
-              if (item.tasks.description) {
-                taskRecord.description = String(item.tasks.description);
+              // Only add description if it exists
+              if (taskObj.description) {
+                taskRecord.description = String(taskObj.description);
               }
               
               transformedTasks.push(taskRecord);
