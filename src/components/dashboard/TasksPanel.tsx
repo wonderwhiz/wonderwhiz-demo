@@ -17,20 +17,23 @@ interface Task {
   sparks_reward: number;
 }
 
-// Define a separate type for the Supabase response to avoid recursive type instantiation
-interface TaskResponseItem {
+// Define a separate type for the database task record
+interface TaskRecord {
+  id: string;
+  title: string;
+  description: string | null;
+  created_at: string;
+  type: string;
+  sparks_reward: number;
+}
+
+// Define a type for the child-task relationship
+interface ChildTaskRecord {
   id: string;
   status: 'pending' | 'completed';
   child_id: string;
   task_id: string;
-  tasks: {
-    id: string;
-    title: string;
-    description: string | null;
-    created_at: string;
-    type: string;
-    sparks_reward: number;
-  };
+  tasks: TaskRecord;
 }
 
 interface TasksPanelProps {
@@ -60,8 +63,8 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
         
         if (error) throw error;
         
-        // Use the non-recursive type for the data
-        const responseData = data as unknown as TaskResponseItem[];
+        // Type the data response correctly
+        const responseData = data as unknown as ChildTaskRecord[];
         
         // Transform the data to match the Task interface
         const transformedTasks: Task[] = responseData.map(item => ({
