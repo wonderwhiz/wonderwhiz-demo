@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, CheckCircle2, Circle, Trophy } from 'lucide-react';
@@ -16,8 +17,12 @@ interface Task {
   sparks_reward: number;
 }
 
-// Define a more specific interface for the data structure returned from Supabase
-interface TaskResponse {
+// Define a separate type for the Supabase response to avoid recursive type instantiation
+interface TaskResponseItem {
+  id: string;
+  status: 'pending' | 'completed';
+  child_id: string;
+  task_id: string;
   tasks: {
     id: string;
     title: string;
@@ -26,9 +31,6 @@ interface TaskResponse {
     type: string;
     sparks_reward: number;
   };
-  status: 'pending' | 'completed';
-  child_id: string;
-  task_id: string;
 }
 
 interface TasksPanelProps {
@@ -58,8 +60,8 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
         
         if (error) throw error;
         
-        // Use the TaskResponse interface to properly type the data
-        const responseData = data as unknown as TaskResponse[];
+        // Use the non-recursive type for the data
+        const responseData = data as unknown as TaskResponseItem[];
         
         // Transform the data to match the Task interface
         const transformedTasks: Task[] = responseData.map(item => ({
