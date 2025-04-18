@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, CheckCircle2, Circle, Trophy } from 'lucide-react';
@@ -33,6 +34,8 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
   useEffect(() => {
     const fetchTasks = async () => {
       try {
+        setLoading(true);
+        
         const { data, error } = await supabase
           .from('child_tasks')
           .select('*, tasks(*)')
@@ -41,7 +44,8 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
         
         if (error) throw error;
         
-        const transformedTasks = data.map(item => ({
+        // Fix: Properly transform the data to match the Task interface
+        const transformedTasks: Task[] = data.map(item => ({
           id: item.tasks.id,
           title: item.tasks.title,
           description: item.tasks.description,
