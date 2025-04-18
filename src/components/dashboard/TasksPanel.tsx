@@ -7,7 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 
-// Define a simple flat type with no complex nesting or references
+// Define a simple standalone interface with primitive types only
 interface TaskRecord {
   id: string;
   title: string;
@@ -37,36 +37,41 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
       try {
         setLoading(true);
         
-        // Fetch the data using a simple select
+        // Use simple string-based query to avoid type complexities
         const { data, error } = await supabase
           .from('child_tasks')
-          .select('*, tasks(*)')
+          .select('id, status, task_id, completed_at, tasks(id, title, description, type, sparks_reward, created_at)')
           .eq('child_id', childId)
           .order('created_at', { ascending: false });
         
         if (error) throw error;
         
-        // Initialize an empty array with our simplified type
+        // Build a clean array of task records
         const transformedTasks: TaskRecord[] = [];
         
-        // Manually transform the data to avoid complex type issues
         if (data && Array.isArray(data)) {
-          for (const item of data) {
-            if (item && item.tasks) {
-              // Create a flat object with explicit properties and fallbacks
-              transformedTasks.push({
-                id: String(item.tasks.id || ''),
-                title: String(item.tasks.title || 'Untitled Task'),
-                description: item.tasks.description ? String(item.tasks.description) : undefined,
-                status: (item.status === 'completed' ? 'completed' : 'pending'),
-                created_at: String(item.tasks.created_at || new Date().toISOString()),
-                type: (['daily', 'weekly', 'special'].includes(String(item.tasks.type)) 
+          data.forEach(item => {
+            if (item && typeof item === 'object' && item.tasks) {
+              // Create a new object with primitive values
+              const taskRecord: TaskRecord = {
+                id: typeof item.tasks.id === 'string' ? item.tasks.id : String(item.tasks.id || ''),
+                title: typeof item.tasks.title === 'string' ? item.tasks.title : 'Untitled Task',
+                status: item.status === 'completed' ? 'completed' : 'pending',
+                created_at: typeof item.tasks.created_at === 'string' ? item.tasks.created_at : new Date().toISOString(),
+                type: ['daily', 'weekly', 'special'].includes(String(item.tasks.type)) 
                   ? (item.tasks.type as 'daily' | 'weekly' | 'special') 
-                  : 'daily'),
-                sparks_reward: Number(item.tasks.sparks_reward || 5)
-              });
+                  : 'daily',
+                sparks_reward: typeof item.tasks.sparks_reward === 'number' ? item.tasks.sparks_reward : 5
+              };
+              
+              // Add description only if it exists
+              if (item.tasks.description) {
+                taskRecord.description = String(item.tasks.description);
+              }
+              
+              transformedTasks.push(taskRecord);
             }
-          }
+          });
         }
         
         setTasks(transformedTasks);
