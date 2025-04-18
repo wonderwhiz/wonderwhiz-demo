@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, CheckCircle2, Circle, Trophy } from 'lucide-react';
@@ -7,7 +6,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 
-// Define a simple standalone interface with primitive types only
 interface TaskRecord {
   id: string;
   title: string;
@@ -24,11 +22,7 @@ interface TasksPanelProps {
   onClose?: () => void;
 }
 
-const TasksPanel: React.FC<TasksPanelProps> = ({ 
-  childId, 
-  onComplete,
-  onClose 
-}) => {
+const TasksPanel: React.FC<TasksPanelProps> = ({ childId, onComplete, onClose }) => {
   const [tasks, setTasks] = useState<TaskRecord[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -36,45 +30,32 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
     const fetchTasks = async () => {
       try {
         setLoading(true);
-        
-        // Use a simpler query approach to avoid complex type inference
-        const { data, error } = await supabase
-          .from('child_tasks')
-          .select('id, status, task_id, completed_at, tasks(id, title, description, type, sparks_reward, created_at)')
-          .eq('child_id', childId);
+        const { data: rawTasks, error } = await supabase
+          .from('tasks')
+          .select(`
+            id,
+            title,
+            description,
+            type,
+            sparks_reward,
+            created_at,
+            child_tasks!inner (
+              status
+            )
+          `)
+          .eq('child_tasks.child_id', childId);
         
         if (error) throw error;
         
-        // Transform the data using a simpler approach
-        const transformedTasks: TaskRecord[] = [];
-        
-        if (data && Array.isArray(data)) {
-          data.forEach(item => {
-            // Only process valid items
-            if (item && typeof item === 'object' && item.tasks) {
-              const taskObj = item.tasks;
-              
-              // Create a new task record with explicit type handling
-              const taskRecord: TaskRecord = {
-                id: String(taskObj.id || ''),
-                title: String(taskObj.title || 'Untitled Task'),
-                status: item.status === 'completed' ? 'completed' : 'pending',
-                created_at: String(taskObj.created_at || new Date().toISOString()),
-                type: (['daily', 'weekly', 'special'].includes(String(taskObj.type))) 
-                  ? (String(taskObj.type) as 'daily' | 'weekly' | 'special')
-                  : 'daily',
-                sparks_reward: Number(taskObj.sparks_reward || 5)
-              };
-              
-              // Only add description if it exists
-              if (taskObj.description) {
-                taskRecord.description = String(taskObj.description);
-              }
-              
-              transformedTasks.push(taskRecord);
-            }
-          });
-        }
+        const transformedTasks: TaskRecord[] = (rawTasks || []).map(task => ({
+          id: String(task.id),
+          title: String(task.title || 'Untitled Task'),
+          description: task.description ? String(task.description) : undefined,
+          status: task.child_tasks?.[0]?.status === 'completed' ? 'completed' : 'pending',
+          created_at: String(task.created_at || new Date().toISOString()),
+          type: (task.type || 'daily') as 'daily' | 'weekly' | 'special',
+          sparks_reward: Number(task.sparks_reward || 5)
+        }));
         
         setTasks(transformedTasks);
       } catch (error) {
