@@ -7,7 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 
-// Define a simple flat type with no complex nesting
+// Define a simple flat type with no complex nesting or references
 interface TaskRecord {
   id: string;
   title: string;
@@ -37,6 +37,7 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
       try {
         setLoading(true);
         
+        // Fetch the data using a simple select
         const { data, error } = await supabase
           .from('child_tasks')
           .select('*, tasks(*)')
@@ -45,20 +46,23 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
         
         if (error) throw error;
         
-        // Create simple flat objects to avoid deep type nesting
+        // Initialize an empty array with our simplified type
         const transformedTasks: TaskRecord[] = [];
         
+        // Manually transform the data to avoid complex type issues
         if (data && Array.isArray(data)) {
-          for (let i = 0; i < data.length; i++) {
-            const item = data[i];
+          for (const item of data) {
             if (item && item.tasks) {
+              // Create a flat object with explicit properties and fallbacks
               transformedTasks.push({
-                id: item.tasks.id,
-                title: item.tasks.title || 'Untitled Task',
-                description: item.tasks.description || undefined,
-                status: (item.status as 'pending' | 'completed') || 'pending',
-                created_at: item.tasks.created_at || new Date().toISOString(),
-                type: ((item.tasks.type as 'daily' | 'weekly' | 'special') || 'daily'),
+                id: String(item.tasks.id || ''),
+                title: String(item.tasks.title || 'Untitled Task'),
+                description: item.tasks.description ? String(item.tasks.description) : undefined,
+                status: (item.status === 'completed' ? 'completed' : 'pending'),
+                created_at: String(item.tasks.created_at || new Date().toISOString()),
+                type: (['daily', 'weekly', 'special'].includes(String(item.tasks.type)) 
+                  ? (item.tasks.type as 'daily' | 'weekly' | 'special') 
+                  : 'daily'),
                 sparks_reward: Number(item.tasks.sparks_reward || 5)
               });
             }
