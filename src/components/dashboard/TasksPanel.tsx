@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, CheckCircle2, Circle, Trophy } from 'lucide-react';
@@ -7,18 +6,20 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 
-interface Task {
+interface TaskBase {
   id: string;
   title: string;
   description?: string;
-  status: 'pending' | 'completed';
   created_at: string;
   type: 'daily' | 'weekly' | 'special';
   sparks_reward: number;
 }
 
-// Define a separate type for the database task record
-interface TaskRecord {
+interface Task extends TaskBase {
+  status: 'pending' | 'completed';
+}
+
+interface DbTask {
   id: string;
   title: string;
   description: string | null;
@@ -27,13 +28,12 @@ interface TaskRecord {
   sparks_reward: number;
 }
 
-// Define a type for the child-task relationship
-interface ChildTaskRecord {
+interface DbChildTask {
   id: string;
   status: 'pending' | 'completed';
   child_id: string;
   task_id: string;
-  tasks: TaskRecord;
+  tasks: DbTask;
 }
 
 interface TasksPanelProps {
@@ -63,10 +63,8 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
         
         if (error) throw error;
         
-        // Type the data response correctly
-        const responseData = data as unknown as ChildTaskRecord[];
+        const responseData = data as unknown as DbChildTask[];
         
-        // Transform the data to match the Task interface
         const transformedTasks: Task[] = responseData.map(item => ({
           id: item.tasks.id,
           title: item.tasks.title,
@@ -182,10 +180,10 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
           </div>
         ) : (
           <div>
-            {tasks.some(task => !task.status) && (
+            {tasks.some(task => task.status === 'pending') && (
               <div className="mb-6">
                 <h3 className="text-white/70 text-sm uppercase font-medium mb-2">Available Tasks</h3>
-                {tasks.filter(task => !task.status).map((task, index) => (
+                {tasks.filter(task => task.status === 'pending').map((task, index) => (
                   <motion.div 
                     key={task.id}
                     initial={{ opacity: 0, y: 10 }}
@@ -218,10 +216,10 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
               </div>
             )}
             
-            {tasks.some(task => task.status) && (
+            {tasks.some(task => task.status === 'completed') && (
               <div>
                 <h3 className="text-white/70 text-sm uppercase font-medium mb-2">Completed</h3>
-                {tasks.filter(task => task.status).map((task, index) => (
+                {tasks.filter(task => task.status === 'completed').map((task, index) => (
                   <motion.div 
                     key={task.id}
                     initial={{ opacity: 0, y: 10 }}
