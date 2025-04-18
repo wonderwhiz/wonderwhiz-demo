@@ -24,6 +24,28 @@ import { useWhizzyChat } from '@/hooks/useWhizzyChat';
 import VoiceVisualizer from './VoiceVisualizer';
 import ContentGenerator from './ContentGenerator';
 import { sampleCards, constellationNodes, constellationEdges, sampleTasks } from './constants/sampleData';
+import { TaskProps } from '@/types/TaskProps';
+import { ConstellationNode, ConstellationEdge } from '@/types/ConstellationTypes';
+import { CardProps } from '@/types/CardProps';
+
+interface Task {
+  id: string;
+  title: string;
+  description?: string;
+  type: 'daily' | 'learning' | 'creative' | 'challenge';
+  completed: boolean;
+  reward?: number;
+  timeEstimate?: string;
+  priority: 'high' | 'medium' | 'low';
+}
+
+interface InternalConstellationNode extends ConstellationNode {
+  title: string;
+}
+
+interface InternalConstellationEdge extends ConstellationEdge {
+  strength: number;
+}
 
 interface WonderCanvasProps {
   childId: string;
@@ -139,6 +161,19 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
     }
   }, [audioEnabled, playInteractionSound, recordInteraction]);
 
+  const convertTaskPropsToTask = (taskProps: TaskProps): Task => {
+    return {
+      id: taskProps.id,
+      title: taskProps.title,
+      description: taskProps.description,
+      completed: taskProps.completed,
+      type: taskProps.type as 'daily' | 'learning' | 'creative' | 'challenge',
+      priority: taskProps.priority as 'high' | 'medium' | 'low',
+      timeEstimate: taskProps.timeEstimate,
+      reward: taskProps.reward
+    };
+  };
+
   useEffect(() => {
     const offlineCards = getOfflineData('wonder_cards');
     if (!isOnline && offlineCards) {
@@ -158,8 +193,12 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
     }
     
     storeOfflineData('wonder_cards', sampleCards);
-    storeOfflineData('constellation_data', { nodes: constellationNodes, edges: constellationEdges });
-    storeOfflineData('tasks_data', sampleTasks);
+    storeOfflineData('constellation_data', { 
+      nodes: constellationNodes as InternalConstellationNode[], 
+      edges: constellationEdges as InternalConstellationEdge[] 
+    });
+    const formattedTasks = sampleTasks.map(convertTaskPropsToTask);
+    storeOfflineData('tasks_data', formattedTasks);
     
     const particleCount = shouldUseReducedFeatures ? 10 : 25;
     
@@ -549,7 +588,7 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
       </AnimatePresence>
       
       <TaskOrbits
-        tasks={sampleTasks}
+        tasks={sampleTasks.map(convertTaskPropsToTask)}
         visible={showTaskOrbits}
         onTaskClick={handleTaskClick}
         maxTasks={shouldUseReducedFeatures ? 3 : 5}
