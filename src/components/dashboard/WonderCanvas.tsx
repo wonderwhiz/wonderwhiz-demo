@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -55,19 +54,16 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   
-  // For particle effects
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     
-    // Create subtle floating particles
     const createParticle = () => {
       const particle = document.createElement('div');
       particle.classList.add('absolute', 'rounded-full', 'opacity-30', 'pointer-events-none');
       
-      // Random properties
       const size = Math.random() * 8 + 4;
-      const hue = Math.floor(Math.random() * 60) + 240; // Blues and purples
+      const hue = Math.floor(Math.random() * 60) + 240;
       
       particle.style.width = `${size}px`;
       particle.style.height = `${size}px`;
@@ -79,7 +75,6 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
       
       canvas.appendChild(particle);
       
-      // Set animation
       const animation = particle.animate(
         [
           { transform: 'translateY(0) rotate(0deg)', opacity: 0 },
@@ -96,12 +91,10 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
       };
     };
     
-    // Create initial particles
     for (let i = 0; i < 15; i++) {
       setTimeout(() => createParticle(), Math.random() * 5000);
     }
     
-    // Create new particles periodically
     const interval = setInterval(() => {
       if (Math.random() > 0.7) createParticle();
     }, 2000);
@@ -109,12 +102,10 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
     return () => clearInterval(interval);
   }, []);
   
-  // Handle voice input
   const startVoiceInput = () => {
     setIsListening(true);
     setShowVoicePrompt(true);
     
-    // Simulate voice recognition (replace with actual implementation)
     const simulateVoiceRecognition = () => {
       const phrases = [
         "Tell me about space", 
@@ -150,7 +141,6 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
   const togglePanel = (panel: 'curios' | 'tasks' | 'sparks') => {
     setActivePanel(prev => prev === panel ? 'none' : panel);
     
-    // Trigger confetti on first sparks panel open
     if (panel === 'sparks' && activePanel !== 'sparks') {
       setTimeout(() => {
         confetti({
@@ -171,7 +161,6 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
     const queryToUse = customQuery || query;
     
     if (!queryToUse.trim()) {
-      // Focus the input with a gentle pulse animation
       if (inputRef.current) {
         inputRef.current.focus();
         inputRef.current.classList.add('animate-pulse-gentle');
@@ -185,10 +174,8 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
     
     setOrbExpanded(true);
     
-    // Start the creation process
     handleSubmitQuery();
     
-    // Animate the orb expansion
     setTimeout(() => {
       confetti({
         particleCount: 100,
@@ -198,11 +185,9 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
     }, 500);
   };
   
-  // Handle suggestion click with animated feedback
   const handleSuggestionClick = (suggestion: string) => {
     setQuery(suggestion);
     
-    // Create a temporary floating element that flies to the center
     const tempElement = document.createElement('div');
     tempElement.innerText = suggestion;
     tempElement.className = 'fixed text-white font-bold pointer-events-none z-50 transition-all duration-700';
@@ -210,7 +195,6 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
     tempElement.style.top = `${Math.random() * 30 + 60}%`;
     document.body.appendChild(tempElement);
     
-    // Animate to center
     setTimeout(() => {
       tempElement.style.left = '50%';
       tempElement.style.top = '40%';
@@ -228,10 +212,8 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
 
   return (
     <div className="relative w-full min-h-screen overflow-hidden flex flex-col items-center">
-      {/* Background particle container */}
       <div ref={canvasRef} className="absolute inset-0 pointer-events-none overflow-hidden" />
       
-      {/* Top welcome bar */}
       <motion.div 
         initial={{ y: -50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -263,7 +245,6 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
         </div>
       </motion.div>
       
-      {/* Main content area with wonder orb */}
       <motion.div 
         className="flex-1 w-full flex flex-col items-center justify-center px-4 pb-20"
         initial={{ opacity: 0 }}
@@ -340,7 +321,6 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
                 </div>
               </div>
               
-              {/* Suggestions cloud */}
               <SuggestionsCloud 
                 suggestions={curioSuggestions}
                 onSuggestionClick={handleSuggestionClick}
@@ -365,7 +345,6 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
           )}
         </AnimatePresence>
         
-        {/* Voice input prompt overlay */}
         <AnimatePresence>
           {showVoicePrompt && (
             <motion.div
@@ -423,7 +402,6 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
         </AnimatePresence>
       </motion.div>
       
-      {/* Bottom dock navigation */}
       <motion.div 
         className="fixed bottom-0 left-0 right-0 flex justify-center pb-4"
         initial={{ y: 100 }}
@@ -469,7 +447,6 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
         </div>
       </motion.div>
       
-      {/* Sliding panels */}
       <AnimatePresence>
         {activePanel === 'curios' && (
           <motion.div 
@@ -501,6 +478,7 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
             <div className="w-12 h-1 bg-white/20 rounded-full mx-auto my-3" />
             <TasksPanel 
               childId={childId}
+              onComplete={onComplete}
               onClose={() => setActivePanel('none')}
             />
           </motion.div>

@@ -1,91 +1,118 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Zap, Brain, Star } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
 interface SuggestionsCloudProps {
   suggestions: string[];
   onSuggestionClick: (suggestion: string) => void;
+  isLoading?: boolean;
 }
 
-const SuggestionsCloud: React.FC<SuggestionsCloudProps> = ({ suggestions, onSuggestionClick }) => {
-  // Icons to randomly assign to suggestions
-  const icons = [
-    <Sparkles className="h-3 w-3 text-wonderwhiz-vibrant-yellow" />,
-    <Zap className="h-3 w-3 text-wonderwhiz-bright-pink" />,
-    <Brain className="h-3 w-3 text-wonderwhiz-cyan" />,
-    <Star className="h-3 w-3 text-wonderwhiz-gold" />
-  ];
+const SuggestionsCloud: React.FC<SuggestionsCloudProps> = ({ 
+  suggestions, 
+  onSuggestionClick,
+  isLoading = false 
+}) => {
+  if (isLoading) {
+    return (
+      <motion.div 
+        className="flex justify-center items-center mt-6 h-20"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+      >
+        <div className="flex items-center text-white/60">
+          <Sparkles className="animate-pulse h-4 w-4 mr-2" />
+          <span>Gathering wonder...</span>
+        </div>
+      </motion.div>
+    );
+  }
   
-  // Positions for floating suggestions
-  const getRandomPosition = (index: number) => {
-    // Create a semi-circle layout
-    const total = suggestions.length;
-    const angle = (Math.PI / (total - 1)) * index;
-    const radius = 150;
+  if (!suggestions || suggestions.length === 0) {
+    return null;
+  }
+  
+  // Different sizes for visual interest
+  const getSizeClass = (index: number) => {
+    const patterns = ['text-sm', 'text-base', 'text-lg'];
+    return patterns[index % patterns.length];
+  };
+  
+  // Different colors for visual interest
+  const getColorClass = (index: number) => {
+    const patterns = [
+      'text-wonderwhiz-gold hover:text-wonderwhiz-gold/90',
+      'text-wonderwhiz-bright-pink hover:text-wonderwhiz-bright-pink/90',
+      'text-wonderwhiz-cyan hover:text-wonderwhiz-cyan/90',
+      'text-indigo-400 hover:text-indigo-300'
+    ];
+    return patterns[index % patterns.length];
+  };
+  
+  // Different animation delays
+  const getDelay = (index: number) => {
+    return index * 0.1;
+  };
+  
+  // Calculate positions in a circular/cloud pattern
+  const getPosition = (index: number, total: number) => {
+    // This creates a somewhat random but balanced distribution
+    const angle = (index / total) * Math.PI * 2;
+    const radius = 100 + Math.random() * 50; // Varying radius for more natural look
+    const x = Math.cos(angle) * radius;
+    const y = Math.sin(angle) * (radius * 0.6); // Elliptical shape
     
     return {
-      left: `calc(50% + ${Math.sin(angle) * radius}px)`,
-      top: `calc(50% - ${Math.cos(angle) * radius}px)`,
-      scale: 0.85 + Math.random() * 0.3,
-      rotate: -10 + Math.random() * 20
+      left: `calc(50% + ${x}px)`,
+      top: `calc(50% + ${y}px)`,
+      transform: 'translate(-50%, -50%)'
     };
   };
 
   return (
     <motion.div 
-      className="relative w-full h-60 mt-16"
+      className="relative h-48 mt-6 overflow-visible"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.8, delay: 0.5 }}
+      transition={{ duration: 0.6, delay: 0.3 }}
     >
-      {suggestions.map((suggestion, index) => {
-        const position = getRandomPosition(index);
-        
-        return (
-          <motion.div
-            key={`suggestion-${index}`}
-            className="absolute transform -translate-x-1/2 -translate-y-1/2"
-            style={{
-              left: position.left,
-              top: position.top,
-            }}
-            initial={{ 
-              opacity: 0,
-              scale: 0.5,
-              rotate: position.rotate 
-            }}
-            animate={{ 
-              opacity: 1, 
-              scale: position.scale,
-              rotate: position.rotate,
-              y: [0, -5, 0, 5, 0],
-            }}
-            transition={{
-              opacity: { duration: 0.5, delay: 0.1 * index },
-              scale: { duration: 0.5, delay: 0.1 * index },
-              y: { 
-                repeat: Infinity, 
-                duration: 4 + Math.random() * 2, 
-                ease: "easeInOut",
-                delay: index * 0.2 
-              }
-            }}
-            whileHover={{ scale: position.scale * 1.1 }}
-            whileTap={{ scale: position.scale * 0.95 }}
-          >
-            <motion.button
-              onClick={() => onSuggestionClick(suggestion)}
-              className="text-sm bg-white/10 backdrop-blur-sm hover:bg-white/20 px-4 py-2 rounded-full border border-white/20 text-white shadow-glow-sm flex items-center whitespace-nowrap"
-            >
-              <span className="mr-1.5">
-                {icons[index % icons.length]}
-              </span>
-              {suggestion}
-            </motion.button>
-          </motion.div>
-        );
-      })}
+      {/* Central sparkle */}
+      <motion.div
+        className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white/40"
+        initial={{ scale: 0.8 }}
+        animate={{ 
+          scale: [0.8, 1.1, 0.8],
+          rotate: [0, 180, 360]
+        }}
+        transition={{ 
+          duration: 10, 
+          repeat: Infinity,
+          ease: "linear"
+        }}
+      >
+        <Sparkles className="h-8 w-8" />
+      </motion.div>
+      
+      {/* Suggestions */}
+      {suggestions.map((suggestion, index) => (
+        <motion.button
+          key={`${suggestion}-${index}`}
+          className={`absolute whitespace-nowrap rounded-full px-3 py-1 font-medium ${getSizeClass(index)} ${getColorClass(index)} bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-colors`}
+          style={getPosition(index, suggestions.length)}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          transition={{ 
+            duration: 0.4, 
+            delay: getDelay(index) 
+          }}
+          onClick={() => onSuggestionClick(suggestion)}
+        >
+          {suggestion}
+        </motion.button>
+      ))}
     </motion.div>
   );
 };

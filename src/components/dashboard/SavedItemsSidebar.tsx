@@ -1,240 +1,266 @@
-import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
-import { Sidebar, SidebarContent, SidebarHeader, SidebarTrigger } from '@/components/ui/sidebar';
-import { Button } from '@/components/ui/button';
-import { Bookmark, ChevronDown, X, ExternalLink } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { getSpecialistInfo } from '@/utils/specialists';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
 
-interface SavedItem {
-  id: string;
-  type: string;
-  content: any;
-  specialist_id: string;
-  curio_id: string;
-  title?: string;
-  curio_title?: string;
-  saved_at?: string;
-}
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
+import { 
+  Bookmark, X, Heart, Clock, Tag, Filter, Search,
+  Trash2, ArrowLeft
+} from 'lucide-react';
+import { Sidebar, SidebarHeader, SidebarContent } from '@/components/ui/sidebar';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { supabase } from '@/integrations/supabase/client';
+import { format } from 'date-fns';
 
 interface SavedItemsSidebarProps {
-  childId?: string;
-  onViewItem?: (item: SavedItem) => void;
+  childId: string;
+  onClose?: () => void;
 }
 
-const SavedItemsSidebar: React.FC<SavedItemsSidebarProps> = ({ childId, onViewItem }) => {
-  const [savedItems, setSavedItems] = useState<SavedItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [displayedItemsCount, setDisplayedItemsCount] = useState(5);
-  const [filter, setFilter] = useState<string | null>(null);
-
+const SavedItemsSidebar: React.FC<SavedItemsSidebarProps> = ({ childId, onClose }) => {
+  const [savedItems, setSavedItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<'all' | 'bookmarked' | 'liked'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  
   useEffect(() => {
-    if (childId) {
-      fetchSavedItems();
-    }
+    const fetchSavedItems = async () => {
+      if (!childId) return;
+      
+      try {
+        setLoading(true);
+        
+        // Fetch bookmarked blocks
+        const { data: bookmarks, error: bookmarksError } = await supabase
+          .from('child_block_interactions')
+          .select(`
+            id,
+            block_id,
+            bookmarked,
+            liked,
+            created_at,
+            blocks:block_id(id, content, type, curio_id),
+            curios:blocks(id, title, query)
+          `)
+          .eq('child_profile_id', childId)
+          .or('bookmarked.eq.true,liked.eq.true')
+          .order('created_at', { ascending: false });
+        
+        if (bookmarksError) throw bookmarksError;
+        
+        // Transform the data
+        const formattedItems = bookmarks?.map(item => ({
+          id: item.id,
+          blockId: item.block_id,
+          bookmarked: item.bookmarked,
+          liked: item.liked,
+          createdAt: item.created_at,
+          content: item.blocks?.content,
+          type: item.blocks?.type,
+          curioId: item.blocks?.curio_id,
+          curioTitle: item.curios?.title || 'Untitled Curio'
+        })) || [];
+        
+        setSavedItems(formattedItems);
+      } catch (error) {
+        console.error('Error fetching saved items:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchSavedItems();
   }, [childId]);
-
-  const fetchSavedItems = async () => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('content_blocks')
-        .select('id, type, content, specialist_id, curio_id, bookmarked, curios(title)')
-        .eq('bookmarked', true)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      const formattedItems = data.map(item => ({
-        id: item.id,
-        type: item.type,
-        content: item.content,
-        specialist_id: item.specialist_id,
-        curio_id: item.curio_id,
-        title: getItemTitle(item.type, item.content),
-        curio_title: item.curios?.title,
-        saved_at: new Date().toISOString() // This should ideally come from a saved_at column
-      }));
-
-      setSavedItems(formattedItems);
-    } catch (error) {
-      console.error('Error fetching saved items:', error);
-    } finally {
-      setIsLoading(false);
+  
+  // Filter and search items
+  const getFilteredItems = () => {
+    let filteredItems = [...savedItems];
+    
+    // Apply type filter
+    if (filter === 'bookmarked') {
+      filteredItems = filteredItems.filter(item => item.bookmarked);
+    } else if (filter === 'liked') {
+      filteredItems = filteredItems.filter(item => item.liked);
     }
-  };
-
-  const getItemTitle = (type: string, content: any): string => {
-    switch (type) {
-      case 'fact':
-      case 'funFact':
-        return content?.title || content?.fact?.substring(0, 50) + '...' || 'Interesting Fact';
-      case 'quiz':
-        return content?.question?.substring(0, 50) + '...' || 'Quiz';
-      case 'flashcard':
-        return content?.front?.substring(0, 50) + '...' || 'Flashcard';
-      case 'creative':
-        return content?.prompt?.substring(0, 50) + '...' || 'Creative Challenge';
-      case 'task':
-        return content?.title || content?.task?.substring(0, 50) + '...' || 'Task';
-      case 'news':
-        return content?.headline || 'News';
-      case 'mindfulness':
-        return content?.title || 'Mindfulness Exercise';
-      default:
-        return 'Saved Item';
+    
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filteredItems = filteredItems.filter(item => {
+        const content = typeof item.content === 'string' 
+          ? item.content 
+          : JSON.stringify(item.content);
+        
+        return content.toLowerCase().includes(query) || 
+               item.curioTitle.toLowerCase().includes(query);
+      });
     }
+    
+    return filteredItems;
   };
-
-  const handleLoadMore = () => {
-    setDisplayedItemsCount(prev => Math.min(prev + 5, savedItems.length));
-  };
-
-  const handleFilterChange = (newFilter: string | null) => {
-    setFilter(newFilter);
-    setDisplayedItemsCount(5);
-  };
-
-  const filteredItems = filter
-    ? savedItems.filter(item => item.type === filter)
-    : savedItems;
-
-  const getItemTypeLabel = (type: string): string => {
-    switch (type) {
-      case 'fact': return 'Fact';
-      case 'funFact': return 'Fun Fact';
-      case 'quiz': return 'Quiz';
-      case 'flashcard': return 'Flashcard';
-      case 'creative': return 'Creative';
-      case 'task': return 'Task';
-      case 'news': return 'News';
-      case 'mindfulness': return 'Mindfulness';
-      default: return type.charAt(0).toUpperCase() + type.slice(1);
+  
+  const filteredItems = getFilteredItems();
+  
+  // Get excerpt text from block content
+  const getExcerpt = (content: any, maxLength = 80) => {
+    if (!content) return 'No content';
+    
+    let text = '';
+    
+    if (typeof content === 'string') {
+      text = content;
+    } else if (content.fact) {
+      text = content.fact;
+    } else if (content.question) {
+      text = content.question;
+    } else if (content.text) {
+      text = content.text;
+    } else if (content.description) {
+      text = content.description;
+    } else {
+      text = JSON.stringify(content);
     }
+    
+    return text.length > maxLength 
+      ? text.substring(0, maxLength) + '...'
+      : text;
   };
-
-  const getItemTypeIcon = (type: string) => {
-    // You would add specific icons for each type
-    return <Bookmark className="h-4 w-4" />;
-  };
-
+  
   return (
-    <Sidebar variant="inset" className="bg-purple-950">
-      <SidebarHeader className="rounded-none bg-violet-900">
+    <Sidebar 
+      side="right" 
+      className="border-l border-white/10"
+    >
+      <SidebarHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <Bookmark className="mr-2 h-5 w-5 text-yellow-400" />
-            <h3 className="text-white font-medium">Saved Items</h3>
+            {onClose && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="mr-2 text-white/70 hover:text-white"
+                onClick={onClose}
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            )}
+            <h2 className="text-lg font-bold text-white flex items-center">
+              <Bookmark className="mr-2 h-5 w-5 text-wonderwhiz-gold" />
+              Saved Items
+            </h2>
           </div>
-          <SidebarTrigger />
-        </div>
-        
-        <div className="flex items-center gap-2 mt-2 pb-1 overflow-x-auto scrollbar-hide">
-          <Button
-            variant={filter === null ? "secondary" : "ghost"}
-            size="sm"
-            className="text-xs whitespace-nowrap"
-            onClick={() => handleFilterChange(null)}
-          >
-            All
-          </Button>
-          {['fact', 'quiz', 'flashcard', 'creative', 'mindfulness'].map(type => (
-            <Button
-              key={type}
-              variant={filter === type ? "secondary" : "ghost"}
-              size="sm"
-              className="text-xs whitespace-nowrap"
-              onClick={() => handleFilterChange(type)}
+          
+          {onClose && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="text-white/70 hover:text-white"
+              onClick={onClose}
             >
-              {getItemTypeLabel(type)}
+              <X className="h-5 w-5" />
             </Button>
-          ))}
+          )}
         </div>
       </SidebarHeader>
       
-      <SidebarContent className="bg-purple-950">
-        <ScrollArea className="h-[calc(100vh-100px)]">
-          <div className="p-4">
-            {isLoading ? (
-              <div className="space-y-4">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="h-24 bg-white/5 animate-pulse rounded-lg"></div>
-                ))}
-              </div>
-            ) : savedItems.length === 0 ? (
-              <div className="text-center p-6">
-                <Bookmark className="mx-auto h-10 w-10 text-white/30 mb-2" />
-                <p className="text-white/60">No saved items yet</p>
-                <p className="text-white/40 text-sm mt-1">
-                  Click the Save button on content you'd like to revisit later
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {filteredItems.slice(0, displayedItemsCount).map((item) => {
-                  const specialist = getSpecialistInfo(item.specialist_id);
-                  
-                  return (
-                    <Card 
-                      key={item.id}
-                      className="overflow-hidden bg-white/5 border border-white/10 hover:bg-white/10 transition-colors cursor-pointer"
-                      onClick={() => onViewItem && onViewItem(item)}
-                    >
-                      <div className="p-3">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Avatar className="h-6 w-6">
-                            <AvatarImage src={specialist.avatar} alt={specialist.name} />
-                            <AvatarFallback className={specialist.fallbackColor}>{specialist.fallbackInitial}</AvatarFallback>
-                          </Avatar>
-                          <span className="text-xs font-medium text-white/70">{specialist.name}</span>
-                          <Badge className="ml-auto text-[10px] bg-white/10 text-white/70 hover:bg-white/20">
-                            {getItemTypeLabel(item.type)}
-                          </Badge>
-                        </div>
-                        
-                        <h4 className="text-sm font-medium text-white line-clamp-2">{item.title}</h4>
-                        
-                        {item.curio_title && (
-                          <div className="mt-2 flex items-center justify-between">
-                            <p className="text-xs text-white/50 italic">
-                              From: {item.curio_title}
-                            </p>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-6 w-6 text-white/40 hover:text-white hover:bg-white/10"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                // Implement view in curio logic
-                              }}
-                            >
-                              <ExternalLink className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    </Card>
-                  );
-                })}
-                
-                {displayedItemsCount < filteredItems.length && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    className="w-full text-white/60 hover:text-white hover:bg-white/10"
-                    onClick={handleLoadMore}
-                  >
-                    Load More <ChevronDown className="ml-1 h-4 w-4" />
-                  </Button>
-                )}
-              </div>
+      <SidebarContent>
+        {/* Search and filters */}
+        <div className="mb-4 space-y-2">
+          <div className="relative">
+            <Input
+              className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/50"
+              placeholder="Search saved items..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/50" />
+          </div>
+          
+          <div className="flex space-x-2">
+            <Button 
+              variant={filter === 'all' ? "default" : "outline"} 
+              size="sm"
+              onClick={() => setFilter('all')}
+              className={filter === 'all' ? "bg-wonderwhiz-bright-pink text-white" : "text-white/70"}
+            >
+              All
+            </Button>
+            <Button 
+              variant={filter === 'bookmarked' ? "default" : "outline"} 
+              size="sm"
+              onClick={() => setFilter('bookmarked')}
+              className={filter === 'bookmarked' ? "bg-wonderwhiz-gold text-wonderwhiz-deep-purple" : "text-white/70"}
+            >
+              <Bookmark className="h-4 w-4 mr-1" />
+              Bookmarked
+            </Button>
+            <Button 
+              variant={filter === 'liked' ? "default" : "outline"} 
+              size="sm"
+              onClick={() => setFilter('liked')}
+              className={filter === 'liked' ? "bg-wonderwhiz-bright-pink text-white" : "text-white/70"}
+            >
+              <Heart className="h-4 w-4 mr-1" />
+              Liked
+            </Button>
+          </div>
+        </div>
+        
+        {/* Saved items list */}
+        {loading ? (
+          <div className="flex justify-center items-center h-40">
+            <div className="animate-spin h-8 w-8 border-t-2 border-b-2 border-wonderwhiz-bright-pink rounded-full"></div>
+          </div>
+        ) : filteredItems.length === 0 ? (
+          <div className="text-center p-6 text-white/60">
+            <p>No saved items found</p>
+            {searchQuery && (
+              <Button 
+                variant="link" 
+                className="text-wonderwhiz-bright-pink mt-2"
+                onClick={() => setSearchQuery('')}
+              >
+                Clear search
+              </Button>
             )}
           </div>
-        </ScrollArea>
+        ) : (
+          <div className="space-y-3 pr-2" style={{ maxHeight: 'calc(100vh - 230px)', overflowY: 'auto' }}>
+            {filteredItems.map((item, index) => (
+              <Link
+                key={`${item.id}-${index}`}
+                to={`/curio/${childId}/${item.curioId}?blockId=${item.blockId}`}
+              >
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                  className="bg-white/5 hover:bg-white/10 transition-colors rounded-lg p-3 border border-white/10"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center">
+                      {item.liked && <Heart className="h-4 w-4 text-wonderwhiz-bright-pink mr-1" fill="currentColor" />}
+                      {item.bookmarked && <Bookmark className="h-4 w-4 text-wonderwhiz-gold mr-1" fill="currentColor" />}
+                      <span className="text-xs text-white/50">{item.type}</span>
+                    </div>
+                    <div className="flex items-center text-xs text-white/50">
+                      <Clock className="h-3 w-3 mr-1" />
+                      {format(new Date(item.createdAt), 'MMM d')}
+                    </div>
+                  </div>
+                  
+                  <p className="text-sm text-white font-medium mb-1">
+                    {getExcerpt(item.content)}
+                  </p>
+                  
+                  <p className="text-xs text-wonderwhiz-cyan">
+                    From: {item.curioTitle}
+                  </p>
+                </motion.div>
+              </Link>
+            ))}
+          </div>
+        )}
       </SidebarContent>
     </Sidebar>
   );

@@ -42,16 +42,30 @@ export interface SidebarProps {
   side?: 'left' | 'right';
   width?: string;
   className?: string;
+  variant?: 'default' | 'transparent' | 'blurred';
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ 
   children, 
   side = 'left',
   width = '280px',
-  className = ''
+  className = '',
+  variant = 'default'
 }) => {
   const { isOpen, closeSidebar } = useSidebar();
   
+  // Determine background style based on variant
+  const getBgStyle = () => {
+    switch (variant) {
+      case 'transparent':
+        return 'bg-transparent border-white/10';
+      case 'blurred':
+        return 'bg-white/5 backdrop-blur-md border-white/10';
+      default:
+        return 'bg-gradient-to-b from-wonderwhiz-deep-purple to-wonderwhiz-light-purple/90 backdrop-blur-md border-r border-white/10';
+    }
+  };
+
   const variants = {
     open: { 
       x: side === 'left' ? 0 : 'calc(100vw - ' + width + ')', 
@@ -82,7 +96,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             animate="open"
             exit="closed"
             variants={variants}
-            className={`fixed top-0 bottom-0 z-50 bg-gradient-to-b from-wonderwhiz-deep-purple to-wonderwhiz-light-purple/90 backdrop-blur-md border-r border-white/10 overflow-y-auto ${className}`}
+            className={`fixed top-0 bottom-0 z-50 ${getBgStyle()} overflow-y-auto ${className}`}
             style={{ 
               width,
               [side]: 0,
