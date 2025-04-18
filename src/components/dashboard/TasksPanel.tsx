@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, CheckCircle2, Circle, Trophy } from 'lucide-react';
@@ -6,19 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 
-interface TaskBase {
-  id: string;
-  title: string;
-  description?: string;
-  created_at: string;
-  type: 'daily' | 'weekly' | 'special';
-  sparks_reward: number;
-}
-
-interface Task extends TaskBase {
-  status: 'pending' | 'completed';
-}
-
+// Database types - these reflect what comes from Supabase
 interface DbTask {
   id: string;
   title: string;
@@ -30,10 +19,21 @@ interface DbTask {
 
 interface DbChildTask {
   id: string;
-  status: 'pending' | 'completed';
+  status: string;
   child_id: string;
   task_id: string;
   tasks: DbTask;
+}
+
+// Application types - these are what we use in the component
+interface Task {
+  id: string;
+  title: string;
+  description?: string;
+  status: 'pending' | 'completed';
+  created_at: string;
+  type: 'daily' | 'weekly' | 'special';
+  sparks_reward: number;
 }
 
 interface TasksPanelProps {
@@ -63,13 +63,14 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
         
         if (error) throw error;
         
+        // Explicit type assertion of the response
         const responseData = data as unknown as DbChildTask[];
         
         const transformedTasks: Task[] = responseData.map(item => ({
           id: item.tasks.id,
           title: item.tasks.title,
           description: item.tasks.description || undefined,
-          status: item.status,
+          status: item.status as 'pending' | 'completed',
           created_at: item.tasks.created_at,
           type: item.tasks.type as 'daily' | 'weekly' | 'special',
           sparks_reward: item.tasks.sparks_reward || 5
