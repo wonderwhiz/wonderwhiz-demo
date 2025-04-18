@@ -6,8 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 
-// Basic task record from the database
-interface DbTaskRecord {
+interface TaskBase {
   id: string;
   title: string;
   description: string | null;
@@ -16,23 +15,14 @@ interface DbTaskRecord {
   sparks_reward: number;
 }
 
-// Child task record with a simplified task representation
-interface DbChildTaskRecord {
+interface ChildTaskRecord {
   id: string;
   status: string;
   child_id: string;
   task_id: string;
-  tasks: {
-    id: string;
-    title: string;
-    description: string | null;
-    created_at: string;
-    type: string;
-    sparks_reward: number;
-  }; 
+  tasks: TaskBase; 
 }
 
-// Application types - these are what we use in the component
 interface TaskRecord {
   id: string;
   title: string;
@@ -70,8 +60,7 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
         
         if (error) throw error;
         
-        // Explicit type assertion of the response
-        const responseData = data as unknown as DbChildTaskRecord[];
+        const responseData = data as unknown as ChildTaskRecord[];
         
         const transformedTasks: TaskRecord[] = responseData.map(item => ({
           id: item.tasks.id,
