@@ -41,7 +41,6 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
         
         if (error) throw error;
         
-        // Transform the data to match the Task interface
         const transformedTasks = data.map(item => ({
           id: item.tasks.id,
           title: item.tasks.title,
@@ -66,14 +65,12 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
   
   const handleCompleteTask = async (taskId: string) => {
     try {
-      // Optimistically update UI
       setTasks(prev => 
         prev.map(task => 
-          task.id === taskId ? { ...task, status: 'completed' as const } : task
+          task.id === taskId ? { ...task, status: 'completed' } : task
         )
       );
       
-      // Update task status in the database
       const { error } = await supabase
         .from('child_tasks')
         .update({ status: 'completed' })
@@ -82,7 +79,6 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
       
       if (error) throw error;
       
-      // Find task and award sparks
       const task = tasks.find(t => t.id === taskId);
       const sparksReward = task?.sparks_reward || 5;
       
@@ -93,7 +89,6 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
         })
       });
       
-      // Record the sparks transaction
       await supabase.from('sparks_transactions').insert({
         child_id: childId,
         amount: sparksReward,
@@ -120,10 +115,9 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
       console.error('Error completing task:', error);
       toast.error('Failed to update task');
       
-      // Revert the optimistic update
       setTasks(prev => 
         prev.map(task => 
-          task.id === taskId ? { ...task, status: 'pending' as const } : task
+          task.id === taskId ? { ...task, status: 'pending' } : task
         )
       );
     }
@@ -131,7 +125,6 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
 
   return (
     <div className="px-4 py-3">
-      {/* Panel header with back button */}
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center">
           {onClose && (
