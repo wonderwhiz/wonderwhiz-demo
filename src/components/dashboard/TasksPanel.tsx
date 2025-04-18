@@ -17,12 +17,13 @@ interface DbTaskRecord {
   sparks_reward: number;
 }
 
+// Simplified interface for child tasks to avoid circular references
 interface DbChildTaskRecord {
   id: string;
   status: string;
   child_id: string;
   task_id: string;
-  tasks: DbTaskRecord;
+  tasks: DbTaskRecord; // Direct reference to task data
 }
 
 // Application types - these are what we use in the component
