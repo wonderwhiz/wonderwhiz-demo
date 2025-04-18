@@ -10,6 +10,8 @@ interface FloatingParticleProps {
   pattern?: 'float' | 'spiral' | 'pulse' | 'zigzag';
   interactive?: boolean;
   onClick?: () => void;
+  amplitude?: number;
+  speed?: number;
 }
 
 const FloatingParticle: React.FC<FloatingParticleProps> = ({
@@ -19,7 +21,9 @@ const FloatingParticle: React.FC<FloatingParticleProps> = ({
   delay = 0,
   pattern = 'float',
   interactive = false,
-  onClick
+  onClick,
+  amplitude = 50,
+  speed = 1
 }) => {
   const [position, setPosition] = useState({
     x: Math.random() * 100,
@@ -39,7 +43,7 @@ const FloatingParticle: React.FC<FloatingParticleProps> = ({
   // Generate animation properties based on pattern
   const getAnimationProps = () => {
     const baseProps = {
-      y: [0, -Math.random() * 100 - 50],
+      y: [0, -Math.random() * amplitude - 20],
       opacity: [0, 0.7, 0],
     };
     
@@ -48,7 +52,7 @@ const FloatingParticle: React.FC<FloatingParticleProps> = ({
         return {
           ...baseProps,
           rotate: [0, 360 * (Math.random() > 0.5 ? 1 : -1)],
-          x: [0, Math.sin(Math.random() * Math.PI * 2) * 100],
+          x: [0, Math.sin(Math.random() * Math.PI * 2) * amplitude],
         };
       case 'pulse':
         return {
@@ -84,7 +88,7 @@ const FloatingParticle: React.FC<FloatingParticleProps> = ({
       }}
       animate={getAnimationProps()}
       transition={{
-        duration: duration + Math.random() * 5,
+        duration: (duration + Math.random() * 5) / speed,
         delay: delay + Math.random() * 2,
         ease: "easeInOut",
         repeat: Infinity,

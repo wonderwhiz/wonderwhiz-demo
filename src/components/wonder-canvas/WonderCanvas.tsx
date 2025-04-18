@@ -14,6 +14,9 @@ import PinchCollector from './PinchCollector';
 import MultiTouchExpander from './MultiTouchExpander';
 import RestReminder from './RestReminder';
 import FamilyMessaging from './FamilyMessaging';
+import WebGLBackground from './WebGLBackground';
+import TaskOrbits from './TaskOrbits';
+import { useAppPerformance } from '@/hooks/useAppPerformance';
 import confetti from 'canvas-confetti';
 
 interface WonderCanvasProps {
@@ -32,13 +35,21 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
   const [isListening, setIsListening] = useState(false);
   const [showConstellation, setShowConstellation] = useState(false);
   const [activeStarId, setActiveStarId] = useState<string | undefined>(undefined);
-  const [particles, setParticles] = useState<Array<{id: number, size: number, color: string, delay: number, pattern: string}>>([]);
+  const [particles, setParticles] = useState<Array<{id: number; size: number; color: string; delay: number; pattern: string}>>([]);
   const [activeCard, setActiveCard] = useState(0);
   const [expandedCardIndex, setExpandedCardIndex] = useState<number | null>(null);
   const [timeOfDay, setTimeOfDay] = useState<'morning' | 'afternoon' | 'evening'>('morning');
+  const [showTaskOrbits, setShowTaskOrbits] = useState(false);
   const { childProfile } = useChildProfile(childId);
   const { streakDays, sparkAnimation } = useSparksSystem(childId);
   const childAge = childProfile?.age ? Number(childProfile.age) : 10;
+  const { 
+    isOnline, 
+    isLowPerformanceDevice, 
+    shouldUseReducedFeatures,
+    storeOfflineData,
+    getOfflineData
+  } = useAppPerformance();
   
   const canvasRef = useRef<HTMLDivElement>(null);
   
@@ -89,8 +100,49 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
       emotionalTone: 'calming'
     }
   ];
+  
+  // Sample tasks data
+  const sampleTasks = [
+    {
+      id: '1',
+      title: 'Read about stars',
+      type: 'learning' as const,
+      completed: false,
+      priority: 'high' as const
+    },
+    {
+      id: '2',
+      title: 'Draw a dinosaur',
+      type: 'creative' as const,
+      completed: false,
+      priority: 'medium' as const
+    },
+    {
+      id: '3',
+      title: 'Complete space quiz',
+      type: 'challenge' as const,
+      completed: true,
+      priority: 'low' as const
+    },
+    {
+      id: '4',
+      title: 'Learn 3 ocean facts',
+      type: 'daily' as const,
+      completed: false,
+      priority: 'medium' as const
+    },
+  ];
 
   useEffect(() => {
+    // Check if we have saved offline data
+    const offlineCards = getOfflineData('wonder_cards');
+    if (!isOnline && offlineCards) {
+      toast.info("Using saved content while offline", {
+        icon: "📡",
+        id: "offline-mode"
+      });
+    }
+    
     // Determine time of day
     const hour = new Date().getHours();
     if (hour >= 5 && hour < 12) {
@@ -101,9 +153,15 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
       setTimeOfDay('evening');
     }
     
+    // Save sampleCards for offline use
+    storeOfflineData('wonder_cards', sampleCards);
+    
+    // Generate fewer particles on low-performance devices
+    const particleCount = shouldUseReducedFeatures ? 10 : 25;
+    
     // Generate background particles with different patterns
     const patterns = ['float', 'spiral', 'pulse', 'zigzag'];
-    const newParticles = Array(25).fill(0).map((_, index) => ({
+    const newParticles = Array(particleCount).fill(0).map((_, index) => ({
       id: index,
       size: Math.random() * 6 + 2,
       color: `rgba(255, 255, 255, ${Math.random() * 0.2 + 0.1})`,
@@ -115,7 +173,7 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
     
     // Add interactive particles
     const canvas = canvasRef.current;
-    if (canvas) {
+    if (canvas && !shouldUseReducedFeatures) {
       const addInteractiveParticle = () => {
         const particle = document.createElement('div');
         const size = Math.random() * 8 + 4;
@@ -182,7 +240,15 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
         setTimeout(addInteractiveParticle, i * 2000);
       }
     }
-  }, [timeOfDay]);
+    
+    // Network status notification
+    if (!isOnline) {
+      toast.info("You're currently offline. Some features may be limited.", {
+        id: "offline-status",
+        duration: 5000
+      });
+    }
+  }, [timeOfDay, isOnline, shouldUseReducedFeatures, storeOfflineData, getOfflineData]);
 
   const handleVoiceInput = async (transcript: string) => {
     setIsListening(true);
@@ -306,6 +372,30 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
     // Award sparks for exploration
     handleCollectSpark(2);
   };
+  
+  const handleTaskClick = (taskId: string) => {
+    const task = sampleTasks.find(t => t.id === taskId);
+    if (task) {
+      toast.success(`Starting task: ${task.title}`, {
+        icon: '📝',
+        position: 'bottom-center'
+      });
+      
+      // In a real app, this would navigate to the task
+      setShowTaskOrbits(false);
+    }
+  };
+  
+  const handleOrbLongPress = () => {
+    setShowTaskOrbits(prev => !prev);
+    
+    if (!showTaskOrbits) {
+      toast.info("Your tasks orbit", {
+        icon: '✨',
+        position: 'bottom-center'
+      });
+    }
+  };
 
   // Get background gradient based on time of day
   const getTimeBasedGradient = () => {
@@ -323,7 +413,18 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
 
   return (
     <div ref={canvasRef} className={`relative w-full h-screen overflow-hidden bg-gradient-to-b ${getTimeBasedGradient()}`}>
-      {/* Background particles with different patterns */}
+      {/* WebGL Background - Only load on high-performance devices or when explicitly required */}
+      {!shouldUseReducedFeatures && (
+        <WebGLBackground 
+          timeOfDay={timeOfDay}
+          intensity={0.8}
+          particleCount={isLowPerformanceDevice ? 500 : 1500}
+          interactive={true}
+          lowPerformance={isLowPerformanceDevice}
+        />
+      )}
+      
+      {/* Fallback background particles with different patterns */}
       {particles.map((particle) => (
         <FloatingParticle 
           key={particle.id}
@@ -331,25 +432,44 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
           color={particle.color}
           delay={particle.delay}
           pattern={particle.pattern as 'float' | 'spiral' | 'pulse' | 'zigzag'}
+          amplitude={shouldUseReducedFeatures ? 30 : 50}
+          speed={shouldUseReducedFeatures ? 0.7 : 1}
         />
       ))}
       
       {/* Animated background */}
-      <motion.div 
-        className="absolute inset-0 opacity-20"
-        animate={{
-          backgroundPosition: ['0% 0%', '100% 100%'],
-        }}
-        transition={{
-          duration: 20,
-          repeat: Infinity,
-          repeatType: 'reverse',
-        }}
-        style={{
-          backgroundImage: 'url("/patterns/wonder-pattern.svg")',
-          backgroundSize: '100% 100%',
-        }}
-      />
+      {!shouldUseReducedFeatures && (
+        <motion.div 
+          className="absolute inset-0 opacity-20"
+          animate={{
+            backgroundPosition: ['0% 0%', '100% 100%'],
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            repeatType: 'reverse',
+          }}
+          style={{
+            backgroundImage: 'url("/patterns/wonder-pattern.svg")',
+            backgroundSize: '100% 100%',
+          }}
+        />
+      )}
+      
+      {/* Offline indicator */}
+      {!isOnline && (
+        <div className="fixed top-4 left-4 bg-amber-600/90 text-white text-xs px-2 py-1 rounded-full z-50 flex items-center">
+          <span className="inline-block w-2 h-2 rounded-full bg-white mr-1 animate-pulse"></span>
+          Offline
+        </div>
+      )}
+      
+      {/* Performance mode indicator */}
+      {shouldUseReducedFeatures && (
+        <div className="fixed top-4 left-20 bg-gray-600/90 text-white text-xs px-2 py-1 rounded-full z-50">
+          Lite Mode
+        </div>
+      )}
       
       {/* Sparks animation system with time-based variant */}
       <motion.div
@@ -370,6 +490,14 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
           }}
         />
       </motion.div>
+      
+      {/* Task orbits */}
+      <TaskOrbits
+        tasks={sampleTasks}
+        visible={showTaskOrbits}
+        onTaskClick={handleTaskClick}
+        maxTasks={shouldUseReducedFeatures ? 3 : 5}
+      />
       
       {/* Special gesture handlers */}
       <PinchCollector 
@@ -495,6 +623,7 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
           onVoiceInput={handleVoiceInput}
           childAge={childAge}
           isListening={isListening}
+          onLongPress={handleOrbLongPress}
         />
         
         {/* Swipe indicator */}

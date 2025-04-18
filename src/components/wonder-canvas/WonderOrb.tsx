@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, useAnimation, AnimatePresence } from 'framer-motion';
 import { Mic, Search, Sparkles, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 interface WonderOrbProps {
   onSearch: (query: string) => void;
   onVoiceInput: (transcript: string) => void;
+  onLongPress?: () => void;
   childAge?: number;
   isListening?: boolean;
 }
@@ -15,11 +16,14 @@ interface WonderOrbProps {
 const WonderOrb: React.FC<WonderOrbProps> = ({
   onSearch,
   onVoiceInput,
+  onLongPress,
   childAge = 8,
   isListening = false
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [query, setQuery] = useState('');
+  const [isPressing, setIsPressing] = useState(false);
+  const pressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const orbControls = useAnimation();
 
   // Pulsing animation
@@ -38,10 +42,47 @@ const WonderOrb: React.FC<WonderOrbProps> = ({
   }, []);
 
   const handleOrbClick = () => {
-    setIsExpanded(!isExpanded);
+    // Only expand if not triggered by long press
+    if (!isPressing) {
+      setIsExpanded(!isExpanded);
+      
+      if (!isExpanded) {
+        toast.success(childAge < 8 ? "What would you like to explore?" : "Ask me anything!");
+      }
+    }
+  };
+  
+  const handlePressStart = () => {
+    setIsPressing(true);
     
-    if (!isExpanded) {
-      toast.success(childAge < 8 ? "What would you like to explore?" : "Ask me anything!");
+    // Setup long press detection
+    pressTimeoutRef.current = setTimeout(() => {
+      if (onLongPress) {
+        onLongPress();
+        
+        // Visual feedback
+        orbControls.start({
+          scale: [1, 1.2, 1],
+          transition: { duration: 0.5 }
+        });
+      }
+      setIsPressing(false);
+    }, 800); // Consider a press longer than 800ms as a long press
+  };
+  
+  const handlePressEnd = () => {
+    // Clear the timeout to prevent long press if released quickly
+    if (pressTimeoutRef.current) {
+      clearTimeout(pressTimeoutRef.current);
+      pressTimeoutRef.current = null;
+    }
+    
+    // If this was a short press, trigger normal click after a short delay
+    if (isPressing) {
+      setTimeout(() => {
+        setIsPressing(false);
+        handleOrbClick();
+      }, 50);
     }
   };
 
@@ -70,6 +111,11 @@ const WonderOrb: React.FC<WonderOrbProps> = ({
         }}
         transition={{ type: "spring", damping: 20, stiffness: 200 }}
         onClick={handleOrbClick}
+        onMouseDown={handlePressStart}
+        onMouseUp={handlePressEnd}
+        onMouseLeave={handlePressEnd}
+        onTouchStart={handlePressStart}
+        onTouchEnd={handlePressEnd}
       >
         <motion.div 
           className="relative w-full h-full flex items-center justify-center"
@@ -123,26 +169,30 @@ const WonderOrb: React.FC<WonderOrbProps> = ({
                   <Mic className={`w-8 h-8 ${isListening ? 'animate-pulse' : ''}`} />
                 </Button>
 
-                {childAge < 8 && (
-                  <div className="flex gap-2 text-2xl">
-                    {["✨", "🌟", "💫", "⭐️"].map((star, i) => (
-                      <motion.span
-                        key={i}
-                        animate={{ 
-                          rotate: [0, 20, -20, 0],
-                          scale: [1, 1.2, 1]
-                        }}
-                        transition={{ 
-                          duration: 2,
-                          delay: i * 0.2,
-                          repeat: Infinity
-                        }}
-                      >
-                        {star}
-                      </motion.span>
-                    ))}
-                  </div>
-                )}
+                <div className="text-white/60 text-sm">
+                  {childAge < 10 ? (
+                    <div className="flex gap-2 text-2xl">
+                      {["✨", "🌟", "💫", "⭐️"].map((star, i) => (
+                        <motion.span
+                          key={i}
+                          animate={{ 
+                            rotate: [0, 20, -20, 0],
+                            scale: [1, 1.2, 1]
+                          }}
+                          transition={{ 
+                            duration: 2,
+                            delay: i * 0.2,
+                            repeat: Infinity
+                          }}
+                        >
+                          {star}
+                        </motion.span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p>Hold orb to see tasks</p>
+                  )}
+                </div>
               </motion.div>
             </AnimatePresence>
           )}
