@@ -6,22 +6,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Function to map specialist_id to ElevenLabs voice ID
-function getVoiceIdForSpecialist(specialistId: string): string {
-  const voiceMapping = {
-    nova: "EXAVITQu4vr4xnSDxMaL", // Sarah - female voice for Nova
-    spark: "XB0fDUnXU5powFXDhCwa", // Charlotte - female voice for Spark
-    prism: "bIHbv24MWmeRgasZH58o", // Will - male voice for Prism
-    whizzy: "pFZP5JQG7iQjIQuC4Bku", // Lily - female voice for Whizzy
-    atlas: "N2lVS1w4EtoT3dr4eOWO", // Callum - male voice for Atlas
-    pixel: "TX3LPaxmHKxFdv7VOQHJ", // Liam - male voice for Pixel
-    lotus: "XrExE9yKIg1WjnnlVkGX", // Matilda - female voice for Lotus
-    default: "pFZP5JQG7iQjIQuC4Bku" // Lily as default
-  };
-
-  return voiceMapping[specialistId as keyof typeof voiceMapping] || voiceMapping.default;
-}
-
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -29,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { text, specialistId = 'default', model = 'eleven_turbo_v2_5' } = await req.json();
+    const { text, voiceId, model = 'eleven_turbo_v2_5', optimizeStreamingLatency = true } = await req.json();
 
     if (!text) {
       throw new Error('Text is required');
@@ -37,6 +21,10 @@ serve(async (req) => {
 
     // Get API key from environment
     const ELEVENLABS_API_KEY = Deno.env.get('ELEVEN_LABS_API_KEY');
+    
+    // Log relevant information for debugging
+    console.log(`Using ElevenLabs API key exists: ${!!ELEVENLABS_API_KEY}`);
+    console.log(`API key length: ${ELEVENLABS_API_KEY ? ELEVENLABS_API_KEY.length : 0}`);
     
     if (!ELEVENLABS_API_KEY) {
       console.error('ELEVEN_LABS_API_KEY is not set in environment variables');
@@ -50,13 +38,14 @@ serve(async (req) => {
       );
     }
 
-    // Get voice ID for the specialist
-    const voiceId = getVoiceIdForSpecialist(specialistId);
-    console.log(`Generating speech with voice ID: ${voiceId}`);
+    // Use a valid default voice ID if none provided
+    const finalVoiceId = voiceId || 'pkDwhVp7Wc7dQq2DBbpK';
+
+    console.log(`Generating speech for text (length: ${text.length}) with voice: ${finalVoiceId}`);
 
     try {
       const response = await fetch(
-        `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+        `https://api.elevenlabs.io/v1/text-to-speech/${finalVoiceId}`,
         {
           method: 'POST',
           headers: {
@@ -96,9 +85,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           success: true, 
-          audioContent: audioBase64,
-          specialist: specialistId,
-          voiceId
+          audioContent: audioBase64 
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },

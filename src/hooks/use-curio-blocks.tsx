@@ -28,33 +28,29 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
     setIsLoading(true);
     setError(null);
 
-    console.log('Fetching blocks for curioId:', curioId, 'page:', page, 'searchQuery:', searchQuery);
-    
     const start = page * 10;
     const end = start + 9;
 
+    let query = supabase
+      .from('content_blocks')
+      .select('*')
+      .eq('curio_id', curioId)
+      .order('created_at', { ascending: false })
+      .range(start, end);
+
+    if (searchQuery) {
+      query = query.textSearch('content', searchQuery);
+    }
+
     try {
-      let query = supabase
-        .from('content_blocks')
-        .select('*')
-        .eq('curio_id', curioId)
-        .order('created_at', { ascending: false })
-        .range(start, end);
+      const { data, error } = await query;
 
-      if (searchQuery) {
-        query = query.textSearch('content', searchQuery);
+      if (error) {
+        setError(error);
+        return;
       }
 
-      const { data, error: queryError } = await query;
-
-      if (queryError) {
-        console.error('Supabase query error:', queryError);
-        throw queryError;
-      }
-
-      console.log('Fetched blocks:', data?.length || 0, data);
-
-      if (data && data.length > 0) {
+      if (data) {
         // Make sure we're properly typing our ContentBlock before setting state
         const typedBlocks = data.map(block => ({
           id: block.id,
@@ -70,12 +66,8 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
         setBlocks(prevBlocks => [...prevBlocks, ...typedBlocks]);
         setHasMore(data.length === 10);
         setIsFirstLoad(false);
-      } else {
-        console.log('No blocks found for this curio');
-        setHasMore(false);
       }
     } catch (err) {
-      console.error('Error fetching blocks:', err);
       setError(err instanceof Error ? err : new Error('Failed to fetch blocks'));
     } finally {
       setIsLoading(false);

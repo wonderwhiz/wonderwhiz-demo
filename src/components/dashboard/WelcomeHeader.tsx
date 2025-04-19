@@ -25,12 +25,12 @@ const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({
   };
   
   const getPersonalizedMessage = () => {
-    if (streakDays > 3) {
+    if (streakDays > 10) {
       return `Amazing ${streakDays}-day streak!`;
     } else if (streakDays > 0) {
       return `${streakDays} day${streakDays > 1 ? 's' : ''} streak!`;
     }
-    return "Let's learn something new!";
+    return "Welcome back!";
   };
   
   const renderAvatar = () => {

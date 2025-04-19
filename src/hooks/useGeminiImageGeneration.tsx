@@ -24,61 +24,112 @@ export function useGeminiImageGeneration({ childAge = 10, maxRetries = 3 }: UseG
       const adaptedPrompt = adaptPromptForChildAge(prompt, childAge);
       const imageStyle = style || getDefaultStyleForAge(childAge);
       
-      console.log(`Calling OpenAI image generation with prompt: "${adaptedPrompt}" and style: ${imageStyle}`);
+      console.log(`Calling generate-gemini-image with prompt: "${adaptedPrompt}" and style: ${imageStyle}`);
       
-      // Primary method - OpenAI via edge function
-      const { data, error } = await supabase.functions.invoke('generate-openai-image', {
-        body: { 
-          prompt: adaptedPrompt,
-          style: imageStyle === 'cartoon' ? 'vivid' : 'natural',
-          childAge: childAge
-        }
-      });
-      
-      if (error) {
-        console.error('Supabase function error:', error);
-        throw new Error(error.message || 'Failed to call image generation service');
-      }
-      
-      console.log('Image generation response:', data);
-      
-      if (data?.imageUrl) {
-        setImageUrl(data.imageUrl);
-        setFallbackSource(data.source || 'openai');
+      // First try the primary method - Gemini via edge function
+      try {
+        // Call the gemini edge function with error handling
+        const { data, error } = await supabase.functions.invoke('generate-gemini-image', {
+          body: { 
+            prompt: adaptedPrompt,
+            style: imageStyle,
+            childAge: childAge,
+            retryOnFail: true
+          }
+        });
         
-        if (data.source === 'openai') {
-          toast.success("Image created successfully", {
-            duration: 3000,
-            position: "bottom-right"
-          });
-        } else if (data.source.includes('fallback')) {
-          toast.info("Using alternative image source", {
-            duration: 3000,
-            position: "bottom-right"
-          });
+        if (error) {
+          console.error('Supabase function error:', error);
+          throw new Error(error.message || 'Failed to call image generation service');
         }
         
-        return data.imageUrl;
-      } else if (data?.error) {
-        throw new Error(data.error);
-      } else {
-        throw new Error('No image URL returned');
+        console.log('Image generation response:', data);
+        
+        if (data?.imageUrl) {
+          setImageUrl(data.imageUrl);
+          
+          if (data.fallback) {
+            setFallbackSource(data.fallbackSource || 'fallback');
+            
+            if (data.fallbackSource === 'dalle') {
+              toast.info("Using DALL-E image generation", {
+                duration: 3000,
+                position: "bottom-right"
+              });
+            } else if (data.fallbackSource === 'error') {
+              // Try alternate method if primary fails
+              throw new Error('Primary image generation failed, trying alternate method');
+            }
+          } else if (data.source === 'gemini') {
+            setFallbackSource('gemini');
+            toast.success("Image created with Gemini AI", {
+              duration: 3000,
+              position: "bottom-right"
+            });
+          }
+          
+          return data.imageUrl;
+        } else if (data?.error) {
+          throw new Error(data.error);
+        } else {
+          throw new Error('No image URL returned');
+        }
+      } catch (primaryError) {
+        // If primary method fails, try the alternate method
+        console.log('Primary image generation failed, trying alternate method:', primaryError);
+        
+        // Try the alternate method - contextual-image function
+        try {
+          // Only proceed with alternate if retry count is less than max
+          if (retryCount < 2) {
+            setRetryCount(retryCount + 1);
+            
+            const { data: contextualData, error: contextualError } = await supabase.functions.invoke('generate-contextual-image', {
+              body: { 
+                topic: adaptedPrompt,
+                style: imageStyle,
+                childAge: childAge
+              }
+            });
+            
+            if (contextualError) {
+              console.error('Alternate function error:', contextualError);
+              throw new Error(contextualError.message || 'Failed to call alternate image service');
+            }
+            
+            if (contextualData?.imageUrl) {
+              setImageUrl(contextualData.imageUrl);
+              setFallbackSource(contextualData.source || 'alternate');
+              
+              toast.info(`Using alternate image service (${contextualData.source || 'fallback'})`, {
+                duration: 3000,
+                position: "bottom-right"
+              });
+              
+              return contextualData.imageUrl;
+            }
+          }
+          
+          throw new Error('Alternate image generation also failed');
+        } catch (alternateError) {
+          console.error('Alternate image generation failed:', alternateError);
+          throw new Error('All image generation methods failed');
+        }
       }
     } catch (err) {
       console.error('Error generating image:', err);
       setGenerationError(err instanceof Error ? err.message : 'Unknown error generating image');
       
-      // Get a fallback image based on topic
-      const fallbackUrl = getFallbackImage(prompt);
-      setImageUrl(fallbackUrl);
-      setFallbackSource('error-fallback');
-      
-      toast.error("Using alternative image", {
-        description: "Could not generate custom image. Using a stock photo instead.",
+      toast.error("Couldn't generate image", {
+        description: "Image generation failed. Please try again later.",
         duration: 3000
       });
       
-      return fallbackUrl;
+      // Set a placeholder image as fallback
+      const placeholderUrl = `https://placehold.co/600x400/252238/FFFFFF?text=${encodeURIComponent('Image Generation Failed')}`;
+      setImageUrl(placeholderUrl);
+      setFallbackSource('error');
+      return placeholderUrl;
     } finally {
       setIsGenerating(false);
       // Reset retry count after complete attempt (success or final failure)
@@ -113,49 +164,14 @@ export function useGeminiImageGeneration({ childAge = 10, maxRetries = 3 }: UseG
     }
   };
 
-  // Fallback images by topic
-  const getFallbackImage = (topic: string): string => {
-    const topicLower = topic.toLowerCase();
-    
-    // Educational stock images by topic
-    const fallbackImages = {
-      space: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1024&auto=format&fit=crop",
-      planet: "https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?q=80&w=1024&auto=format&fit=crop",
-      galaxy: "https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?q=80&w=1024&auto=format&fit=crop",
-      ocean: "https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?q=80&w=1024&auto=format&fit=crop",
-      sea: "https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?q=80&w=1024&auto=format&fit=crop",
-      animal: "https://images.unsplash.com/photo-1474511320723-9a56873867b5?q=80&w=1024&auto=format&fit=crop",
-      dinosaur: "https://images.unsplash.com/photo-1615243029542-4fcced64c70e?q=80&w=1024&auto=format&fit=crop",
-      robot: "https://images.unsplash.com/photo-1558346490-a72e53ae2d4f?q=80&w=1024&auto=format&fit=crop",
-      technology: "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=1024&auto=format&fit=crop",
-      plant: "https://images.unsplash.com/photo-1502331538081-041522531548?q=80&w=1024&auto=format&fit=crop",
-      volcano: "https://images.unsplash.com/photo-1554232682-b9ef9c92f8de?q=80&w=1024&auto=format&fit=crop",
-      mountain: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1024&auto=format&fit=crop",
-      history: "https://images.unsplash.com/photo-1461360370896-922624d12aa1?q=80&w=1024&auto=format&fit=crop",
-      art: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=1024&auto=format&fit=crop",
-      music: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?q=80&w=1024&auto=format&fit=crop",
-      science: "https://images.unsplash.com/photo-1576086213369-97a306d36557?q=80&w=1024&auto=format&fit=crop"
-    };
-    
-    // Find a matching topic
-    for (const [key, url] of Object.entries(fallbackImages)) {
-      if (topicLower.includes(key)) {
-        return url;
-      }
-    }
-    
-    // Default generic educational image
-    return "https://images.unsplash.com/photo-1492539161849-b2b8f6a5fd00?q=80&w=1024&auto=format&fit=crop";
-  };
-
   return {
     generateImage,
     isGenerating,
     imageUrl,
-    setImageUrl,
+    setImageUrl, // Now explicitly exposing this function
     generationError,
     fallbackSource,
-    setFallbackSource,
+    setFallbackSource, // Now explicitly exposing this function
     resetImage: () => {
       setImageUrl(null);
       setGenerationError(null);

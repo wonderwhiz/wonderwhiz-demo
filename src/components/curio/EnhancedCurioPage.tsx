@@ -11,10 +11,21 @@ import { useBlockInteractions } from '@/hooks/useBlockInteractions';
 import { useElevenLabsVoice } from '@/hooks/useElevenLabsVoice';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
-import CurioPageHeader from '@/components/curio/CurioPageHeader';
-import EnhancedCurioContent from '@/components/curio/EnhancedCurioContent';
+import CurioBlockList from '@/components/CurioBlockList';
+import CurioPageSearch from '@/components/curio/CurioPageSearch';
 import CurioLoadingState from '@/components/curio/CurioLoadingState';
 import CurioErrorState from '@/components/curio/CurioErrorState';
+import RabbitHoleSuggestions from '@/components/curio/RabbitHoleSuggestions';
+import InteractiveImageBlock from '@/components/content-blocks/InteractiveImageBlock';
+import TalkToWhizzy from '@/components/curio/TalkToWhizzy';
+import QuickAnswer from '@/components/curio/QuickAnswer';
+import LearningProgress from '@/components/curio/LearningProgress';
+import ExplorationPath from '@/components/curio/ExplorationPath';
+import ConnectionsVisualizer from '@/components/curio/ConnectionsVisualizer';
+import AgeAdaptiveInterface from '@/components/curio/AgeAdaptiveInterface';
+import EnhancedVoiceInput from '@/components/curio/EnhancedVoiceInput';
+import EnhancedSearchBar from '@/components/curio/EnhancedSearchBar';
+import EnhancedCurioContent from '@/components/curio/EnhancedCurioContent';
 
 const EnhancedCurioPage: React.FC = () => {
   const { childId, curioId } = useParams<{ childId: string, curioId: string }>();
@@ -41,10 +52,17 @@ const EnhancedCurioPage: React.FC = () => {
   const [animateBlocks, setAnimateBlocks] = useState(true);
   const [curioTitle, setCurioTitle] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [showInsights, setShowInsights] = useState(false);
+  const [showPersonalizedMessage, setShowPersonalizedMessage] = useState(false);
+  const [personalizedMessage, setPersonalizedMessage] = useState('');
+  const [specialistIds, setSpecialistIds] = useState<string[]>([]);
+  const [showRabbitHoleSuggestions, setShowRabbitHoleSuggestions] = useState(false);
+  const [quickAnswerExpanded, setQuickAnswerExpanded] = useState(false);
   const [explorationDepth, setExplorationDepth] = useState(0);
   const [explorationPath, setExplorationPath] = useState<string[]>([]);
+  const [isVoiceActive, setIsVoiceActive] = useState(false);
+  const [earnedSparks, setEarnedSparks] = useState(0);
   const [childAge, setChildAge] = useState(10);
+  const [relatedConnections, setRelatedConnections] = useState<{title: string, description: string, type: 'related' | 'deeper' | 'broader'}[]>([]);
   
   const loadTriggerRef = useRef<HTMLDivElement>(null);
 
@@ -79,6 +97,24 @@ const EnhancedCurioPage: React.FC = () => {
         });
     }
   }, [curioId]);
+  
+  const loadCurioAncestors = async (parentId: string, pathSoFar: string[] = []) => {
+    try {
+      const { data, error } = await supabase
+        .from('curios')
+        .select('title')
+        .eq('id', parentId)
+        .single();
+        
+      if (data && !error) {
+        const newPath = [data.title, ...pathSoFar];
+        setExplorationPath([data.title, ...pathSoFar, curioTitle || '']);
+        setExplorationDepth(newPath.length);
+      }
+    } catch (err) {
+      console.error('Error loading curio ancestors:', err);
+    }
+  };
 
   useEffect(() => {
     if (blocks.length > 0 && isFirstLoad) {
@@ -91,21 +127,75 @@ const EnhancedCurioPage: React.FC = () => {
           colors: ['#8b5cf6', '#d946ef', '#3b82f6']
         });
       }, 800);
+      
+      setEarnedSparks(prev => prev + 2);
+      toast.success("You earned 2 sparks for your curiosity!", {
+        icon: "✨"
+      });
+      
+      generateRelatedConnections();
     }
   }, [blocks.length, isFirstLoad]);
+  
+  const generateRelatedConnections = () => {
+    if (!curioTitle) return;
+    
+    const title = curioTitle.toLowerCase();
+    
+    const connections = [
+      {
+        title: `Why is ${title} important?`,
+        description: `Discover the significance and real-world impact of ${title}.`,
+        type: 'deeper' as 'deeper'
+      },
+      {
+        title: `How does ${title} work?`,
+        description: `Explore the fascinating mechanics and processes behind ${title}.`,
+        type: 'deeper' as 'deeper'
+      },
+      {
+        title: `${title} in history`,
+        description: `Journey through time to see how ${title} has evolved and changed.`,
+        type: 'broader' as 'broader'
+      },
+      {
+        title: `Fun facts about ${title}`,
+        description: `Discover surprising and interesting tidbits about ${title}.`,
+        type: 'related' as 'related'
+      }
+    ];
+    
+    setRelatedConnections(connections);
+  };
 
   useEffect(() => {
     if (blocks.length > 0) {
       setTimeout(() => {
         setAnimateBlocks(false);
       }, 1000);
+      
+      const specialists = blocks.map(block => block.specialist_id);
+      const uniqueSpecialists = Array.from(new Set(specialists));
+      setSpecialistIds(uniqueSpecialists);
     }
   }, [blocks]);
 
-  // Add this debugging useEffect to log when blocks change
   useEffect(() => {
-    console.log("Current blocks:", blocks);
-  }, [blocks]);
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      
+      if (scrollPosition + windowHeight > documentHeight * 0.75) {
+        if (blocks.length > 0) {
+          setShowRabbitHoleSuggestions(true);
+        }
+      }
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [blocks.length]);
 
   if (profileError) {
     return <CurioErrorState message="Failed to load profile." />;
@@ -114,13 +204,18 @@ const EnhancedCurioPage: React.FC = () => {
   if (isLoadingProfile) {
     return <CurioLoadingState message="Loading profile..." />;
   }
+
+  const handleNavigateToIndex = (index: number) => {
+    toast.info(`Navigation to exploration step ${index+1}`);
+  };
   
   const handleBackToDashboard = () => {
     navigate(`/dashboard/${childId}`);
   };
   
-  const handleToggleInsights = () => {
-    setShowInsights(!showInsights);
+  const handleStartJourney = () => {
+    setQuickAnswerExpanded(false);
+    window.scrollTo({ top: window.innerHeight * 0.5, behavior: 'smooth' });
   };
   
   const handleRabbitHoleClick = async (question: string) => {
@@ -155,6 +250,8 @@ const EnhancedCurioPage: React.FC = () => {
           setExplorationPath(prev => [...prev, question]);
           setExplorationDepth(prev => prev + 1);
           
+          setEarnedSparks(prev => prev + 2);
+          
           confetti({
             particleCount: 100,
             spread: 70,
@@ -174,13 +271,18 @@ const EnhancedCurioPage: React.FC = () => {
 
   const handleVoiceInput = (transcript: string) => {
     if (transcript) {
+      setIsVoiceActive(false);
       handleRabbitHoleClick(transcript);
     }
   };
+  
+  const handleExplorationNavigate = (index: number) => {
+    toast.info("Path navigation coming soon!");
+  };
 
-  const handlePlayContent = (text: string, specialistId: string) => {
+  const handlePlayContent = (text: string) => {
     if (text && playText) {
-      playText(text, specialistId);
+      playText(text, 'whizzy'); // Fixed: Added the second argument 'whizzy'
       
       if (childAge < 8) {
         toast.success("Reading to you!");
@@ -193,65 +295,32 @@ const EnhancedCurioPage: React.FC = () => {
     window.location.reload();
   };
 
-  const handleProcessReply = (blockId: string, message: string) => {
-    if (!blockId || !message) return;
-    
-    toast.loading("Sending your reply...");
-    
-    handleReply(blockId, message)
-      .then((success) => {
-        if (success) {
-          toast.success("Reply sent successfully!");
-        }
-      })
-      .catch((err) => {
-        console.error("Error processing reply:", err);
-        toast.error("Failed to send reply. Please try again.");
-      });
-  };
-
+  // Use the new EnhancedCurioContent component
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-indigo-950 to-purple-950">
-      <CurioPageHeader
-        curioTitle={curioTitle}
-        handleBackToDashboard={handleBackToDashboard}
-        handleToggleInsights={handleToggleInsights}
-        handleRefresh={handleRefresh}
-        refreshing={refreshing}
-        showInsights={showInsights}
-        childName={childProfile?.name}
-      />
-      
-      {isLoadingBlocks && blocks.length === 0 ? (
-        <CurioLoadingState message="Loading content..." />
-      ) : blocksError ? (
-        <CurioErrorState message="Failed to load content." onRetry={handleRefresh} />
-      ) : blocks.length === 0 ? (
-        <CurioErrorState message="No content blocks found. Try refreshing or creating a new exploration." onRetry={handleRefresh} />
-      ) : (
-        <EnhancedCurioContent
-          title={curioTitle || "Exploring Knowledge"}
-          blocks={blocks}
-          onSearch={(query) => {
-            setSearchQuery(query);
-            handleSearch({ preventDefault: () => {} } as React.FormEvent);
-          }}
-          onVoiceCapture={handleVoiceInput}
-          onImageCapture={(file) => {
-            toast.success("Image received! Analyzing...");
-            // Implement image analysis logic here
-          }}
-          onLike={handleToggleLike}
-          onBookmark={handleToggleBookmark}
-          onReply={handleProcessReply}
-          onReadAloud={handlePlayContent}
-          onExplore={() => toast.info("Explore feature coming soon!")}
-          onRabbitHoleClick={handleRabbitHoleClick}
-          childAge={childAge}
-          childId={childId}
-        />
-      )}
-    </div>
+    <EnhancedCurioContent
+      title={curioTitle || "Exploring Knowledge"}
+      blocks={blocks}
+      onSearch={(query) => {
+        setSearchQuery(query);
+        handleSearch({ preventDefault: () => {} } as React.FormEvent);
+      }}
+      onVoiceCapture={handleVoiceInput}
+      onImageCapture={(file) => {
+        toast.success("Image received! Analyzing...");
+        // Implement image analysis logic here
+      }}
+      onLike={handleToggleLike}
+      onBookmark={handleToggleBookmark}
+      onReply={handleReply}
+      onReadAloud={(text, specialistId) => {
+        if (playText) {
+          playText(text, specialistId);
+        }
+      }}
+      onExplore={() => toast.info("Explore feature coming soon!")}
+      onRabbitHoleClick={handleRabbitHoleClick}
+      childAge={childAge}
+    />
   );
 };
 

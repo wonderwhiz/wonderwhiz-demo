@@ -2,375 +2,362 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import confetti from 'canvas-confetti';
 
-export const useBlockInteractions = (profileId: string | undefined) => {
-  const [isReplying, setIsReplying] = useState(false);
-  const [isLiking, setIsLiking] = useState(false);
-  const [isBookmarking, setIsBookmarking] = useState(false);
+export function useBlockInteractions(childId?: string) {
+  const [loadingStates, setLoadingStates] = useState<{[key: string]: boolean}>({});
 
-  // Handle liking blocks
-  const handleToggleLike = async (blockId: string) => {
-    if (!profileId || isLiking) return;
-    
-    setIsLiking(true);
-    
-    try {
-      // Instead of using separate tables for likes, use the content_blocks table's liked field
-      const { data: block, error: fetchError } = await supabase
-        .from('content_blocks')
-        .select('liked')
-        .eq('id', blockId)
-        .single();
-      
-      if (fetchError) throw fetchError;
-      
-      // Toggle like status
-      const newLikedStatus = !block.liked;
-      
-      const { error: updateError } = await supabase
-        .from('content_blocks')
-        .update({ liked: newLikedStatus })
-        .eq('id', blockId);
-          
-      if (updateError) throw updateError;
-      
-      toast.success(newLikedStatus ? "Added to liked content!" : "Removed from liked content");
-      
-      // Award spark for liking
-      if (newLikedStatus) {
-        try {
-          await supabase.functions.invoke('increment-sparks-balance', {
-            body: JSON.stringify({
-              profileId: profileId,
-              amount: 1
-            })
-          });
-          
-          await supabase.from('sparks_transactions').insert({
-            child_id: profileId,
-            amount: 1,
-            reason: 'Liking content'
-          });
-          
-          toast.success('You earned 1 spark for liking content!', {
-            duration: 2000,
-            position: 'bottom-right'
-          });
-        } catch (err) {
-          console.error('Error awarding spark:', err);
-        }
-      }
-    } catch (error) {
-      console.error('Error updating like status:', error);
-      toast.error("Could not update like");
-    } finally {
-      setIsLiking(false);
-    }
+  const setLoading = (blockId: string, isLoading: boolean) => {
+    setLoadingStates(prev => ({
+      ...prev,
+      [blockId]: isLoading
+    }));
   };
 
-  // Handle bookmarking blocks
-  const handleToggleBookmark = async (blockId: string) => {
-    if (!profileId || isBookmarking) return;
-    
-    setIsBookmarking(true);
-    
-    try {
-      // Instead of using separate tables for bookmarks, use the content_blocks table's bookmarked field
-      const { data: block, error: fetchError } = await supabase
-        .from('content_blocks')
-        .select('bookmarked')
-        .eq('id', blockId)
-        .single();
-      
-      if (fetchError) throw fetchError;
-      
-      // Toggle bookmark status
-      const newBookmarkedStatus = !block.bookmarked;
-      
-      const { error: updateError } = await supabase
-        .from('content_blocks')
-        .update({ bookmarked: newBookmarkedStatus })
-        .eq('id', blockId);
-          
-      if (updateError) throw updateError;
-      
-      toast.success(newBookmarkedStatus ? "Added to bookmarks!" : "Removed from bookmarks");
-      
-      // Award spark for first bookmark
-      if (newBookmarkedStatus) {
-        try {
-          await supabase.functions.invoke('increment-sparks-balance', {
-            body: JSON.stringify({
-              profileId: profileId,
-              amount: 1
-            })
-          });
-          
-          await supabase.from('sparks_transactions').insert({
-            child_id: profileId,
-            amount: 1,
-            reason: 'Bookmarking content'
-          });
-          
-          toast.success('You earned 1 spark for saving content!', {
-            duration: 2000,
-            position: 'bottom-right'
-          });
-        } catch (err) {
-          console.error('Error awarding spark:', err);
-        }
-      }
-    } catch (error) {
-      console.error('Error updating bookmark status:', error);
-      toast.error("Could not update bookmark");
-    } finally {
-      setIsBookmarking(false);
-    }
-  };
-
-  // Handle quiz correct answer
-  const handleQuizCorrect = async () => {
-    if (!profileId) return;
-    
-    try {
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 }
-      });
-      
-      await supabase.functions.invoke('increment-sparks-balance', {
-        body: JSON.stringify({
-          profileId: profileId,
-          amount: 2
-        })
-      });
-      
-      await supabase.from('sparks_transactions').insert({
-        child_id: profileId,
-        amount: 2,
-        reason: 'Answering quiz correctly'
-      });
-      
-      toast.success('You earned 2 sparks for answering correctly!', {
-        duration: 2000,
-        position: 'bottom-right'
-      });
-    } catch (error) {
-      console.error('Error awarding sparks for quiz:', error);
-    }
-  };
-
-  // Handle news read completion
-  const handleNewsRead = async () => {
-    if (!profileId) return;
-    
-    try {
-      await supabase.functions.invoke('increment-sparks-balance', {
-        body: JSON.stringify({
-          profileId: profileId,
-          amount: 1
-        })
-      });
-      
-      await supabase.from('sparks_transactions').insert({
-        child_id: profileId,
-        amount: 1,
-        reason: 'Reading news update'
-      });
-      
-      toast.success('You earned 1 spark for reading news!', {
-        duration: 2000,
-        position: 'bottom-right'
-      });
-    } catch (error) {
-      console.error('Error awarding spark for news:', error);
-    }
-  };
-
-  // Handle creative upload
-  const handleCreativeUpload = async () => {
-    if (!profileId) return;
-    
-    try {
-      confetti({
-        particleCount: 150,
-        spread: 70,
-        origin: { y: 0.6 }
-      });
-      
-      await supabase.functions.invoke('increment-sparks-balance', {
-        body: JSON.stringify({
-          profileId: profileId,
-          amount: 3
-        })
-      });
-      
-      await supabase.from('sparks_transactions').insert({
-        child_id: profileId,
-        amount: 3,
-        reason: 'Completing creative challenge'
-      });
-      
-      toast.success('You earned 3 sparks for your creativity!', {
-        duration: 2000,
-        position: 'bottom-right'
-      });
-    } catch (error) {
-      console.error('Error awarding sparks for creative upload:', error);
-    }
-  };
-
-  // Handle activity completion
-  const handleActivityComplete = async () => {
-    if (!profileId) return;
-    
-    try {
-      confetti({
-        particleCount: 70,
-        spread: 70,
-        origin: { y: 0.6 }
-      });
-      
-      await supabase.functions.invoke('increment-sparks-balance', {
-        body: JSON.stringify({
-          profileId: profileId,
-          amount: 2
-        })
-      });
-      
-      await supabase.from('sparks_transactions').insert({
-        child_id: profileId,
-        amount: 2,
-        reason: 'Completing activity'
-      });
-      
-      toast.success('You earned 2 sparks for completing the activity!', {
-        duration: 2000,
-        position: 'bottom-right'
-      });
-    } catch (error) {
-      console.error('Error awarding sparks for activity:', error);
-    }
-  };
-
-  // Handle mindfulness completion
-  const handleMindfulnessComplete = async () => {
-    if (!profileId) return;
-    
-    try {
-      await supabase.functions.invoke('increment-sparks-balance', {
-        body: JSON.stringify({
-          profileId: profileId,
-          amount: 2
-        })
-      });
-      
-      await supabase.from('sparks_transactions').insert({
-        child_id: profileId,
-        amount: 2,
-        reason: 'Completing mindfulness exercise'
-      });
-      
-      toast.success('You earned 2 sparks for practicing mindfulness!', {
-        duration: 2000,
-        position: 'bottom-right'
-      });
-    } catch (error) {
-      console.error('Error awarding sparks for mindfulness:', error);
-    }
-  };
-
-  // Handle task completion
-  const handleTaskComplete = async () => {
-    if (!profileId) return;
-    
-    try {
-      confetti({
-        particleCount: 70,
-        spread: 70,
-        origin: { y: 0.6 }
-      });
-      
-      await supabase.functions.invoke('increment-sparks-balance', {
-        body: JSON.stringify({
-          profileId: profileId,
-          amount: 2
-        })
-      });
-      
-      await supabase.from('sparks_transactions').insert({
-        child_id: profileId,
-        amount: 2,
-        reason: 'Completing task'
-      });
-      
-      toast.success('You earned 2 sparks for completing the task!', {
-        duration: 2000,
-        position: 'bottom-right'
-      });
-    } catch (error) {
-      console.error('Error awarding sparks for task:', error);
-    }
-  };
-
-  // Handle block replies
   const handleReply = async (blockId: string, message: string) => {
-    if (!profileId || !message.trim() || isReplying) return false;
+    if (!childId || !blockId || !message) return;
     
-    setIsReplying(true);
+    setLoading(blockId, true);
     
     try {
-      // Send reply through edge function
-      const { data, error } = await supabase.functions.invoke('handle-block-replies', {
-        body: {
+      await supabase.functions.invoke('handle-interaction', {
+        body: { 
+          type: 'reply',
           blockId,
-          message: message.trim(),
-          childId: profileId
+          childId,
+          message
         }
       });
       
-      if (error) throw error;
+      toast.success('Comment added!', {
+        position: 'bottom-right',
+        duration: 2000
+      });
+    } catch (error) {
+      console.error('Error adding reply:', error);
+      toast.error("Could not add your comment. Please try again later.");
+    } finally {
+      setLoading(blockId, false);
+    }
+  };
+  
+  const handleQuizCorrect = async (blockId: string) => {
+    if (!childId || !blockId) return;
+    
+    setLoading(blockId, true);
+    
+    try {
+      await supabase.functions.invoke('handle-interaction', {
+        body: { 
+          type: 'quiz-correct',
+          blockId,
+          childId
+        }
+      });
       
-      toast.success("Your comment was sent!");
-      
-      // Award spark for engagement
+      // Award sparks for correct answers
       try {
         await supabase.functions.invoke('increment-sparks-balance', {
           body: JSON.stringify({
-            profileId: profileId,
+            profileId: childId,
+            amount: 3
+          })
+        });
+        
+        await supabase.from('sparks_transactions').insert({
+          child_id: childId,
+          amount: 3,
+          reason: 'Quiz answered correctly'
+        });
+        
+        toast.success('You earned 3 sparks for your knowledge!', {
+          icon: '✨',
+          position: 'bottom-right',
+          duration: 3000
+        });
+      } catch (err) {
+        console.error('Error awarding sparks:', err);
+      }
+    } catch (error) {
+      console.error('Error handling quiz correct:', error);
+    } finally {
+      setLoading(blockId, false);
+    }
+  };
+  
+  const handleNewsRead = async (blockId: string) => {
+    if (!childId || !blockId) return;
+    
+    setLoading(blockId, true);
+    
+    try {
+      await supabase.functions.invoke('handle-interaction', {
+        body: { 
+          type: 'news-read',
+          blockId,
+          childId
+        }
+      });
+      
+      // Award sparks for staying informed
+      try {
+        await supabase.functions.invoke('increment-sparks-balance', {
+          body: JSON.stringify({
+            profileId: childId,
             amount: 1
           })
         });
         
         await supabase.from('sparks_transactions').insert({
-          child_id: profileId,
+          child_id: childId,
           amount: 1,
-          reason: 'Commenting on content'
+          reason: 'Stayed informed with news'
         });
         
-        toast.success('You earned 1 spark for sharing your thoughts!', {
-          duration: 2000,
-          position: 'bottom-right'
+        toast.success('You earned 1 spark for staying informed!', {
+          icon: '✨',
+          position: 'bottom-right',
+          duration: 3000
         });
       } catch (err) {
-        console.error('Error awarding spark for reply:', err);
+        console.error('Error awarding sparks:', err);
       }
-      
-      return true;
     } catch (error) {
-      console.error('Error posting reply:', error);
-      toast.error("Could not post your comment");
-      return false;
+      console.error('Error marking news as read:', error);
     } finally {
-      setIsReplying(false);
+      setLoading(blockId, false);
+    }
+  };
+  
+  const handleCreativeUpload = async (blockId: string, content: any) => {
+    if (!childId || !blockId) return;
+    
+    setLoading(blockId, true);
+    
+    try {
+      await supabase.functions.invoke('handle-interaction', {
+        body: { 
+          type: 'creative-upload',
+          blockId,
+          childId,
+          content
+        }
+      });
+      
+      // Award sparks for creative submissions
+      try {
+        await supabase.functions.invoke('increment-sparks-balance', {
+          body: JSON.stringify({
+            profileId: childId,
+            amount: 5
+          })
+        });
+        
+        await supabase.from('sparks_transactions').insert({
+          child_id: childId,
+          amount: 5,
+          reason: 'Creative submission'
+        });
+        
+        toast.success('You earned 5 sparks for your creativity!', {
+          icon: '✨',
+          position: 'bottom-right',
+          duration: 3000
+        });
+      } catch (err) {
+        console.error('Error awarding sparks:', err);
+      }
+    } catch (error) {
+      console.error('Error handling creative upload:', error);
+    } finally {
+      setLoading(blockId, false);
+    }
+  };
+  
+  const handleActivityComplete = async (blockId: string) => {
+    if (!childId || !blockId) return;
+    
+    setLoading(blockId, true);
+    
+    try {
+      await supabase.functions.invoke('handle-interaction', {
+        body: { 
+          type: 'activity-complete',
+          blockId,
+          childId
+        }
+      });
+      
+      // Award sparks for completing activities
+      try {
+        await supabase.functions.invoke('increment-sparks-balance', {
+          body: JSON.stringify({
+            profileId: childId,
+            amount: 3
+          })
+        });
+        
+        await supabase.from('sparks_transactions').insert({
+          child_id: childId,
+          amount: 3,
+          reason: 'Activity completed'
+        });
+        
+        toast.success('You earned 3 sparks for completing an activity!', {
+          icon: '✨',
+          position: 'bottom-right',
+          duration: 3000
+        });
+      } catch (err) {
+        console.error('Error awarding sparks:', err);
+      }
+    } catch (error) {
+      console.error('Error marking activity as complete:', error);
+    } finally {
+      setLoading(blockId, false);
+    }
+  };
+  
+  const handleMindfulnessComplete = async (blockId: string) => {
+    if (!childId || !blockId) return;
+    
+    setLoading(blockId, true);
+    
+    try {
+      await supabase.functions.invoke('handle-interaction', {
+        body: { 
+          type: 'mindfulness-complete',
+          blockId,
+          childId
+        }
+      });
+      
+      // Award sparks for mindfulness practice
+      try {
+        await supabase.functions.invoke('increment-sparks-balance', {
+          body: JSON.stringify({
+            profileId: childId,
+            amount: 2
+          })
+        });
+        
+        await supabase.from('sparks_transactions').insert({
+          child_id: childId,
+          amount: 2,
+          reason: 'Mindfulness practice'
+        });
+        
+        toast.success('You earned 2 sparks for mindfulness practice!', {
+          icon: '✨',
+          position: 'bottom-right',
+          duration: 3000
+        });
+      } catch (err) {
+        console.error('Error awarding sparks:', err);
+      }
+    } catch (error) {
+      console.error('Error marking mindfulness as complete:', error);
+    } finally {
+      setLoading(blockId, false);
+    }
+  };
+  
+  const handleTaskComplete = async (blockId: string) => {
+    if (!childId || !blockId) return;
+    
+    setLoading(blockId, true);
+    
+    try {
+      await supabase.functions.invoke('handle-interaction', {
+        body: { 
+          type: 'task-complete',
+          blockId,
+          childId
+        }
+      });
+      
+      // Award sparks for completing tasks
+      try {
+        await supabase.functions.invoke('increment-sparks-balance', {
+          body: JSON.stringify({
+            profileId: childId,
+            amount: 1
+          })
+        });
+        
+        await supabase.from('sparks_transactions').insert({
+          child_id: childId,
+          amount: 1,
+          reason: 'Task completed'
+        });
+        
+        toast.success('You earned 1 spark for completing a task!', {
+          icon: '✨',
+          position: 'bottom-right',
+          duration: 3000
+        });
+      } catch (err) {
+        console.error('Error awarding sparks:', err);
+      }
+    } catch (error) {
+      console.error('Error marking task as complete:', error);
+    } finally {
+      setLoading(blockId, false);
+    }
+  };
+  
+  const handleToggleLike = async (blockId: string) => {
+    if (!childId || !blockId) return;
+    
+    setLoading(blockId, true);
+    
+    try {
+      await supabase.functions.invoke('handle-interaction', {
+        body: { 
+          type: 'like',
+          blockId,
+          childId
+        }
+      });
+      
+      toast.success('Content liked!', {
+        position: 'bottom-right',
+        duration: 2000
+      });
+    } catch (error) {
+      console.error('Error toggling like:', error);
+      toast.error("Could not like this content. Please try again later.");
+    } finally {
+      setLoading(blockId, false);
+    }
+  };
+  
+  const handleToggleBookmark = async (blockId: string) => {
+    if (!childId || !blockId) return;
+    
+    setLoading(blockId, true);
+    
+    try {
+      await supabase.functions.invoke('handle-interaction', {
+        body: { 
+          type: 'bookmark',
+          blockId,
+          childId
+        }
+      });
+      
+      toast.success('Content saved!', {
+        position: 'bottom-right',
+        duration: 2000
+      });
+    } catch (error) {
+      console.error('Error toggling bookmark:', error);
+      toast.error("Could not save this content. Please try again later.");
+    } finally {
+      setLoading(blockId, false);
     }
   };
 
   return {
-    handleToggleLike,
-    handleToggleBookmark,
     handleReply,
     handleQuizCorrect,
     handleNewsRead,
@@ -378,8 +365,8 @@ export const useBlockInteractions = (profileId: string | undefined) => {
     handleActivityComplete,
     handleMindfulnessComplete,
     handleTaskComplete,
-    isReplying,
-    isLiking,
-    isBookmarking
+    handleToggleLike,
+    handleToggleBookmark,
+    loadingStates
   };
-};
+}

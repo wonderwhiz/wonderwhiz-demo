@@ -61,83 +61,63 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
   };
 
   const handleSuggestionClick = async (suggestion: string) => {
-    if (!childId) {
-      // If no childId, just call the parent callback
-      if (onSuggestionClick) {
-        onSuggestionClick(suggestion);
-      }
-      return;
+    // First call the provided callback
+    if (onSuggestionClick) {
+      onSuggestionClick(suggestion);
     }
     
-    // Show loading state
-    toast.loading("Creating new exploration...");
-    
-    try {
-      // Create a new curio with the suggestion
-      const { data: newCurio, error } = await supabase
-        .from('curios')
-        .insert({
-          child_id: childId,
-          title: suggestion,
-          query: suggestion,
-        })
-        .select('id')
-        .single();
-        
-      if (error) throw error;
+    // If we have a childId, create a new curio and navigate to it
+    if (childId) {
+      toast.loading("Creating new exploration...");
       
-      if (newCurio) {
-        toast.success("New exploration created!");
-        
-        // Award sparks for following curiosity
-        try {
-          await supabase.functions.invoke('increment-sparks-balance', {
-            body: JSON.stringify({
-              profileId: childId,
-              amount: 2
-            })
-          });
-          
-          await supabase.from('sparks_transactions').insert({
+      try {
+        const { data: newCurio, error } = await supabase
+          .from('curios')
+          .insert({
             child_id: childId,
-            amount: 2,
-            reason: 'Following curiosity'
+            title: suggestion,
+            query: suggestion,
+          })
+          .select('id')
+          .single();
+          
+        if (error) throw error;
+        
+        if (newCurio) {
+          toast.success("New exploration created!");
+          
+          try {
+            await supabase.functions.invoke('increment-sparks-balance', {
+              body: JSON.stringify({
+                profileId: childId,
+                amount: 2
+              })
+            });
+            
+            toast.success('You earned 2 sparks for exploring your curiosity!', {
+              icon: '✨',
+              position: 'bottom-right',
+              duration: 3000
+            });
+          } catch (err) {
+            console.error('Error awarding sparks:', err);
+          }
+          
+          confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#FF5BA3', '#00E2FF', '#FFD54F']  // Brand colors
           });
           
-          toast.success('You earned 2 sparks for exploring your curiosity!', {
-            icon: '✨',
-            position: 'bottom-right',
-            duration: 3000
-          });
-        } catch (err) {
-          console.error('Error awarding sparks:', err);
+          navigate(`/curio/${childId}/${newCurio.id}`);
         }
-        
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#FF5BA3', '#00E2FF', '#FFD54F']  // Brand colors
-        });
-        
-        // Finally, navigate to the new curio page
-        navigate(`/curio/${childId}/${newCurio.id}`);
-        
-        // Also call the parent callback
-        if (onSuggestionClick) {
-          onSuggestionClick(suggestion);
-        }
+      } catch (error) {
+        console.error('Error creating rabbit hole curio:', error);
+        toast.error("Could not create new exploration. Please try again later.");
       }
-    } catch (error) {
-      console.error('Error creating rabbit hole curio:', error);
-      toast.error("Could not create new exploration. Please try again later.");
     }
   };
-
-  // If no suggestions, don't render anything
-  if (!suggestions || suggestions.length === 0) {
-    return null;
-  }
 
   return (
     <div className="mt-8 bg-gradient-to-br from-wonderwhiz-deep-purple/40 to-wonderwhiz-light-purple/30 border border-wonderwhiz-light-purple/30 rounded-xl p-4 font-nunito">

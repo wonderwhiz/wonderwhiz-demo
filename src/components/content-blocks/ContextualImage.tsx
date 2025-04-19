@@ -53,32 +53,24 @@ const ContextualImage: React.FC<ContextualImageProps> = ({
     }
   };
 
-  // Determine if image is about a specific topic based on descriptions or titles
-  const isTopicRelated = (topic: string) => {
+  // Determine if image is about Jupiter based on descriptions or titles
+  const isJupiterRelated = () => {
     const description = getSafeImageDescription().toLowerCase();
     const title = blockTitle.toLowerCase();
-    return description.includes(topic) || title.includes(topic);
-  };
-
-  // Check if the image is space-related
-  const isSpaceRelated = () => {
-    return isTopicRelated('space') || isTopicRelated('planet') || 
-           isTopicRelated('cosmos') || isTopicRelated('galaxy') ||
-           isTopicRelated('star') || isTopicRelated('universe');
-  };
-
-  // Check if the image is ocean-related
-  const isOceanRelated = () => {
-    return isTopicRelated('ocean') || isTopicRelated('sea') || 
-           isTopicRelated('marine') || isTopicRelated('underwater') ||
-           isTopicRelated('water') || isTopicRelated('fish');
+    return description.includes('jupiter') || title.includes('jupiter') || 
+           description.includes('planet') || description.includes('space');
   };
 
   // Determine if image is a fallback from Unsplash
   const isFallbackImage = () => {
-    return contextualImage?.includes('unsplash.com') || 
-           contextualImage?.includes('placeholder');
+    return contextualImage?.includes('unsplash.com');
   };
+
+  console.log("ContextualImage - Image state:", { 
+    isLoading: imageLoading, 
+    hasImage: !!contextualImage, 
+    error: imageError 
+  });
 
   return (
     <AnimatePresence mode="wait">
@@ -94,11 +86,9 @@ const ContextualImage: React.FC<ContextualImageProps> = ({
           <div className="flex flex-col items-center text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-wonderwhiz-bright-pink mb-3"></div>
             <p className="text-white/80 text-sm px-4 font-nunito">
-              {isSpaceRelated() 
+              {isJupiterRelated() 
                 ? "Creating an astronomical wonder just for you!" 
-                : isOceanRelated()
-                  ? "Diving deep to create an underwater scene for you!"
-                  : "Creating a magical picture just for you!"}
+                : "Creating a magical picture just for you!"}
             </p>
           </div>
         </motion.div>
@@ -124,7 +114,7 @@ const ContextualImage: React.FC<ContextualImageProps> = ({
             />
             
             {/* Add dynamic particles for space-related images */}
-            {isSpaceRelated() && (
+            {isJupiterRelated() && (
               <div className="absolute inset-0 pointer-events-none">
                 <motion.div 
                   className="absolute h-2 w-2 rounded-full bg-white/80 blur-[1px]"
@@ -157,56 +147,6 @@ const ContextualImage: React.FC<ContextualImageProps> = ({
                 />
               </div>
             )}
-            
-            {/* Add bubble animations for ocean-related images */}
-            {isOceanRelated() && (
-              <div className="absolute inset-0 pointer-events-none">
-                <motion.div 
-                  className="absolute h-3 w-3 rounded-full bg-white/40 blur-[1px]"
-                  animate={{ 
-                    x: ['10%', '15%', '10%'], 
-                    y: ['90%', '0%'],
-                    opacity: [0.3, 0.7, 0]
-                  }}
-                  transition={{ 
-                    duration: 7, 
-                    repeat: Infinity, 
-                    repeatType: "loop",
-                    ease: "easeInOut"
-                  }}
-                />
-                <motion.div 
-                  className="absolute h-2 w-2 rounded-full bg-white/50 blur-[1px]"
-                  animate={{ 
-                    x: ['50%', '45%', '50%'], 
-                    y: ['90%', '0%'],
-                    opacity: [0.2, 0.6, 0]
-                  }}
-                  transition={{ 
-                    duration: 9, 
-                    repeat: Infinity, 
-                    repeatType: "loop",
-                    ease: "easeInOut",
-                    delay: 1
-                  }}
-                />
-                <motion.div 
-                  className="absolute h-1.5 w-1.5 rounded-full bg-white/60 blur-[1px]"
-                  animate={{ 
-                    x: ['70%', '75%', '70%'], 
-                    y: ['90%', '0%'],
-                    opacity: [0.3, 0.7, 0]
-                  }}
-                  transition={{ 
-                    duration: 6, 
-                    repeat: Infinity, 
-                    repeatType: "loop",
-                    ease: "easeInOut",
-                    delay: 2
-                  }}
-                />
-              </div>
-            )}
           </div>
           <motion.div 
             className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-wonderwhiz-deep-purple/90 via-wonderwhiz-deep-purple/60 to-transparent px-4 py-3"
@@ -215,11 +155,8 @@ const ContextualImage: React.FC<ContextualImageProps> = ({
             transition={{ delay: 0.2, duration: 0.3 }}
           >
             <div className="flex items-center">
-              {isSpaceRelated() && (
+              {isJupiterRelated() && (
                 <Telescope className="mr-2 h-4 w-4 text-wonderwhiz-gold flex-shrink-0" />
-              )}
-              {isOceanRelated() && (
-                <Sparkles className="mr-2 h-4 w-4 text-blue-400 flex-shrink-0" />
               )}
               <p className="text-white text-xs md:text-sm italic font-inter">
                 {getSafeImageDescription()}
@@ -240,7 +177,7 @@ const ContextualImage: React.FC<ContextualImageProps> = ({
           className="relative aspect-[16/9] w-full bg-gradient-to-r from-wonderwhiz-deep-purple/30 to-wonderwhiz-light-purple/40 rounded-lg overflow-hidden flex items-center justify-center p-4"
         >
           <div className="flex flex-col items-center text-center">
-            {isSpaceRelated() ? (
+            {isJupiterRelated() ? (
               <Rocket className="h-10 w-10 text-white/40 mb-3" />
             ) : (
               <ImageIcon className="h-10 w-10 text-white/40 mb-3" />
