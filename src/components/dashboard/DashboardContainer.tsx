@@ -6,6 +6,23 @@ import CurioContent from '@/components/dashboard/CurioContent';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { Helmet } from 'react-helmet-async';
 
+const DashboardContainerContent = () => {
+  return (
+    <div className="flex h-screen w-full">
+      <DashboardSidebar 
+        childId="d49eb66b-5404-4743-a137-d9f121d79151" 
+        sparksBalance={8750} 
+        pastCurios={[]} 
+        onCurioSelect={() => {}}
+      />
+      <div className="flex-1 overflow-auto">
+        <DashboardHeader childName="Explorer" streakDays={7} childAge={10} profileId="d49eb66b-5404-4743-a137-d9f121d79151" />
+        <CurioContent />
+      </div>
+    </div>
+  );
+};
+
 const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-wonderwhiz-deep-purple to-wonderwhiz-purple overflow-hidden">
@@ -47,7 +64,7 @@ const Dashboard = () => {
       
       <div className="relative z-10">
         <SidebarProvider>
-          <DashboardContainer />
+          <DashboardContainerContent />
         </SidebarProvider>
       </div>
     </div>

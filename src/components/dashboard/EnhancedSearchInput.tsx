@@ -1,7 +1,7 @@
 
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Mic, Image, X, Sparkles, SendHorizon, Send } from 'lucide-react';
+import { Search, Mic, Image, X, Sparkles, SendHorizontal, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
