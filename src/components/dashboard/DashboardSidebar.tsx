@@ -14,10 +14,23 @@ import { getInitials } from '@/lib/utils';
 
 interface DashboardSidebarProps {
   profile: any;
+  childId?: string;
+  sparksBalance?: number;
+  pastCurios?: any[];
+  currentCurioId?: string;
+  onCurioSelect?: (curio: any) => void;
   onClose?: () => void;
 }
 
-const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ profile, onClose }) => {
+const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ 
+  profile, 
+  childId,
+  sparksBalance,
+  pastCurios,
+  currentCurioId,
+  onCurioSelect,
+  onClose 
+}) => {
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();

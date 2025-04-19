@@ -17,8 +17,20 @@ interface SavedItemsSidebarProps {
   onClose?: () => void;
 }
 
+interface SavedItem {
+  id: string;
+  blockId: string;
+  bookmarked: boolean;
+  liked: boolean;
+  createdAt: string;
+  content: any;
+  type: string;
+  curioId: string;
+  curioTitle: string;
+}
+
 const SavedItemsSidebar: React.FC<SavedItemsSidebarProps> = ({ childId, onClose }) => {
-  const [savedItems, setSavedItems] = useState<any[]>([]);
+  const [savedItems, setSavedItems] = useState<SavedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'bookmarked' | 'liked'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -30,35 +42,37 @@ const SavedItemsSidebar: React.FC<SavedItemsSidebarProps> = ({ childId, onClose 
       try {
         setLoading(true);
         
-        // Fetch bookmarked blocks
-        const { data: bookmarks, error: bookmarksError } = await supabase
-          .from('child_block_interactions')
+        // Instead of querying a possibly non-existent table, 
+        // let's fetch content blocks that have been liked or bookmarked
+        const { data: blocks, error } = await supabase
+          .from('content_blocks')
           .select(`
             id,
-            block_id,
-            bookmarked,
+            content,
+            type,
+            curio_id,
             liked,
+            bookmarked,
             created_at,
-            blocks:block_id(id, content, type, curio_id),
-            curios:blocks(id, title, query)
+            curios:curio_id(id, title, query)
           `)
-          .eq('child_profile_id', childId)
-          .or('bookmarked.eq.true,liked.eq.true')
+          .eq('liked', true)
+          .or('bookmarked.eq.true')
           .order('created_at', { ascending: false });
         
-        if (bookmarksError) throw bookmarksError;
+        if (error) throw error;
         
         // Transform the data
-        const formattedItems = bookmarks?.map(item => ({
-          id: item.id,
-          blockId: item.block_id,
-          bookmarked: item.bookmarked,
-          liked: item.liked,
-          createdAt: item.created_at,
-          content: item.blocks?.content,
-          type: item.blocks?.type,
-          curioId: item.blocks?.curio_id,
-          curioTitle: item.curios?.title || 'Untitled Curio'
+        const formattedItems = blocks?.map(block => ({
+          id: block.id,
+          blockId: block.id,
+          bookmarked: block.bookmarked,
+          liked: block.liked,
+          createdAt: block.created_at,
+          content: block.content,
+          type: block.type,
+          curioId: block.curio_id,
+          curioTitle: block.curios?.title || 'Untitled Curio'
         })) || [];
         
         setSavedItems(formattedItems);
