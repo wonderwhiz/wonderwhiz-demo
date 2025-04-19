@@ -217,6 +217,7 @@ const DashboardContainer = () => {
       </Helmet>
       
       <DashboardSidebar 
+        profile={childProfile}
         childId={profileId || ''} 
         sparksBalance={childProfile?.sparks_balance || 0}
         pastCurios={pastCurios}

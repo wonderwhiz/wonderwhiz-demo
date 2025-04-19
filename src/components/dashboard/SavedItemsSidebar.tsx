@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -42,8 +41,7 @@ const SavedItemsSidebar: React.FC<SavedItemsSidebarProps> = ({ childId, onClose 
       try {
         setLoading(true);
         
-        // Instead of querying a possibly non-existent table, 
-        // let's fetch content blocks that have been liked or bookmarked
+        // Query content_blocks table for liked or bookmarked items
         const { data: blocks, error } = await supabase
           .from('content_blocks')
           .select(`
