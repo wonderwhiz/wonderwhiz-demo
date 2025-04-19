@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Clock, MessageSquare, Search, BookOpen } from 'lucide-react';
@@ -6,8 +7,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
 
 interface PastCuriosPanelProps {
   childId: string;
@@ -24,8 +23,8 @@ const PastCuriosPanel: React.FC<PastCuriosPanelProps> = ({
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredCurios, setFilteredCurios] = useState<any[]>(initialCurios || []);
-  const navigate = useNavigate();
   
+  // Fetch curios from Supabase if not provided
   useEffect(() => {
     if (initialCurios && initialCurios.length > 0) {
       setPastCurios(initialCurios);
@@ -59,6 +58,7 @@ const PastCuriosPanel: React.FC<PastCuriosPanelProps> = ({
     fetchCurios();
   }, [childId, initialCurios]);
   
+  // Filter curios based on search query
   useEffect(() => {
     if (!searchQuery.trim()) {
       setFilteredCurios(pastCurios);
@@ -74,36 +74,9 @@ const PastCuriosPanel: React.FC<PastCuriosPanelProps> = ({
     setFilteredCurios(filtered);
   }, [searchQuery, pastCurios]);
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!searchQuery.trim()) return;
-    
-    try {
-      const { data: newCurio, error } = await supabase
-        .from('curios')
-        .insert({
-          child_id: childId,
-          title: searchQuery,
-          query: searchQuery,
-        })
-        .select()
-        .single();
-      
-      if (error) throw error;
-
-      if (newCurio) {
-        toast.success("Starting a new exploration!");
-        navigate(`/curio/${childId}/${newCurio.id}`);
-      }
-    } catch (error) {
-      console.error('Error creating curio from search:', error);
-      toast.error('Failed to start exploration');
-    }
-  };
-
   return (
     <div className="px-4 py-3">
+      {/* Panel header with back button */}
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center">
           {onClose && (
@@ -123,18 +96,18 @@ const PastCuriosPanel: React.FC<PastCuriosPanelProps> = ({
         </div>
       </div>
       
+      {/* Search box */}
       <div className="relative mb-4">
-        <form onSubmit={handleSearch}>
-          <Input
-            className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/50"
-            placeholder="Search or start a new exploration..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/50" />
-        </form>
+        <Input
+          className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/50"
+          placeholder="Search your explorations..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/50" />
       </div>
       
+      {/* Curios list */}
       {loading ? (
         <div className="flex justify-center items-center h-40">
           <div className="animate-spin h-8 w-8 border-t-2 border-b-2 border-wonderwhiz-bright-pink rounded-full"></div>

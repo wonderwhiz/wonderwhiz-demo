@@ -217,7 +217,11 @@ const DashboardContainer = () => {
       </Helmet>
       
       <DashboardSidebar 
-        profile={childProfile} 
+        childId={profileId || ''} 
+        sparksBalance={childProfile?.sparks_balance || 0}
+        pastCurios={pastCurios}
+        currentCurioId={currentCurio?.id}
+        onCurioSelect={handleLoadCurio}
       />
       
       <main className="flex-1 flex flex-col min-h-screen relative">

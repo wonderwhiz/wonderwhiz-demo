@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -19,19 +19,6 @@ const Authentication = () => {
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('login');
-
-  // Check if already logged in
-  useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        // User is already logged in, redirect to profiles
-        navigate('/profiles');
-      }
-    };
-    
-    checkSession();
-  }, [navigate]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,7 +69,7 @@ const Authentication = () => {
         description: "You're now signed in.",
       });
       
-      // Navigate to profiles page - this is important
+      // Navigate to profile selector
       navigate('/profiles');
     } catch (error: any) {
       toast.error("Login failed", {
