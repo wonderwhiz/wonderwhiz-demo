@@ -1,10 +1,10 @@
-
 import React, { useState } from 'react';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardSidebar from '@/components/dashboard/DashboardSidebar';
 import CurioContent from '@/components/dashboard/CurioContent';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { Helmet } from 'react-helmet-async';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const DashboardContainerContent = () => {
   // Mock data for the CurioContent component
@@ -53,38 +53,51 @@ const DashboardContainerContent = () => {
   };
 
   return (
-    <div className="flex h-screen w-full">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="flex h-screen w-full"
+    >
       <DashboardSidebar 
         childId="d49eb66b-5404-4743-a137-d9f121d79151" 
         sparksBalance={8750} 
         pastCurios={[]} 
         onCurioSelect={() => {}}
       />
-      <div className="flex-1 overflow-auto">
-        <DashboardHeader childName="Explorer" streakDays={7} childAge={10} profileId="d49eb66b-5404-4743-a137-d9f121d79151" />
-        <CurioContent 
-          currentCurio={null}
-          contentBlocks={contentBlocks}
-          blockReplies={blockReplies}
-          isGenerating={false}
-          loadingBlocks={false}
-          visibleBlocksCount={0}
-          profileId="d49eb66b-5404-4743-a137-d9f121d79151"
-          onLoadMore={handleLoadMore}
-          hasMoreBlocks={false}
-          onToggleLike={handleToggleLike}
-          onToggleBookmark={handleToggleBookmark}
-          onReply={handleReply}
-          onSetQuery={handleSetQuery}
-          onRabbitHoleFollow={handleRabbitHoleFollow}
-          onQuizCorrect={handleQuizCorrect}
-          onNewsRead={handleNewsRead}
-          onCreativeUpload={handleCreativeUpload}
-          playText={handlePlayText}
-          childAge={10}
-        />
+      <div className="flex-1 overflow-auto bg-gradient-to-br from-wonderwhiz-deep-purple/50 to-wonderwhiz-light-purple/30">
+        <div className="sticky top-0 z-10 backdrop-blur-md bg-wonderwhiz-deep-purple/30 border-b border-white/10">
+          <DashboardHeader 
+            childName="Explorer" 
+            streakDays={7} 
+            childAge={10} 
+            profileId="d49eb66b-5404-4743-a137-d9f121d79151" 
+          />
+        </div>
+        <div className="max-w-5xl mx-auto px-4 py-6">
+          <CurioContent 
+            currentCurio={null}
+            contentBlocks={contentBlocks}
+            blockReplies={blockReplies}
+            isGenerating={false}
+            loadingBlocks={false}
+            visibleBlocksCount={0}
+            profileId="d49eb66b-5404-4743-a137-d9f121d79151"
+            onLoadMore={handleLoadMore}
+            hasMoreBlocks={false}
+            onToggleLike={handleToggleLike}
+            onToggleBookmark={handleToggleBookmark}
+            onReply={handleReply}
+            onSetQuery={handleSetQuery}
+            onRabbitHoleFollow={handleRabbitHoleFollow}
+            onQuizCorrect={handleQuizCorrect}
+            onNewsRead={handleNewsRead}
+            onCreativeUpload={handleCreativeUpload}
+            playText={handlePlayText}
+            childAge={10}
+          />
+        </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
