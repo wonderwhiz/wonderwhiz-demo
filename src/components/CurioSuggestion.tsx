@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import MagicalBorder from './MagicalBorder';
 import { useNavigate } from 'react-router-dom';
@@ -32,53 +32,16 @@ const CurioSuggestion: React.FC<CurioSuggestionProps> = ({
   type = 'general',
   loading = false
 }) => {
-  const [isCreating, setIsCreating] = useState(false);
   const colorVariant = COLOR_VARIANTS[index % COLOR_VARIANTS.length];
   const navigate = useNavigate();
   
   const handleClick = async () => {
-    // Prevent multiple rapid clicks
-    if (loading || isCreating) return;
-    
-    // Always call onClick to ensure the parent knows the suggestion was clicked
-    onClick(suggestion);
-    
     if (directGenerate && profileId) {
       try {
-        setIsCreating(true);
-        
         toast.loading("Creating your wonder journey...", {
           id: "create-curio",
           duration: 3000
         });
-        
-        console.log(`Creating curio for suggestion: ${suggestion}`);
-        
-        // Check if this suggestion was recently created
-        const { data: existingCurios, error: checkError } = await supabase
-          .from('curios')
-          .select('id')
-          .eq('child_id', profileId)
-          .eq('title', suggestion)
-          .order('created_at', { ascending: false })
-          .limit(1);
-          
-        if (checkError) {
-          console.error('Error checking for existing curios:', checkError);
-        }
-        
-        // If we found a recent match, just navigate to it
-        if (existingCurios && existingCurios.length > 0) {
-          console.log(`Found existing curio for suggestion: ${suggestion}`);
-          toast.success("Starting your journey!", {
-            id: "create-curio"
-          });
-          
-          setTimeout(() => {
-            navigate(`/curio/${profileId}/${existingCurios[0].id}`);
-          }, 300);
-          return;
-        }
         
         // Create a new curio based on the suggestion
         const { data: newCurio, error } = await supabase
@@ -96,6 +59,8 @@ const CurioSuggestion: React.FC<CurioSuggestionProps> = ({
           toast.error("Oops! Couldn't start your journey", {
             id: "create-curio"
           });
+          // Fallback to just setting the query
+          onClick(suggestion);
           return;
         }
         
@@ -138,26 +103,29 @@ const CurioSuggestion: React.FC<CurioSuggestionProps> = ({
           }
           
           // Navigate to the curio page with the correct path
-          setTimeout(() => {
-            navigate(`/curio/${profileId}/${newCurio.id}`);
-          }, 300);
+          navigate(`/curio/${profileId}/${newCurio.id}`);
         } else {
           console.error('No curio ID returned after creation');
           toast.error("Couldn't create your journey", {
             id: "create-curio"
           });
+          onClick(suggestion);
         }
       } catch (error) {
         console.error('Error creating curio from suggestion:', error);
         toast.error("Couldn't create your journey", {
           id: "create-curio"
         });
-      } finally {
-        setIsCreating(false);
+        // Fallback to just setting the query
+        onClick(suggestion);
       }
+    } else {
+      // Original behavior
+      onClick(suggestion);
     }
   };
   
+  // Extract a key keyword from the suggestion for personalized messaging
   const getKeyword = () => {
     const words = suggestion.toLowerCase().split(' ');
     const keyTopics = ['space', 'animals', 'dinosaurs', 'oceans', 'planets', 'stars', 'robots', 
@@ -176,6 +144,7 @@ const CurioSuggestion: React.FC<CurioSuggestionProps> = ({
   const keyword = getKeyword();
   const hasKeyword = keyword.length > 0;
   
+  // Get engaging prefix based on suggestion content
   const getPrefix = () => {
     if (suggestion.toLowerCase().includes('how')) {
       return "Uncover";
@@ -194,6 +163,7 @@ const CurioSuggestion: React.FC<CurioSuggestionProps> = ({
     return "Wonder about";
   };
   
+  // Get fun emoji for the topic
   const getEmoji = () => {
     if (!keyword) return "✨";
     
@@ -247,10 +217,10 @@ const CurioSuggestion: React.FC<CurioSuggestionProps> = ({
       >
         <button
           onClick={handleClick}
-          className={`w-full h-full p-4 bg-white/10 text-white text-left rounded-2xl border-white/20 hover:bg-white/20 transition-colors font-nunito ${(loading || isCreating) ? 'opacity-70' : ''}`}
-          disabled={loading || isCreating}
+          className={`w-full h-full p-4 bg-white/10 text-white text-left rounded-2xl border-white/20 hover:bg-white/20 transition-colors font-nunito ${loading ? 'opacity-70' : ''}`}
+          disabled={loading}
         >
-          {(loading || isCreating) && (
+          {loading && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-2xl">
               <div className="animate-spin h-5 w-5 border-2 border-white/60 border-t-transparent rounded-full"></div>
             </div>

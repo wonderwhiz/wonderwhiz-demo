@@ -166,15 +166,14 @@ const CurioBlock = ({
   
   const hasRabbitHoles = Array.isArray(blockContent.rabbitHoles) && blockContent.rabbitHoles.length > 0;
   
-  const generatedRabbitHoles = hasRabbitHoles ? blockContent.rabbitHoles.slice(0, 2) : [
+  const generatedRabbitHoles = hasRabbitHoles ? blockContent.rabbitHoles : [
     `Tell me more about this`,
     `Why is this important?`
   ];
 
   // Auto-read text for young children
   React.useEffect(() => {
-    // Always auto-read for young users to improve accessibility
-    if (childAge && childAge < 8 && onReadAloud) {
+    if (childAge && childAge < 7 && onReadAloud) {
       setTimeout(() => {
         onReadAloud(displayText, specialist.id || '');
       }, 800);
@@ -214,7 +213,7 @@ const CurioBlock = ({
             {displayText}
           </div>
 
-          {childAge && childAge > 6 && (
+          {generatedRabbitHoles.length > 0 && childAge && childAge > 7 && (
             <div className="flex flex-wrap gap-2 mb-4">
               {generatedRabbitHoles.slice(0, 2).map((question, index) => (
                 <Badge 
@@ -243,16 +242,6 @@ const CurioBlock = ({
               {childAge && childAge < 8 ? "Like" : "Like"}
             </Button>
 
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => onReadAloud && onReadAloud(displayText, specialist.id || '')}
-              className="text-white/70 hover:text-wonderwhiz-blue font-inter"
-            >
-              <VolumeIcon className="h-4 w-4 mr-1" />
-              Read to me
-            </Button>
-            
             {childAge && childAge > 7 && (
               <Button 
                 variant="ghost" 
@@ -266,6 +255,16 @@ const CurioBlock = ({
                 Save
               </Button>
             )}
+
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => onReadAloud && onReadAloud(displayText, specialist.id || '')}
+              className="text-white/70 hover:text-wonderwhiz-blue font-inter"
+            >
+              <VolumeIcon className="h-4 w-4 mr-1" />
+              {childAge && childAge < 8 ? "Read to me" : "Read aloud"}
+            </Button>
           </div>
         </div>
       </Card>
@@ -301,25 +300,19 @@ const CurioContent: React.FC<CurioContentProps> = ({
     curio_id: block.curio_id || currentCurio?.id || ''
   }));
 
-  const [quickAnswerExpanded, setQuickAnswerExpanded] = useState(childAge && childAge < 8 ? true : false);
+  const [quickAnswerExpanded, setQuickAnswerExpanded] = useState(true);
 
   const handlePlayText = (text: string, specialistId: string) => {
     if (playText) {
       playText(text, specialistId);
-      if (childAge && childAge < 8) {
-        toast.success("Reading to you...", {
-          icon: "🎧",
-        });
-      } else {
-        toast.success("Reading to you...");
-      }
+      toast.success("Reading to you...");
     }
   };
 
   return (
     <div className="space-y-6 px-4 py-4">
       {currentCurio && (
-        <div className="mb-6">
+        <div className="mb-8">
           <h2 className="text-2xl font-bold text-white mb-4 font-nunito">{currentCurio.title}</h2>
           
           <div className="mb-6">
@@ -330,27 +323,21 @@ const CurioContent: React.FC<CurioContentProps> = ({
             />
           </div>
           
-          {/* Always show quick answer for young children */}
-          {childAge && childAge < 8 && (
-            <QuickAnswer 
-              question={currentCurio.title}
-              isExpanded={quickAnswerExpanded}
-              onToggleExpand={() => setQuickAnswerExpanded(!quickAnswerExpanded)}
-              onStartJourney={() => setQuickAnswerExpanded(false)}
-              childId={profileId}
-              childAge={childAge}
-            />
-          )}
+          <QuickAnswer 
+            question={currentCurio.title}
+            isExpanded={quickAnswerExpanded}
+            onToggleExpand={() => setQuickAnswerExpanded(!quickAnswerExpanded)}
+            onStartJourney={() => setQuickAnswerExpanded(false)}
+            childId={profileId}
+            childAge={childAge}
+          />
 
-          {/* Always show the interactive image for young users */}
           {profileId && childAge && childAge < 8 && (
             <InteractiveImageBlock
               topic={currentCurio.title}
               childId={profileId}
               childAge={childAge || 10}
-              onShare={() => toast.success("Image saved!", {
-                icon: "🖼️",
-              })}
+              onShare={() => toast.success("Image shared!")}
             />
           )}
         </div>
@@ -386,7 +373,7 @@ const CurioContent: React.FC<CurioContentProps> = ({
           </div>
           <h3 className="text-xl font-semibold text-white mb-2 font-nunito">Let's start exploring!</h3>
           <p className="text-white/70 max-w-md mx-auto font-inter">
-            Ask a question to begin your learning adventure!
+            Ask a question or pick a topic to begin your learning adventure!
           </p>
         </div>
       )}
@@ -419,10 +406,8 @@ const CurioContent: React.FC<CurioContentProps> = ({
                 <div className="animate-spin h-4 w-4 mr-2 border-2 border-white/50 border-t-white rounded-full"></div>
                 Loading...
               </>
-            ) : childAge && childAge < 8 ? (
-              'Show More Fun Facts!'
             ) : (
-              'Show More'
+              'Show More Fun Facts'
             )}
           </Button>
         </div>

@@ -3,7 +3,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import WonderWhizLogo from '@/components/WonderWhizLogo';
-import { User, Home, BookOpen } from 'lucide-react';
+import { User, Sparkles } from 'lucide-react';
 
 const Navbar = () => {
   return (
@@ -13,25 +13,11 @@ const Navbar = () => {
         <span className="ml-3 text-xl md:text-2xl font-baloo font-bold text-white">WonderWhiz</span>
       </div>
       
-      <div className="flex items-center space-x-2">
-        <Link to="/dashboard">
-          <Button variant="ghost" size="sm" className="hover:bg-opacity-20 text-white bg-wonderwhiz-blue bg-opacity-20">
-            <Home className="h-5 w-5" />
-            <span className="sr-only md:not-sr-only md:ml-2">Home</span>
-          </Button>
-        </Link>
-        
-        <Link to="/library">
-          <Button variant="ghost" size="sm" className="hover:bg-opacity-20 text-white bg-wonderwhiz-green bg-opacity-20">
-            <BookOpen className="h-5 w-5" />
-            <span className="sr-only md:not-sr-only md:ml-2">Library</span>
-          </Button>
-        </Link>
-        
+      <div className="flex items-center space-x-4">
         <Link to="/profiles">
-          <Button variant="ghost" size="sm" className="hover:bg-opacity-20 text-white bg-wonderwhiz-pink bg-opacity-20">
-            <User className="h-5 w-5" />
-            <span className="sr-only md:not-sr-only md:ml-2">Profile</span>
+          <Button variant="ghost" className="hover:bg-opacity-20 text-white bg-wonderwhiz-pink bg-opacity-20">
+            <User className="h-5 w-5 mr-1" />
+            My Profile
           </Button>
         </Link>
       </div>

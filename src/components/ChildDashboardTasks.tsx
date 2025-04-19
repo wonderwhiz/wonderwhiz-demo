@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ChildTaskList from './ChildTaskList';
-import { Check, Clock, Award, Sparkles, Star } from 'lucide-react';
+import { Check, Clock, Award, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { motion } from 'framer-motion';
 
@@ -40,7 +40,7 @@ const CompletedTaskList = ({ childId }: { childId: string }) => {
   }, [childId]);
   
   if (loading) {
-    return <div className="flex justify-center p-4 text-white/70">Loading...</div>;
+    return <div className="flex justify-center p-4 text-white/70">Loading tasks...</div>;
   }
   
   if (tasks.length === 0) {
@@ -49,7 +49,7 @@ const CompletedTaskList = ({ childId }: { childId: string }) => {
   
   return (
     <div className="space-y-3">
-      {tasks.slice(0, 3).map((task) => ( // Only show 3 most recent completed tasks
+      {tasks.map((task) => (
         <motion.div 
           key={task.id} 
           className="bg-green-500/20 border border-green-500/30 rounded-lg p-3"
@@ -62,8 +62,12 @@ const CompletedTaskList = ({ childId }: { childId: string }) => {
               <Check className="h-4 w-4 mr-2 text-green-400" />
               {task.tasks?.title}
             </h4>
-            <div className="mt-1 flex items-center">
-              <div className="flex items-center bg-wonderwhiz-gold/20 px-2 py-0.5 rounded text-wonderwhiz-gold text-xs border border-wonderwhiz-gold/30">
+            <p className="text-sm text-white/70 ml-6">{task.tasks?.description}</p>
+            <div className="mt-1 ml-6 flex items-center">
+              <div className="text-xs text-white/70">
+                Completed: {new Date(task.completed_at).toLocaleDateString()}
+              </div>
+              <div className="ml-3 flex items-center bg-wonderwhiz-gold/20 px-2 py-0.5 rounded text-wonderwhiz-gold text-xs border border-wonderwhiz-gold/30">
                 <Sparkles className="h-3 w-3 mr-1" />
                 <span>{task.tasks?.sparks_reward || 0} earned</span>
               </div>
@@ -123,28 +127,29 @@ const ChildDashboardTasks = ({
   
   const handleTaskCompleted = () => {
     fetchTaskCounts();
+    // If there's a callback for spark earnings, we can call it here
     if (onSparkEarned) {
-      // We'll just notify that some sparks were earned without specifying the amount
-      onSparkEarned(10);
+      // We don't know the exact amount earned, so we're not calling it for now
+      // This would be better handled through a more specific event from ChildTaskList
     }
   };
   
   return (
-    <Card className="border-wonderwhiz-bright-pink/30 shadow-lg bg-gradient-to-br from-purple-900/90 to-pink-900/40 transform transition-transform hover:scale-[1.01]">
+    <Card className="border-wonderwhiz-bright-pink/30 shadow-lg bg-gradient-to-br from-purple-900/90 to-pink-900/40">
       <CardHeader className="pb-2 border-b border-white/10">
-        <CardTitle className="text-xl flex items-center justify-between text-white">
+        <CardTitle className="text-lg flex items-center justify-between text-white">
           <span className="flex items-center">
-            <Star className="h-6 w-6 mr-2 text-wonderwhiz-vibrant-yellow" />
-            Tasks from Parents
+            <Award className="h-5 w-5 mr-2 text-wonderwhiz-bright-pink" />
+            Tasks
           </span>
           <div className="flex gap-4 text-sm">
             <div className="flex items-center">
               <Clock className="h-4 w-4 mr-1 text-amber-400" />
-              <span className="text-white/70">{isLoading ? '...' : pendingTasksCount} to do</span>
+              <span className="text-white/70">{isLoading ? '...' : pendingTasksCount} pending</span>
             </div>
             <div className="flex items-center">
               <Check className="h-4 w-4 mr-1 text-green-400" />
-              <span className="text-white/70">{isLoading ? '...' : completedTasksCount} done</span>
+              <span className="text-white/70">{isLoading ? '...' : completedTasksCount} completed</span>
             </div>
           </div>
         </CardTitle>
@@ -152,11 +157,11 @@ const ChildDashboardTasks = ({
       <CardContent className="pt-4">
         <Tabs defaultValue="pending" className="mt-0">
           <TabsList className="grid grid-cols-2 mb-4 bg-white/10 border border-white/20">
-            <TabsTrigger value="pending" className="data-[state=active]:bg-wonderwhiz-bright-pink/20 data-[state=active]:text-wonderwhiz-bright-pink text-lg py-2">
-              To Do
+            <TabsTrigger value="pending" className="data-[state=active]:bg-wonderwhiz-bright-pink/20 data-[state=active]:text-wonderwhiz-bright-pink">
+              Pending
             </TabsTrigger>
-            <TabsTrigger value="completed" className="data-[state=active]:bg-green-500/20 data-[state=active]:text-green-400 text-lg py-2">
-              Done
+            <TabsTrigger value="completed" className="data-[state=active]:bg-green-500/20 data-[state=active]:text-green-400">
+              Completed
             </TabsTrigger>
           </TabsList>
           <TabsContent value="pending">

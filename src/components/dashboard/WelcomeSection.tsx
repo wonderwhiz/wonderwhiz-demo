@@ -1,7 +1,6 @@
 
 import React from 'react';
 import WelcomeView from './WelcomeView';
-import { toast } from 'sonner';
 
 interface WelcomeSectionProps {
   curioSuggestions: string[];
@@ -30,43 +29,18 @@ const WelcomeSection: React.FC<WelcomeSectionProps> = ({
   handleSubmitQuery,
   isGenerating
 }) => {
-  const handleSuggestionClickWithFeedback = (suggestion: string) => {
-    if (isGenerating) {
-      toast.info("Already creating your adventure! Please wait a moment...");
-      return;
-    }
-    
-    console.log(`Suggestion clicked: ${suggestion}`);
-    handleCurioSuggestionClick(suggestion);
-  };
-  
-  const handleSubmitWithValidation = () => {
-    if (isGenerating) {
-      toast.info("Please wait while we create your adventure!");
-      return;
-    }
-    
-    if (!query.trim()) {
-      toast.error("Please tell me what you want to learn about!");
-      return;
-    }
-    
-    console.log(`Submit clicked for query: ${query}`);
-    handleSubmitQuery();
-  };
-
   return (
-    <div>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-indigo-900 to-purple-950">
       <WelcomeView
         childId={childId}
         childProfile={childProfile}
-        curioSuggestions={curioSuggestions.slice(0, 4)} // Limit to just 4 suggestions to reduce clutter
+        curioSuggestions={curioSuggestions}
         pastCurios={pastCurios}
         query={query}
         setQuery={setQuery}
-        handleSubmitQuery={handleSubmitWithValidation}
+        handleSubmitQuery={handleSubmitQuery}
         isGenerating={isGenerating}
-        onCurioSuggestionClick={handleSuggestionClickWithFeedback}
+        onCurioSuggestionClick={handleCurioSuggestionClick}
         onRefreshSuggestions={handleRefreshSuggestions}
         isLoadingSuggestions={isLoadingSuggestions}
       />

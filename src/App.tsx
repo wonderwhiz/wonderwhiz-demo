@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,7 +20,6 @@ import Dashboard from "./pages/Dashboard";
 import ParentZone from "./pages/ParentZone";
 import EnhancedCurioPage from '@/components/curio/EnhancedCurioPage';
 import SimplifiedCurioPage from '@/components/curio/SimplifiedCurioPage';
-import NewDashboardPage from './pages/NewDashboardPage';
 
 // Import the spark animations CSS
 import './components/sparkAnimations.css';
@@ -217,7 +215,6 @@ const App = () => {
               <Route path="/create-profile" element={<CreateProfile />} />
               <Route path="/profiles" element={<ProfileSelector />} />
               <Route path="/dashboard/:profileId" element={<Dashboard />} />
-              <Route path="/new-dashboard/:profileId" element={<NewDashboardPage />} />
               <Route path="/parent-zone/:profileId" element={<ParentZone />} />
               <Route path="/curio/:childId/:curioId" element={<EnhancedCurioPage />} />
               <Route path="/simple-curio/:childId/:curioId" element={<SimplifiedCurioPage />} />

@@ -1,137 +1,202 @@
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
-import { 
-  Home, LogOut, Settings, User, Book, CheckSquare, 
-  Sparkles, Award, Clock, Calendar
-} from 'lucide-react';
-import { Sidebar, SidebarHeader, SidebarContent } from '@/components/ui/sidebar';
-import { supabase } from '@/integrations/supabase/client';
+import React, { useState } from 'react';
+import { ChevronDown, MessageSquare, Bookmark, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { getInitials } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Card } from '@/components/ui/card';
+import { Sidebar, SidebarContent, SidebarHeader, SidebarTrigger } from '@/components/ui/sidebar';
+import SparksBalance from '@/components/SparksBalance';
+import SavedItemsSidebar from './SavedItemsSidebar';
+
+interface Curio {
+  id: string;
+  title: string;
+  query: string;
+  created_at: string;
+}
 
 interface DashboardSidebarProps {
-  profile: any;
-  childId?: string;
-  sparksBalance?: number;
-  pastCurios?: any[];
+  childId: string;
+  sparksBalance: number;
+  pastCurios: Curio[];
   currentCurioId?: string;
-  onCurioSelect?: (curio: any) => void;
-  onClose?: () => void;
+  onCurioSelect: (curio: Curio) => void;
 }
 
 const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ 
-  profile, 
-  childId,
-  sparksBalance,
-  pastCurios,
+  childId, 
+  sparksBalance, 
+  pastCurios, 
   currentCurioId,
-  onCurioSelect,
-  onClose 
+  onCurioSelect 
 }) => {
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-      window.location.href = '/';
-    } catch (error) {
-      console.error('Error logging out:', error);
-    }
+  const [showSavedItems, setShowSavedItems] = useState(false);
+  const [curioPageSize] = useState(5);
+  const [displayedCuriosCount, setDisplayedCuriosCount] = useState(curioPageSize);
+
+  const handleLoadMoreCurios = () => {
+    setDisplayedCuriosCount(prev => Math.min(prev + curioPageSize, pastCurios.length));
   };
-  
-  if (!profile) {
-    return (
-      <Sidebar 
-        side="left"
-        className="border-r border-white/10"
-      >
-        <div className="flex justify-center items-center h-full">
-          <div className="animate-spin h-8 w-8 border-t-2 border-b-2 border-white rounded-full"></div>
-        </div>
-      </Sidebar>
-    );
-  }
-  
+
   return (
-    <Sidebar 
-      side="left" 
-      className="border-r border-white/10"
-    >
-      <SidebarHeader>
-        <div className="flex items-center">
-          <Avatar className="h-10 w-10 mr-2">
-            <AvatarImage src={profile.avatar_url} alt={profile.name} />
-            <AvatarFallback className="bg-wonderwhiz-bright-pink/20 text-wonderwhiz-bright-pink">
-              {getInitials(profile.name)}
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <h2 className="text-lg font-bold text-white">{profile.name}</h2>
-            <p className="text-sm text-white/60">Age {profile.age}</p>
+    <>
+      <Sidebar variant="inset" className="bg-purple-950">
+        <SidebarHeader className="rounded-none bg-violet-900">
+          <div className="flex items-center justify-between">
+            <h3 className="text-white font-medium">Dashboard</h3>
+            <SidebarTrigger />
           </div>
-        </div>
-      </SidebarHeader>
-      
-      <SidebarContent>
-        <div className="space-y-1">
-          <Link to={`/dashboard/${profile.id}`}>
-            <Button variant="ghost" className="w-full justify-start text-white">
-              <Home className="mr-2 h-4 w-4" />
-              Dashboard
-            </Button>
-          </Link>
-          
-          <Link to={`/new-dashboard/${profile.id}`}>
-            <Button variant="ghost" className="w-full justify-start text-white">
-              <Sparkles className="mr-2 h-4 w-4 text-wonderwhiz-gold" />
-              Wonder Canvas ✨
-            </Button>
-          </Link>
-          
-          <h3 className="text-white/50 text-xs font-medium uppercase mt-4 mb-2 px-2">Learning</h3>
-          
-          <Button variant="ghost" className="w-full justify-start text-white">
-            <Book className="mr-2 h-4 w-4" />
-            Past Explorations
-          </Button>
-          
-          <Button variant="ghost" className="w-full justify-start text-white">
-            <CheckSquare className="mr-2 h-4 w-4" />
-            Tasks & Activities
-          </Button>
-          
-          <Button variant="ghost" className="w-full justify-start text-white">
-            <Award className="mr-2 h-4 w-4" />
-            Achievements
-          </Button>
-          
-          <h3 className="text-white/50 text-xs font-medium uppercase mt-4 mb-2 px-2">My Account</h3>
-          
-          <Link to={`/parent-zone/${profile.id}`}>
-            <Button variant="ghost" className="w-full justify-start text-white">
-              <User className="mr-2 h-4 w-4" />
-              Parent Zone
-            </Button>
-          </Link>
-          
-          <Button variant="ghost" className="w-full justify-start text-white">
-            <Settings className="mr-2 h-4 w-4" />
-            Settings
-          </Button>
-          
-          <Button 
-            variant="ghost" 
-            className="w-full justify-start text-white/70 hover:text-white mt-6"
-            onClick={handleLogout}
+          <div className="flex items-center">
+            <SparksBalance childId={childId} initialBalance={sparksBalance} size="md" />
+            <button 
+              onClick={() => setShowSavedItems(true)} 
+              className="ml-auto text-white/60 hover:text-white transition-colors flex items-center"
+            >
+              <Bookmark className="mr-1.5 h-4 w-4 text-yellow-400" />
+              <span>View Saved</span>
+            </button>
+          </div>
+        </SidebarHeader>
+        
+        <SidebarContent className="bg-purple-950">
+          <div className="p-4">
+            <h3 className="text-white font-medium mb-3 flex items-center">
+              <span>Your Past Curios</span>
+              <div className="ml-2 text-xs bg-white/10 px-2 py-0.5 rounded-full text-white/70">
+                {pastCurios.length}
+              </div>
+            </h3>
+            
+            {pastCurios.length === 0 ? (
+              <p className="text-white/60 text-sm">Ask a question to start exploring!</p>
+            ) : (
+              <div className="space-y-3">
+                {pastCurios.slice(0, displayedCuriosCount).map((curio, index) => (
+                  <Card 
+                    key={curio.id} 
+                    className={`
+                      cursor-pointer 
+                      transition-all 
+                      hover:bg-white/10 
+                      border 
+                      border-opacity-20 
+                      rounded-lg 
+                      overflow-hidden 
+                      shadow-sm 
+                      hover:shadow-md
+                      ${getCardColorClass(index)}
+                    `} 
+                    onClick={() => onCurioSelect(curio)}
+                  >
+                    <div 
+                      className={`
+                        p-3 
+                        flex 
+                        items-center 
+                        ${currentCurioId === curio.id ? 'bg-white/10 text-white' : 'text-white/80'}
+                        line-clamp-2 
+                        break-words 
+                        overflow-hidden
+                      `}
+                    >
+                      <MessageSquare className="h-4 w-4 mr-2 flex-shrink-0" />
+                      <span 
+                        className="
+                          text-sm 
+                          font-medium 
+                          leading-tight 
+                          line-clamp-2 
+                          break-words 
+                          max-h-[3rem] 
+                          overflow-hidden 
+                          text-ellipsis
+                        "
+                      >
+                        {curio.title}
+                      </span>
+                    </div>
+                  </Card>
+                ))}
+                
+                {displayedCuriosCount < pastCurios.length && (
+                  <motion.div 
+                    initial={{ opacity: 0 }} 
+                    animate={{ opacity: 1 }} 
+                    className="flex justify-center pt-2"
+                  >
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="
+                        text-white/60 
+                        hover:text-white 
+                        hover:bg-white/10 
+                        flex 
+                        items-center 
+                        gap-1 
+                        text-xs 
+                        border 
+                        border-white/10 
+                        rounded-full
+                      " 
+                      onClick={handleLoadMoreCurios}
+                    >
+                      Load More <ChevronDown className="h-3 w-3" />
+                    </Button>
+                  </motion.div>
+                )}
+              </div>
+            )}
+          </div>
+        </SidebarContent>
+      </Sidebar>
+
+      {/* Saved Items Sidebar */}
+      <AnimatePresence>
+        {showSavedItems && (
+          <motion.div
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -50 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-50 bg-black/50"
           >
-            <LogOut className="mr-2 h-4 w-4" />
-            Sign Out
-          </Button>
-        </div>
-      </SidebarContent>
-    </Sidebar>
+            <div className="relative h-full">
+              <div className="absolute top-0 left-0 h-full">
+                <SavedItemsSidebar 
+                  childId={childId}
+                  onViewItem={(item) => {
+                    // Handle viewing saved item
+                    setShowSavedItems(false);
+                  }}
+                />
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-4 right-4 text-white/70 hover:text-white bg-black/20 hover:bg-black/40"
+                onClick={() => setShowSavedItems(false)}
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
+};
+
+// Helper function to get the color class based on index
+const getCardColorClass = (index: number) => {
+  switch (index % 5) {
+    case 0: return "border-wonderwhiz-pink/60 bg-wonderwhiz-pink/5";
+    case 1: return "border-wonderwhiz-gold/60 bg-wonderwhiz-gold/5";
+    case 2: return "border-wonderwhiz-blue/60 bg-wonderwhiz-blue/5";
+    case 3: return "border-wonderwhiz-purple/60 bg-wonderwhiz-purple/5";
+    case 4: return "border-emerald-400/60 bg-emerald-400/5";
+    default: return "border-white/60 bg-white/5";
+  }
 };
 
 export default DashboardSidebar;
