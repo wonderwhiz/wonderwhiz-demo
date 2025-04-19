@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardSidebar from '@/components/dashboard/DashboardSidebar';
 import CurioContent from '@/components/dashboard/CurioContent';
@@ -7,6 +7,51 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import { Helmet } from 'react-helmet-async';
 
 const DashboardContainerContent = () => {
+  // Mock data for the CurioContent component
+  const [contentBlocks, setContentBlocks] = useState([]);
+  const [blockReplies, setBlockReplies] = useState({});
+  
+  // Handler functions
+  const handleLoadMore = () => {
+    console.log('Load more triggered');
+  };
+  
+  const handleToggleLike = (blockId: string) => {
+    console.log('Toggle like for block:', blockId);
+  };
+  
+  const handleToggleBookmark = (blockId: string) => {
+    console.log('Toggle bookmark for block:', blockId);
+  };
+  
+  const handleReply = (blockId: string, message: string) => {
+    console.log('Reply to block:', blockId, 'with message:', message);
+  };
+  
+  const handleSetQuery = (query: string) => {
+    console.log('Set query:', query);
+  };
+  
+  const handleRabbitHoleFollow = (question: string) => {
+    console.log('Follow rabbit hole question:', question);
+  };
+  
+  const handleQuizCorrect = (blockId: string) => {
+    console.log('Quiz correct for block:', blockId);
+  };
+  
+  const handleNewsRead = (blockId: string) => {
+    console.log('News read for block:', blockId);
+  };
+  
+  const handleCreativeUpload = (blockId: string) => {
+    console.log('Creative upload for block:', blockId);
+  };
+  
+  const handlePlayText = (text: string, specialistId: string) => {
+    console.log('Play text:', text, 'with specialist:', specialistId);
+  };
+
   return (
     <div className="flex h-screen w-full">
       <DashboardSidebar 
@@ -17,7 +62,27 @@ const DashboardContainerContent = () => {
       />
       <div className="flex-1 overflow-auto">
         <DashboardHeader childName="Explorer" streakDays={7} childAge={10} profileId="d49eb66b-5404-4743-a137-d9f121d79151" />
-        <CurioContent />
+        <CurioContent 
+          currentCurio={null}
+          contentBlocks={contentBlocks}
+          blockReplies={blockReplies}
+          isGenerating={false}
+          loadingBlocks={false}
+          visibleBlocksCount={0}
+          profileId="d49eb66b-5404-4743-a137-d9f121d79151"
+          onLoadMore={handleLoadMore}
+          hasMoreBlocks={false}
+          onToggleLike={handleToggleLike}
+          onToggleBookmark={handleToggleBookmark}
+          onReply={handleReply}
+          onSetQuery={handleSetQuery}
+          onRabbitHoleFollow={handleRabbitHoleFollow}
+          onQuizCorrect={handleQuizCorrect}
+          onNewsRead={handleNewsRead}
+          onCreativeUpload={handleCreativeUpload}
+          playText={handlePlayText}
+          childAge={10}
+        />
       </div>
     </div>
   );
