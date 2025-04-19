@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -174,15 +175,45 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
     
     setOrbExpanded(true);
     
-    handleSubmitQuery();
-    
-    setTimeout(() => {
-      confetti({
-        particleCount: 100,
-        spread: 160,
-        origin: { y: 0.5, x: 0.5 }
-      });
-    }, 500);
+    try {
+      const { data: newCurio, error } = await supabase
+        .from('curios')
+        .insert({
+          child_id: childId,
+          title: queryToUse,
+          query: queryToUse,
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+
+      if (newCurio) {
+        toast.success("Let's explore something new!");
+        
+        if (pastCurios) {
+          const updatedCurios = [
+            { id: newCurio.id, title: queryToUse, query: queryToUse, created_at: new Date().toISOString() },
+            ...pastCurios
+          ];
+          // No need to call setPastCurios as it's not provided in the props
+        }
+        
+        setTimeout(() => {
+          confetti({
+            particleCount: 100,
+            spread: 160,
+            origin: { y: 0.5, x: 0.5 }
+          });
+        }, 500);
+        
+        navigate(`/curio/${childId}/${newCurio.id}`);
+      }
+    } catch (error) {
+      console.error('Error creating curio:', error);
+      toast.error("Couldn't start your exploration. Let's try again!");
+      setOrbExpanded(false);
+    }
   };
   
   const handleSuggestionClick = (suggestion: string) => {
@@ -208,6 +239,10 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
     }, 10);
     
     onCurioSuggestionClick(suggestion);
+  };
+
+  const handleTaskComplete = (taskId: string) => {
+    toast.success("Task completed!");
   };
 
   return (
@@ -324,6 +359,7 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
               <SuggestionsCloud 
                 suggestions={curioSuggestions}
                 onSuggestionClick={handleSuggestionClick}
+                isLoading={false}
               />
             </motion.div>
           ) : (
@@ -478,7 +514,7 @@ const WonderCanvas: React.FC<WonderCanvasProps> = ({
             <div className="w-12 h-1 bg-white/20 rounded-full mx-auto my-3" />
             <TasksPanel 
               childId={childId}
-              onComplete={onComplete}
+              onComplete={handleTaskComplete}
               onClose={() => setActivePanel('none')}
             />
           </motion.div>
