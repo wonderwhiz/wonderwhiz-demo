@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Compass, Star, ArrowRight, Sparkles, Book, Map, Zap, ChevronDown } from 'lucide-react';
@@ -8,21 +7,23 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-
 interface KnowledgeJourneyProps {
   childId: string;
   childProfile: any;
   onTopicClick: (topic: string) => void;
 }
-
 const KnowledgeJourney: React.FC<KnowledgeJourneyProps> = ({
   childId,
   childProfile,
   onTopicClick
 }) => {
-  const { recentlyViewedTopics, strongestTopics, getPersonalizedSuggestions } = useChildLearningHistory(childId);
+  const {
+    recentlyViewedTopics,
+    strongestTopics,
+    getPersonalizedSuggestions
+  } = useChildLearningHistory(childId);
   const [showAll, setShowAll] = useState(false);
-  
+
   // Create a consistent color palette based on brand guidelines
   const nodeColors = {
     strength: {
@@ -54,11 +55,11 @@ const KnowledgeJourney: React.FC<KnowledgeJourneyProps> = ({
       iconBg: "bg-wonderwhiz-deep-purple/50"
     }
   };
-  
+
   // Combine data sources for a clean journey visualization
   const generateJourneyNodes = () => {
     const nodes = [];
-    
+
     // Add strongest interests
     if (strongestTopics.length > 0) {
       strongestTopics.slice(0, 2).forEach(topic => {
@@ -70,7 +71,7 @@ const KnowledgeJourney: React.FC<KnowledgeJourneyProps> = ({
         });
       });
     }
-    
+
     // Add recent topics with recency info
     if (recentlyViewedTopics.length > 0) {
       recentlyViewedTopics.slice(0, 3).forEach((topic, index) => {
@@ -82,7 +83,7 @@ const KnowledgeJourney: React.FC<KnowledgeJourneyProps> = ({
         });
       });
     }
-    
+
     // Add personalized suggestions as next steps
     const suggestions = getPersonalizedSuggestions().slice(0, 2);
     suggestions.forEach(suggestion => {
@@ -93,7 +94,7 @@ const KnowledgeJourney: React.FC<KnowledgeJourneyProps> = ({
         subtitle: 'Recommended for you'
       });
     });
-    
+
     // Add interests-based nodes
     if (childProfile?.interests && childProfile.interests.length > 0) {
       childProfile.interests.slice(0, 2).forEach(interest => {
@@ -105,14 +106,11 @@ const KnowledgeJourney: React.FC<KnowledgeJourneyProps> = ({
         });
       });
     }
-    
     return nodes;
   };
-  
   const journeyNodes = generateJourneyNodes();
   // Show only 3 nodes initially, show all if showAll is true
   const displayedNodes = showAll ? journeyNodes : journeyNodes.slice(0, 3);
-
   const handleNodeClick = (node: any) => {
     // Handle clicks differently based on node type
     switch (node.type) {
@@ -132,11 +130,13 @@ const KnowledgeJourney: React.FC<KnowledgeJourneyProps> = ({
         onTopicClick(node.title);
     }
   };
-  
+
   // Animation variants
   const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { 
+    hidden: {
+      opacity: 0
+    },
+    visible: {
       opacity: 1,
       transition: {
         when: "beforeChildren",
@@ -144,11 +144,13 @@ const KnowledgeJourney: React.FC<KnowledgeJourneyProps> = ({
       }
     }
   };
-  
   const itemVariants = {
-    hidden: { opacity: 0, y: 10 },
-    visible: { 
-      opacity: 1, 
+    hidden: {
+      opacity: 0,
+      y: 10
+    },
+    visible: {
+      opacity: 1,
       y: 0,
       transition: {
         type: "spring",
@@ -157,103 +159,6 @@ const KnowledgeJourney: React.FC<KnowledgeJourneyProps> = ({
       }
     }
   };
-
-  return (
-    <motion.div 
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="bg-gradient-to-br from-wonderwhiz-deep-purple/40 to-indigo-950/70 backdrop-blur-sm rounded-2xl border border-wonderwhiz-light-purple/30 p-5 shadow-lg"
-    >
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-wonderwhiz-bright-pink/20 to-wonderwhiz-deep-purple/30 flex items-center justify-center mr-3 border border-white/10">
-            <Map className="h-5 w-5 text-wonderwhiz-bright-pink" />
-          </div>
-          <div>
-            <h3 className="text-xl font-nunito font-bold text-white">Knowledge Journey</h3>
-            <p className="text-sm font-inter text-white/70">Your path of discovery</p>
-          </div>
-        </div>
-        
-        <Badge className="bg-wonderwhiz-bright-pink/20 text-wonderwhiz-bright-pink border-wonderwhiz-bright-pink/20 font-nunito">
-          {journeyNodes.length} pathways
-        </Badge>
-      </div>
-      
-      {/* Knowledge journey visualization */}
-      <div className="space-y-3 relative">
-        {journeyNodes.length === 0 ? (
-          <div className="text-center py-6 text-white/70 font-inter">
-            <p>Start your learning journey by exploring topics!</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-3">
-            {displayedNodes.map((node) => (
-              <motion.div 
-                key={node.id}
-                variants={itemVariants}
-                whileHover={{ scale: 1.02, y: -1 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <Card 
-                  className={cn(
-                    "overflow-hidden border transition-all cursor-pointer group",
-                    nodeColors[node.type as keyof typeof nodeColors].bg,
-                    nodeColors[node.type as keyof typeof nodeColors].border,
-                    nodeColors[node.type as keyof typeof nodeColors].hover
-                  )}
-                  onClick={() => handleNodeClick(node)}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <div className={cn(
-                          "p-2 rounded-full mr-3 border border-white/20", 
-                          nodeColors[node.type as keyof typeof nodeColors].iconBg
-                        )}>
-                          {nodeColors[node.type as keyof typeof nodeColors].icon}
-                        </div>
-                        
-                        <div>
-                          <h4 className="font-nunito font-semibold text-white group-hover:text-white/90">{node.title}</h4>
-                          <p className="text-xs font-inter text-white/70">{node.subtitle}</p>
-                        </div>
-                      </div>
-                      
-                      <ArrowRight className="h-4 w-4 text-white/60 group-hover:text-white/90 group-hover:translate-x-0.5 transition-all" />
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-            
-            {journeyNodes.length > 3 && (
-              <motion.div variants={itemVariants}>
-                <Button 
-                  variant="ghost" 
-                  className="w-full text-white/70 font-nunito hover:text-white hover:bg-wonderwhiz-deep-purple/30 flex items-center justify-center"
-                  onClick={() => setShowAll(!showAll)}
-                >
-                  <ChevronDown className={`mr-2 h-4 w-4 transition-transform ${showAll ? 'rotate-180' : ''}`} />
-                  <span>{showAll ? 'Show less' : `Show ${journeyNodes.length - 3} more pathways`}</span>
-                </Button>
-              </motion.div>
-            )}
-          </div>
-        )}
-      </div>
-      
-      <Button 
-        variant="ghost" 
-        className="w-full mt-4 text-wonderwhiz-cyan font-nunito hover:text-white hover:bg-wonderwhiz-cyan/20"
-        onClick={() => onTopicClick("Suggest a new topic for me to learn about")}
-      >
-        <Compass className="mr-2 h-4 w-4" />
-        <span>Discover new paths</span>
-      </Button>
-    </motion.div>
-  );
+  return;
 };
-
 export default KnowledgeJourney;
