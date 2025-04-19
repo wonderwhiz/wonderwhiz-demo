@@ -1,55 +1,58 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Star } from 'lucide-react';
+import { Star } from 'lucide-react';
 
 interface DashboardHeaderProps {
   childName: string;
-  streakDays?: number;
-  childAge?: number;
-  profileId?: string; // Added this property to fix the TypeScript error
+  streakDays: number;
+  childAge: number;
+  profileId: string;
 }
 
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   childName,
-  streakDays = 0,
-  childAge = 10,
-  profileId // Added this to the component props
+  streakDays,
+  childAge,
+  profileId
 }) => {
   return (
-    <motion.div 
-      className="bg-gradient-to-r from-wonderwhiz-deep-purple via-wonderwhiz-purple to-wonderwhiz-light-purple border-b border-wonderwhiz-light-purple/30 backdrop-blur-md"
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-white font-nunito">
-              Welcome back, {childName}!
-            </h1>
-            <p className="text-white/70 mt-1 font-inter">
-              {childAge < 8 ? "Let's explore something amazing today!" :
-               childAge < 12 ? "What would you like to discover?" :
-               "Ready to expand your knowledge?"}
-            </p>
-          </div>
+    <div className="px-4 py-3">
+      <div className="max-w-5xl mx-auto flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <motion.div 
+            className="w-10 h-10 rounded-xl bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-purple flex items-center justify-center"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Star className="h-5 w-5 text-white" />
+          </motion.div>
           
-          {streakDays > 0 && (
-            <motion.div 
-              className="flex items-center bg-wonderwhiz-bright-pink/20 px-4 py-2 rounded-full"
-              whileHover={{ scale: 1.05 }}
+          <div>
+            <motion.h1 
+              className="text-lg font-bold text-white"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
             >
-              <Star className="h-5 w-5 text-wonderwhiz-vibrant-yellow mr-2" />
-              <span className="text-white font-nunito">
-                {streakDays} day{streakDays !== 1 ? 's' : ''} streak!
-              </span>
-            </motion.div>
-          )}
+              WonderWhiz
+            </motion.h1>
+          </div>
         </div>
+
+        {streakDays > 0 && (
+          <motion.div 
+            className="flex items-center gap-2 bg-wonderwhiz-bright-pink/20 px-3 py-1.5 rounded-full"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+          >
+            <Star className="h-4 w-4 text-wonderwhiz-bright-pink" />
+            <span className="text-wonderwhiz-bright-pink text-sm font-medium">
+              {streakDays} day streak!
+            </span>
+          </motion.div>
+        )}
       </div>
-    </motion.div>
+    </div>
   );
 };
 
