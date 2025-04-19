@@ -49,9 +49,9 @@ const SpecialistAvatar: React.FC<SpecialistAvatarProps> = ({ specialistId, size 
   
   return (
     <div 
-      className={`${getSizeClasses()} rounded-full bg-gradient-to-br ${getSpecialistGradient()} flex items-center justify-center shadow-glow-sm ${className}`}
+      className={`${getSizeClasses()} rounded-full bg-gradient-to-br ${getSpecialistGradient()} flex items-center justify-center shadow-glow-sm transform transition-all duration-300 hover:scale-110 ${className}`}
     >
-      <span role="img" aria-label="specialist icon">
+      <span role="img" aria-label="specialist icon" className="animate-float-gentle">
         {getSpecialistEmoji()}
       </span>
     </div>

@@ -1,248 +1,57 @@
 
-import React, { useState, useEffect } from 'react';
-import { Helmet } from 'react-helmet-async';
-import { useParams } from 'react-router-dom';
-import { Card } from '@/components/ui/card';
-import { useSparksSystem } from '@/hooks/useSparksSystem';
+import React from 'react';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardSidebar from '@/components/dashboard/DashboardSidebar';
 import CurioContent from '@/components/dashboard/CurioContent';
-import { useDashboardProfile } from '@/hooks/useDashboardProfile';
-import { useCurioCreation } from '@/hooks/useCurioCreation';
-import { useCurioData } from '@/hooks/useCurioData';
-import { useBlockInteractionHandlers } from '@/hooks/useBlockInteractionHandlers';
-import WelcomeSection from '@/components/dashboard/WelcomeSection';
-import TalkToWhizzy from '@/components/curio/TalkToWhizzy';
-import { useElevenLabsVoice } from '@/hooks/useElevenLabsVoice';
-import VoiceInputButton from '@/components/curio/VoiceInputButton';
-import IntelligentSuggestions from '@/components/dashboard/IntelligentSuggestions';
-import KnowledgeJourney from '@/components/dashboard/KnowledgeJourney';
-import DiscoverySection from '@/components/dashboard/DiscoverySection';
+import { SidebarProvider } from '@/components/ui/sidebar';
+import { Helmet } from 'react-helmet-async';
 
-interface Curio {
-  id: string;
-  title: string;
-  query: string;
-  created_at: string;
-}
-
-const DashboardContainer = () => {
-  const { profileId } = useParams<{ profileId: string }>();
-  const [currentCurio, setCurrentCurio] = useState<Curio | null>(null);
-  const { streakDays } = useSparksSystem(profileId);
-  const [ageGroup, setAgeGroup] = useState<'5-7' | '8-11' | '12-16'>('8-11');
-  const [childAge, setChildAge] = useState<number>(10);
-  const [isVoiceActive, setIsVoiceActive] = useState(false);
-
-  const {
-    childProfile,
-    setChildProfile,
-    isLoading,
-    pastCurios,
-    setPastCurios,
-    isLoadingSuggestions,
-    curioSuggestions,
-    handleRefreshSuggestions
-  } = useDashboardProfile(profileId);
-
-  const { playText, isPlaying, stopPlaying } = useElevenLabsVoice();
-
-  const {
-    query,
-    setQuery,
-    isGenerating,
-    handleSubmitQuery,
-    handleFollowRabbitHole,
-    handleCurioSuggestionClick: curioCreationSuggestionClick
-  } = useCurioCreation(profileId, childProfile, setPastCurios, setChildProfile, setCurrentCurio);
-
-  const {
-    blocks: contentBlocks,
-    isLoading: isLoadingBlocks,
-    isGeneratingContent,
-    hasMoreBlocks,
-    loadingMoreBlocks,
-    loadMoreBlocks,
-    totalBlocksLoaded,
-    handleToggleLike,
-    handleToggleBookmark,
-    handleSearch,
-    clearSearch,
-    isFirstLoad,
-    generationError
-  } = useCurioData(currentCurio?.id, profileId);
-
-  const {
-    blockReplies,
-    handleBlockReply,
-    handleQuizCorrect,
-    handleNewsRead,
-    handleCreativeUpload,
-    handleSparkEarned
-  } = useBlockInteractionHandlers(profileId, childProfile, setChildProfile, contentBlocks);
-
-  useEffect(() => {
-    if (childProfile?.age) {
-      const age = typeof childProfile.age === 'string' 
-        ? parseInt(childProfile.age, 10) 
-        : childProfile.age;
-      
-      setChildAge(age);
-        
-      if (age >= 5 && age <= 7) {
-        setAgeGroup('5-7');
-      } else if (age >= 8 && age <= 11) {
-        setAgeGroup('8-11');
-      } else {
-        setAgeGroup('12-16');
-      }
-    }
-  }, [childProfile]);
-
-  const handleLoadCurio = (curio: Curio) => {
-    setCurrentCurio(curio);
-  };
-
-  const handleVoiceTranscript = (transcript: string) => {
-    if (transcript.trim()) {
-      setQuery(transcript);
-      setIsVoiceActive(false);
-      
-      setTimeout(() => {
-        handleSubmitQuery();
-      }, 300);
-    }
-  };
-
-  // Use the logic from the local function but call the one from useCurioCreation
-  const handleSuggestionClick = (suggestion: string) => {
-    setCurrentCurio(null);
-    curioCreationSuggestionClick(suggestion);
-  };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-wonderwhiz-deep-purple flex items-center justify-center">
-        <div className="rounded-full h-12 w-12 border-t-2 border-b-2 border-wonderwhiz-bright-pink animate-spin"></div>
-      </div>
-    );
-  }
-
+const Dashboard = () => {
   return (
-    <div className="min-h-screen flex w-full bg-gradient-to-b from-wonderwhiz-deep-purple to-wonderwhiz-deep-purple/90">
+    <div className="min-h-screen bg-gradient-to-br from-wonderwhiz-deep-purple to-wonderwhiz-purple overflow-hidden">
       <Helmet>
-        <title>WonderWhiz - Explore & Learn</title>
-        <meta name="description" content="Explore topics, ask questions, and learn in a fun, interactive way with WonderWhiz." />
+        <title>WonderWhiz - Your Learning Adventure</title>
+        <meta name="description" content="Discover amazing facts, fun activities, and cool adventures! What will you learn today?" />
       </Helmet>
       
-      <DashboardSidebar 
-        childId={profileId || ''} 
-        sparksBalance={childProfile?.sparks_balance || 0}
-        pastCurios={pastCurios}
-        currentCurioId={currentCurio?.id}
-        onCurioSelect={handleLoadCurio}
-      />
-      
-      <main className="flex-1 flex flex-col min-h-screen relative">
-        <DashboardHeader 
-          childName={childProfile?.name || 'Explorer'} 
-          profileId={profileId}
-          streakDays={streakDays}
-          childAge={childAge}
-        />
+      {/* Static decorative background */}
+      <div className="fixed inset-0 z-0 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-wonderwhiz-deep-purple via-indigo-900 to-purple-950"></div>
         
-        <div className="flex-1 overflow-y-auto">
-          <div className="max-w-5xl mx-auto space-y-6 p-4">
-            <Card className="bg-wonderwhiz-purple/50 backdrop-blur-sm border-white/10 flex-grow relative overflow-hidden shadow-xl rounded-xl">
-              {!currentCurio ? (
-                <div className="p-6 space-y-8">
-                  <WelcomeSection 
-                    curioSuggestions={curioSuggestions}
-                    isLoadingSuggestions={isLoadingSuggestions}
-                    handleRefreshSuggestions={handleRefreshSuggestions}
-                    handleCurioSuggestionClick={handleSuggestionClick}
-                    childProfile={childProfile}
-                    pastCurios={pastCurios}
-                    childId={profileId || ''}
-                    query={query}
-                    setQuery={setQuery}
-                    handleSubmitQuery={handleSubmitQuery}
-                    isGenerating={isGenerating || isGeneratingContent}
-                  />
-                  
-                  <IntelligentSuggestions
-                    childId={profileId || ''}
-                    childProfile={childProfile}
-                    onSuggestionClick={handleSuggestionClick}
-                    pastCurios={pastCurios}
-                  />
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <KnowledgeJourney 
-                      childId={profileId || ''}
-                      childProfile={childProfile}
-                      onTopicClick={handleSuggestionClick}
-                    />
-                    <DiscoverySection 
-                      childId={profileId || ''} 
-                      sparksBalance={childProfile?.sparks_balance || 0}
-                      onSparkEarned={(amount) => {
-                        if (childProfile && setChildProfile) {
-                          setChildProfile({
-                            ...childProfile,
-                            sparks_balance: (childProfile.sparks_balance || 0) + amount
-                          });
-                        }
-                      }}
-                    />
-                  </div>
-                </div>
-              ) : (
-                <CurioContent
-                  currentCurio={currentCurio}
-                  contentBlocks={contentBlocks}
-                  blockReplies={blockReplies}
-                  isGenerating={isGeneratingContent}
-                  loadingBlocks={loadingMoreBlocks}
-                  visibleBlocksCount={totalBlocksLoaded}
-                  profileId={profileId}
-                  onLoadMore={loadMoreBlocks}
-                  hasMoreBlocks={hasMoreBlocks}
-                  onToggleLike={handleToggleLike}
-                  onToggleBookmark={handleToggleBookmark}
-                  onReply={(blockId, message) => handleBlockReply(blockId, message)} 
-                  onSetQuery={setQuery}
-                  onRabbitHoleFollow={handleFollowRabbitHole}
-                  onQuizCorrect={handleQuizCorrect}
-                  onNewsRead={handleNewsRead}
-                  onCreativeUpload={handleCreativeUpload}
-                  generationError={generationError}
-                  playText={playText}
-                  childAge={childAge}
-                />
-              )}
-            </Card>
-          </div>
+        {/* Subtle grid pattern */}
+        <div className="absolute inset-0" style={{ 
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+        }}></div>
+        
+        {/* Static stars - small dots */}
+        <div className="absolute inset-0">
+          {Array.from({ length: 50 }).map((_, i) => (
+            <div 
+              key={i}
+              className="absolute rounded-full bg-white"
+              style={{
+                width: Math.random() * 2 + 1 + 'px',
+                height: Math.random() * 2 + 1 + 'px',
+                top: Math.random() * 100 + '%',
+                left: Math.random() * 100 + '%',
+                opacity: Math.random() * 0.5 + 0.1,
+              }}
+            />
+          ))}
         </div>
         
-        <VoiceInputButton 
-          isActive={isVoiceActive}
-          onToggle={setIsVoiceActive}
-          onTranscript={handleVoiceTranscript}
-          childAge={childAge}
-        />
-        
-        {profileId && (
-          <TalkToWhizzy 
-            childId={profileId}
-            curioTitle={currentCurio?.title}
-            ageGroup={ageGroup}
-            onNewQuestionGenerated={handleFollowRabbitHole}
-          />
-        )}
-      </main>
+        {/* Soft glow effects */}
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-indigo-600/10 blur-3xl"></div>
+        <div className="absolute bottom-1/3 right-1/4 w-96 h-96 rounded-full bg-purple-600/10 blur-3xl"></div>
+      </div>
+      
+      <div className="relative z-10">
+        <SidebarProvider>
+          <DashboardContainer />
+        </SidebarProvider>
+      </div>
     </div>
   );
 };
 
-export default DashboardContainer;
+export default Dashboard;
