@@ -1,8 +1,11 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, PieChart, RefreshCcw, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface CurioPageHeaderProps {
   curioTitle: string | null;
@@ -28,7 +31,45 @@ const CurioPageHeader: React.FC<CurioPageHeaderProps> = ({
   const navigate = useNavigate();
 
   const handleBackToDashboardInner = () => {
-    navigate(`/dashboard/${profileId}`);
+    if (profileId) {
+      navigate(`/dashboard/${profileId}`);
+    } else {
+      handleBackToDashboard();
+    }
+  };
+  
+  const handleRefreshInner = async () => {
+    if (refreshing) return;
+    
+    // Call the provided refresh handler
+    handleRefresh();
+    
+    // If we have a profile ID and a curio title, create a new curio with the same title
+    if (profileId && curioTitle) {
+      try {
+        toast.loading("Refreshing your exploration...");
+        
+        const { data: newCurio, error } = await supabase
+          .from('curios')
+          .insert({
+            child_id: profileId,
+            title: curioTitle,
+            query: curioTitle
+          })
+          .select('id')
+          .single();
+          
+        if (error) throw error;
+        
+        if (newCurio && newCurio.id) {
+          toast.success("Created a fresh exploration!");
+          navigate(`/curio/${profileId}/${newCurio.id}`);
+        }
+      } catch (error) {
+        console.error('Error creating refresh curio:', error);
+        toast.error("Couldn't refresh exploration. Try again!");
+      }
+    }
   };
 
   return (
@@ -43,7 +84,7 @@ const CurioPageHeader: React.FC<CurioPageHeaderProps> = ({
           <Button
             variant="ghost"
             size="icon"
-            onClick={handleBackToDashboard}
+            onClick={handleBackToDashboardInner}
             className="mr-3 bg-white/5 hover:bg-white/10 text-white rounded-full h-9 w-9"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -69,7 +110,7 @@ const CurioPageHeader: React.FC<CurioPageHeaderProps> = ({
           <Button
             variant="ghost"
             size="icon"
-            onClick={handleRefresh}
+            onClick={handleRefreshInner}
             disabled={refreshing}
             className="bg-white/5 hover:bg-white/10 text-white rounded-full h-9 w-9"
           >
@@ -79,7 +120,7 @@ const CurioPageHeader: React.FC<CurioPageHeaderProps> = ({
           <Button
             variant="ghost"
             size="icon"
-            onClick={handleBackToDashboard}
+            onClick={handleBackToDashboardInner}
             className="bg-white/5 hover:bg-white/10 text-white rounded-full h-9 w-9 sm:hidden"
           >
             <Home className="h-4 w-4" />

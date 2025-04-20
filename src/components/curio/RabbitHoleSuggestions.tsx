@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 
 interface RabbitHoleSuggestionsProps {
-  currentQuestion: string;
+  currentQuestion?: string;
   suggestions: string[];
   onSuggestionClick: (suggestion: string) => void;
   childAge?: number;
@@ -18,8 +18,8 @@ interface RabbitHoleSuggestionsProps {
 }
 
 const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
-  currentQuestion,
-  suggestions,
+  currentQuestion = "",
+  suggestions = [],
   onSuggestionClick,
   childAge = 10,
   explorationDepth = 1,
@@ -83,7 +83,7 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
           
         if (error) throw error;
         
-        if (newCurio) {
+        if (newCurio && newCurio.id) {
           toast.success("New exploration created!");
           
           try {

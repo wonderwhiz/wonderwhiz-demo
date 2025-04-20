@@ -22,6 +22,7 @@ import ViewModeSwitcher from '@/components/curio/ViewModeSwitcher';
 import RabbitHoleSuggestions from '@/components/content-blocks/RabbitHoleSuggestions';
 import InteractiveImageBlock from '@/components/content-blocks/InteractiveImageBlock';
 import TalkToWhizzy from '@/components/curio/TalkToWhizzy';
+import { useCurioGeneration } from '@/hooks/useCurioGeneration';
 
 const SimplifiedCurioPage: React.FC = () => {
   const { childId, curioId } = useParams<{ childId: string, curioId: string }>();
@@ -32,6 +33,7 @@ const SimplifiedCurioPage: React.FC = () => {
   const { searchQuery, setSearchQuery, handleSearch } = useSearch();
   const { blocks, isLoading: isLoadingBlocks, error: blocksError, hasMore, loadMore, isFirstLoad } = useCurioBlocks(childId, curioId, searchQuery);
   const { generateContent, isGenerating } = useDynamicContentGeneration();
+  const { generateRandomExploration } = useCurioGeneration();
   const { 
     handleToggleLike,
     handleToggleBookmark,
@@ -307,6 +309,15 @@ const SimplifiedCurioPage: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   
+  const handleRefresh = async () => {
+    if (!childId || !curioTitle) return;
+    
+    const query = curioTitle || 'Random exploration';
+    const childAge = childProfile?.age ? Number(childProfile.age) : 10;
+    
+    await generateRandomExploration(childId, childAge);
+  };
+  
   const handleRabbitHoleClick = async (question: string) => {
     if (!childId) return;
     
@@ -391,6 +402,7 @@ const SimplifiedCurioPage: React.FC = () => {
               placeholder="Search within this exploration..."
               onSearch={(query) => handleSearch({ preventDefault: () => {} } as React.FormEvent)}
               onClear={() => setSearchQuery('')}
+              childId={childId}
             />
           </div>
         </div>

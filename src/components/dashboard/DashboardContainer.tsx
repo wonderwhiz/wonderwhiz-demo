@@ -13,12 +13,14 @@ import TasksSection from '@/components/dashboard/TasksSection';
 import AnimatedBackground from '@/components/ui/animated-background';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { Task } from '@/types/dashboard';
+import { useGroqGeneration } from '@/hooks/useGroqGeneration';
 
 const DashboardContainerContent = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+  const { generateQuickAnswer } = useGroqGeneration();
   
   // Sample children profile data
   const profileData = {
@@ -71,13 +73,43 @@ const DashboardContainerContent = () => {
     fetchTasks();
   }, [profileData.id]);
 
-  const handleSearch = (query: string) => {
+  const handleSearch = async (query: string) => {
     setSearchQuery(query);
     if (query.trim()) {
       toast.success("Searching for your curiosities!");
-      setTimeout(() => {
+      
+      try {
+        // Generate a quick answer to show while navigating
+        generateQuickAnswer(query, profileData.age)
+          .catch(error => console.error('Error generating quick answer:', error));
+        
+        // Create a new curio in the database
+        const { data: newCurio, error } = await supabase
+          .from('curios')
+          .insert({
+            child_id: profileData.id,
+            title: query,
+            query: query
+          })
+          .select('id')
+          .single();
+          
+        if (error) throw error;
+        
+        if (newCurio && newCurio.id) {
+          // Navigate to the new curio page
+          setTimeout(() => {
+            navigate(`/curio/${profileData.id}/${newCurio.id}`);
+          }, 500);
+        } else {
+          // Fallback to search page if curio creation fails
+          navigate(`/curio/${profileData.id}/search?q=${encodeURIComponent(query)}`);
+        }
+      } catch (error) {
+        console.error('Error creating curio:', error);
+        // Fallback to search page
         navigate(`/curio/${profileData.id}/search?q=${encodeURIComponent(query)}`);
-      }, 500);
+      }
     }
   };
   
@@ -92,28 +124,77 @@ const DashboardContainerContent = () => {
     }, 300);
   };
   
-  const handleCurioSelect = (suggestion: string) => {
+  const handleCurioSelect = async (suggestion: string) => {
     toast.success(`Exploring: ${suggestion}`);
-    setTimeout(() => {
+    
+    try {
+      // Create a new curio in the database for the suggestion
+      const { data: newCurio, error } = await supabase
+        .from('curios')
+        .insert({
+          child_id: profileData.id,
+          title: suggestion,
+          query: suggestion
+        })
+        .select('id')
+        .single();
+        
+      if (error) throw error;
+      
+      if (newCurio && newCurio.id) {
+        // Navigate to the new curio page
+        setTimeout(() => {
+          navigate(`/curio/${profileData.id}/${newCurio.id}`);
+        }, 300);
+      } else {
+        // Fallback to new curio page without ID
+        navigate(`/curio/${profileData.id}/new?topic=${encodeURIComponent(suggestion)}`);
+      }
+    } catch (error) {
+      console.error('Error creating curio for suggestion:', error);
+      // Fallback to new curio page
       navigate(`/curio/${profileData.id}/new?topic=${encodeURIComponent(suggestion)}`);
-    }, 300);
+    }
   };
   
   const handleImageUpload = (file: File) => {
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       toast.success("Image received! Let's explore what's in it.");
-      setTimeout(() => {
+      
+      try {
+        // Create a new curio for image exploration
+        const { data: newCurio, error } = await supabase
+          .from('curios')
+          .insert({
+            child_id: profileData.id,
+            title: "Image Exploration",
+            query: "Image Analysis"
+          })
+          .select('id')
+          .single();
+          
+        if (error) throw error;
+        
+        if (newCurio && newCurio.id) {
+          setTimeout(() => {
+            navigate(`/curio/${profileData.id}/${newCurio.id}`);
+          }, 500);
+        } else {
+          navigate(`/curio/${profileData.id}/image-search`);
+        }
+      } catch (error) {
+        console.error('Error creating curio for image:', error);
         navigate(`/curio/${profileData.id}/image-search`);
-      }, 500);
+      }
     };
     reader.readAsDataURL(file);
   };
   
-  const handleVoiceInput = (transcript: string) => {
+  const handleVoiceInput = async (transcript: string) => {
     if (transcript.trim()) {
       toast.success(`I heard: "${transcript}"`);
-      handleSearch(transcript);
+      await handleSearch(transcript);
     } else {
       toast.error("I couldn't understand that. Please try again.");
     }
