@@ -16,7 +16,7 @@ const DashboardContainerContent = () => {
       id: '1',
       title: 'Explore the mysteries of volcanoes',
       completed: false,
-      type: 'explore',
+      type: 'explore' as const, // Using "as const" to ensure the type is correctly inferred
       duration: '15 min',
       reward: 50
     },
@@ -24,7 +24,7 @@ const DashboardContainerContent = () => {
       id: '2',
       title: 'Learn about dinosaur discoveries',
       completed: false,
-      type: 'read',
+      type: 'read' as const, // Using "as const" to ensure the type is correctly inferred
       duration: '10 min',
       reward: 30
     }
