@@ -1,60 +1,202 @@
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import AnimatedBackground from '@/components/ui/animated-background';
+import React, { useState } from 'react';
+import { ChevronDown, MessageSquare, Bookmark, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Card } from '@/components/ui/card';
+import { Sidebar, SidebarContent, SidebarHeader, SidebarTrigger } from '@/components/ui/sidebar';
+import SparksBalance from '@/components/SparksBalance';
+import SavedItemsSidebar from './SavedItemsSidebar';
+
+interface Curio {
+  id: string;
+  title: string;
+  query: string;
+  created_at: string;
+}
 
 interface DashboardSidebarProps {
   childId: string;
   sparksBalance: number;
-  pastCurios: any[];
-  onCurioSelect: () => void;
+  pastCurios: Curio[];
+  currentCurioId?: string;
+  onCurioSelect: (curio: Curio) => void;
 }
 
-const DashboardSidebar = ({ childId, sparksBalance, pastCurios, onCurioSelect }: DashboardSidebarProps) => {
+const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ 
+  childId, 
+  sparksBalance, 
+  pastCurios, 
+  currentCurioId,
+  onCurioSelect 
+}) => {
+  const [showSavedItems, setShowSavedItems] = useState(false);
+  const [curioPageSize] = useState(5);
+  const [displayedCuriosCount, setDisplayedCuriosCount] = useState(curioPageSize);
+
+  const handleLoadMoreCurios = () => {
+    setDisplayedCuriosCount(prev => Math.min(prev + curioPageSize, pastCurios.length));
+  };
+
   return (
-    <motion.aside 
-      initial={{ x: -20, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      transition={{ duration: 0.3 }}
-      className="w-72 h-screen overflow-y-auto border-r border-white/10 relative"
-    >
-      <AnimatedBackground />
-      <div className="relative z-10 p-4">
-        <div className="mb-6">
-          <h2 className="text-lg font-nunito font-bold text-white">Dashboard</h2>
-          <p className="text-sm text-white/70 font-inter">Explore your learning journey</p>
-        </div>
-        
-        {/* Sparks balance */}
-        <div className="mb-6 p-4 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10">
+    <>
+      <Sidebar variant="inset" className="bg-purple-950">
+        <SidebarHeader className="rounded-none bg-violet-900">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-white/70 font-inter">Sparks Balance</span>
-            <motion.span 
-              className="text-lg font-bold text-wonderwhiz-vibrant-yellow font-nunito"
-              initial={{ scale: 1 }}
-              whileHover={{ scale: 1.1 }}
-            >
-              ✨ {sparksBalance}
-            </motion.span>
+            <h3 className="text-white font-medium">Dashboard</h3>
+            <SidebarTrigger />
           </div>
-        </div>
+          <div className="flex items-center">
+            <SparksBalance childId={childId} initialBalance={sparksBalance} size="md" />
+            <button 
+              onClick={() => setShowSavedItems(true)} 
+              className="ml-auto text-white/60 hover:text-white transition-colors flex items-center"
+            >
+              <Bookmark className="mr-1.5 h-4 w-4 text-yellow-400" />
+              <span>View Saved</span>
+            </button>
+          </div>
+        </SidebarHeader>
         
-        {/* Past curios section */}
-        <div className="space-y-2">
-          <h3 className="text-sm font-medium text-white/70 mb-2 font-inter">Recent Explorations</h3>
-          {pastCurios.length === 0 ? (
-            <div className="text-center p-4 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10">
-              <p className="text-sm text-white/50 font-inter">Start exploring to see your journey here!</p>
+        <SidebarContent className="bg-purple-950">
+          <div className="p-4">
+            <h3 className="text-white font-medium mb-3 flex items-center">
+              <span>Your Past Curios</span>
+              <div className="ml-2 text-xs bg-white/10 px-2 py-0.5 rounded-full text-white/70">
+                {pastCurios.length}
+              </div>
+            </h3>
+            
+            {pastCurios.length === 0 ? (
+              <p className="text-white/60 text-sm">Ask a question to start exploring!</p>
+            ) : (
+              <div className="space-y-3">
+                {pastCurios.slice(0, displayedCuriosCount).map((curio, index) => (
+                  <Card 
+                    key={curio.id} 
+                    className={`
+                      cursor-pointer 
+                      transition-all 
+                      hover:bg-white/10 
+                      border 
+                      border-opacity-20 
+                      rounded-lg 
+                      overflow-hidden 
+                      shadow-sm 
+                      hover:shadow-md
+                      ${getCardColorClass(index)}
+                    `} 
+                    onClick={() => onCurioSelect(curio)}
+                  >
+                    <div 
+                      className={`
+                        p-3 
+                        flex 
+                        items-center 
+                        ${currentCurioId === curio.id ? 'bg-white/10 text-white' : 'text-white/80'}
+                        line-clamp-2 
+                        break-words 
+                        overflow-hidden
+                      `}
+                    >
+                      <MessageSquare className="h-4 w-4 mr-2 flex-shrink-0" />
+                      <span 
+                        className="
+                          text-sm 
+                          font-medium 
+                          leading-tight 
+                          line-clamp-2 
+                          break-words 
+                          max-h-[3rem] 
+                          overflow-hidden 
+                          text-ellipsis
+                        "
+                      >
+                        {curio.title}
+                      </span>
+                    </div>
+                  </Card>
+                ))}
+                
+                {displayedCuriosCount < pastCurios.length && (
+                  <motion.div 
+                    initial={{ opacity: 0 }} 
+                    animate={{ opacity: 1 }} 
+                    className="flex justify-center pt-2"
+                  >
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="
+                        text-white/60 
+                        hover:text-white 
+                        hover:bg-white/10 
+                        flex 
+                        items-center 
+                        gap-1 
+                        text-xs 
+                        border 
+                        border-white/10 
+                        rounded-full
+                      " 
+                      onClick={handleLoadMoreCurios}
+                    >
+                      Load More <ChevronDown className="h-3 w-3" />
+                    </Button>
+                  </motion.div>
+                )}
+              </div>
+            )}
+          </div>
+        </SidebarContent>
+      </Sidebar>
+
+      {/* Saved Items Sidebar */}
+      <AnimatePresence>
+        {showSavedItems && (
+          <motion.div
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -50 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-50 bg-black/50"
+          >
+            <div className="relative h-full">
+              <div className="absolute top-0 left-0 h-full">
+                <SavedItemsSidebar 
+                  childId={childId}
+                  onViewItem={(item) => {
+                    // Handle viewing saved item
+                    setShowSavedItems(false);
+                  }}
+                />
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-4 right-4 text-white/70 hover:text-white bg-black/20 hover:bg-black/40"
+                onClick={() => setShowSavedItems(false)}
+              >
+                <X className="h-5 w-5" />
+              </Button>
             </div>
-          ) : (
-            <div className="space-y-2">
-              {/* Render past curios here */}
-            </div>
-          )}
-        </div>
-      </div>
-    </motion.aside>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
+};
+
+// Helper function to get the color class based on index
+const getCardColorClass = (index: number) => {
+  switch (index % 5) {
+    case 0: return "border-wonderwhiz-pink/60 bg-wonderwhiz-pink/5";
+    case 1: return "border-wonderwhiz-gold/60 bg-wonderwhiz-gold/5";
+    case 2: return "border-wonderwhiz-blue/60 bg-wonderwhiz-blue/5";
+    case 3: return "border-wonderwhiz-purple/60 bg-wonderwhiz-purple/5";
+    case 4: return "border-emerald-400/60 bg-emerald-400/5";
+    default: return "border-white/60 bg-white/5";
+  }
 };
 
 export default DashboardSidebar;

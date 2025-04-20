@@ -1,276 +1,246 @@
 
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { supabase } from '@/integrations/supabase/client';
-import MainHeader from '@/components/layout/MainHeader';
+import { useParams } from 'react-router-dom';
+import { Card } from '@/components/ui/card';
+import { useSparksSystem } from '@/hooks/useSparksSystem';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
-import EnhancedSearchInput from '@/components/dashboard/EnhancedSearchInput';
+import DashboardSidebar from '@/components/dashboard/DashboardSidebar';
+import CurioContent from '@/components/dashboard/CurioContent';
+import { useDashboardProfile } from '@/hooks/useDashboardProfile';
+import { useCurioCreation } from '@/hooks/useCurioCreation';
+import { useCurioData } from '@/hooks/useCurioData';
+import { useBlockInteractionHandlers } from '@/hooks/useBlockInteractionHandlers';
+import WelcomeSection from '@/components/dashboard/WelcomeSection';
+import TalkToWhizzy from '@/components/curio/TalkToWhizzy';
+import { useElevenLabsVoice } from '@/hooks/useElevenLabsVoice';
+import VoiceInputButton from '@/components/curio/VoiceInputButton';
 import IntelligentSuggestions from '@/components/dashboard/IntelligentSuggestions';
-import TasksSection from '@/components/dashboard/TasksSection';
-import AnimatedBackground from '@/components/ui/animated-background';
-import { SidebarProvider } from '@/components/ui/sidebar';
-import { Task } from '@/types/dashboard';
-import { useGroqGeneration } from '@/hooks/useGroqGeneration';
+import KnowledgeJourney from '@/components/dashboard/KnowledgeJourney';
+import DiscoverySection from '@/components/dashboard/DiscoverySection';
 
-const DashboardContainerContent = () => {
-  const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { generateQuickAnswer } = useGroqGeneration();
-  
-  // Sample children profile data
-  const profileData = {
-    name: "Explorer",
-    streakDays: 20,
-    age: 10,
-    id: "d49eb66b-5404-4743-a137-d9f121d79151",
-    interests: ['space', 'dinosaurs', 'science']
-  };
-
-  useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        const { data: childTasks, error } = await supabase
-          .from('child_tasks')
-          .select(`
-            id,
-            status,
-            tasks:task_id (
-              id,
-              title,
-              description,
-              sparks_reward
-            )
-          `)
-          .eq('child_profile_id', profileData.id)
-          .eq('status', 'pending');
-
-        if (error) throw error;
-
-        // Transform the data to match our Task interface
-        const formattedTasks: Task[] = childTasks.map(task => ({
-          id: task.id,
-          title: task.tasks.title,
-          completed: false,
-          type: 'explore' as const,
-          duration: '15 min',
-          reward: task.tasks.sparks_reward
-        }));
-
-        setTasks(formattedTasks);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching tasks:', error);
-        toast.error('Failed to load tasks');
-        setLoading(false);
-      }
-    };
-
-    fetchTasks();
-  }, [profileData.id]);
-
-  const handleSearch = async (query: string) => {
-    setSearchQuery(query);
-    if (query.trim()) {
-      toast.success("Searching for your curiosities!");
-      
-      try {
-        // Generate a quick answer to show while navigating
-        generateQuickAnswer(query, profileData.age)
-          .catch(error => console.error('Error generating quick answer:', error));
-        
-        // Create a new curio in the database
-        const { data: newCurio, error } = await supabase
-          .from('curios')
-          .insert({
-            child_id: profileData.id,
-            title: query,
-            query: query
-          })
-          .select('id')
-          .single();
-          
-        if (error) throw error;
-        
-        if (newCurio && newCurio.id) {
-          // Navigate to the new curio page
-          setTimeout(() => {
-            navigate(`/curio/${profileData.id}/${newCurio.id}`);
-          }, 500);
-        } else {
-          // Fallback to search page if curio creation fails
-          navigate(`/curio/${profileData.id}/search?q=${encodeURIComponent(query)}`);
-        }
-      } catch (error) {
-        console.error('Error creating curio:', error);
-        // Fallback to search page
-        navigate(`/curio/${profileData.id}/search?q=${encodeURIComponent(query)}`);
-      }
-    }
-  };
-  
-  const handleTaskClick = (task: any) => {
-    toast.info(`Starting quest: ${task.title}`);
-    setTimeout(() => {
-      if (task.type === 'explore') {
-        navigate(`/curio/${profileData.id}/explore?topic=${encodeURIComponent(task.title)}`);
-      } else {
-        navigate(`/tasks/${profileData.id}/${task.id}`);
-      }
-    }, 300);
-  };
-  
-  const handleCurioSelect = async (suggestion: string) => {
-    toast.success(`Exploring: ${suggestion}`);
-    
-    try {
-      // Create a new curio in the database for the suggestion
-      const { data: newCurio, error } = await supabase
-        .from('curios')
-        .insert({
-          child_id: profileData.id,
-          title: suggestion,
-          query: suggestion
-        })
-        .select('id')
-        .single();
-        
-      if (error) throw error;
-      
-      if (newCurio && newCurio.id) {
-        // Navigate to the new curio page
-        setTimeout(() => {
-          navigate(`/curio/${profileData.id}/${newCurio.id}`);
-        }, 300);
-      } else {
-        // Fallback to new curio page without ID
-        navigate(`/curio/${profileData.id}/new?topic=${encodeURIComponent(suggestion)}`);
-      }
-    } catch (error) {
-      console.error('Error creating curio for suggestion:', error);
-      // Fallback to new curio page
-      navigate(`/curio/${profileData.id}/new?topic=${encodeURIComponent(suggestion)}`);
-    }
-  };
-  
-  const handleImageUpload = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = async () => {
-      toast.success("Image received! Let's explore what's in it.");
-      
-      try {
-        // Create a new curio for image exploration
-        const { data: newCurio, error } = await supabase
-          .from('curios')
-          .insert({
-            child_id: profileData.id,
-            title: "Image Exploration",
-            query: "Image Analysis"
-          })
-          .select('id')
-          .single();
-          
-        if (error) throw error;
-        
-        if (newCurio && newCurio.id) {
-          setTimeout(() => {
-            navigate(`/curio/${profileData.id}/${newCurio.id}`);
-          }, 500);
-        } else {
-          navigate(`/curio/${profileData.id}/image-search`);
-        }
-      } catch (error) {
-        console.error('Error creating curio for image:', error);
-        navigate(`/curio/${profileData.id}/image-search`);
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-  
-  const handleVoiceInput = async (transcript: string) => {
-    if (transcript.trim()) {
-      toast.success(`I heard: "${transcript}"`);
-      await handleSearch(transcript);
-    } else {
-      toast.error("I couldn't understand that. Please try again.");
-    }
-  };
-
-  return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="flex h-screen w-full flex-col"
-    >
-      <MainHeader childId={profileData.id} profileName={profileData.name} />
-      
-      <div className="flex-1 overflow-auto bg-gradient-to-br from-wonderwhiz-deep-purple/50 to-wonderwhiz-light-purple/30">
-        <div className="sticky top-0 z-10 backdrop-blur-md bg-wonderwhiz-deep-purple/30 border-b border-white/10">
-          <DashboardHeader 
-            childName={profileData.name} 
-            streakDays={profileData.streakDays} 
-            childAge={profileData.age} 
-            profileId={profileData.id} 
-          />
-        </div>
-        
-        <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
-          {/* Search Section */}
-          <section className="relative z-10">
-            <EnhancedSearchInput
-              onSearch={handleSearch}
-              onImageCapture={handleImageUpload}
-              onVoiceCapture={handleVoiceInput}
-              placeholder="What would you like to discover today?"
-              childAge={profileData.age}
-            />
-          </section>
-
-          {/* Tasks Section */}
-          <section>
-            <TasksSection
-              tasks={tasks}
-              onTaskClick={handleTaskClick}
-              childId={profileData.id}
-              isLoading={loading}
-            />
-          </section>
-
-          {/* Intelligent Suggestions */}
-          <section>
-            <IntelligentSuggestions
-              childId={profileData.id}
-              childProfile={profileData}
-              onSuggestionClick={handleCurioSelect}
-              pastCurios={[]}
-            />
-          </section>
-        </div>
-      </div>
-    </motion.div>
-  );
-};
+interface Curio {
+  id: string;
+  title: string;
+  query: string;
+  created_at: string;
+}
 
 const DashboardContainer = () => {
+  const { profileId } = useParams<{ profileId: string }>();
+  const [currentCurio, setCurrentCurio] = useState<Curio | null>(null);
+  const { streakDays } = useSparksSystem(profileId);
+  const [ageGroup, setAgeGroup] = useState<'5-7' | '8-11' | '12-16'>('8-11');
+  const [childAge, setChildAge] = useState<number>(10);
+  const [isVoiceActive, setIsVoiceActive] = useState(false);
+
+  const {
+    childProfile,
+    setChildProfile,
+    isLoading,
+    pastCurios,
+    setPastCurios,
+    isLoadingSuggestions,
+    curioSuggestions,
+    handleRefreshSuggestions
+  } = useDashboardProfile(profileId);
+
+  const { playText, isPlaying, stopPlaying } = useElevenLabsVoice();
+
+  const {
+    query,
+    setQuery,
+    isGenerating,
+    handleSubmitQuery,
+    handleFollowRabbitHole,
+    handleCurioSuggestionClick: curioCreationSuggestionClick
+  } = useCurioCreation(profileId, childProfile, setPastCurios, setChildProfile, setCurrentCurio);
+
+  const {
+    blocks: contentBlocks,
+    isLoading: isLoadingBlocks,
+    isGeneratingContent,
+    hasMoreBlocks,
+    loadingMoreBlocks,
+    loadMoreBlocks,
+    totalBlocksLoaded,
+    handleToggleLike,
+    handleToggleBookmark,
+    handleSearch,
+    clearSearch,
+    isFirstLoad,
+    generationError
+  } = useCurioData(currentCurio?.id, profileId);
+
+  const {
+    blockReplies,
+    handleBlockReply,
+    handleQuizCorrect,
+    handleNewsRead,
+    handleCreativeUpload,
+    handleSparkEarned
+  } = useBlockInteractionHandlers(profileId, childProfile, setChildProfile, contentBlocks);
+
+  useEffect(() => {
+    if (childProfile?.age) {
+      const age = typeof childProfile.age === 'string' 
+        ? parseInt(childProfile.age, 10) 
+        : childProfile.age;
+      
+      setChildAge(age);
+        
+      if (age >= 5 && age <= 7) {
+        setAgeGroup('5-7');
+      } else if (age >= 8 && age <= 11) {
+        setAgeGroup('8-11');
+      } else {
+        setAgeGroup('12-16');
+      }
+    }
+  }, [childProfile]);
+
+  const handleLoadCurio = (curio: Curio) => {
+    setCurrentCurio(curio);
+  };
+
+  const handleVoiceTranscript = (transcript: string) => {
+    if (transcript.trim()) {
+      setQuery(transcript);
+      setIsVoiceActive(false);
+      
+      setTimeout(() => {
+        handleSubmitQuery();
+      }, 300);
+    }
+  };
+
+  // Use the logic from the local function but call the one from useCurioCreation
+  const handleSuggestionClick = (suggestion: string) => {
+    setCurrentCurio(null);
+    curioCreationSuggestionClick(suggestion);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-wonderwhiz-deep-purple flex items-center justify-center">
+        <div className="rounded-full h-12 w-12 border-t-2 border-b-2 border-wonderwhiz-bright-pink animate-spin"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-wonderwhiz-deep-purple to-wonderwhiz-purple overflow-hidden">
+    <div className="min-h-screen flex w-full bg-gradient-to-b from-wonderwhiz-deep-purple to-wonderwhiz-deep-purple/90">
       <Helmet>
-        <title>WonderWhiz - Your Learning Adventure</title>
-        <meta name="description" content="Discover amazing facts and start your learning adventure!" />
+        <title>WonderWhiz - Explore & Learn</title>
+        <meta name="description" content="Explore topics, ask questions, and learn in a fun, interactive way with WonderWhiz." />
       </Helmet>
       
-      {/* Decorative background */}
-      <AnimatedBackground />
+      <DashboardSidebar 
+        childId={profileId || ''} 
+        sparksBalance={childProfile?.sparks_balance || 0}
+        pastCurios={pastCurios}
+        currentCurioId={currentCurio?.id}
+        onCurioSelect={handleLoadCurio}
+      />
       
-      <div className="relative z-10">
-        <SidebarProvider>
-          <DashboardContainerContent />
-        </SidebarProvider>
-      </div>
+      <main className="flex-1 flex flex-col min-h-screen relative">
+        <DashboardHeader 
+          childName={childProfile?.name || 'Explorer'} 
+          profileId={profileId}
+          streakDays={streakDays}
+          childAge={childAge}
+        />
+        
+        <div className="flex-1 overflow-y-auto">
+          <div className="max-w-5xl mx-auto space-y-6 p-4">
+            <Card className="bg-wonderwhiz-purple/50 backdrop-blur-sm border-white/10 flex-grow relative overflow-hidden shadow-xl rounded-xl">
+              {!currentCurio ? (
+                <div className="p-6 space-y-8">
+                  <WelcomeSection 
+                    curioSuggestions={curioSuggestions}
+                    isLoadingSuggestions={isLoadingSuggestions}
+                    handleRefreshSuggestions={handleRefreshSuggestions}
+                    handleCurioSuggestionClick={handleSuggestionClick}
+                    childProfile={childProfile}
+                    pastCurios={pastCurios}
+                    childId={profileId || ''}
+                    query={query}
+                    setQuery={setQuery}
+                    handleSubmitQuery={handleSubmitQuery}
+                    isGenerating={isGenerating || isGeneratingContent}
+                  />
+                  
+                  <IntelligentSuggestions
+                    childId={profileId || ''}
+                    childProfile={childProfile}
+                    onSuggestionClick={handleSuggestionClick}
+                    pastCurios={pastCurios}
+                  />
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <KnowledgeJourney 
+                      childId={profileId || ''}
+                      childProfile={childProfile}
+                      onTopicClick={handleSuggestionClick}
+                    />
+                    <DiscoverySection 
+                      childId={profileId || ''} 
+                      sparksBalance={childProfile?.sparks_balance || 0}
+                      onSparkEarned={(amount) => {
+                        if (childProfile && setChildProfile) {
+                          setChildProfile({
+                            ...childProfile,
+                            sparks_balance: (childProfile.sparks_balance || 0) + amount
+                          });
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <CurioContent
+                  currentCurio={currentCurio}
+                  contentBlocks={contentBlocks}
+                  blockReplies={blockReplies}
+                  isGenerating={isGeneratingContent}
+                  loadingBlocks={loadingMoreBlocks}
+                  visibleBlocksCount={totalBlocksLoaded}
+                  profileId={profileId}
+                  onLoadMore={loadMoreBlocks}
+                  hasMoreBlocks={hasMoreBlocks}
+                  onToggleLike={handleToggleLike}
+                  onToggleBookmark={handleToggleBookmark}
+                  onReply={(blockId, message) => handleBlockReply(blockId, message)} 
+                  onSetQuery={setQuery}
+                  onRabbitHoleFollow={handleFollowRabbitHole}
+                  onQuizCorrect={handleQuizCorrect}
+                  onNewsRead={handleNewsRead}
+                  onCreativeUpload={handleCreativeUpload}
+                  generationError={generationError}
+                  playText={playText}
+                  childAge={childAge}
+                />
+              )}
+            </Card>
+          </div>
+        </div>
+        
+        <VoiceInputButton 
+          isActive={isVoiceActive}
+          onToggle={setIsVoiceActive}
+          onTranscript={handleVoiceTranscript}
+          childAge={childAge}
+        />
+        
+        {profileId && (
+          <TalkToWhizzy 
+            childId={profileId}
+            curioTitle={currentCurio?.title}
+            ageGroup={ageGroup}
+            onNewQuestionGenerated={handleFollowRabbitHole}
+          />
+        )}
+      </main>
     </div>
   );
 };

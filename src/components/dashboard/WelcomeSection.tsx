@@ -1,6 +1,8 @@
 
 import React from 'react';
 import WelcomeView from './WelcomeView';
+import DiscoverySection from './DiscoverySection';
+import SmartDashboard from './SmartDashboard';
 
 interface WelcomeSectionProps {
   curioSuggestions: string[];
@@ -30,20 +32,42 @@ const WelcomeSection: React.FC<WelcomeSectionProps> = ({
   isGenerating
 }) => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-indigo-900 to-purple-950">
-      <WelcomeView
-        childId={childId}
-        childProfile={childProfile}
-        curioSuggestions={curioSuggestions}
-        pastCurios={pastCurios}
-        query={query}
-        setQuery={setQuery}
-        handleSubmitQuery={handleSubmitQuery}
-        isGenerating={isGenerating}
-        onCurioSuggestionClick={handleCurioSuggestionClick}
-        onRefreshSuggestions={handleRefreshSuggestions}
-        isLoadingSuggestions={isLoadingSuggestions}
-      />
+    <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-indigo-900 to-purple-950 pb-16">
+      <div className="px-4 pb-8 max-w-7xl mx-auto">
+        <WelcomeView
+          childId={childId}
+          childProfile={childProfile}
+          curioSuggestions={curioSuggestions}
+          pastCurios={pastCurios}
+          query={query}
+          setQuery={setQuery}
+          handleSubmitQuery={handleSubmitQuery}
+          isGenerating={isGenerating}
+          onCurioSuggestionClick={handleCurioSuggestionClick}
+          onRefreshSuggestions={handleRefreshSuggestions}
+          isLoadingSuggestions={isLoadingSuggestions}
+        />
+        
+        {/* New SmartDashboard component that implements the WonderWhiz concept */}
+        <SmartDashboard
+          childId={childId}
+          childProfile={childProfile}
+          curioSuggestions={curioSuggestions}
+          isLoadingSuggestions={isLoadingSuggestions}
+          onCurioSuggestionClick={handleCurioSuggestionClick}
+          handleRefreshSuggestions={handleRefreshSuggestions}
+          pastCurios={pastCurios}
+        />
+        
+        {/* Integrated discovery section with improved visuals */}
+        <DiscoverySection 
+          childId={childId} 
+          sparksBalance={childProfile?.sparks_balance || 0}
+          onSparkEarned={(amount) => {
+            console.log(`Earned ${amount} sparks`);
+          }}
+        />
+      </div>
     </div>
   );
 };

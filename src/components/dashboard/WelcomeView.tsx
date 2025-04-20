@@ -1,13 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import EnhancedSearchInput from './EnhancedSearchInput';
+import MagicalSearchBar from './MagicalSearchBar';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Sparkles } from 'lucide-react';
+import { Sparkles, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import TasksSection from './TasksSection';
-import { useWhizzyChat } from '@/hooks/useWhizzyChat';
-import WhizzyChat from '@/components/curio/WhizzyChat';
 
 interface WelcomeViewProps {
   childId: string;
@@ -19,35 +17,9 @@ interface WelcomeViewProps {
   handleSubmitQuery: () => void;
   isGenerating: boolean;
   onCurioSuggestionClick: (suggestion: string) => void;
-  onRefreshSuggestions?: () => void;
-  isLoadingSuggestions?: boolean;
+  onRefreshSuggestions?: () => void; // Make this optional
+  isLoadingSuggestions?: boolean; // Make this optional
 }
-
-const demoTasks = [
-  {
-    id: '1',
-    title: 'Explore a new topic',
-    completed: false,
-    type: 'explore' as const,
-    duration: '10 min',
-    reward: 5
-  },
-  {
-    id: '2',
-    title: 'Complete a quiz about space',
-    completed: false,
-    type: 'quiz' as const,
-    reward: 10
-  },
-  {
-    id: '3',
-    title: 'Read about dinosaurs',
-    completed: true,
-    type: 'read' as const,
-    duration: '15 min',
-    reward: 8
-  }
-];
 
 const WelcomeView: React.FC<WelcomeViewProps> = ({
   childId,
@@ -60,11 +32,11 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
   isGenerating,
   onCurioSuggestionClick,
   onRefreshSuggestions,
-  isLoadingSuggestions = false,
+  isLoadingSuggestions = false, // Provide default value
 }) => {
   const [pendingTasksCount, setPendingTasksCount] = useState(0);
-  const [tasks, setTasks] = useState(demoTasks);
   
+  // Fetch pending tasks count
   useEffect(() => {
     const fetchPendingTasksCount = async () => {
       try {
@@ -86,6 +58,7 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
       fetchPendingTasksCount();
     }
     
+    // Set up a subscription to listen for task updates
     const tasksSubscription = supabase
       .channel('public:child_tasks')
       .on('postgres_changes', 
@@ -101,76 +74,64 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
     };
   }, [childId]);
 
-  const handleTaskClick = (task: any) => {
-    console.log('Task clicked:', task);
-  };
-
-  const handleImageUpload = async (file: File) => {
-    const mockQuery = "What is this beautiful mountain?";
-    setQuery(mockQuery);
-    handleSubmitQuery();
-  };
-
-  const handleVoiceInput = (transcript: string) => {
-    setQuery(transcript);
-    handleSubmitQuery();
-  };
-
-  const {
-    isMuted,
-    toggleMute,
-    isListening,
-    transcript,
-    toggleVoice,
-    isProcessing,
-    chatHistory,
-    voiceSupported
-  } = useWhizzyChat({
-    childAge: childProfile?.age,
-    curioContext: childProfile?.name,
-    onNewQuestionGenerated: (question) => onCurioSuggestionClick(question)
-  });
-
   return (
-    <div className="container mx-auto px-4 pt-4 pb-16">
+    <div className="container mx-auto px-4 pt-8 pb-16">
       <div className="max-w-3xl mx-auto">
-        <motion.div 
-          className="mb-12"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
+        {/* Header Section */}
+        <div className="text-center mb-8">
           <motion.h1 
-            className="text-3xl md:text-4xl font-nunito font-bold bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent text-center mb-8"
+            className="text-3xl md:text-4xl font-bold text-white mb-2 font-nunito"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            Hello, {childProfile?.name || 'Explorer'}!
+          </motion.h1>
+          
+          <motion.p 
+            className="text-white/70 mb-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
           >
             What would you like to discover today?
-          </motion.h1>
-        </motion.div>
-
-        <div className="mb-10">
-          <EnhancedSearchInput
-            onSearch={handleSubmitQuery}
-            onImageCapture={handleImageUpload}
-            onVoiceCapture={handleVoiceInput}
-            isProcessing={isGenerating}
-            childAge={childProfile?.age}
-            initialQuery={query}
-            placeholder="What are you curious about today?"
-          />
+          </motion.p>
+          
+          {childProfile?.sparks_balance !== undefined && (
+            <motion.div 
+              className="inline-flex items-center bg-white/10 px-4 py-2 rounded-full text-white text-sm mb-6"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3, delay: 0.2 }}
+            >
+              <Sparkles className="h-4 w-4 text-wonderwhiz-vibrant-yellow mr-2" />
+              <span>{childProfile.sparks_balance} Sparks</span>
+            </motion.div>
+          )}
         </div>
-
-        {pendingTasksCount > 0 && (
-          <TasksSection 
-            tasks={tasks} 
-            onTaskClick={handleTaskClick} 
-            childId={childId} 
-            pendingTasksCount={pendingTasksCount} 
+        
+        {/* Search Section */}
+        <motion.div 
+          className="mb-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+        >
+          <MagicalSearchBar
+            query={query}
+            setQuery={setQuery}
+            handleSubmitQuery={handleSubmitQuery}
+            isGenerating={isGenerating}
+            placeholder="What do you want to learn about?"
           />
+        </motion.div>
+        
+        {/* Tasks Section - Intelligently blended into the experience */}
+        {pendingTasksCount > 0 && (
+          <TasksSection childId={childId} pendingTasksCount={pendingTasksCount} />
         )}
         
+        {/* Curio Suggestions */}
         <motion.div
           className="mb-10"
           initial={{ opacity: 0, y: 20 }}
@@ -178,15 +139,18 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
           transition={{ duration: 0.5, delay: 0.4 }}
         >
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-nunito font-bold text-white flex items-center">
-              <Sparkles className="h-5 w-5 text-wonderwhiz-vibrant-yellow mr-2" />
-              Discover Something New
-            </h2>
+            <h2 className="text-xl font-bold text-white">Discover Something New</h2>
             <Button 
               variant="ghost"
               size="sm"
               className="text-white/70 hover:text-white hover:bg-white/10"
-              onClick={onRefreshSuggestions}
+              onClick={() => {
+                if (onRefreshSuggestions) {
+                  onRefreshSuggestions();
+                } else {
+                  onCurioSuggestionClick(curioSuggestions[Math.floor(Math.random() * curioSuggestions.length)]);
+                }
+              }}
               disabled={isLoadingSuggestions}
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingSuggestions ? 'animate-spin' : ''}`} />
@@ -201,60 +165,44 @@ const WelcomeView: React.FC<WelcomeViewProps> = ({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: 0.2 + (index * 0.1) }}
-                className="bg-gradient-to-br from-white/5 to-white/10 hover:from-white/10 hover:to-white/15 border border-white/10 rounded-lg p-4 cursor-pointer transition-all"
+                className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg p-4 cursor-pointer transition-all"
                 onClick={() => onCurioSuggestionClick(suggestion)}
                 whileHover={{ scale: 1.02, backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
                 whileTap={{ scale: 0.98 }}
               >
-                <p className="text-white font-nunito">{suggestion}</p>
+                <p className="text-white">{suggestion}</p>
               </motion.div>
             ))}
           </div>
         </motion.div>
         
+        {/* Recent Curios */}
         {pastCurios && pastCurios.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.5 }}
           >
-            <h2 className="text-xl font-nunito font-bold text-white mb-4 flex items-center">
-              <Sparkles className="h-5 w-5 text-wonderwhiz-vibrant-yellow mr-2" />
-              Your Recent Explorations
-            </h2>
+            <h2 className="text-xl font-bold text-white mb-4">Your Recent Explorations</h2>
             <div className="space-y-3">
               {pastCurios.slice(0, 3).map((curio, index) => (
                 <motion.div
-                  key={curio.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: 0.2 + (index * 0.1) }}
-                  className="bg-gradient-to-br from-white/5 to-white/10 hover:from-white/10 hover:to-white/15 border border-white/10 rounded-lg p-4 cursor-pointer transition-all"
+                  key={`curio-${curio.id}`}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3, delay: 0.3 + (index * 0.1) }}
+                  className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg p-4 cursor-pointer transition-all"
                   onClick={() => onCurioSuggestionClick(curio.query || curio.title)}
-                  whileHover={{ scale: 1.01 }}
+                  whileHover={{ scale: 1.01, backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
                   whileTap={{ scale: 0.99 }}
                 >
-                  <p className="text-white font-medium font-nunito">{curio.title}</p>
-                  <p className="text-white/60 text-sm mt-1 font-inter">
-                    {new Date(curio.created_at).toLocaleDateString()}
-                  </p>
+                  <p className="text-white font-medium">{curio.title}</p>
+                  <p className="text-white/60 text-sm mt-1">{new Date(curio.created_at).toLocaleDateString()}</p>
                 </motion.div>
               ))}
             </div>
           </motion.div>
         )}
-        
-        <WhizzyChat
-          messages={chatHistory}
-          onSend={(message) => onCurioSuggestionClick(message)}
-          isListening={isListening}
-          isProcessing={isProcessing}
-          isMuted={isMuted}
-          onToggleMute={toggleMute}
-          onToggleVoice={toggleVoice}
-          transcript={transcript}
-          childAge={childProfile?.age}
-        />
       </div>
     </div>
   );

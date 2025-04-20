@@ -4,8 +4,6 @@ import { motion } from 'framer-motion';
 import { Search, Mic, Image, X, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
 
 interface EnhancedSearchBarProps {
   onSearch: (query: string) => void;
@@ -18,7 +16,6 @@ interface EnhancedSearchBarProps {
   onExplore?: () => void;
   isProcessing?: boolean;
   childAge?: number;
-  childId?: string;
 }
 
 const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
@@ -31,14 +28,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   showExploreButton = true,
   onExplore,
   isProcessing = false,
-  childAge = 10,
-  childId
+  childAge = 10
 }) => {
   const [query, setQuery] = useState(initialQuery);
   const [isRecording, setIsRecording] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,53 +88,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       setIsListening(false);
       setIsRecording(false);
       toast.info("Voice capture canceled");
-    }
-  };
-
-  const handleExploreClick = async () => {
-    if (onExplore) {
-      onExplore();
-      return;
-    }
-    
-    if (!childId) {
-      toast.error("Can't explore without child ID");
-      return;
-    }
-    
-    toast.loading("Starting a new exploration...");
-    
-    try {
-      // Generate a random topic based on age
-      const topics = childAge < 8 
-        ? ["dinosaurs", "animals", "space", "ocean", "robots"]
-        : ["amazing facts about space", "how animals communicate", "mysteries of the ocean", "how robots work", "fascinating science experiments"];
-        
-      const randomTopic = topics[Math.floor(Math.random() * topics.length)];
-      
-      // Create a new curio in the database
-      const { data: newCurio, error } = await supabase
-        .from('curios')
-        .insert({
-          child_id: childId,
-          title: randomTopic,
-          query: randomTopic
-        })
-        .select('id')
-        .single();
-        
-      if (error) throw error;
-      
-      if (newCurio && newCurio.id) {
-        toast.success("Starting a new adventure!");
-        // Navigate to the new curio
-        navigate(`/curio/${childId}/${newCurio.id}`);
-      } else {
-        throw new Error("No curio ID returned");
-      }
-    } catch (error) {
-      console.error('Error creating exploration curio:', error);
-      toast.error("Couldn't start exploration. Try again!");
     }
   };
 
@@ -203,12 +151,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               <Mic className={`h-4 w-4 ${isRecording ? "animate-pulse" : ""}`} />
             </Button>
             
-            {showExploreButton && (
+            {showExploreButton && onExplore && (
               <Button
                 type="button"
                 variant="default"
                 size="sm"
-                onClick={handleExploreClick}
+                onClick={onExplore}
                 className="h-8 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white ml-1 flex items-center"
               >
                 <Sparkles className="h-3.5 w-3.5 mr-1" />
