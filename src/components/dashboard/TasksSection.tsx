@@ -1,7 +1,9 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle, Sparkles, Star, Clock, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 interface Task {
   id: string;
@@ -33,17 +35,23 @@ const TasksSection: React.FC<TasksSectionProps> = ({
   }
 
   return (
-    <div className="bg-gradient-to-br from-green-500/20 to-emerald-600/20 backdrop-blur-sm rounded-xl border border-white/10 p-4 overflow-hidden">
+    <div className="bg-gradient-to-br from-green-500/20 to-emerald-600/20 backdrop-blur-sm rounded-xl border border-white/10 p-4 mb-6 overflow-hidden">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center">
             <CheckCircle className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-white font-nunito">Today's Quests</h2>
-            <p className="text-sm text-white/70 font-inter">Complete these to earn sparks!</p>
+            <h2 className="text-lg font-bold text-white">Today's Quests</h2>
+            <p className="text-sm text-white/70">Complete these to earn sparks!</p>
           </div>
         </div>
+        
+        {pendingTasks.length > 0 && (
+          <div className="bg-green-500/30 px-2.5 py-1 rounded-full text-white text-sm font-medium">
+            {pendingTasks.length} {pendingTasks.length === 1 ? 'quest' : 'quests'}
+          </div>
+        )}
       </div>
       
       {pendingTasks.length > 0 ? (
@@ -95,6 +103,19 @@ const TasksSection: React.FC<TasksSectionProps> = ({
               </div>
             </motion.div>
           ))}
+        </div>
+      ) : pendingTasksCount && pendingTasksCount > 0 ? (
+        <div className="bg-white/5 rounded-lg p-4">
+          <p className="text-white text-center">You have {pendingTasksCount} pending tasks!</p>
+          <div className="mt-2 flex justify-center">
+            <Button
+              variant="outline"
+              className="border-white/20 text-white hover:bg-white/10"
+              onClick={() => window.location.href = `/tasks/${childId}`}
+            >
+              View Tasks
+            </Button>
+          </div>
         </div>
       ) : (
         <div className="text-center p-6">

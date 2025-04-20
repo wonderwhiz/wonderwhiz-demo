@@ -1,8 +1,10 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import ContentBlock from './ContentBlock';
 import CurioErrorState from './curio/CurioErrorState';
+import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
 
 interface CurioBlockListProps {
   blocks: any[];
@@ -25,8 +27,8 @@ interface CurioBlockListProps {
   handleMindfulnessComplete: () => void;
   handleRabbitHoleClick: (question: string) => void;
   onRefresh?: () => void;
-  onReadAloud?: (text: string) => void; // New prop for voice readout
-  childAge?: number; // New prop for age adaptation
+  onReadAloud?: (text: string) => void; // For voice readout
+  childAge?: number; // For age adaptation
 }
 
 const CurioBlockList: React.FC<CurioBlockListProps> = ({
@@ -67,7 +69,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
   };
 
   // Auto-read first block for young children on first load
-  React.useEffect(() => {
+  useEffect(() => {
     if (isFirstLoad && blocks.length > 0 && childAge < 8 && onReadAloud) {
       // For very young children, automatically read the first content block
       const firstBlockContent = blocks[0]?.content?.fact || 
@@ -84,17 +86,23 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
 
   if (blocks.length === 0 && searchQuery) {
     return (
-      <div className="py-8 text-center">
-        <p className="text-white/70">No results found for "{searchQuery}"</p>
-        <button 
-          className="mt-2 text-indigo-400 hover:text-indigo-300"
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="py-8 text-center"
+      >
+        <p className="text-white/70 mb-4">No results found for "{searchQuery}"</p>
+        <Button 
+          variant="outline"
+          className="text-indigo-400 hover:text-indigo-300 border-indigo-400/40"
           onClick={() => {
             // This would typically clear the search
+            window.history.back();
           }}
         >
-          Clear search
-        </button>
-      </div>
+          Go Back
+        </Button>
+      </motion.div>
     );
   }
 
@@ -104,6 +112,26 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
         message="We had trouble generating content. Please try again." 
         onRetry={onRefresh}
       />
+    );
+  }
+
+  if (blocks.length === 0 && !loadingMoreBlocks) {
+    return (
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="py-12 text-center"
+      >
+        <p className="text-white/70 mb-6">Let's find something interesting for you!</p>
+        <Button
+          variant="default"
+          onClick={onRefresh}
+          className="bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-purple hover:from-wonderwhiz-bright-pink/90 hover:to-wonderwhiz-purple/90"
+        >
+          <RefreshCw className="mr-2 h-4 w-4" />
+          Explore Knowledge
+        </Button>
+      </motion.div>
     );
   }
 

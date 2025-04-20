@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { Helmet } from 'react-helmet-async';
@@ -8,8 +8,13 @@ import EnhancedSearchInput from '@/components/dashboard/EnhancedSearchInput';
 import IntelligentSuggestions from '@/components/dashboard/IntelligentSuggestions';
 import TasksSection from '@/components/dashboard/TasksSection';
 import AnimatedBackground from '@/components/ui/animated-background';
+import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 const DashboardContainerContent = () => {
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
+  
   // Mock data - replace with real data from your backend
   const mockTasks = [
     {
@@ -29,13 +34,63 @@ const DashboardContainerContent = () => {
       reward: 30
     }
   ];
+  
+  // Sample children profile data
+  const profileData = {
+    name: "Explorer",
+    streakDays: 20,
+    age: 10,
+    id: "d49eb66b-5404-4743-a137-d9f121d79151",
+    interests: ['space', 'dinosaurs', 'science']
+  };
 
-  const handleLoadMore = () => console.log('Load more triggered');
-  const handleSearch = (query: string) => console.log('Search:', query);
-  const handleImageUpload = (file: File) => console.log('Image uploaded:', file);
-  const handleVoiceInput = (transcript: string) => console.log('Voice input:', transcript);
-  const handleTaskClick = (task: any) => console.log('Task clicked:', task);
-  const handleCurioSelect = (suggestion: string) => console.log('Curio selected:', suggestion);
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    if (query.trim()) {
+      toast.success("Searching for your curiosities!");
+      setTimeout(() => {
+        navigate(`/curio/${profileData.id}/search?q=${encodeURIComponent(query)}`);
+      }, 500);
+    }
+  };
+  
+  const handleTaskClick = (task: any) => {
+    toast.info(`Starting quest: ${task.title}`);
+    setTimeout(() => {
+      if (task.type === 'explore') {
+        navigate(`/curio/${profileData.id}/explore?topic=${encodeURIComponent(task.title)}`);
+      } else {
+        navigate(`/tasks/${profileData.id}/${task.id}`);
+      }
+    }, 300);
+  };
+  
+  const handleCurioSelect = (suggestion: string) => {
+    toast.success(`Exploring: ${suggestion}`);
+    setTimeout(() => {
+      navigate(`/curio/${profileData.id}/new?topic=${encodeURIComponent(suggestion)}`);
+    }, 300);
+  };
+  
+  const handleImageUpload = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      toast.success("Image received! Let's explore what's in it.");
+      setTimeout(() => {
+        navigate(`/curio/${profileData.id}/image-search`);
+      }, 500);
+    };
+    reader.readAsDataURL(file);
+  };
+  
+  const handleVoiceInput = (transcript: string) => {
+    if (transcript.trim()) {
+      toast.success(`I heard: "${transcript}"`);
+      handleSearch(transcript);
+    } else {
+      toast.error("I couldn't understand that. Please try again.");
+    }
+  };
 
   return (
     <motion.div 
@@ -46,10 +101,10 @@ const DashboardContainerContent = () => {
       <div className="flex-1 overflow-auto bg-gradient-to-br from-wonderwhiz-deep-purple/50 to-wonderwhiz-light-purple/30">
         <div className="sticky top-0 z-10 backdrop-blur-md bg-wonderwhiz-deep-purple/30 border-b border-white/10">
           <DashboardHeader 
-            childName="Explorer" 
-            streakDays={20} 
-            childAge={10} 
-            profileId="d49eb66b-5404-4743-a137-d9f121d79151" 
+            childName={profileData.name} 
+            streakDays={profileData.streakDays} 
+            childAge={profileData.age} 
+            profileId={profileData.id} 
           />
         </div>
         
@@ -61,7 +116,7 @@ const DashboardContainerContent = () => {
               onImageCapture={handleImageUpload}
               onVoiceCapture={handleVoiceInput}
               placeholder="What would you like to discover today?"
-              childAge={10}
+              childAge={profileData.age}
             />
           </section>
 
@@ -70,7 +125,7 @@ const DashboardContainerContent = () => {
             <TasksSection
               tasks={mockTasks}
               onTaskClick={handleTaskClick}
-              childId="d49eb66b-5404-4743-a137-d9f121d79151"
+              childId={profileData.id}
               pendingTasksCount={2}
             />
           </section>
@@ -78,8 +133,8 @@ const DashboardContainerContent = () => {
           {/* Intelligent Suggestions */}
           <section>
             <IntelligentSuggestions
-              childId="d49eb66b-5404-4743-a137-d9f121d79151"
-              childProfile={{ age: 10, interests: ['space', 'dinosaurs', 'science'] }}
+              childId={profileData.id}
+              childProfile={profileData}
               onSuggestionClick={handleCurioSelect}
               pastCurios={[]}
             />
