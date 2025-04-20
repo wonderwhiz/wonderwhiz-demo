@@ -9,6 +9,7 @@ export interface CurioSearchBarProps {
   onSearch: (query: string) => void;
   onClear?: () => void;
   handleSearch?: (e: FormEvent) => void;
+  childId?: string; // Added childId prop to the interface
 }
 
 const CurioSearchBar: React.FC<CurioSearchBarProps> = ({ 
@@ -17,7 +18,8 @@ const CurioSearchBar: React.FC<CurioSearchBarProps> = ({
   setSearchQuery,
   onSearch,
   onClear,
-  handleSearch
+  handleSearch,
+  childId // Added childId to the destructured props
 }) => {
   const [searchText, setSearchText] = React.useState(searchQuery || '');
 
