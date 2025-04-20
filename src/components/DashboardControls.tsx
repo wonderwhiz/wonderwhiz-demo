@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Book, Wand, FlaskConical } from 'lucide-react';
+import { Sparkles, Book, Wand, Home, ArrowLeft } from 'lucide-react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { motion } from 'framer-motion';
 
@@ -11,14 +11,20 @@ interface DashboardControlsProps {
   activeView: string;
   setActiveView: (view: string) => void;
   curioId?: string;
+  onBack?: () => void;
 }
 
 const DashboardControls: React.FC<DashboardControlsProps> = ({
   profileId,
   activeView,
   setActiveView,
-  curioId
+  curioId,
+  onBack
 }) => {
+  const location = useLocation();
+  const isOnDashboard = location.pathname.includes('/dashboard');
+  const isOnCurio = location.pathname.includes('/curio');
+
   const viewButtons = [
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'collections', label: 'Collections' },
@@ -28,18 +34,47 @@ const DashboardControls: React.FC<DashboardControlsProps> = ({
   return (
     <div className="py-4 px-4 sm:px-6 bg-gradient-to-r from-indigo-950/80 to-indigo-900/80 backdrop-blur-md border-b border-white/10 sticky top-0 z-30">
       <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <ToggleGroup type="single" value={activeView} onValueChange={(value) => value && setActiveView(value)} className="bg-white/5 p-1 rounded-lg">
-          {viewButtons.map(view => (
-            <ToggleGroupItem 
-              key={view.id}
-              value={view.id} 
-              aria-label={`${view.label} View`}
-              className={activeView === view.id ? 'bg-white/15 text-white' : 'text-white/70'}
+        <div className="flex items-center">
+          {onBack && (
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={onBack}
+              className="mr-2 bg-white/5 hover:bg-white/10 rounded-full h-8 w-8 p-0"
             >
-              {view.label}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
+              <ArrowLeft className="h-4 w-4 text-white" />
+            </Button>
+          )}
+          
+          {isOnDashboard && (
+            <ToggleGroup 
+              type="single" 
+              value={activeView} 
+              onValueChange={(value) => value && setActiveView(value)} 
+              className="bg-white/5 p-1 rounded-lg"
+            >
+              {viewButtons.map(view => (
+                <ToggleGroupItem 
+                  key={view.id}
+                  value={view.id} 
+                  aria-label={`${view.label} View`}
+                  className={activeView === view.id ? 'bg-white/15 text-white' : 'text-white/70'}
+                >
+                  {view.label}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+          )}
+          
+          {!isOnDashboard && !isOnCurio && (
+            <Link to={`/dashboard/${profileId}`}>
+              <Button variant="ghost" className="bg-white/5 hover:bg-white/10 text-white">
+                <Home className="h-4 w-4 mr-1.5" />
+                <span>Dashboard</span>
+              </Button>
+            </Link>
+          )}
+        </div>
         
         <div className="flex items-center gap-2">
           {curioId && (
