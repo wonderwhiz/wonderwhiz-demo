@@ -1,7 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { supabase } from '@/integrations/supabase/client';
 import MainHeader from '@/components/layout/MainHeader';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
@@ -9,6 +11,7 @@ import EnhancedSearchInput from '@/components/dashboard/EnhancedSearchInput';
 import IntelligentSuggestions from '@/components/dashboard/IntelligentSuggestions';
 import TasksSection from '@/components/dashboard/TasksSection';
 import AnimatedBackground from '@/components/ui/animated-background';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import { Task } from '@/types/dashboard';
 
 const DashboardContainerContent = () => {
@@ -171,7 +174,7 @@ const DashboardContainerContent = () => {
   );
 };
 
-const Dashboard = () => {
+const DashboardContainer = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-wonderwhiz-deep-purple to-wonderwhiz-purple overflow-hidden">
       <Helmet>
@@ -191,4 +194,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default DashboardContainer;
