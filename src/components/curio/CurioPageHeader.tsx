@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, PieChart, RefreshCcw, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 interface CurioPageHeaderProps {
   curioTitle: string | null;
@@ -25,6 +25,12 @@ const CurioPageHeader: React.FC<CurioPageHeaderProps> = ({
   profileId,
   childName
 }) => {
+  const navigate = useNavigate();
+
+  const handleBackToDashboardInner = () => {
+    navigate(`/dashboard/${profileId}`);
+  };
+
   return (
     <motion.header 
       className="sticky top-0 z-50 bg-gradient-to-b from-indigo-950/95 to-indigo-950/85 backdrop-blur-sm py-3 px-4 sm:px-6 border-b border-white/10 shadow-md"

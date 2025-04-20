@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle, Sparkles, Star, Clock, ArrowRight } from 'lucide-react';
@@ -19,16 +18,29 @@ interface TasksSectionProps {
   onTaskClick: (task: Task) => void;
   childId?: string;
   pendingTasksCount?: number;
+  isLoading?: boolean;
 }
 
 const TasksSection: React.FC<TasksSectionProps> = ({
   tasks,
   onTaskClick,
   childId,
-  pendingTasksCount
+  pendingTasksCount,
+  isLoading
 }) => {
   const pendingTasks = tasks.filter(task => !task.completed);
   const completedTasks = tasks.filter(task => task.completed);
+
+  if (isLoading) {
+    return (
+      <div className="bg-gradient-to-br from-green-500/20 to-emerald-600/20 backdrop-blur-sm rounded-xl border border-white/10 p-4 mb-6">
+        <div className="animate-pulse space-y-3">
+          <div className="h-6 bg-white/10 rounded w-1/4"></div>
+          <div className="h-20 bg-white/5 rounded"></div>
+        </div>
+      </div>
+    );
+  }
 
   if (pendingTasks.length === 0 && (!pendingTasksCount || pendingTasksCount === 0)) {
     return null;
