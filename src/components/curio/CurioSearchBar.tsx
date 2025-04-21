@@ -10,7 +10,8 @@ export interface CurioSearchBarProps {
   onSearch: (query: string) => void;
   onClear?: () => void;
   handleSearch?: (e: FormEvent) => void;
-  childId?: string; // Add the childId prop to fix the error
+  childId?: string;
+  disabled?: boolean;
 }
 
 const CurioSearchBar: React.FC<CurioSearchBarProps> = ({ 
@@ -20,14 +21,15 @@ const CurioSearchBar: React.FC<CurioSearchBarProps> = ({
   onSearch,
   onClear,
   handleSearch,
-  childId // Handle the new prop
+  childId,
+  disabled = false
 }) => {
   const [searchText, setSearchText] = useState(searchQuery || '');
   const [isTyping, setIsTyping] = useState(false);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (searchText.trim()) {
+    if (searchText.trim() && !disabled) {
       if (handleSearch) {
         handleSearch(e);
       } else {
@@ -57,7 +59,7 @@ const CurioSearchBar: React.FC<CurioSearchBarProps> = ({
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && searchText.trim()) {
+    if (e.key === 'Enter' && searchText.trim() && !disabled) {
       e.preventDefault();
       if (handleSearch) {
         handleSearch(e as unknown as FormEvent);
@@ -77,7 +79,8 @@ const CurioSearchBar: React.FC<CurioSearchBarProps> = ({
           onChange={handleInputChange}
           onKeyPress={handleKeyPress}
           placeholder={placeholder}
-          className="w-full pl-10 pr-10 py-3 bg-white/10 border border-white/20 rounded-full text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+          disabled={disabled}
+          className={`w-full pl-10 pr-10 py-3 bg-white/10 border border-white/20 rounded-full text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 ${disabled ? 'opacity-70 cursor-not-allowed' : ''}`}
         />
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60 h-5 w-5" />
         
@@ -86,6 +89,7 @@ const CurioSearchBar: React.FC<CurioSearchBarProps> = ({
             <button
               type="button"
               onClick={handleClear}
+              disabled={disabled}
               className="text-white/60 hover:text-white/90 transition-colors"
             >
               <X className="h-5 w-5" />
@@ -96,6 +100,7 @@ const CurioSearchBar: React.FC<CurioSearchBarProps> = ({
             <Button
               type="submit"
               size="sm"
+              disabled={disabled}
               className="bg-indigo-600 hover:bg-indigo-700 rounded-full h-8 px-3 ml-1"
             >
               <Sparkles className="h-4 w-4 mr-1" />

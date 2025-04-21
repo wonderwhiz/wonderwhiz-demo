@@ -4,20 +4,17 @@ import { Helmet } from 'react-helmet-async';
 import { useParams } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { useSparksSystem } from '@/hooks/useSparksSystem';
-import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardSidebar from '@/components/dashboard/DashboardSidebar';
 import CurioContent from '@/components/dashboard/CurioContent';
 import { useDashboardProfile } from '@/hooks/useDashboardProfile';
 import { useCurioCreation } from '@/hooks/useCurioCreation';
 import { useCurioData } from '@/hooks/useCurioData';
 import { useBlockInteractionHandlers } from '@/hooks/useBlockInteractionHandlers';
-import WelcomeSection from '@/components/dashboard/WelcomeSection';
 import TalkToWhizzy from '@/components/curio/TalkToWhizzy';
 import { useElevenLabsVoice } from '@/hooks/useElevenLabsVoice';
 import VoiceInputButton from '@/components/curio/VoiceInputButton';
-import IntelligentSuggestions from '@/components/dashboard/IntelligentSuggestions';
-import KnowledgeJourney from '@/components/dashboard/KnowledgeJourney';
-import DiscoverySection from '@/components/dashboard/DiscoverySection';
+import DashboardControls from '@/components/dashboard/DashboardControls';
+import ConsolidatedDashboard from '@/components/dashboard/ConsolidatedDashboard';
 
 interface Curio {
   id: string;
@@ -144,60 +141,33 @@ const DashboardContainer = () => {
       />
       
       <main className="flex-1 flex flex-col min-h-screen relative">
-        <DashboardHeader 
-          childName={childProfile?.name || 'Explorer'} 
-          profileId={profileId}
+        <DashboardControls
+          childName={childProfile?.name || 'Explorer'}
+          childId={profileId || ''}
+          sparksBalance={childProfile?.sparks_balance || 0}
           streakDays={streakDays}
-          childAge={childAge}
+          query={query}
+          setQuery={setQuery}
+          handleSubmitQuery={handleSubmitQuery}
+          isGenerating={isGenerating || isGeneratingContent}
         />
         
         <div className="flex-1 overflow-y-auto">
-          <div className="max-w-5xl mx-auto space-y-6 p-4">
-            <Card className="bg-wonderwhiz-purple/50 backdrop-blur-sm border-white/10 flex-grow relative overflow-hidden shadow-xl rounded-xl">
-              {!currentCurio ? (
-                <div className="p-6 space-y-8">
-                  <WelcomeSection 
-                    curioSuggestions={curioSuggestions}
-                    isLoadingSuggestions={isLoadingSuggestions}
-                    handleRefreshSuggestions={handleRefreshSuggestions}
-                    handleCurioSuggestionClick={handleSuggestionClick}
-                    childProfile={childProfile}
-                    pastCurios={pastCurios}
-                    childId={profileId || ''}
-                    query={query}
-                    setQuery={setQuery}
-                    handleSubmitQuery={handleSubmitQuery}
-                    isGenerating={isGenerating || isGeneratingContent}
-                  />
-                  
-                  <IntelligentSuggestions
-                    childId={profileId || ''}
-                    childProfile={childProfile}
-                    onSuggestionClick={handleSuggestionClick}
-                    pastCurios={pastCurios}
-                  />
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <KnowledgeJourney 
-                      childId={profileId || ''}
-                      childProfile={childProfile}
-                      onTopicClick={handleSuggestionClick}
-                    />
-                    <DiscoverySection 
-                      childId={profileId || ''} 
-                      sparksBalance={childProfile?.sparks_balance || 0}
-                      onSparkEarned={(amount) => {
-                        if (childProfile && setChildProfile) {
-                          setChildProfile({
-                            ...childProfile,
-                            sparks_balance: (childProfile.sparks_balance || 0) + amount
-                          });
-                        }
-                      }}
-                    />
-                  </div>
-                </div>
-              ) : (
+          {!currentCurio ? (
+            <ConsolidatedDashboard
+              childId={profileId || ''}
+              childProfile={childProfile}
+              curioSuggestions={curioSuggestions}
+              isLoadingSuggestions={isLoadingSuggestions}
+              onCurioSuggestionClick={handleSuggestionClick}
+              handleRefreshSuggestions={handleRefreshSuggestions}
+              pastCurios={pastCurios}
+              sparksBalance={childProfile?.sparks_balance || 0}
+              streakDays={streakDays}
+            />
+          ) : (
+            <div className="max-w-5xl mx-auto space-y-6 p-4">
+              <Card className="bg-wonderwhiz-purple/50 backdrop-blur-sm border-white/10 flex-grow relative overflow-hidden shadow-xl rounded-xl">
                 <CurioContent
                   currentCurio={currentCurio}
                   contentBlocks={contentBlocks}
@@ -220,9 +190,9 @@ const DashboardContainer = () => {
                   playText={playText}
                   childAge={childAge}
                 />
-              )}
-            </Card>
-          </div>
+              </Card>
+            </div>
+          )}
         </div>
         
         <VoiceInputButton 

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import ContentBlock from './ContentBlock';
 import CurioErrorState from './curio/CurioErrorState';
@@ -20,13 +20,13 @@ interface CurioBlockListProps {
   handleQuizCorrect: () => void;
   handleNewsRead: () => void;
   handleCreativeUpload: () => void;
-  handleTaskComplete: () => void;
-  handleActivityComplete: () => void;
-  handleMindfulnessComplete: () => void;
+  handleTaskComplete?: () => void;
+  handleActivityComplete?: () => void;
+  handleMindfulnessComplete?: () => void;
   handleRabbitHoleClick: (question: string) => void;
   onRefresh?: () => void;
-  onReadAloud?: (text: string) => void; // New prop for voice readout
-  childAge?: number; // New prop for age adaptation
+  onReadAloud?: (text: string) => void;
+  childAge?: number;
 }
 
 const CurioBlockList: React.FC<CurioBlockListProps> = ({
@@ -67,7 +67,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
   };
 
   // Auto-read first block for young children on first load
-  React.useEffect(() => {
+  useEffect(() => {
     if (isFirstLoad && blocks.length > 0 && childAge < 8 && onReadAloud) {
       // For very young children, automatically read the first content block
       const firstBlockContent = blocks[0]?.content?.fact || 
@@ -75,9 +75,11 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
                                blocks[0]?.content?.description || '';
       
       if (firstBlockContent) {
-        setTimeout(() => {
+        const timeoutId = setTimeout(() => {
           onReadAloud(firstBlockContent);
         }, 1000); // Small delay to let UI settle
+        
+        return () => clearTimeout(timeoutId);
       }
     }
   }, [isFirstLoad, blocks, childAge, onReadAloud]);
