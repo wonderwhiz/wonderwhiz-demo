@@ -18,18 +18,23 @@ const ParentTasksSection: React.FC<ParentTasksSectionProps> = ({ childId }) => {
     if (!childId) return;
 
     setLoading(true);
-    supabase
-      .from('child_tasks')
-      .select('id, status, completed_at, tasks(title, sparks_reward)')
-      .eq('child_profile_id', childId)
-      .then(({ data, error }) => {
-        if (!error && Array.isArray(data)) setTasks(data);
-        setLoading(false); // Moved inside .then() instead of using .finally()
-      })
-      .catch(error => {
+    const fetchTasks = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('child_tasks')
+          .select('id, status, completed_at, tasks(title, sparks_reward)')
+          .eq('child_profile_id', childId);
+          
+        if (error) throw error;
+        if (Array.isArray(data)) setTasks(data);
+      } catch (error) {
         console.error("Error fetching tasks:", error);
+      } finally {
         setLoading(false);
-      });
+      }
+    };
+    
+    fetchTasks();
   }, [childId]);
 
   const pendingTasks = tasks.filter(t => t.status !== "completed");
