@@ -24,8 +24,12 @@ const ParentTasksSection: React.FC<ParentTasksSectionProps> = ({ childId }) => {
       .eq('child_profile_id', childId)
       .then(({ data, error }) => {
         if (!error && Array.isArray(data)) setTasks(data);
+        setLoading(false); // Moved inside .then() instead of using .finally()
       })
-      .finally(() => setLoading(false));
+      .catch(error => {
+        console.error("Error fetching tasks:", error);
+        setLoading(false);
+      });
   }, [childId]);
 
   const pendingTasks = tasks.filter(t => t.status !== "completed");
@@ -63,7 +67,7 @@ const ParentTasksSection: React.FC<ParentTasksSectionProps> = ({ childId }) => {
                   {t.tasks?.title || "Task"} (Earn {t.tasks?.sparks_reward || 0} sparks)
                 </span>
               </div>
-              <Button size="xs" variant="secondary" className="ml-2 opacity-50 cursor-not-allowed">
+              <Button size="sm" variant="secondary" className="ml-2 opacity-50 cursor-not-allowed">
                 Mark as complete
               </Button>
             </div>
