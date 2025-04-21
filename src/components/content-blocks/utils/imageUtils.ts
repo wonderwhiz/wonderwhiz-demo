@@ -11,8 +11,8 @@ const PLACEHOLDER_IMAGES = [
 ];
 
 export const getContextualImage = async (
-  block: any, 
-  isFirstBlock: boolean, 
+  block: any,
+  isFirstBlock: boolean,
   requestId: string,
   retryCountRef: React.MutableRefObject<number>
 ) => {
@@ -23,88 +23,100 @@ export const getContextualImage = async (
     imageRequestInProgress: false,
     imageDescription: "A magical adventure awaits!"
   };
-  
+
+  // Only generate for first block unless you plan to update logic for more blocks
   if (!isFirstBlock) {
     return result;
   }
 
-  console.log(`[${requestId}][${block.id}] Starting image generation for block`);
-  
   try {
     const imageKey = `content-image-${block.id}`;
     const cachedImage = localStorage.getItem(imageKey);
-    
+
     if (cachedImage) {
-      console.log(`[${requestId}][${block.id}] Using cached image`);
       result.contextualImage = cachedImage;
       return result;
     }
-    
-    // Determine the appropriate image prompt based on block type and content
-    let imagePrompt = '';
-    
-    if (block.type === 'fact' || block.type === 'funFact') {
-      imagePrompt = block.content?.fact || block.content?.text || block.content?.title || 'educational concept';
-    } else if (block.type === 'quiz') {
-      imagePrompt = block.content?.question || 'quiz question';
-    } else {
-      // For other block types
-      const contentText = JSON.stringify(block.content).substring(0, 150);
-      imagePrompt = `Educational concept about ${contentText}`;
+
+    // Build a specific, delightful prompt
+    let basePrompt = '';
+    switch (block.type) {
+      case 'fact':
+      case 'funFact':
+        basePrompt = block.content?.fact || block.content?.text || block.content?.title || 'educational topic for kids';
+        break;
+      case 'quiz':
+        basePrompt = block.content?.question || 'quiz concept for kids';
+        break;
+      case 'flashcard':
+        basePrompt = block.content?.front || 'learning topic flashcard';
+        break;
+      case 'creative':
+        basePrompt = block.content?.prompt || 'creative prompt for kids';
+        break;
+      case 'activity':
+        basePrompt = block.content?.title || block.content?.description || 'fun activity for kids';
+        break;
+      case 'task':
+        basePrompt = block.content?.task || 'kid learning task';
+        break;
+      case 'riddle':
+        basePrompt = block.content?.riddle || 'kids riddle';
+        break;
+      case 'news':
+        basePrompt = block.content?.headline || 'news for children';
+        break;
+      case 'mindfulness':
+        basePrompt = block.content?.instruction || 'calm and mindful moment for kids';
+        break;
+      default:
+        basePrompt = JSON.stringify(block.content || {}).substring(0, 160);
     }
-    
+
+    let style = 'Pixar/Disney, educational, inspiring wonder, child-friendly, vibrant colors, not realistic, magical, high quality illustration';
+
+    // Add specialist tweaks
+    if (block.specialist_id === 'whizzy') {
+      style += ', whimsical, sprinkle of fun, cartoonish';
+    } else if (block.specialist_id === 'nova') {
+      style += ', cosmic, space, glowing';
+    } else if (block.specialist_id === 'spark') {
+      style += ', technical, blueprint hints';
+    }
+
     result.imageLoading = true;
     result.imageRequestInProgress = true;
 
-    // Use Supabase Edge function to generate image
-    console.log(`[${requestId}][${block.id}] Calling Supabase function for image generation`);
-    
-    // Determine specialist style for prompting
-    let specialistStyle = 'educational';
-    if (block.specialist_id === 'whizzy') {
-      specialistStyle = 'whimsical, colorful cartoon';
-    } else if (block.specialist_id === 'nova') {
-      specialistStyle = 'cosmic, space-themed';
-    } else if (block.specialist_id === 'spark') {
-      specialistStyle = 'technical, blueprint style';
-    }
-    
+    // Use Supabase edge function for DALL-E/OpenAI
     const { data, error } = await supabase.functions.invoke('generate-gemini-image', {
-      body: { 
-        prompt: imagePrompt,
-        style: specialistStyle
+      body: {
+        prompt: `${basePrompt}. Style: ${style}`,
+        style,
+        childAge: block.childAge || 10,
+        retryOnFail: true
       }
     });
-    
+
     if (error) {
-      console.error(`[${requestId}][${block.id}] Supabase function error:`, error);
-      throw new Error(error.message);
+      throw new Error(error.message || "Image generation failed");
     }
-    
-    console.log(`[${requestId}][${block.id}] Image generation response:`, data);
-    
+
     if (data?.imageUrl) {
       result.contextualImage = data.imageUrl;
-      result.imageDescription = data.textResponse || `Visual representation of ${imagePrompt}`;
-      
-      // Cache the image
+      result.imageDescription = data.textResponse || `Magical image of "${basePrompt}"`;
       localStorage.setItem(imageKey, data.imageUrl);
-      console.log(`[${requestId}][${block.id}] Image cached successfully`);
     } else {
-      throw new Error('No image URL in response');
+      throw new Error('No image URL returned from Supabase edge function');
     }
-  } catch (error) {
-    console.error(`[${requestId}][${block.id}] Error generating image:`, error);
-    result.imageError = 'Could not generate image';
-    
-    // If retry count is below threshold, we'll let the component retry
+  } catch (err: any) {
+    result.imageError = err?.message || 'Could not generate image';
     if (retryCountRef.current < 2) {
       result.imageRequestInProgress = false;
     }
   } finally {
     result.imageLoading = false;
   }
-  
+
   return result;
 };
 
