@@ -1,22 +1,14 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Card } from '@/components/ui/card';
-import BlockHeader from './BlockHeader';
+import React from 'react';
 import { motion } from 'framer-motion';
+import { Lightbulb, Star } from 'lucide-react';
+import { blockVariants, contentVariants, getBlockStyle } from './utils/blockAnimations';
 
-export interface FactBlockProps {
+interface FactBlockProps {
   fact: string;
   title?: string;
   specialistId: string;
   rabbitHoles?: string[];
-  expanded?: boolean;
-  setExpanded?: React.Dispatch<React.SetStateAction<boolean>>;
-  textSize?: string;
-  narrativePosition?: 'beginning' | 'middle' | 'end';
-  onLike?: () => void;
-  onBookmark?: () => void;
-  onReply?: (message: string) => void;
-  onTaskComplete?: () => void;
   onRabbitHoleClick?: (question: string) => void;
   updateHeight?: (height: number) => void;
 }
@@ -26,68 +18,52 @@ const FactBlock: React.FC<FactBlockProps> = ({
   title,
   specialistId,
   rabbitHoles = [],
-  expanded,
-  setExpanded,
-  textSize,
-  narrativePosition,
-  onLike,
-  onBookmark,
-  onReply,
-  onTaskComplete,
   onRabbitHoleClick,
   updateHeight
 }) => {
-  const blockRef = useRef<HTMLDivElement>(null);
-  const [prevHeight, setPrevHeight] = useState<number | null>(null);
-  
-  // Only measure and update height when the component mounts or facts/expands change
-  useEffect(() => {
-    if (blockRef.current && updateHeight) {
-      const currentHeight = blockRef.current.offsetHeight;
-      
-      // Only update if height actually changed to prevent infinite loop
-      if (prevHeight === null || prevHeight !== currentHeight) {
-        setPrevHeight(currentHeight);
-        updateHeight(currentHeight);
-      }
-    }
-  }, [fact, expanded, updateHeight, prevHeight, rabbitHoles?.length]);
-  
   return (
-    <Card 
-      ref={blockRef}
-      className="overflow-hidden bg-white/5 backdrop-blur-sm border-primary/10"
+    <motion.div
+      variants={blockVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      className={`bg-gradient-to-br ${getBlockStyle('fact')} p-6 rounded-xl shadow-lg backdrop-blur-sm border`}
     >
-      <BlockHeader 
-        type="fact" 
-        specialistId={specialistId}
-        blockTitle={title}
-      />
-      
-      <div className="p-4">
-        <p className="text-white/80 text-base leading-relaxed">{fact || "No content available"}</p>
-        
-        {rabbitHoles && rabbitHoles.length > 0 && (
-          <div className="mt-4 space-y-2">
-            <p className="text-white/60 text-sm font-medium">I wonder...</p>
-            
-            <div className="space-y-2">
-              {rabbitHoles.map((question, index) => (
-                <motion.button
-                  key={index}
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.99 }}
-                  className="w-full text-left p-2.5 px-3 bg-white/5 hover:bg-white/10 rounded-lg text-white/80 text-sm transition-colors"
-                  onClick={() => onRabbitHoleClick && onRabbitHoleClick(question)}
-                >
-                  {question}
-                </motion.button>
-              ))}
+      <div className="flex items-start space-x-4">
+        <div className="bg-wonderwhiz-cyan/20 p-2 rounded-full">
+          <Lightbulb className="h-5 w-5 text-wonderwhiz-cyan" />
+        </div>
+        <div className="flex-1">
+          <h3 className="text-lg font-bold text-white mb-3">{title || "Did you know?"}</h3>
+          <motion.p 
+            variants={contentVariants}
+            className="text-white/90 leading-relaxed"
+          >
+            {fact}
+          </motion.p>
+
+          {rabbitHoles.length > 0 && (
+            <div className="mt-4 space-y-2">
+              <p className="text-white/70 text-sm font-medium">Want to learn more?</p>
+              <div className="space-y-2">
+                {rabbitHoles.map((question, idx) => (
+                  <motion.button
+                    key={idx}
+                    whileHover={{ scale: 1.02, backgroundColor: 'rgba(255,255,255,0.1)' }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => onRabbitHoleClick?.(question)}
+                    className="w-full text-left p-3 bg-white/5 rounded-lg text-white/80 flex items-center space-x-2 transition-colors"
+                  >
+                    <Star className="h-4 w-4 text-wonderwhiz-cyan" />
+                    <span>{question}</span>
+                  </motion.button>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-    </Card>
+    </motion.div>
   );
 };
 

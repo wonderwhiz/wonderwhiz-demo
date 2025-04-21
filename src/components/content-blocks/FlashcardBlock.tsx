@@ -1,6 +1,10 @@
-import React, { useState, useEffect } from 'react';
 
-export interface FlashcardBlockProps {
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { BookOpen, RefreshCw } from 'lucide-react';
+import { blockVariants, contentVariants, getBlockStyle } from './utils/blockAnimations';
+
+interface FlashcardBlockProps {
   content: {
     front: string;
     back: string;
@@ -16,40 +20,52 @@ const FlashcardBlock: React.FC<FlashcardBlockProps> = ({
   updateHeight
 }) => {
   const [isFlipped, setIsFlipped] = useState(false);
-  
-  useEffect(() => {
-    if (updateHeight) {
-      // Estimate the height of the content and update the parent
-      const estimatedHeight = 200; // Adjust this value based on your content
-      updateHeight(estimatedHeight);
-    }
-  }, [content, updateHeight, isFlipped]);
-  
+
   return (
-    <div className="p-3 bg-white/10 backdrop-blur-md rounded-lg">
-      <div className={`relative w-full transition-all duration-500 ${isFlipped ? 'rotate-y-180' : ''}`}>
-        <div className="p-4 border border-white/20 rounded-lg">
-          {isFlipped ? (
-            <div className="min-h-[100px]">
-              <h3 className="text-white font-medium mb-2">Answer:</h3>
-              <p className="text-white/90">{content.back}</p>
-            </div>
-          ) : (
-            <div className="min-h-[100px]">
-              <h3 className="text-white font-medium mb-2">Question:</h3>
-              <p className="text-white/90">{content.front}</p>
-            </div>
-          )}
-          
-          <button
+    <motion.div
+      variants={blockVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      className={`bg-gradient-to-br ${getBlockStyle('flashcard')} p-6 rounded-xl shadow-lg backdrop-blur-sm border`}
+    >
+      <div className="flex items-start space-x-4">
+        <div className="bg-wonderwhiz-vibrant-yellow/20 p-2 rounded-full">
+          <BookOpen className="h-5 w-5 text-wonderwhiz-vibrant-yellow" />
+        </div>
+        <div className="flex-1">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={isFlipped ? 'back' : 'front'}
+              initial={{ opacity: 0, rotateX: -90 }}
+              animate={{ opacity: 1, rotateX: 0 }}
+              exit={{ opacity: 0, rotateX: 90 }}
+              transition={{ duration: 0.3 }}
+              className="min-h-[120px]"
+            >
+              <div className="bg-white/10 rounded-lg p-4">
+                <h3 className="text-white/90 font-medium mb-2">
+                  {isFlipped ? 'Answer:' : 'Question:'}
+                </h3>
+                <p className="text-white/80">
+                  {isFlipped ? content.back : content.front}
+                </p>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => setIsFlipped(!isFlipped)}
-            className="mt-3 w-full py-2 bg-white/10 hover:bg-white/15 text-white text-sm rounded-md transition-colors"
+            className="mt-4 w-full py-3 bg-white/10 hover:bg-white/15 rounded-lg text-white flex items-center justify-center space-x-2 transition-colors"
           >
-            {isFlipped ? "Show Question" : "Reveal Answer"}
-          </button>
+            <RefreshCw className="h-4 w-4" />
+            <span>{isFlipped ? "Show Question" : "Reveal Answer"}</span>
+          </motion.button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
