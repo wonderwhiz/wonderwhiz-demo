@@ -236,7 +236,7 @@ const ConsolidatedDashboard: React.FC<ConsolidatedDashboardProps> = ({
                     loading={isLoadingSuggestions}
                     index={index + 3}
                     profileId={childId}
-                    variant="simple"
+                    // Remove the variant prop as it doesn't exist in the CurioSuggestion interface
                   />
                 </motion.div>
               ))}
@@ -277,7 +277,7 @@ const ConsolidatedDashboard: React.FC<ConsolidatedDashboardProps> = ({
                           </div>
                           <div>
                             <div className="text-white font-medium">{topic.topic}</div>
-                            <div className="text-xs text-white/60">You've explored this {topic.count} times</div>
+                            <div className="text-xs text-white/60">You've explored this {topic.level} times</div>
                           </div>
                         </div>
                       </div>
