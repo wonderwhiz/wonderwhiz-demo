@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,6 +8,8 @@ import CurioSuggestion from '@/components/CurioSuggestion';
 import SparksOverview from '@/components/SparksOverview';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import DynamicWonderSuggestions from './DynamicWonderSuggestions';
+import ParentTasksSection from './ParentTasksSection';
 
 // Helper function to determine card type from suggestion
 const getCardTypeForSuggestion = (suggestion: string): 'space' | 'animals' | 'science' | 'history' | 'technology' | 'general' => {
@@ -120,52 +121,24 @@ const ConsolidatedDashboard: React.FC<ConsolidatedDashboardProps> = ({
         </Button>
       </div>
       
-      {/* Active Tab Content */}
       {activeTab === 'wonders' && (
         <>
-          {/* Wonder Journeys Section */}
+          {/* Dynamic Discover New Wonders */}
           <motion.div variants={itemVariants} className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center">
-                <div className="w-8 h-8 rounded-full bg-wonderwhiz-bright-pink/20 flex items-center justify-center mr-3">
-                  <Compass className="h-4 w-4 text-wonderwhiz-bright-pink" />
-                </div>
-                <h2 className="text-xl font-bold text-white font-nunito">Discover New Wonders</h2>
-              </div>
-              
-              <Button
-                variant="ghost"
-                size="icon"
-                className="bg-white/5 hover:bg-white/10 text-white rounded-full h-8 w-8"
-                onClick={handleRefreshSuggestions}
-                disabled={isLoadingSuggestions}
-              >
-                <RefreshCw className={`h-4 w-4 ${isLoadingSuggestions ? 'animate-spin' : ''}`} />
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {uniqueSuggestions.slice(0, 3).map((suggestion, index) => (
-                <motion.div
-                  key={`suggestion-${index}`}
-                  variants={itemVariants}
-                  whileHover={{ y: -5, transition: { duration: 0.2 } }}
-                  className="h-full"
-                >
-                  <CurioSuggestion
-                    suggestion={suggestion}
-                    onClick={() => onCurioSuggestionClick(suggestion)}
-                    type={getCardTypeForSuggestion(suggestion)}
-                    loading={isLoadingSuggestions}
-                    index={index}
-                    profileId={childId}
-                  />
-                </motion.div>
-              ))}
-            </div>
+            <DynamicWonderSuggestions
+              childId={childId}
+              childInterests={childProfile?.interests || []}
+              isLoading={isLoadingSuggestions}
+              onSuggestionClick={onCurioSuggestionClick}
+            />
           </motion.div>
 
-          {/* Recent Explorations */}
+          {/* Parent-set Tasks */}
+          <motion.div variants={itemVariants}>
+            <ParentTasksSection childId={childId} />
+          </motion.div>
+
+          {/* Recent Explorations - show via recentlyViewedTopics (not sidebar duplicating pastCurios) */}
           <motion.div variants={itemVariants} className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center">
@@ -174,22 +147,20 @@ const ConsolidatedDashboard: React.FC<ConsolidatedDashboardProps> = ({
                 </div>
                 <h2 className="text-xl font-bold text-white font-nunito">Your Recent Explorations</h2>
               </div>
-              
               <Badge className="bg-wonderwhiz-blue-accent/20 text-wonderwhiz-blue-accent border-wonderwhiz-blue-accent/20">
-                <Calendar className="h-3 w-3 mr-1" /> Last 7 days
+                <Calendar className="h-3 w-3 mr-1" /> Recent
               </Badge>
             </div>
-
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {pastCurios.slice(0, 3).map((curio, index) => (
-                <motion.div 
-                  key={`curio-${curio.id}`}
+              {recentlyViewedTopics.slice(0, 3).map((topic, index) => (
+                <motion.div
+                  key={`recent-topic-${topic}-${index}`}
                   variants={itemVariants}
                   whileHover={{ y: -5, transition: { duration: 0.2 } }}
                 >
-                  <Card 
+                  <Card
                     className="border-white/10 bg-white/5 hover:bg-white/10 transition-colors cursor-pointer overflow-hidden"
-                    onClick={() => onCurioSuggestionClick(curio.query || curio.title)}
+                    onClick={() => onCurioSuggestionClick(topic)}
                   >
                     <CardContent className="p-4">
                       <div className="flex items-start">
@@ -197,19 +168,21 @@ const ConsolidatedDashboard: React.FC<ConsolidatedDashboardProps> = ({
                           <Lightbulb className="h-4 w-4 text-wonderwhiz-gold" />
                         </div>
                         <div>
-                          <h4 className="font-medium text-white line-clamp-2">{curio.title}</h4>
-                          <p className="text-xs text-white/60 mt-1">
-                            {new Date(curio.created_at).toLocaleDateString()}
-                          </p>
+                          <h4 className="font-medium text-white line-clamp-2">{topic}</h4>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
                 </motion.div>
               ))}
+              {recentlyViewedTopics.length === 0 && (
+                <div className="text-white/60 text-center py-8 w-full col-span-3">
+                  Explore more topics to see your recent learning adventures!
+                </div>
+              )}
             </div>
           </motion.div>
-          
+
           {/* More Suggestions - Different from the top ones */}
           <motion.div variants={itemVariants}>
             <div className="flex items-center justify-between mb-4">
@@ -244,17 +217,16 @@ const ConsolidatedDashboard: React.FC<ConsolidatedDashboardProps> = ({
           </motion.div>
         </>
       )}
-      
+
       {activeTab === 'journey' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Progress Overview */}
           <motion.div variants={itemVariants}>
-            <SparksOverview 
-              childId={childId} 
+            <SparksOverview
+              childId={childId}
               sparksBalance={sparksBalance}
             />
           </motion.div>
-          
           {/* Learning Strengths */}
           <motion.div variants={itemVariants}>
             <Card className="bg-white/5 backdrop-blur-sm border-white/10 shadow-glow-sm">
@@ -263,11 +235,10 @@ const ConsolidatedDashboard: React.FC<ConsolidatedDashboardProps> = ({
                   <BookOpen className="mr-2 h-5 w-5 text-wonderwhiz-cyan" />
                   Your Learning Strengths
                 </h3>
-                
                 <div className="space-y-3">
                   {strongestTopics.length > 0 ? (
                     strongestTopics.slice(0, 3).map((topic, index) => (
-                      <div 
+                      <div
                         key={`topic-${index}`}
                         className="bg-white/10 rounded-lg p-3 flex items-center justify-between"
                       >
@@ -277,7 +248,9 @@ const ConsolidatedDashboard: React.FC<ConsolidatedDashboardProps> = ({
                           </div>
                           <div>
                             <div className="text-white font-medium">{topic.topic}</div>
-                            <div className="text-xs text-white/60">You've explored this {topic.level} times</div>
+                            <div className="text-xs text-white/60">
+                              You've explored this {topic.level} times
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -288,9 +261,8 @@ const ConsolidatedDashboard: React.FC<ConsolidatedDashboardProps> = ({
                     </div>
                   )}
                 </div>
-                
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   className="w-full text-wonderwhiz-cyan hover:text-white hover:bg-wonderwhiz-cyan/20"
                   onClick={() => window.location.href = `/profile/${childId}`}
                 >
