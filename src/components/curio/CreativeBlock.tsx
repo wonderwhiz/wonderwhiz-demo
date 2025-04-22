@@ -1,7 +1,7 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, Brush, FileEdit, Box } from 'lucide-react';
+import { useHaptic } from '@/hooks/use-haptic';
 
 interface CreativeBlockProps {
   content: {
@@ -23,8 +23,17 @@ const CreativeBlock: React.FC<CreativeBlockProps> = ({
   uploadFeedback,
   childAge = 10
 }) => {
+  const { triggerHaptic } = useHaptic();
+
   const prompt = content.prompt || '';
   const examples = content.examples || [];
+
+  const handleCreativeOptionClick = (option: string) => {
+    triggerHaptic('success');
+    if (onCreativeUpload) {
+      onCreativeUpload();
+    }
+  };
 
   return (
     <motion.div
@@ -56,26 +65,23 @@ const CreativeBlock: React.FC<CreativeBlockProps> = ({
           </ul>
         </div>
       )}
-
+      
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
-        <CreativeOption
-          icon={<Brush className="h-5 w-5" />}
-          title="Draw a picture"
-          description={childAge < 10 ? "Draw what you imagine!" : "Express your ideas visually"}
-          onClick={onCreativeUpload}
-        />
-        <CreativeOption
-          icon={<FileEdit className="h-5 w-5" />}
-          title="Write a story"
-          description={childAge < 10 ? "Tell a fun story!" : "Create a narrative about this topic"}
-          onClick={onCreativeUpload}
-        />
-        <CreativeOption
-          icon={<Box className="h-5 w-5" />}
-          title="Make a model"
-          description={childAge < 10 ? "Build something cool!" : "Create a physical representation"}
-          onClick={onCreativeUpload}
-        />
+        {['Draw', 'Write', 'Make'].map((type) => (
+          <CreativeOption
+            key={type}
+            icon={type === 'Draw' ? <Brush className="h-5 w-5" /> :
+                  type === 'Write' ? <FileEdit className="h-5 w-5" /> :
+                  <Box className="h-5 w-5" />}
+            title={`${type} ${type === 'Draw' ? 'a picture' : 
+                         type === 'Write' ? 'a story' : 
+                         'a model'}`}
+            description={childAge < 10 ? 
+              `${type} something fun!` : 
+              `Express your ideas through ${type.toLowerCase()}ing`}
+            onClick={() => handleCreativeOptionClick(type)}
+          />
+        ))}
       </div>
     </motion.div>
   );

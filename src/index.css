@@ -590,3 +590,35 @@ html.magic-cursor-active {
     @apply max-w-4xl;
   }
 }
+
+@supports (view-transition-name: none) {
+  .view-transitions-enabled * {
+    view-transition-name: auto;
+  }
+  
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+  }
+}
+
+/* Improve mobile tap highlight */
+@media (hover: none) {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  .touch-feedback:active {
+    opacity: 0.7;
+  }
+}
+
+/* Mobile optimization classes */
+.overscroll-contain {
+  overscroll-behavior-y: contain;
+}
+
+.touch-manipulation {
+  touch-action: manipulation;
+}

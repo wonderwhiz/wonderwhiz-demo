@@ -22,6 +22,7 @@ import ViewModeSwitcher from '@/components/curio/ViewModeSwitcher';
 import RabbitHoleSuggestions from '@/components/content-blocks/RabbitHoleSuggestions';
 import InteractiveImageBlock from '@/components/content-blocks/InteractiveImageBlock';
 import TalkToWhizzy from '@/components/curio/TalkToWhizzy';
+import { ContentBlockSkeleton } from '@/components/content-blocks/ContentBlockSkeleton';
 
 const SimplifiedCurioPage: React.FC = () => {
   const { childId, curioId } = useParams<{ childId: string, curioId: string }>();
@@ -63,6 +64,12 @@ const SimplifiedCurioPage: React.FC = () => {
       navigate('/profiles');
     }
   }, [user, childId, navigate]);
+
+  useEffect(() => {
+    if ('startViewTransition' in document) {
+      document.documentElement.classList.add('view-transitions-enabled');
+    }
+  }, []);
 
   useEffect(() => {
     if (curioId) {
@@ -366,129 +373,141 @@ const SimplifiedCurioPage: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-indigo-950 to-indigo-900">
-      <motion.header 
-        className="py-4 sm:py-6 px-4 sm:px-6 bg-black/20 backdrop-blur-sm sticky top-0 z-40"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
+    <div className="min-h-screen flex w-full bg-gradient-to-b from-indigo-950 to-indigo-900">
+      <motion.main 
+        className="flex-1 flex flex-col min-h-screen relative"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.3 }}
       >
-        <div className="max-w-4xl mx-auto">
-          <ViewModeSwitcher currentMode="simplified" />
-          
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div>
-              {curioTitle && (
-                <h1 className="text-xl sm:text-2xl font-bold text-white leading-tight">
-                  {curioTitle}
-                </h1>
-              )}
-            </div>
-          </div>
-          
-          <div className="mt-3">
-            <CurioSearchBar
-              placeholder="Search within this exploration..."
-              onSearch={(query) => handleSearch({ preventDefault: () => {} } as React.FormEvent)}
-              onClear={() => setSearchQuery('')}
-            />
-          </div>
-        </div>
-      </motion.header>
-
-      <main className="flex-grow">
-        <div className="max-w-4xl mx-auto py-6 px-4 sm:px-6">
-          {curioTitle && !isLoadingBlocks && !searchQuery && (
-            <QuickAnswer 
-              question={curioTitle}
-              isExpanded={quickAnswerExpanded}
-              onToggleExpand={() => setQuickAnswerExpanded(!quickAnswerExpanded)}
-              onStartJourney={handleStartJourney}
-              childId={childId}
-            />
-          )}
-          
-          {curioTitle && !isLoadingBlocks && !searchQuery && (
-            <InteractiveImageBlock
-              topic={curioTitle}
-              childId={childId}
-              childAge={childProfile?.age ? Number(childProfile.age) : 10}
-              onShare={() => {
-                toast.success('Image shared with your learning journey!');
-              }}
-            />
-          )}
-          
-          {(isLoadingBlocks || isEnhancingContent) && (
-            <CurioLoadingState />
-          )}
-          
-          {blocksError && (
-            <CurioErrorState message="Failed to load content." />
-          )}
-          
-          {searchQuery && visibleBlocks.length === 0 && !isLoadingBlocks && (
-            <div className="text-center py-10">
-              <p className="text-white/70">No results found for "{searchQuery}"</p>
-              <Button 
-                variant="link" 
-                onClick={() => setSearchQuery('')}
-                className="text-white/60 hover:text-white mt-2"
-              >
-                Clear search
-              </Button>
-            </div>
-          )}
-          
-          {journeyStarted && visibleBlocks.length > 0 && !searchQuery && (
-            <CosmicFlow
-              blocks={visibleBlocks}
-              currentBlockIndex={currentBlockIndex}
-              onNavigate={handleNavigateToIndex}
-              ageGroup={ageGroup}
-            />
-          )}
-          
-          <div className="space-y-6 mt-6">
-            {visibleBlocks.map((block, index) => (
-              <div key={block.id} id={`block-${index}`}>
-                <SimplifiedContentBlock
-                  block={block}
-                  ageGroup={ageGroup}
-                  onLike={() => handleToggleLike(block.id)}
-                  onBookmark={() => handleToggleBookmark(block.id)}
-                  onReply={(message) => handleReply(block.id, message)}
-                  onShare={() => {
-                    toast.success('Content shared!');
-                  }}
-                />
-              </div>
-            ))}
+        <motion.header 
+          className="py-4 sm:py-6 px-4 sm:px-6 bg-black/20 backdrop-blur-sm sticky top-0 z-40"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <div className="max-w-4xl mx-auto">
+            <ViewModeSwitcher currentMode="simplified" />
             
-            {hasMore && (
-              <div ref={lastBlockRef} className="h-12 flex items-center justify-center">
-                <div className="animate-pulse text-white/30 text-sm">Loading more...</div>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div>
+                {curioTitle && (
+                  <h1 className="text-xl sm:text-2xl font-bold text-white leading-tight">
+                    {curioTitle}
+                  </h1>
+                )}
+              </div>
+            </div>
+            
+            <div className="mt-3">
+              <CurioSearchBar
+                placeholder="Search within this exploration..."
+                onSearch={(query) => handleSearch({ preventDefault: () => {} } as React.FormEvent)}
+                onClear={() => setSearchQuery('')}
+              />
+            </div>
+          </div>
+        </motion.header>
+
+        <main className="flex-grow">
+          <div className="max-w-4xl mx-auto py-6 px-4 sm:px-6">
+            {curioTitle && !isLoadingBlocks && !searchQuery && (
+              <QuickAnswer 
+                question={curioTitle}
+                isExpanded={quickAnswerExpanded}
+                onToggleExpand={() => setQuickAnswerExpanded(!quickAnswerExpanded)}
+                onStartJourney={handleStartJourney}
+                childId={childId}
+              />
+            )}
+            
+            {curioTitle && !isLoadingBlocks && !searchQuery && (
+              <InteractiveImageBlock
+                topic={curioTitle}
+                childId={childId}
+                childAge={childProfile?.age ? Number(childProfile.age) : 10}
+                onShare={() => {
+                  toast.success('Image shared with your learning journey!');
+                }}
+              />
+            )}
+            
+            {(isLoadingBlocks || isEnhancingContent) && (
+              <div className="max-w-3xl mx-auto px-4 space-y-4 w-full">
+                {[1, 2, 3].map((i) => (
+                  <ContentBlockSkeleton key={i} />
+                ))}
               </div>
             )}
+            
+            {blocksError && (
+              <CurioErrorState message="Failed to load content." />
+            )}
+            
+            {searchQuery && visibleBlocks.length === 0 && !isLoadingBlocks && (
+              <div className="text-center py-10">
+                <p className="text-white/70">No results found for "{searchQuery}"</p>
+                <Button 
+                  variant="link" 
+                  onClick={() => setSearchQuery('')}
+                  className="text-white/60 hover:text-white mt-2"
+                >
+                  Clear search
+                </Button>
+              </div>
+            )}
+            
+            {journeyStarted && visibleBlocks.length > 0 && !searchQuery && (
+              <CosmicFlow
+                blocks={visibleBlocks}
+                currentBlockIndex={currentBlockIndex}
+                onNavigate={handleNavigateToIndex}
+                ageGroup={ageGroup}
+              />
+            )}
+            
+            <div className="space-y-6 mt-6">
+              {visibleBlocks.map((block, index) => (
+                <div key={block.id} id={`block-${index}`}>
+                  <SimplifiedContentBlock
+                    block={block}
+                    ageGroup={ageGroup}
+                    onLike={() => handleToggleLike(block.id)}
+                    onBookmark={() => handleToggleBookmark(block.id)}
+                    onReply={(message) => handleReply(block.id, message)}
+                    onShare={() => {
+                      toast.success('Content shared!');
+                    }}
+                  />
+                </div>
+              ))}
+              
+              {hasMore && (
+                <div ref={lastBlockRef} className="h-12 flex items-center justify-center">
+                  <div className="animate-pulse text-white/30 text-sm">Loading more...</div>
+                </div>
+              )}
+            </div>
+            
+            {showRabbitHoleSuggestions && visibleBlocks.length > 0 && !searchQuery && (
+              <RabbitHoleSuggestions
+                curioTitle={curioTitle || ''}
+                profileId={childId}
+                onSuggestionClick={handleRabbitHoleClick}
+                specialistIds={specialistIds}
+              />
+            )}
           </div>
-          
-          {showRabbitHoleSuggestions && visibleBlocks.length > 0 && !searchQuery && (
-            <RabbitHoleSuggestions
-              curioTitle={curioTitle || ''}
-              profileId={childId}
-              onSuggestionClick={handleRabbitHoleClick}
-              specialistIds={specialistIds}
-            />
-          )}
-        </div>
-      </main>
+        </main>
 
-      <TalkToWhizzy 
-        childId={childId}
-        curioTitle={curioTitle || undefined}
-        ageGroup={ageGroup}
-        onNewQuestionGenerated={handleRabbitHoleClick}
-      />
+        <TalkToWhizzy 
+          childId={childId}
+          curioTitle={curioTitle || undefined}
+          ageGroup={ageGroup}
+          onNewQuestionGenerated={handleRabbitHoleClick}
+        />
+      </motion.main>
     </div>
   );
 };
