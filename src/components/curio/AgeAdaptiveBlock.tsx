@@ -1,166 +1,152 @@
 
-import React, { ReactNode } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Star, Brain, Puzzle, Lightbulb, Rocket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { blockVariants, contentVariants } from '../content-blocks/utils/blockAnimations';
+import { getSpecialistIconClass } from '../content-blocks/utils/blockStyles';
 
-export interface AgeAdaptiveBlockProps {
+interface AgeAdaptiveBlockProps {
+  children?: React.ReactNode;
+  content: React.ReactNode;
   title: string;
-  content: ReactNode;
   type: string;
   ageGroup: '5-7' | '8-11' | '12-16';
-  specialist?: string;
+  specialist: string;
   onInteract?: () => void;
   interactionLabel?: string;
   className?: string;
-  children?: ReactNode;
 }
 
-// Different background gradients based on block type
-const getBackgroundGradient = (type: string) => {
-  switch (type) {
-    case 'fact':
-      return 'from-blue-600/20 to-indigo-600/20';
-    case 'funFact':
-      return 'from-purple-600/20 to-pink-600/20';
-    case 'quiz':
-      return 'from-green-600/20 to-emerald-600/20';
-    case 'creative':
-      return 'from-yellow-500/20 to-amber-500/20';
-    case 'activity':
-      return 'from-orange-500/20 to-red-500/20';
-    case 'mindfulness':
-      return 'from-teal-500/20 to-cyan-500/20';
-    case 'flashcard':
-      return 'from-sky-500/20 to-blue-500/20';
-    case 'news':
-      return 'from-gray-500/20 to-slate-500/20';
-    default:
-      return 'from-indigo-500/20 to-purple-500/20';
-  }
-};
-
-// Get icon based on block type
-const getBlockIcon = (type: string) => {
-  switch (type) {
-    case 'fact':
-      return <Brain className="h-6 w-6" />;
-    case 'funFact':
-      return <Sparkles className="h-6 w-6" />;
-    case 'quiz':
-      return <Puzzle className="h-6 w-6" />;
-    case 'creative':
-      return <Lightbulb className="h-6 w-6" />;
-    case 'activity':
-      return <Rocket className="h-6 w-6" />;
-    default:
-      return <Star className="h-6 w-6" />;
-  }
-};
-
-// Get style variations based on age group
-const getAgeGroupStyles = (ageGroup: '5-7' | '8-11' | '12-16') => {
-  switch (ageGroup) {
-    case '5-7':
-      return {
-        borderWidth: 'border-4',
-        titleSize: 'text-xl md:text-2xl',
-        contentSize: 'text-lg',
-        padding: 'p-5',
-        cornerDecoration: true,
-        animation: true
-      };
-    case '8-11':
-      return {
-        borderWidth: 'border-2',
-        titleSize: 'text-lg md:text-xl',
-        contentSize: 'text-base',
-        padding: 'p-4',
-        cornerDecoration: false,
-        animation: true
-      };
-    case '12-16':
-      return {
-        borderWidth: 'border',
-        titleSize: 'text-base md:text-lg',
-        contentSize: 'text-sm',
-        padding: 'p-4',
-        cornerDecoration: false,
-        animation: false
-      };
-  }
-};
-
 const AgeAdaptiveBlock: React.FC<AgeAdaptiveBlockProps> = ({
-  title,
+  children,
   content,
+  title,
   type,
   ageGroup,
   specialist,
   onInteract,
   interactionLabel = 'Interact',
-  className = '',
-  children
+  className = ''
 }) => {
-  const styles = getAgeGroupStyles(ageGroup);
-  const backgroundGradient = getBackgroundGradient(type);
-  const icon = getBlockIcon(type);
+  // Get visual style based on age group
+  const getVisualStyle = () => {
+    switch (ageGroup) {
+      case '5-7':
+        return {
+          padding: 'p-5',
+          titleSize: 'text-xl',
+          contentSize: 'text-lg leading-relaxed',
+          borderWidth: 'border-2',
+          roundness: 'rounded-2xl',
+          buttonSize: 'text-base py-2.5',
+          animation: true
+        };
+      case '8-11':
+        return {
+          padding: 'p-4',
+          titleSize: 'text-lg',
+          contentSize: 'text-base leading-relaxed',
+          borderWidth: 'border',
+          roundness: 'rounded-xl',
+          buttonSize: 'text-sm py-2',
+          animation: true
+        };
+      case '12-16':
+        return {
+          padding: 'p-4',
+          titleSize: 'text-base font-medium',
+          contentSize: 'text-sm leading-relaxed',
+          borderWidth: 'border',
+          roundness: 'rounded-lg',
+          buttonSize: 'text-xs py-1.5',
+          animation: false
+        };
+    }
+  };
   
+  // Get block background based on type
+  const getBlockBackground = () => {
+    switch (type) {
+      case 'fact':
+      case 'funFact':
+        return 'bg-gradient-to-br from-wonderwhiz-cyan/20 to-wonderwhiz-blue/20 border-wonderwhiz-cyan/30';
+      case 'quiz':
+        return 'bg-gradient-to-br from-wonderwhiz-bright-pink/20 to-wonderwhiz-purple/20 border-wonderwhiz-bright-pink/30';
+      case 'creative':
+        return 'bg-gradient-to-br from-wonderwhiz-green/20 to-wonderwhiz-cyan/20 border-wonderwhiz-green/30';
+      case 'activity':
+        return 'bg-gradient-to-br from-wonderwhiz-green/20 to-wonderwhiz-cyan/20 border-wonderwhiz-green/30';
+      case 'mindfulness':
+        return 'bg-gradient-to-br from-wonderwhiz-cyan/20 to-wonderwhiz-blue/20 border-wonderwhiz-cyan/30';
+      case 'flashcard':
+        return 'bg-gradient-to-br from-wonderwhiz-vibrant-yellow/20 to-wonderwhiz-orange/20 border-wonderwhiz-vibrant-yellow/30';
+      case 'news':
+        return 'bg-gradient-to-br from-wonderwhiz-blue-accent/20 to-wonderwhiz-cyan/20 border-wonderwhiz-blue-accent/30';
+      default:
+        return 'bg-gradient-to-br from-wonderwhiz-purple/20 to-wonderwhiz-blue/20 border-white/10';
+    }
+  };
+  
+  // Get specialist text color class
+  const specialistColorClass = getSpecialistIconClass(specialist);
+  
+  const style = getVisualStyle();
+  const background = getBlockBackground();
+  
+  // Animation based on age group
+  const useAnimations = style.animation;
+
   return (
     <motion.div
-      initial={styles.animation ? { opacity: 0, y: 20 } : false}
-      animate={styles.animation ? { opacity: 1, y: 0 } : false}
-      transition={{ duration: 0.4 }}
-      className={`bg-gradient-to-tr ${backgroundGradient} backdrop-blur-sm rounded-xl ${styles.borderWidth} border-white/10 ${styles.padding} relative ${className}`}
+      className={`${background} ${style.borderWidth} ${style.roundness} ${style.padding} shadow-lg ${className}`}
+      variants={useAnimations ? blockVariants : undefined}
+      initial={useAnimations ? "initial" : undefined}
+      animate={useAnimations ? "animate" : undefined}
+      exit={useAnimations ? "exit" : undefined}
     >
-      {/* Corner decoration for younger kids */}
-      {styles.cornerDecoration && (
-        <div className="absolute -top-3 -right-3 bg-gradient-to-r from-pink-500 to-yellow-500 rounded-full p-2 shadow-lg">
-          {icon}
-        </div>
+      {title && (
+        <motion.h3 
+          className={`${style.titleSize} text-white mb-2.5`}
+          variants={useAnimations ? contentVariants : undefined}
+        >
+          {title}
+        </motion.h3>
       )}
       
-      {/* Title with appropriate styling for age group */}
-      <h3 className={`${styles.titleSize} font-bold mb-2 ${styles.cornerDecoration ? 'pr-8' : ''}`}>
-        {title}
-      </h3>
-      
-      {/* Specialist badge for older kids */}
-      {ageGroup !== '5-7' && specialist && (
-        <div className="absolute top-3 right-3">
-          <div className="bg-white/10 rounded-full px-2 py-1 text-xs text-white/70">
-            {specialist}
-          </div>
-        </div>
-      )}
-      
-      {/* Content section */}
-      <div className={`${styles.contentSize} mt-3`}>
+      <motion.div 
+        className={`${style.contentSize} text-white/90`}
+        variants={useAnimations ? contentVariants : undefined}
+      >
         {content}
-      </div>
+      </motion.div>
       
-      {/* Interaction button with age-appropriate styling */}
       {onInteract && (
-        <div className="mt-4 flex justify-center">
+        <div className="mt-4 flex justify-end">
           <Button
+            size="sm"
+            variant="ghost"
             onClick={onInteract}
-            size={ageGroup === '5-7' ? 'lg' : ageGroup === '8-11' ? 'default' : 'sm'}
-            className={
-              ageGroup === '5-7'
-                ? 'bg-gradient-to-r from-pink-500 to-yellow-500 text-white font-bold rounded-full px-6 py-3'
-                : ageGroup === '8-11'
-                ? 'bg-white/10 hover:bg-white/20 text-white rounded-lg'
-                : 'bg-white/5 hover:bg-white/10 text-white/80 hover:text-white rounded'
-            }
+            className={`bg-white/10 hover:bg-white/20 text-white ${style.buttonSize}`}
           >
-            {ageGroup === '5-7' && <Sparkles className="w-5 h-5 mr-2" />}
             {interactionLabel}
           </Button>
         </div>
       )}
       
-      {/* Child components (like interaction elements) */}
       {children}
+      
+      <div className="mt-3 pt-2 border-t border-white/10 flex justify-between items-center">
+        <div className="text-xs text-white/50">
+          <span className={`font-medium ${specialistColorClass}`}>{specialist}</span> specialist
+        </div>
+        
+        {ageGroup === '5-7' && (
+          <div className="text-xs text-white/50">
+            {/* Simplistic icon that would appeal to younger children */}
+            <span className="text-wonderwhiz-vibrant-yellow">★★★</span>
+          </div>
+        )}
+      </div>
     </motion.div>
   );
 };
