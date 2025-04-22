@@ -1,6 +1,6 @@
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import BlockError from './BlockError';
+import { BlockError } from './BlockError';
 
 interface Props {
   children: ReactNode;
@@ -30,6 +30,7 @@ class ContentBlockErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <BlockError
+          message="Something went wrong displaying this content."
           error={this.state.error}
           onRetry={this.props.onRetry}
           childAge={this.props.childAge}
