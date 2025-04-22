@@ -13,15 +13,28 @@ interface RiddleBlockProps {
   };
   specialistId: string;
   updateHeight?: (height: number) => void;
+  childAge?: number;
 }
 
 const RiddleBlock: React.FC<RiddleBlockProps> = ({
   content,
   specialistId,
-  updateHeight
+  updateHeight,
+  childAge = 10
 }) => {
   const [showAnswer, setShowAnswer] = useState(false);
   const [showHint, setShowHint] = useState(false);
+
+  // Get age-appropriate button and text styling
+  const getButtonStyle = () => {
+    if (childAge <= 7) {
+      return "bg-wonderwhiz-bright-pink/30 hover:bg-wonderwhiz-bright-pink/40 text-lg py-4";
+    } else if (childAge <= 11) {
+      return "bg-wonderwhiz-bright-pink/20 hover:bg-wonderwhiz-bright-pink/30 text-base py-3";
+    } else {
+      return "bg-wonderwhiz-bright-pink/20 hover:bg-wonderwhiz-bright-pink/30 text-sm py-3";
+    }
+  };
 
   return (
     <motion.div
@@ -69,7 +82,7 @@ const RiddleBlock: React.FC<RiddleBlockProps> = ({
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setShowAnswer(!showAnswer)}
-              className="w-full py-3 bg-wonderwhiz-bright-pink/20 hover:bg-wonderwhiz-bright-pink/30 rounded-lg text-white flex items-center justify-center space-x-2 transition-colors"
+              className={`w-full rounded-lg text-white flex items-center justify-center space-x-2 transition-colors ${getButtonStyle()}`}
             >
               {showAnswer ? "Hide Answer" : "Show Answer"}
             </motion.button>

@@ -7,6 +7,7 @@ interface AgeAdaptation {
   textSize: string;
   spacing: string;
   interactionStyle: string;
+  interactionSize: 'large' | 'default' | 'small';
   shouldAutoRead: boolean;
   messageStyle: 'playful' | 'casual' | 'formal';
   ageGroup: AgeGroup;
@@ -19,6 +20,7 @@ export const useAgeAdaptation = (age: number): AgeAdaptation => {
         textSize: 'text-lg',
         spacing: 'space-y-6',
         interactionStyle: 'interactive-young',
+        interactionSize: 'large',
         shouldAutoRead: true,
         messageStyle: 'playful',
         ageGroup: '5-7'
@@ -28,6 +30,7 @@ export const useAgeAdaptation = (age: number): AgeAdaptation => {
         textSize: 'text-base',
         spacing: 'space-y-4',
         interactionStyle: 'interactive-middle',
+        interactionSize: 'default',
         shouldAutoRead: false,
         messageStyle: 'casual',
         ageGroup: '8-11'
@@ -37,6 +40,7 @@ export const useAgeAdaptation = (age: number): AgeAdaptation => {
         textSize: 'text-sm',
         spacing: 'space-y-4',
         interactionStyle: 'interactive-older',
+        interactionSize: 'small',
         shouldAutoRead: false,
         messageStyle: 'formal',
         ageGroup: '12-16'

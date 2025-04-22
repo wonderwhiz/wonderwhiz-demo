@@ -1,3 +1,4 @@
+
 export interface BlockInteractionsProps {
   id: string;
   liked?: boolean;
@@ -59,6 +60,7 @@ export interface RiddleBlockProps {
   };
   specialistId: string;
   updateHeight?: (height: number) => void;
+  childAge?: number;
 }
 
 export interface NewsBlockProps {

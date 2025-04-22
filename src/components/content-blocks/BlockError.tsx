@@ -63,7 +63,7 @@ const BlockError: React.FC<BlockErrorProps> = ({
       <div className="flex flex-col items-center justify-center py-4">
         {getIcon()}
         
-        <h3 className={`mt-4 mb-2 font-semibold text-white ${textSize === 'large' ? 'text-xl' : 'text-lg'}`}>
+        <h3 className={`mt-4 mb-2 font-semibold text-white ${textSize === 'text-lg' ? 'text-xl' : textSize}`}>
           {getFriendlyErrorMessage()}
         </h3>
         
@@ -78,7 +78,7 @@ const BlockError: React.FC<BlockErrorProps> = ({
           <Button
             onClick={onRetry}
             variant="outline"
-            size={interactionSize === 'large' ? 'lg' : 'default'}
+            size={interactionSize}
             className="mt-3 border-purple-400/30 bg-purple-900/30 text-white hover:bg-purple-800/50"
           >
             <RefreshCw className="mr-2 h-4 w-4" />
