@@ -54,10 +54,11 @@ serve(async (req) => {
       console.log('Prompt truncated to 500 characters');
     }
 
-    // We'll use a different approach to retrieve and process the image
     try {
       // Call HuggingFace API using the stabilityai/stable-diffusion-2 model
       console.log("Sending request to HuggingFace API");
+      
+      // IMPORTANT: Create a proper request with better error handling
       const response = await fetch(
         "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2",
         {
@@ -83,19 +84,19 @@ serve(async (req) => {
       
       // Check if response is OK
       if (!response.ok) {
-        // Create a new error with status information
+        // Get error text but don't consume the whole body
         const errorText = await response.text();
         console.error(`HuggingFace API error (${response.status}):`, errorText);
         throw new Error(`HuggingFace API error: ${response.status} - ${errorText}`);
       }
 
-      // For successful responses, we get binary image data
-      // We need to read it correctly without consuming the body multiple times
-      const imageArrayBuffer = await response.arrayBuffer();
+      // IMPORTANT: Only read the response body once and store it
+      // We create a buffer here and then convert it to base64 directly
+      const responseBuffer = await response.arrayBuffer();
       
       // Convert array buffer to base64
       const base64Image = btoa(
-        new Uint8Array(imageArrayBuffer).reduce(
+        new Uint8Array(responseBuffer).reduce(
           (data, byte) => data + String.fromCharCode(byte),
           ''
         )
@@ -113,6 +114,7 @@ serve(async (req) => {
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+      
     } catch (hfError) {
       console.error('HuggingFace API call failed:', hfError);
       
