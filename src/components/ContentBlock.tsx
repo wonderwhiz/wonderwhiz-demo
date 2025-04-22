@@ -60,8 +60,33 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   profileId,
   isLoading
 }) => {
+  const [renderKey, setRenderKey] = React.useState(`block-${block.id}-${Date.now()}`);
+  
+  // Added error handling state for debug purposes
+  const [hasRenderError, setHasRenderError] = React.useState(false);
+  const [renderErrorDetails, setRenderErrorDetails] = React.useState<string | null>(null);
+  
+  React.useEffect(() => {
+    // Reset error state when block changes
+    setHasRenderError(false);
+    setRenderErrorDetails(null);
+    
+    // Generate a new key when block changes to force re-render
+    setRenderKey(`block-${block.id}-${Date.now()}`);
+  }, [block.id, block.type]);
+
   if (isLoading) {
     return <ContentBlockLoading childAge={childAge} />;
+  }
+
+  // Safety check for block existing and having required properties
+  if (!block || !block.type || !block.id) {
+    console.error('Invalid block data received:', block);
+    return (
+      <div className="p-4 bg-red-900/20 rounded-lg border border-red-500/30 text-white">
+        <p>Error: Invalid block data received</p>
+      </div>
+    );
   }
 
   // Verify the block type to ensure it's valid for the blockContainer function
@@ -93,8 +118,114 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     return [];
   };
   
+  // Error handling function
+  const handleBlockRenderError = (error: Error) => {
+    console.error(`Error rendering block type '${block.type}':`, error);
+    setHasRenderError(true);
+    setRenderErrorDetails(error.message);
+    
+    // Force a re-render with a simpler version after a short delay
+    setTimeout(() => {
+      setRenderKey(`block-${block.id}-fallback-${Date.now()}`);
+    }, 100);
+  };
+  
+  // Safely render block content with error catching
+  const safeRenderBlock = (renderFunction: () => React.ReactNode) => {
+    try {
+      return renderFunction();
+    } catch (error: any) {
+      handleBlockRenderError(error);
+      
+      // Return a fallback rendering
+      return (
+        <div className="p-4 bg-wonderwhiz-purple/30 rounded-lg border border-white/10">
+          <p className="text-white/90">This content couldn't be displayed properly.</p>
+          {renderErrorDetails && (
+            <p className="text-white/60 text-sm mt-2 italic">Error: {renderErrorDetails}</p>
+          )}
+        </div>
+      );
+    }
+  };
+  
+  // Safely process content for fallback rendering
+  const getSafeContent = () => {
+    if (!block.content) return { title: "", text: "" };
+    
+    try {
+      const extractedContent = {
+        title: "",
+        text: ""
+      };
+      
+      // Try to extract title
+      if (typeof block.content.title === 'string') {
+        extractedContent.title = block.content.title;
+      } else if (typeof block.content.question === 'string') {
+        extractedContent.title = block.content.question;
+      } else if (typeof block.content.front === 'string') {
+        extractedContent.title = block.content.front;
+      } else if (typeof block.content.headline === 'string') {
+        extractedContent.title = block.content.headline;
+      }
+      
+      // Try to extract text content
+      if (typeof block.content.fact === 'string') {
+        extractedContent.text = block.content.fact;
+      } else if (typeof block.content.text === 'string') {
+        extractedContent.text = block.content.text;
+      } else if (typeof block.content.description === 'string') {
+        extractedContent.text = block.content.description;
+      } else if (typeof block.content.prompt === 'string') {
+        extractedContent.text = block.content.prompt;
+      } else if (typeof block.content.instruction === 'string') {
+        extractedContent.text = block.content.instruction;
+      } else if (typeof block.content.body === 'string') {
+        extractedContent.text = block.content.body;
+      } else if (typeof block.content.explanation === 'string') {
+        extractedContent.text = block.content.explanation;
+      }
+      
+      return extractedContent;
+    } catch (e) {
+      console.error("Error extracting safe content:", e);
+      return { title: "", text: "" };
+    }
+  };
+  
+  // Fallback rendering in case the specific component fails
+  const renderFallbackBlock = () => {
+    const safeContent = getSafeContent();
+    
+    return (
+      <div className={blockContainer({ type: blockType, childAge: getAgeVariant() })}>
+        {safeContent.title && (
+          <h3 className="text-lg font-medium text-white mb-2">{safeContent.title}</h3>
+        )}
+        
+        {safeContent.text && (
+          <p className="text-white/90 mb-3">{safeContent.text}</p>
+        )}
+        
+        {!safeContent.title && !safeContent.text && (
+          <p className="text-white/70">This {block.type} content is available but can't be displayed properly.</p>
+        )}
+        
+        <div className="mt-2 pt-2 border-t border-white/10">
+          <p className="text-white/60 text-sm">Content type: {block.type}</p>
+        </div>
+      </div>
+    );
+  };
+  
   // Render different block types
   const renderBlockContent = () => {
+    // If we've had a render error and this is the fallback render, use simplified display
+    if (hasRenderError && renderKey.includes('fallback')) {
+      return renderFallbackBlock();
+    }
+    
     const commonProps = {
       onLike: handleToggleLike,
       onBookmark: handleToggleBookmark,
@@ -105,7 +236,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     
     switch (block.type) {
       case 'quiz':
-        return (
+        return safeRenderBlock(() => (
           <div>
             <EnhancedQuizBlock 
               question={block.content.question}
@@ -127,10 +258,10 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
               relatedQuestions={getRelatedQuestions()}
             />
           </div>
-        );
+        ));
         
       case 'fact':
-        return (
+        return safeRenderBlock(() => (
           <div>
             <FactBlock 
               fact={block.content.fact}
@@ -152,10 +283,10 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
               relatedQuestions={getRelatedQuestions()}
             />
           </div>
-        );
+        ));
         
       case 'news':
-        return (
+        return safeRenderBlock(() => (
           <div>
             <NewsBlock 
               content={block.content}
@@ -174,14 +305,16 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
               relatedQuestions={getRelatedQuestions()}
             />
           </div>
-        );
+        ));
         
       case 'riddle':
-        return (
+        return safeRenderBlock(() => (
           <div>
             <RiddleBlock
               content={block.content}
               specialistId={block.specialist_id}
+              updateHeight={() => {}}
+              childAge={childAge}
             />
             <BlockInteractions
               id={block.id}
@@ -195,10 +328,10 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
               relatedQuestions={getRelatedQuestions()}
             />
           </div>
-        );
+        ));
         
       case 'funFact':
-        return (
+        return safeRenderBlock(() => (
           <div>
             <FunFactBlock 
               fact={block.content.text || block.content.fact}
@@ -221,15 +354,16 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
               relatedQuestions={getRelatedQuestions()}
             />
           </div>
-        );
+        ));
         
       case 'flashcard':
-        return (
+        return safeRenderBlock(() => (
           <div>
             <FlashcardBlock
               content={block.content}
               specialistId={block.specialist_id}
               childAge={childAge}
+              updateHeight={() => {}}
             />
             <BlockInteractions
               id={block.id}
@@ -243,16 +377,17 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
               relatedQuestions={getRelatedQuestions()}
             />
           </div>
-        );
+        ));
         
       case 'creative':
-        return (
+        return safeRenderBlock(() => (
           <div>
             <CreativeBlock
               content={block.content}
               specialistId={block.specialist_id}
               onCreativeUpload={onCreativeUpload}
               childAge={childAge}
+              updateHeight={() => {}}
             />
             <BlockInteractions
               id={block.id}
@@ -266,16 +401,17 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
               relatedQuestions={getRelatedQuestions()}
             />
           </div>
-        );
+        ));
         
       case 'activity':
-        return (
+        return safeRenderBlock(() => (
           <div>
             <ActivityBlock
               content={block.content}
               specialistId={block.specialist_id}
               onActivityComplete={onActivityComplete}
               childAge={childAge}
+              updateHeight={() => {}}
             />
             <BlockInteractions
               id={block.id}
@@ -289,16 +425,17 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
               relatedQuestions={getRelatedQuestions()}
             />
           </div>
-        );
+        ));
         
       case 'mindfulness':
-        return (
+        return safeRenderBlock(() => (
           <div>
             <MindfulnessBlock
               content={block.content}
               specialistId={block.specialist_id}
               onMindfulnessComplete={onMindfulnessComplete}
               childAge={childAge}
+              updateHeight={() => {}}
             />
             <BlockInteractions
               id={block.id}
@@ -312,16 +449,17 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
               relatedQuestions={getRelatedQuestions()}
             />
           </div>
-        );
+        ));
         
       case 'task':
-        return (
+        return safeRenderBlock(() => (
           <div>
             <TaskBlock
               content={block.content}
               specialistId={block.specialist_id}
               onTaskComplete={onTaskComplete}
               childAge={childAge}
+              updateHeight={() => {}}
             />
             <BlockInteractions
               id={block.id}
@@ -335,11 +473,11 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
               relatedQuestions={getRelatedQuestions()}
             />
           </div>
-        );
+        ));
         
       // Add simple fallback for other block types
       default:
-        return (
+        return safeRenderBlock(() => (
           <div>
             <div className={blockContainer({ type: blockType, childAge: getAgeVariant() })}>
               {block.content && typeof block.content === 'object' ? (
@@ -389,13 +527,14 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
               relatedQuestions={getRelatedQuestions()}
             />
           </div>
-        );
+        ));
     }
   };
 
   return (
-    <ContentBlockErrorBoundary onRetry={() => window.location.reload()} childAge={childAge}>
+    <ContentBlockErrorBoundary onRetry={() => setRenderKey(`block-${block.id}-retry-${Date.now()}`)} childAge={childAge}>
       <motion.div
+        key={renderKey}
         variants={blockVariants}
         initial="initial"
         animate="animate"

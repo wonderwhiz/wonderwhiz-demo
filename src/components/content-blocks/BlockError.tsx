@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { AlertCircle, RefreshCw } from 'lucide-react';
+import { AlertCircle, RefreshCw, LightbulbOff, Lightbulb } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAgeAdaptation } from '@/hooks/useAgeAdaptation';
 
@@ -18,47 +18,71 @@ const BlockError: React.FC<BlockErrorProps> = ({
   onRetry,
   childAge = 10
 }) => {
-  const { textSize, messageStyle } = useAgeAdaptation(childAge);
+  const { textSize, interactionSize } = useAgeAdaptation(childAge);
   
-  const getErrorMessage = () => {
-    if (messageStyle === 'playful') {
-      return "Oops! Something's not working right. Let's try again!";
-    } else if (messageStyle === 'casual') {
-      return message || "We ran into a problem loading this content. Want to try again?";
+  // Get a child-friendly error message based on the age
+  const getFriendlyErrorMessage = (): string => {
+    if (childAge <= 7) {
+      return "Oops! This part of the lesson is taking a little nap. Let's try again!";
+    } else if (childAge <= 11) {
+      return "Hmm, we're having trouble showing this part of your learning adventure. Let's try refreshing it!";
+    } else {
+      return message || "We couldn't load this content block. Please try refreshing it.";
     }
-    return message;
   };
-
+  
+  // Get appropriate icon based on child age
+  const getIcon = () => {
+    if (childAge <= 7) {
+      return <LightbulbOff className="h-10 w-10 text-amber-300/70" />;
+    } else if (childAge <= 11) {
+      return <Lightbulb className="h-10 w-10 text-amber-300/70" />;
+    } else {
+      return <AlertCircle className="h-10 w-10 text-amber-300/70" />;
+    }
+  };
+  
+  // Get button label based on child age
+  const getButtonLabel = (): string => {
+    if (childAge <= 7) {
+      return "Wake it up!";
+    } else if (childAge <= 11) {
+      return "Refresh";
+    } else {
+      return "Try Again";
+    }
+  };
+  
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="p-4 rounded-lg bg-red-500/10 border border-red-500/20"
+      transition={{ duration: 0.3 }}
+      className="rounded-xl bg-gradient-to-br from-purple-900/30 to-red-900/30 border border-red-500/20 overflow-hidden p-5 text-center shadow-glow-brand-red"
     >
-      <div className="flex flex-col items-center text-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
-          <AlertCircle className="h-5 w-5 text-red-400" />
-        </div>
+      <div className="flex flex-col items-center justify-center py-4">
+        {getIcon()}
         
-        <p className={`${textSize} text-white/80`}>
-          {getErrorMessage()}
-        </p>
+        <h3 className={`mt-4 mb-2 font-semibold text-white ${textSize === 'large' ? 'text-xl' : 'text-lg'}`}>
+          {getFriendlyErrorMessage()}
+        </h3>
         
-        {error?.message && messageStyle === 'formal' && (
-          <p className="text-xs text-white/60 mt-1">
-            Error details: {error.message}
+        {childAge > 11 && error?.message && (
+          <p className="text-white/60 text-sm mt-1 mb-3 max-w-lg mx-auto">
+            {error.message.substring(0, 120)}
+            {error.message.length > 120 ? '...' : ''}
           </p>
         )}
         
         {onRetry && (
           <Button
-            variant="outline"
-            size="sm"
             onClick={onRetry}
-            className="mt-2 bg-white/5 hover:bg-white/10"
+            variant="outline"
+            size={interactionSize === 'large' ? 'lg' : 'default'}
+            className="mt-3 border-purple-400/30 bg-purple-900/30 text-white hover:bg-purple-800/50"
           >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            {messageStyle === 'playful' ? "Try Again!" : "Retry"}
+            <RefreshCw className="mr-2 h-4 w-4" />
+            {getButtonLabel()}
           </Button>
         )}
       </div>
