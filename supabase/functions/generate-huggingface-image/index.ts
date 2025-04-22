@@ -84,36 +84,42 @@ serve(async (req) => {
       
       // Check if response is OK
       if (!response.ok) {
-        // Get error text but don't consume the whole body
         const errorText = await response.text();
         console.error(`HuggingFace API error (${response.status}):`, errorText);
         throw new Error(`HuggingFace API error: ${response.status} - ${errorText}`);
       }
 
-      // IMPORTANT: Only read the response body once and store it
-      // We create a buffer here and then convert it to base64 directly
-      const responseBuffer = await response.arrayBuffer();
+      // Clone the response before consuming it
+      const responseClone = response.clone();
       
-      // Convert array buffer to base64
-      const base64Image = btoa(
-        new Uint8Array(responseBuffer).reduce(
-          (data, byte) => data + String.fromCharCode(byte),
-          ''
-        )
-      );
-      
-      const imageUrl = `data:image/png;base64,${base64Image}`;
-      
-      console.log('Successfully generated image with HuggingFace (stable-diffusion-2)');
-      
-      // Return the image data URL
-      return new Response(
-        JSON.stringify({ 
-          imageUrl: imageUrl,
-          source: 'huggingface'
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      try {
+        // Get the response as an array buffer
+        const responseBuffer = await responseClone.arrayBuffer();
+        
+        // Convert array buffer to base64
+        const base64Image = btoa(
+          new Uint8Array(responseBuffer).reduce(
+            (data, byte) => data + String.fromCharCode(byte),
+            ''
+          )
+        );
+        
+        const imageUrl = `data:image/png;base64,${base64Image}`;
+        
+        console.log('Successfully generated image with HuggingFace (stable-diffusion-2)');
+        
+        // Return the image data URL
+        return new Response(
+          JSON.stringify({ 
+            imageUrl: imageUrl,
+            source: 'huggingface'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } catch (conversionError) {
+        console.error('Error converting image response:', conversionError);
+        throw new Error(`Failed to process image: ${conversionError.message}`);
+      }
       
     } catch (hfError) {
       console.error('HuggingFace API call failed:', hfError);
