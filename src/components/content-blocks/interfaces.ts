@@ -19,6 +19,7 @@ export interface FlashcardBlockProps {
   };
   specialistId: string;
   updateHeight?: (height: number) => void;
+  childAge?: number;
 }
 
 export interface CreativeBlockProps {
@@ -33,6 +34,7 @@ export interface CreativeBlockProps {
   uploadFeedback?: string | null;
   updateHeight?: (height: number) => void;
   curioId?: string;
+  childAge?: number;
 }
 
 export interface TaskBlockProps {
@@ -46,6 +48,7 @@ export interface TaskBlockProps {
   specialistId: string;
   onTaskComplete?: () => void;
   updateHeight?: (height: number) => void;
+  childAge?: number;
 }
 
 export interface RiddleBlockProps {
@@ -82,6 +85,7 @@ export interface ActivityBlockProps {
   specialistId: string;
   onActivityComplete?: () => void;
   updateHeight?: (height: number) => void;
+  childAge?: number;
 }
 
 export interface MindfulnessBlockProps {
@@ -94,4 +98,5 @@ export interface MindfulnessBlockProps {
   specialistId: string;
   onMindfulnessComplete?: () => void;
   updateHeight?: (height: number) => void;
+  childAge?: number;
 }
