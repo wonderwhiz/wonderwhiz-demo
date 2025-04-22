@@ -81,9 +81,13 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
           .select('id')
           .single();
           
-        if (error) throw error;
+        if (error) {
+          console.error('Error creating rabbit hole curio:', error);
+          toast.error("Could not create new exploration");
+          return;
+        }
         
-        if (newCurio) {
+        if (newCurio && newCurio.id) {
           toast.success("New exploration created!");
           
           try {
@@ -99,18 +103,18 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
               position: 'bottom-right',
               duration: 3000
             });
+            
+            confetti({
+              particleCount: 100,
+              spread: 70,
+              origin: { y: 0.6 },
+              colors: ['#FF5BA3', '#00E2FF', '#FFD54F']  // Brand colors
+            });
+            
+            navigate(`/curio/${childId}/${newCurio.id}`);
           } catch (err) {
             console.error('Error awarding sparks:', err);
           }
-          
-          confetti({
-            particleCount: 100,
-            spread: 70,
-            origin: { y: 0.6 },
-            colors: ['#FF5BA3', '#00E2FF', '#FFD54F']  // Brand colors
-          });
-          
-          navigate(`/curio/${childId}/${newCurio.id}`);
         }
       } catch (error) {
         console.error('Error creating rabbit hole curio:', error);

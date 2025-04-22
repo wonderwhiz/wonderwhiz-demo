@@ -45,6 +45,7 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
   const suggestions = generateSuggestions();
   
   const handleSuggestionClick = async (question: string) => {
+    // Show loading toast
     toast.loading("Creating new exploration...");
     
     try {
@@ -59,7 +60,11 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
         .select('id')
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating curio:', error);
+        toast.error("Could not create new exploration");
+        return;
+      }
       
       if (newCurio && newCurio.id) {
         toast.success("New exploration created!");
@@ -89,9 +94,7 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
         }
         
         // Call the onSuggestionClick prop first
-        if (onSuggestionClick) {
-          onSuggestionClick(question);
-        }
+        onSuggestionClick(question);
         
         // Navigate to the new curio page
         navigate(`/curio/${profileId}/${newCurio.id}`);

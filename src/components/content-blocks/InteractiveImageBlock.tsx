@@ -14,7 +14,7 @@ interface InteractiveImageBlockProps {
   childId?: string;
   childAge?: number;
   onShare?: () => void;
-  style?: 'cartoon' | 'realistic' | 'watercolor';
+  style?: 'vivid' | 'natural';
 }
 
 const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
@@ -22,7 +22,7 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
   childId,
   childAge = 10,
   onShare,
-  style = 'cartoon'
+  style = 'vivid'
 }) => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -83,8 +83,12 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
         setGenerationProgress(100);
         setImageUrl(data.fallbackImageUrl);
         console.log('Using fallback image from DALL-E function');
+        
+        toast.info("Using an alternative image for this topic", { 
+          duration: 3000 
+        });
       } else {
-        throw new Error("No image was generated");
+        throw new Error(data?.error || "No image was generated");
       }
     } catch (err: any) {
       clearInterval(progressInterval);
@@ -96,6 +100,10 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
         const fallbackUrl = await getFallbackImageUrl();
         setImageUrl(fallbackUrl);
         setGenerationProgress(100);
+        
+        toast.info("Using a substitute image", { 
+          duration: 3000 
+        });
       } catch (fallbackErr) {
         console.error('Fallback image also failed:', fallbackErr);
       }
@@ -126,11 +134,11 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
     const basePrompt = `Educational illustration about ${topic}`;
     
     if (childAge <= 7) {
-      return `${basePrompt}, ${style} style, vibrant colors, simple shapes, kid-friendly illustration, educational, vibrant colors, stylized, age-appropriate, learning material, engaging illustration`;
+      return `${basePrompt}, cartoon style, vibrant colors, simple shapes, kid-friendly illustration, educational, vibrant colors, stylized, age-appropriate, learning material, engaging illustration`;
     } else if (childAge <= 11) {
-      return `${basePrompt}, ${style} style, educational illustration, age-appropriate (${childAge} years old), engaging, colorful, informative, learning material`;
+      return `${basePrompt}, illustration style, educational illustration, age-appropriate (${childAge} years old), engaging, colorful, informative, learning material`;
     } else {
-      return `${basePrompt}, ${style} style, detailed educational illustration, informative visualization, age-appropriate for teens, educational content, learning material`;
+      return `${basePrompt}, detailed educational illustration, informative visualization, age-appropriate for teens, educational content, learning material`;
     }
   };
 
