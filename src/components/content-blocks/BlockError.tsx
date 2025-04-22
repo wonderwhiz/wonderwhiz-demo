@@ -53,6 +53,19 @@ const BlockError: React.FC<BlockErrorProps> = ({
     }
   };
   
+  // Map the age adaptation size to button size
+  const getButtonSize = () => {
+    switch (interactionSize) {
+      case 'large':
+        return 'lg';
+      case 'small':
+        return 'sm';
+      case 'default':
+      default:
+        return 'default';
+    }
+  };
+  
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -78,7 +91,7 @@ const BlockError: React.FC<BlockErrorProps> = ({
           <Button
             onClick={onRetry}
             variant="outline"
-            size={interactionSize}
+            size={getButtonSize()}
             className="mt-3 border-purple-400/30 bg-purple-900/30 text-white hover:bg-purple-800/50"
           >
             <RefreshCw className="mr-2 h-4 w-4" />
