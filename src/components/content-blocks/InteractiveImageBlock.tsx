@@ -88,54 +88,65 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
     setFallbackSource(null);
     
     try {
+      // Ensure we have a valid topic before proceeding
+      if (!topic || topic.trim().length === 0) {
+        throw new Error("No topic provided for image generation");
+      }
+      
       const prompt = generatePrompt();
       const style = getImageStyle();
       
       toast.loading("Generating image...");
       setProgress(30);
       
-      console.log('Calling generate-dalle-image with prompt:', prompt);
+      console.log('Calling generate-dalle-image with prompt:', prompt.substring(0, 50) + '...');
       
-      const { data, error } = await supabase.functions.invoke('generate-dalle-image', {
-        body: JSON.stringify({
+      // Call the Supabase edge function with proper JSON body
+      const { data, error: functionError } = await supabase.functions.invoke('generate-dalle-image', {
+        body: {
           prompt,
           style,
           childAge,
           retryOnFail: true
-        })
+        }
       });
       
       setProgress(90);
       
-      if (error) {
-        console.error('Error generating image:', error);
-        setError(`Failed to generate image: ${error.message || 'Unknown error'}`);
-        toast.error("Could not generate image");
-        return;
+      if (functionError) {
+        console.error('Edge function error:', functionError);
+        throw new Error(`Failed to generate image: ${functionError.message || functionError}`);
+      }
+      
+      if (!data) {
+        console.error('No data returned from edge function');
+        throw new Error('No response from image generation service');
       }
       
       if (data.error) {
         console.error('API Error:', data.error);
-        setError(`Failed to generate image: ${data.error}`);
-        toast.error("Could not generate image");
-        
-        // Try a fallback color background
-        const colorBackground = generateColorBackground(topic);
-        setFallbackSource('color');
-        setImageUrl(colorBackground);
-        return;
+        throw new Error(`Failed to generate image: ${data.error}`);
       }
       
+      // Handle missing image URL
+      if (!data.imageUrl && !data.fallbackImageUrl) {
+        console.error('No image URL in response:', data);
+        throw new Error('No image URL returned');
+      }
+      
+      // Use fallback URL if main URL is missing
+      const finalImageUrl = data.imageUrl || data.fallbackImageUrl;
+      
       // If we got a fallback image from Unsplash
-      if (data.source === 'fallback') {
-        console.log('Using fallback image from Unsplash');
+      if (data.source === 'fallback' || data.fallbackImageUrl) {
+        console.log('Using fallback image source:', data.source || 'unsplash');
         setFallbackSource('unsplash');
         toast.success("Generated an alternative image");
       } else {
         toast.success("Image generated!");
       }
       
-      setImageUrl(data.imageUrl);
+      setImageUrl(finalImageUrl);
       setProgress(100);
       
     } catch (err: any) {
@@ -149,6 +160,7 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
       setImageUrl(colorBackground);
     } finally {
       setIsLoading(false);
+      toast.dismiss();
     }
   };
   
@@ -277,6 +289,13 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
                   src={imageUrl} 
                   alt={`Visualization of ${topic}`}
                   className="w-full h-full object-cover"
+                  onError={() => {
+                    console.error('Image loading error');
+                    setError("The image failed to load");
+                    // Set a color background as final fallback
+                    setFallbackSource('color');
+                    setImageUrl(generateColorBackground(topic));
+                  }}
                 />
               </div>
             )}
