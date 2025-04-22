@@ -1,9 +1,11 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Star, Trophy, Sparkles, CheckCircle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+import confetti from 'canvas-confetti';
 
 interface ExplorationProgressProps {
   totalBlocks: number;
@@ -11,6 +13,7 @@ interface ExplorationProgressProps {
   interactedBlocks: number;
   sparksEarned: number;
   onComplete?: () => void;
+  childAge?: number;
 }
 
 const ExplorationProgress: React.FC<ExplorationProgressProps> = ({
@@ -18,7 +21,8 @@ const ExplorationProgress: React.FC<ExplorationProgressProps> = ({
   viewedBlocks,
   interactedBlocks,
   sparksEarned,
-  onComplete
+  onComplete,
+  childAge = 10
 }) => {
   // Calculate progress percentages
   const viewProgress = totalBlocks > 0 ? (viewedBlocks / totalBlocks) * 100 : 0;
@@ -42,6 +46,32 @@ const ExplorationProgress: React.FC<ExplorationProgressProps> = ({
     visible: { opacity: 1, y: 0 }
   };
 
+  // Handle completion effect
+  useEffect(() => {
+    if (isComplete && onComplete) {
+      // Celebration effect when journey is complete
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#8b5cf6', '#ec4899', '#3b82f6']
+      });
+      
+      setTimeout(() => {
+        toast.success("Journey completed! You earned bonus sparks!", {
+          icon: "✨"
+        });
+        onComplete();
+      }, 500);
+    }
+  }, [isComplete, onComplete]);
+
+  // Adapt text size based on child age
+  const getTextSize = () => {
+    if (childAge && childAge <= 7) return "text-base";
+    return "text-sm";
+  };
+
   return (
     <motion.div
       className="bg-black/20 border border-white/10 rounded-xl p-4 mb-6"
@@ -62,8 +92,8 @@ const ExplorationProgress: React.FC<ExplorationProgressProps> = ({
       
       <motion.div variants={itemVariants} className="mb-4">
         <div className="flex justify-between items-center mb-1.5">
-          <span className="text-white/70 text-sm">Content Explored</span>
-          <span className="text-white/90 text-sm font-medium">{viewedBlocks}/{totalBlocks}</span>
+          <span className={`text-white/70 ${getTextSize()}`}>Content Explored</span>
+          <span className={`text-white/90 ${getTextSize()} font-medium`}>{viewedBlocks}/{totalBlocks}</span>
         </div>
         <div className="relative">
           <Progress 
@@ -79,8 +109,8 @@ const ExplorationProgress: React.FC<ExplorationProgressProps> = ({
       
       <motion.div variants={itemVariants} className="mb-4">
         <div className="flex justify-between items-center mb-1.5">
-          <span className="text-white/70 text-sm">Interactions</span>
-          <span className="text-white/90 text-sm font-medium">{interactedBlocks}/{totalBlocks}</span>
+          <span className={`text-white/70 ${getTextSize()}`}>Interactions</span>
+          <span className={`text-white/90 ${getTextSize()} font-medium`}>{interactedBlocks}/{totalBlocks}</span>
         </div>
         <div className="relative">
           <Progress 
