@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
@@ -53,9 +54,9 @@ serve(async (req) => {
       console.log('Prompt truncated to 500 characters');
     }
 
-    // Call HuggingFace API - we're using the black-forest-labs/FLUX.1-schnell model
+    // Call HuggingFace API using the stabilityai/stable-diffusion-2 model instead
     const response = await fetch(
-      "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell",
+      "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2",
       {
         method: "POST",
         headers: {
@@ -64,9 +65,12 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           inputs: safePrompt,
+          options: {
+            wait_for_model: true
+          },
           parameters: {
-            guidance_scale: 7.5, // Controls how closely the image follows the prompt
-            num_inference_steps: 25, // Balance between quality and speed
+            guidance_scale: 7.5,
+            num_inference_steps: 25,
           }
         })
       }
@@ -117,7 +121,7 @@ serve(async (req) => {
     
     const imageUrl = `data:image/png;base64,${base64Image}`;
     
-    console.log('Successfully generated image with HuggingFace');
+    console.log('Successfully generated image with HuggingFace (stable-diffusion-2)');
     
     // Return the image data URL
     return new Response(
