@@ -21,14 +21,22 @@ export const successAnimation = {
 export const getBlockStyle = (type: string) => {
   switch (type) {
     case 'fact':
-      return 'from-wonderwhiz-cyan/20 to-wonderwhiz-blue/20 border-wonderwhiz-cyan/30';
+      return 'from-wonderwhiz-cyan/20 to-wonderwhiz-blue/20 border-wonderwhiz-cyan/30 hover:from-wonderwhiz-cyan/30 hover:to-wonderwhiz-blue/30';
     case 'quiz':
-      return 'from-wonderwhiz-bright-pink/20 to-wonderwhiz-purple/20 border-wonderwhiz-bright-pink/30';
+      return 'from-wonderwhiz-bright-pink/20 to-wonderwhiz-purple/20 border-wonderwhiz-bright-pink/30 hover:from-wonderwhiz-bright-pink/30 hover:to-wonderwhiz-purple/30';
     case 'flashcard':
-      return 'from-wonderwhiz-vibrant-yellow/20 to-wonderwhiz-orange/20 border-wonderwhiz-vibrant-yellow/30';
+      return 'from-wonderwhiz-vibrant-yellow/20 to-wonderwhiz-orange/20 border-wonderwhiz-vibrant-yellow/30 hover:from-wonderwhiz-vibrant-yellow/30 hover:to-wonderwhiz-orange/30';
     case 'creative':
-      return 'from-wonderwhiz-green/20 to-wonderwhiz-cyan/20 border-wonderwhiz-green/30';
+      return 'from-wonderwhiz-green/20 to-wonderwhiz-cyan/20 border-wonderwhiz-green/30 hover:from-wonderwhiz-green/30 hover:to-wonderwhiz-cyan/30';
+    case 'task':
+      return 'from-wonderwhiz-purple/20 to-wonderwhiz-bright-pink/20 border-wonderwhiz-purple/30 hover:from-wonderwhiz-purple/30 hover:to-wonderwhiz-bright-pink/30';
     default:
-      return 'from-wonderwhiz-deep-purple/20 to-wonderwhiz-light-purple/20 border-wonderwhiz-light-purple/30';
+      return 'from-wonderwhiz-deep-purple/20 to-wonderwhiz-light-purple/20 border-wonderwhiz-light-purple/30 hover:from-wonderwhiz-deep-purple/30 hover:to-wonderwhiz-light-purple/30';
   }
 };
+
+export const successAnimation = {
+  scale: [1, 1.05, 1],
+  transition: { duration: 0.5 }
+};
+
