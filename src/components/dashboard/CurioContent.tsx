@@ -16,6 +16,11 @@ import EnhancedSearchBar from '@/components/curio/EnhancedSearchBar';
 import FireflyQuizBlock from '@/components/curio/FireflyQuizBlock';
 import MindfulnessBlock from '@/components/curio/MindfulnessBlock';
 import CreativeBlock from '@/components/curio/CreativeBlock';
+import ActivityBlock from '@/components/content-blocks/ActivityBlock';
+import TaskBlock from '@/components/content-blocks/TaskBlock';
+import RiddleBlock from '@/components/content-blocks/RiddleBlock';
+import FlashcardBlock from '@/components/content-blocks/FlashcardBlock';
+import { BlockError } from '@/components/content-blocks/BlockError';
 
 interface ContentBlock {
   id: string;
@@ -421,18 +426,107 @@ const CurioContent: React.FC<CurioContentProps> = ({
       )}
       
       <div className="space-y-6">
-        {contentBlocks.map((block) => (
-          <CurioBlock 
-            key={block.id}
-            block={block}
-            onToggleLike={onToggleLike}
-            onToggleBookmark={onToggleBookmark}
-            onReply={onReply}
-            onReadAloud={playText}
-            childAge={childAge}
-            onRabbitHoleFollow={onRabbitHoleFollow}
-          />
-        ))}
+        {contentBlocks.map((block) => {
+          switch (block.type) {
+            case 'quiz':
+              return (
+                <FireflyQuizBlock
+                  key={block.id}
+                  question={block.content?.question || "Question not available"}
+                  options={block.content?.options || []}
+                  correctIndex={block.content?.correctIndex || 0}
+                  explanation={block.content?.explanation || ""}
+                  specialistId={block.specialist_id || "whizzy"}
+                  onQuizCorrect={() => onQuizCorrect(block.id)}
+                  childAge={childAge}
+                />
+              );
+              
+            case 'mindfulness':
+              return (
+                <MindfulnessBlock
+                  key={block.id}
+                  title={block.content?.title || "Mindfulness Exercise"}
+                  instructions={block.content?.instruction || block.content?.exercise || "Take a deep breath..."}
+                  duration={block.content?.duration || 180}
+                  benefit={block.content?.benefit || ""}
+                  onComplete={() => onToggleLike(block.id)}
+                  childAge={childAge}
+                />
+              );
+              
+            case 'creative':
+              return (
+                <CreativeBlock
+                  key={block.id}
+                  content={block.content || {}}
+                  specialistId={block.specialist_id || "spark"}
+                  onCreativeUpload={() => onCreativeUpload(block.id)}
+                  childAge={childAge}
+                />
+              );
+              
+            case 'activity':
+              return (
+                <ActivityBlock
+                  key={block.id}
+                  content={block.content || {}}
+                  specialistId={block.specialist_id || "nova"}
+                  onActivityComplete={() => onToggleLike(block.id)}
+                  updateHeight={() => {}}
+                  childAge={childAge}
+                />
+              );
+              
+            case 'task':
+              return (
+                <TaskBlock
+                  key={block.id}
+                  content={block.content || {}}
+                  specialistId={block.specialist_id || "lotus"}
+                  onTaskComplete={() => onToggleLike(block.id)}
+                  updateHeight={() => {}}
+                  childAge={childAge}
+                />
+              );
+              
+            case 'riddle':
+              return (
+                <RiddleBlock
+                  key={block.id}
+                  content={block.content || {}}
+                  specialistId={block.specialist_id || "atlas"}
+                  updateHeight={() => {}}
+                  childAge={childAge}
+                />
+              );
+              
+            case 'flashcard':
+              return (
+                <FlashcardBlock
+                  key={block.id}
+                  content={block.content || {}}
+                  specialistId={block.specialist_id || "prism"}
+                  updateHeight={() => {}}
+                  childAge={childAge}
+                />
+              );
+              
+            default:
+              return (
+                <CurioBlock 
+                  key={block.id}
+                  block={block}
+                  onToggleLike={onToggleLike}
+                  onToggleBookmark={onToggleBookmark}
+                  onReply={onReply}
+                  onReadAloud={playText}
+                  childAge={childAge}
+                  onRabbitHoleFollow={onRabbitHoleFollow}
+                />
+              );
+          }
+        })}
       </div>
       
       {hasMoreBlocks && (

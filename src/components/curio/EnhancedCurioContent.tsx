@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -14,6 +15,7 @@ import FlashcardBlock from '@/components/content-blocks/FlashcardBlock';
 import EnhancedSearchBar from './EnhancedSearchBar';
 import QuickAnswer from './QuickAnswer';
 import InteractiveImageBlock from '@/components/content-blocks/InteractiveImageBlock';
+import { BlockError } from '@/components/content-blocks/BlockError';
 
 interface EnhancedCurioContentProps {
   title: string;
@@ -293,17 +295,20 @@ const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
         <div className="max-w-3xl mx-auto px-4">
           {blocks.length > 0 ? (
             blocks.map((block) => {
+              // Safety check to ensure block has an id
+              const blockId = block.id || `temp-${Math.random().toString(36).substring(2, 9)}`;
+              
               switch (block.type) {
                 case 'quiz':
                   return (
                     <FireflyQuizBlock
-                      key={block.id}
-                      question={block.content.question}
-                      options={block.content.options}
-                      correctIndex={block.content.correctIndex}
-                      explanation={block.content.explanation}
-                      specialistId={block.specialist_id}
-                      onQuizCorrect={() => onLike && onLike(block.id)}
+                      key={blockId}
+                      question={block.content?.question || "Question not available"}
+                      options={block.content?.options || []}
+                      correctIndex={block.content?.correctIndex || 0}
+                      explanation={block.content?.explanation || ""}
+                      specialistId={block.specialist_id || "whizzy"}
+                      onQuizCorrect={() => onLike && onLike(blockId)}
                       childAge={childAge}
                     />
                   );
@@ -311,12 +316,12 @@ const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
                 case 'mindfulness':
                   return (
                     <MindfulnessBlock
-                      key={block.id}
-                      title={block.content.title || "Mindfulness Exercise"}
-                      instructions={block.content.instruction || block.content.exercise}
-                      duration={block.content.duration || 180}
-                      benefit={block.content.benefit}
-                      onComplete={() => onLike && onLike(block.id)}
+                      key={blockId}
+                      title={block.content?.title || "Mindfulness Exercise"}
+                      instructions={block.content?.instruction || block.content?.exercise || "Take a deep breath..."}
+                      duration={block.content?.duration || 180}
+                      benefit={block.content?.benefit || ""}
+                      onComplete={() => onLike && onLike(blockId)}
                       childAge={childAge}
                     />
                   );
@@ -324,10 +329,10 @@ const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
                 case 'creative':
                   return (
                     <CreativeBlock
-                      key={block.id}
-                      content={block.content}
-                      specialistId={block.specialist_id}
-                      onCreativeUpload={() => onLike && onLike(block.id)}
+                      key={blockId}
+                      content={block.content || {}}
+                      specialistId={block.specialist_id || "spark"}
+                      onCreativeUpload={() => onLike && onLike(blockId)}
                       childAge={childAge}
                     />
                   );
@@ -335,10 +340,10 @@ const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
                 case 'activity':
                   return (
                     <ActivityBlock
-                      key={block.id}
-                      content={block.content}
-                      specialistId={block.specialist_id}
-                      onActivityComplete={() => onLike && onLike(block.id)}
+                      key={blockId}
+                      content={block.content || {}}
+                      specialistId={block.specialist_id || "nova"}
+                      onActivityComplete={() => onLike && onLike(blockId)}
                       updateHeight={() => {}}
                       childAge={childAge}
                     />
@@ -347,10 +352,10 @@ const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
                 case 'task':
                   return (
                     <TaskBlock
-                      key={block.id}
-                      content={block.content}
-                      specialistId={block.specialist_id}
-                      onTaskComplete={() => onLike && onLike(block.id)}
+                      key={blockId}
+                      content={block.content || {}}
+                      specialistId={block.specialist_id || "lotus"}
+                      onTaskComplete={() => onLike && onLike(blockId)}
                       updateHeight={() => {}}
                       childAge={childAge}
                     />
@@ -359,9 +364,9 @@ const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
                 case 'riddle':
                   return (
                     <RiddleBlock
-                      key={block.id}
-                      content={block.content}
-                      specialistId={block.specialist_id}
+                      key={blockId}
+                      content={block.content || {}}
+                      specialistId={block.specialist_id || "atlas"}
                       updateHeight={() => {}}
                       childAge={childAge}
                     />
@@ -370,10 +375,20 @@ const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
                 case 'flashcard':
                   return (
                     <FlashcardBlock
-                      key={block.id}
-                      content={block.content}
-                      specialistId={block.specialist_id}
+                      key={blockId}
+                      content={block.content || {}}
+                      specialistId={block.specialist_id || "prism"}
                       updateHeight={() => {}}
+                      childAge={childAge}
+                    />
+                  );
+                
+                case 'error':
+                  return (
+                    <BlockError
+                      key={blockId}
+                      message={block.content?.message || "Something went wrong with this content block."}
+                      onRetry={() => console.log("Retry requested for error block")}
                       childAge={childAge}
                     />
                   );
@@ -381,14 +396,14 @@ const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
                 default:
                   return (
                     <SpecialistBlock
-                      key={block.id}
-                      blockId={block.id}
-                      specialistId={block.specialist_id}
+                      key={blockId}
+                      blockId={blockId}
+                      specialistId={block.specialist_id || "whizzy"}
                       content={block.content?.fact || block.content?.text || block.content?.body || ''}
                       followupQuestions={block.content?.rabbitHoles || []}
                       onRabbitHoleClick={onRabbitHoleClick}
-                      onLike={() => onLike && onLike(block.id)}
-                      onBookmark={() => onBookmark && onBookmark(block.id)}
+                      onLike={() => onLike && onLike(blockId)}
+                      onBookmark={() => onBookmark && onBookmark(blockId)}
                       onReply={(blockId, message) => onReply && onReply(blockId, message)}
                       onReadAloud={onReadAloud}
                       childAge={childAge}

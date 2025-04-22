@@ -50,15 +50,19 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
         throw new Error(`Image generation failed: ${error.message}`);
       }
       
-      if (data.success === false) {
+      if (!data || data.success === false) {
         // Try fallback to Unsplash if AI generation fails
         const unsplashUrl = await getFallbackImageUrl();
         setImageUrl(unsplashUrl);
-        if (data.error) {
+        if (data?.error) {
           console.warn('AI image generation failed, using fallback image. Error:', data.error);
         }
-      } else {
+      } else if (data.imageUrl) {
         setImageUrl(data.imageUrl);
+      } else {
+        // If data exists but no imageUrl, try Unsplash fallback
+        const fallbackUrl = await getFallbackImageUrl();
+        setImageUrl(fallbackUrl);
       }
     } catch (err: any) {
       console.error('Error generating image:', err);

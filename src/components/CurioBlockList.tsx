@@ -6,6 +6,7 @@ import CurioErrorState from './curio/CurioErrorState';
 import ExplorationProgress from './curio/ExplorationProgress';
 import ExplorationBreadcrumb from './curio/ExplorationBreadcrumb';
 import RelatedCurioPaths from './curio/RelatedCurioPaths';
+import { BlockError } from './content-blocks/BlockError';
 
 interface CurioBlockListProps {
   blocks: any[];
@@ -67,6 +68,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
   const [viewedBlocks, setViewedBlocks] = useState<Set<string>>(new Set());
   const [interactedBlocks, setInteractedBlocks] = useState<Set<string>>(new Set());
   const [sparksEarned, setSparksEarned] = useState(0);
+  const [blockRenderErrors, setBlockRenderErrors] = useState<Record<string, Error>>({});
   
   // Track which blocks have been viewed using Intersection Observer
   useEffect(() => {
@@ -135,6 +137,15 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
       setSparksEarned(prev => prev + 3);
       handleQuizCorrect();
     }
+  };
+  
+  // Error boundary for block rendering
+  const handleBlockError = (blockId: string, error: Error) => {
+    console.error(`Error rendering block ${blockId}:`, error);
+    setBlockRenderErrors(prev => ({
+      ...prev,
+      [blockId]: error
+    }));
   };
   
   // Animation variants
@@ -216,33 +227,62 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
       )}
       
       {/* Content Blocks */}
-      {blocks.map((block, index) => (
-        <motion.div 
-          key={block.id} 
-          custom={index}
-          initial={animateBlocks ? "hidden" : "visible"}
-          animate="visible"
-          variants={blockEntryAnimations}
-          data-block-id={block.id}
-        >
-          <ContentBlock 
-            block={block}
-            onLike={() => enrichedHandlers.handleToggleLike(block.id)}
-            onBookmark={() => enrichedHandlers.handleToggleBookmark(block.id)}
-            onReply={(message) => enrichedHandlers.handleReply(block.id, message)}
-            onCreativeUpload={handleCreativeUpload}
-            onTaskComplete={handleTaskComplete}
-            onActivityComplete={handleActivityComplete}
-            onMindfulnessComplete={handleMindfulnessComplete}
-            onNewsRead={handleNewsRead}
-            onQuizCorrect={enrichedHandlers.handleQuizCorrect}
-            onRabbitHoleClick={handleRabbitHoleClick}
-            onReadAloud={onReadAloud}
-            childAge={childAge}
-            profileId={profileId}
-          />
-        </motion.div>
-      ))}
+      {blocks.map((block, index) => {
+        const blockId = block.id || `block-${index}`;
+        
+        // If this block has a rendering error, show error component instead
+        if (blockRenderErrors[blockId]) {
+          return (
+            <motion.div 
+              key={blockId} 
+              custom={index}
+              initial={animateBlocks ? "hidden" : "visible"}
+              animate="visible"
+              variants={blockEntryAnimations}
+              data-block-id={blockId}
+            >
+              <BlockError 
+                error={blockRenderErrors[blockId]}
+                message="This content block couldn't be displayed."
+                onRetry={() => setBlockRenderErrors(prev => {
+                  const newErrors = {...prev};
+                  delete newErrors[blockId];
+                  return newErrors;
+                })}
+                childAge={childAge}
+              />
+            </motion.div>
+          );
+        }
+        
+        return (
+          <motion.div 
+            key={blockId} 
+            custom={index}
+            initial={animateBlocks ? "hidden" : "visible"}
+            animate="visible"
+            variants={blockEntryAnimations}
+            data-block-id={blockId}
+          >
+            <ContentBlock 
+              block={block}
+              onLike={() => enrichedHandlers.handleToggleLike(blockId)}
+              onBookmark={() => enrichedHandlers.handleToggleBookmark(blockId)}
+              onReply={(message) => enrichedHandlers.handleReply(blockId, message)}
+              onCreativeUpload={handleCreativeUpload}
+              onTaskComplete={handleTaskComplete}
+              onActivityComplete={handleActivityComplete}
+              onMindfulnessComplete={handleMindfulnessComplete}
+              onNewsRead={handleNewsRead}
+              onQuizCorrect={enrichedHandlers.handleQuizCorrect}
+              onRabbitHoleClick={handleRabbitHoleClick}
+              onReadAloud={onReadAloud}
+              childAge={childAge}
+              profileId={profileId}
+            />
+          </motion.div>
+        );
+      })}
       
       {/* Related exploration paths */}
       {blocks.length > 0 && !searchQuery && curioTitle && (

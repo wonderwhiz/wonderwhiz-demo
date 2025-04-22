@@ -54,7 +54,7 @@ export const BlockError: React.FC<BlockErrorProps> = ({
   };
   
   // Map the age adaptation size to button size
-  const getButtonSize = () => {
+  const getButtonSize = (): "default" | "sm" | "lg" | "icon" => {
     switch (interactionSize) {
       case 'large':
         return 'lg';
