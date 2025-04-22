@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
@@ -48,8 +49,6 @@ const SmartDashboard: React.FC<SmartDashboardProps> = ({
     }
   };
 
-  const safeCurioSuggestions = Array.isArray(curioSuggestions) ? curioSuggestions : [];
-
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -80,6 +79,7 @@ const SmartDashboard: React.FC<SmartDashboardProps> = ({
         <DynamicWonderSuggestions
           childId={childId}
           childInterests={childProfile?.interests || ["science", "space", "animals"]}
+          childAge={childProfile?.age || 10}
           isLoading={isLoadingSuggestions}
           onSuggestionClick={onCurioSuggestionClick}
         />
@@ -100,7 +100,7 @@ const SmartDashboard: React.FC<SmartDashboardProps> = ({
               <MemoryJourney 
                 childId={childId} 
                 pastCurios={pastCurios}
-                onCurioClick={handleCurioClick => onCurioSuggestionClick(handleCurioClick.query || handleCurioClick.title)}
+                onCurioClick={curio => onCurioSuggestionClick(curio.query || curio.title)}
               />
             </CardContent>
           </Card>

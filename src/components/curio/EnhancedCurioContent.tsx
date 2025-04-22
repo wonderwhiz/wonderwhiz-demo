@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -55,9 +54,36 @@ const getSpecialistInfo = (specialistId: string) => {
       fallbackColor: 'bg-purple-600',
       fallbackInitial: 'W',
     },
+    lotus: {
+      name: 'Lotus',
+      title: 'Nature Guide',
+      avatar: '/specialists/lotus-avatar.png',
+      fallbackColor: 'bg-green-700',
+      fallbackInitial: 'L',
+    },
+    atlas: {
+      name: 'Atlas',
+      title: 'History Explorer',
+      avatar: '/specialists/atlas-avatar.png',
+      fallbackColor: 'bg-orange-600',
+      fallbackInitial: 'A',
+    },
+    pixel: {
+      name: 'Pixel',
+      title: 'Tech Wizard',
+      avatar: '/specialists/pixel-avatar.png',
+      fallbackColor: 'bg-indigo-600',
+      fallbackInitial: 'P',
+    },
   };
 
-  return specialists[specialistId as keyof typeof specialists] || specialists.whizzy;
+  return specialists[specialistId as keyof typeof specialists] || {
+    name: specialistId.charAt(0).toUpperCase() + specialistId.slice(1),
+    title: 'Knowledge Specialist',
+    avatar: '',
+    fallbackColor: 'bg-purple-600',
+    fallbackInitial: specialistId.charAt(0).toUpperCase(),
+  };
 };
 
 const SpecialistBlock: React.FC<{
@@ -118,6 +144,9 @@ const SpecialistBlock: React.FC<{
               )}
               {specialistId === 'spark' && (
                 <div className="ml-2 h-2 w-2 rounded-full bg-yellow-400"></div>
+              )}
+              {specialistId === 'prism' && (
+                <div className="ml-2 h-2 w-2 rounded-full bg-green-400"></div>
               )}
             </div>
             <p className="text-sm text-white/60">{specialist.title}</p>
@@ -239,7 +268,6 @@ const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
   onRabbitHoleClick,
   childAge = 10
 }) => {
-  // Use the actual blocks passed from props instead of hardcoded examples
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-indigo-950 to-purple-950">
       <div className="sticky top-0 z-40 bg-gradient-to-b from-indigo-950/95 to-indigo-950/90 backdrop-blur-sm py-4 px-4 border-b border-white/10">
@@ -304,9 +332,9 @@ const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
                     content={content}
                     followupQuestions={followupQuestions}
                     onRabbitHoleClick={onRabbitHoleClick}
-                    onLike={onLike}
-                    onBookmark={onBookmark}
-                    onReply={onReply}
+                    onLike={() => onLike && onLike(block.id)}
+                    onBookmark={() => onBookmark && onBookmark(block.id)}
+                    onReply={(blockId, message) => onReply && onReply(blockId, message)}
                     onReadAloud={onReadAloud}
                     childAge={childAge}
                   />

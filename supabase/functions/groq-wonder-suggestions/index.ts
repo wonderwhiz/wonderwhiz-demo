@@ -1,151 +1,119 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
+import { Groq } from 'https://esm.sh/@groq/groq@0.5.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const groqApiKey = Deno.env.get('GROQ_API_KEY') || '';
-
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { interests = ["science", "space", "animals", "history"] } = await req.json();
-    
-    if (!groqApiKey) {
-      console.error("GROQ_API_KEY is missing");
-      // Return fallback suggestions
-      return new Response(
-        JSON.stringify({ 
-          suggestions: [
-            "Why do stars twinkle in the night sky?",
-            "How do pandas survive eating only bamboo?", 
-            "What makes rainbows appear after rain?",
-            "How did ancient Egyptians build the pyramids?",
-            "What happens inside a volcano before it erupts?",
-            "How do airplanes stay in the sky?"
-          ]
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Get the request body
+    const { childAge, interests = [], count = 6 } = await req.json()
+
+    // Initialize Groq client
+    const groqClient = new Groq({
+      apiKey: Deno.env.get('GROQ_API_KEY')!,
+    })
+
+    // Create prompt based on child's age and interests
+    const interestsText = interests.length > 0 
+      ? `Their interests include: ${interests.join(', ')}.` 
+      : 'They have diverse interests.'
+
+    let ageDescription = 'a young person'
+    if (childAge <= 7) {
+      ageDescription = 'a young child (5-7 years old)'
+    } else if (childAge <= 11) {
+      ageDescription = 'a child (8-11 years old)'
+    } else {
+      ageDescription = 'a teenager (12-16 years old)'
     }
 
-    const systemPrompt = `You are an AI designed to generate engaging, educational wonder questions for children based on their interests.
-    Each question should spark curiosity and be specific enough to generate meaningful educational content.
-    Questions should be phrased as questions that start with words like "How", "Why", "What", etc.
-    Avoid generic questions and focus on creating specific, interesting questions that will genuinely fascinate children.`;
-
-    const userPrompt = `Generate 6 fascinating, educational wonder questions for children interested in: ${interests.join(', ')}.
+    const prompt = `Generate ${count} engaging, age-appropriate curiosity questions for ${ageDescription}. ${interestsText}
     
-    Make the questions specific, diverse, and appropriate for children.
-    Each question should be something that would genuinely fascinate a child and lead to educational exploration.
+    Make the questions interesting, educational and diverse across different topics. For young children, use simpler language and more "wow" questions.
     
-    Format your response as a JSON array of strings containing ONLY the questions.`;
-
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${groqApiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'llama3-8b-8192',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
-        temperature: 0.8,
-        max_tokens: 1024,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Groq API error: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json();
+    Output ONLY the list of ${count} questions as an array in JSON format with no additional text.
+    Example format: ["Why is the sky blue?", "How do planes fly?", ...] 
     
-    // Try to parse the content as JSON
+    The questions should be complete, standalone questions (not conversation starters) that a child would be curious about.`
+
+    // Call Groq API
+    const completion = await groqClient.chat.completions.create({
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a children\'s educational content generator. You specialize in creating age-appropriate questions that spark curiosity and wonder in children. Your output must be exactly in the JSON format requested.',
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      model: 'llama3-8b-8192',
+      temperature: 0.7,
+      max_tokens: 1000,
+    })
+
+    // Parse the response
+    const responseText = completion.choices[0]?.message?.content || '[]'
+    let questions
+    
     try {
-      const suggestionsData = JSON.parse(data.choices[0].message.content);
-      if (Array.isArray(suggestionsData) && suggestionsData.length > 0) {
-        return new Response(
-          JSON.stringify({ suggestions: suggestionsData }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+      // Find JSON array in the response
+      const jsonMatch = responseText.match(/\[.*\]/s)
+      if (jsonMatch) {
+        questions = JSON.parse(jsonMatch[0])
+      } else {
+        // Fallback if no JSON array is found
+        questions = JSON.parse(responseText)
       }
-    } catch (e) {
-      console.error("Error parsing JSON from Groq response:", e);
-      // If we can't parse as JSON, try to extract from text with regex
-      const suggestionsMatch = data.choices[0].message.content.match(/\[[\s\S]*\]/);
-      if (suggestionsMatch) {
-        try {
-          const suggestions = JSON.parse(suggestionsMatch[0]);
-          return new Response(
-            JSON.stringify({ suggestions }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        } catch (nestedError) {
-          console.error("Error parsing extracted JSON:", nestedError);
-        }
-      }
+    } catch (error) {
+      console.error('Error parsing JSON response:', error)
+      console.log('Raw response:', responseText)
+      
+      // Fallback questions if parsing fails
+      questions = [
+        "Why is the sky blue?",
+        "How do animals communicate?", 
+        "What makes rainbows form?",
+        "How do planes stay in the air?",
+        "Why do we dream?",
+        "What is beyond our solar system?"
+      ]
     }
 
-    // If all parsing fails, extract questions with regex
-    const text = data.choices[0].message.content;
-    const questionsRegex = /["']([^"']+\?)["']/g;
-    const questions = [];
-    let match;
-    while ((match = questionsRegex.exec(text)) !== null && questions.length < 6) {
-      questions.push(match[1]);
-    }
-
-    if (questions.length > 0) {
-      return new Response(
-        JSON.stringify({ suggestions: questions }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Last fallback
+    // Return the questions
     return new Response(
-      JSON.stringify({ 
-        suggestions: [
-          "How do volcanoes work?",
-          "Why does the moon change shape?", 
-          "What makes rainbows appear?",
-          "How do plants grow from tiny seeds?",
-          "What lives in the deepest parts of the ocean?",
-          "How did dinosaurs become extinct?"
-        ]
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-
-  } catch (error) {
-    console.error("Error in groq-wonder-suggestions function:", error);
-    return new Response(
-      JSON.stringify({ 
-        error: "Failed to generate suggestions",
-        suggestions: [
-          "Why is the sky blue?",
-          "How do bees make honey?",
-          "What makes thunder and lightning?",
-          "How do computers work?",
-          "Why do leaves change color in autumn?",
-          "How do birds know which way to fly?"
-        ]
-      }),
+      JSON.stringify({ suggestions: questions }),
       { 
-        status: 200, // Return 200 even on error so we still get fallback suggestions
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        },
+        status: 200
       }
-    );
+    )
+  } catch (error) {
+    console.error('Error:', error)
+    
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { 
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        },
+        status: 500
+      }
+    )
   }
-});
+})
