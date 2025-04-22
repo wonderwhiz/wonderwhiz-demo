@@ -1,7 +1,8 @@
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
-import { Groq } from 'https://esm.sh/@groq/groq@0.5.0'
+// Fix the Groq import to use a compatible version
+import { Groq } from 'https://esm.sh/@groq/node@0.5.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
