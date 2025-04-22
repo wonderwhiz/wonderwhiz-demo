@@ -100,7 +100,6 @@ export interface MindfulnessBlockProps {
   childAge?: number;
 }
 
-// Ensure all block interfaces include interaction props
 export interface BlockCommonProps {
   specialistId: string;
   updateHeight?: (height: number) => void;

@@ -7,7 +7,13 @@ import { toast } from 'sonner';
 import FireflyQuizBlock from './FireflyQuizBlock';
 import MindfulnessBlock from './MindfulnessBlock';
 import CreativeBlock from './CreativeBlock';
+import ActivityBlock from '@/components/content-blocks/ActivityBlock';
+import TaskBlock from '@/components/content-blocks/TaskBlock';
+import RiddleBlock from '@/components/content-blocks/RiddleBlock';
+import FlashcardBlock from '@/components/content-blocks/FlashcardBlock';
 import EnhancedSearchBar from './EnhancedSearchBar';
+import QuickAnswer from './QuickAnswer';
+import InteractiveImageBlock from '@/components/content-blocks/InteractiveImageBlock';
 
 interface EnhancedCurioContentProps {
   title: string;
@@ -254,6 +260,21 @@ const SpecialistBlock: React.FC<{
   );
 };
 
+interface EnhancedCurioContentProps {
+  title: string;
+  blocks: any[];
+  onSearch: (query: string) => void;
+  onVoiceCapture?: (transcript: string) => void;
+  onImageCapture?: (file: File) => void;
+  onLike?: (blockId: string) => void;
+  onBookmark?: (blockId: string) => void;
+  onReply?: (blockId: string, message: string) => void;
+  onReadAloud?: (text: string, specialistId: string) => void;
+  onExplore?: () => void;
+  onRabbitHoleClick?: (question: string) => void;
+  childAge?: number;
+}
+
 const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
   title,
   blocks,
@@ -287,58 +308,107 @@ const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
         <div className="max-w-3xl mx-auto px-4">
           {blocks.length > 0 ? (
             blocks.map((block) => {
-              if (block.type === 'quiz') {
-                return (
-                  <FireflyQuizBlock
-                    key={block.id}
-                    question={block.content.question}
-                    options={block.content.options}
-                    correctIndex={block.content.correctIndex}
-                    explanation={block.content.explanation}
-                    childAge={childAge}
-                  />
-                );
-              } else if (block.type === 'mindfulness') {
-                return (
-                  <MindfulnessBlock
-                    key={block.id}
-                    title={block.content.title}
-                    instructions={block.content.instruction}
-                    duration={block.content.duration}
-                    benefit={block.content.benefit}
-                    childAge={childAge}
-                  />
-                );
-              } else if (block.type === 'creative') {
-                return (
-                  <CreativeBlock
-                    key={block.id}
-                    prompt={block.content.prompt}
-                    examples={block.content.examples}
-                    specialistId={block.specialist_id}
-                    childAge={childAge}
-                  />
-                );
-              } else {
-                // For fact, funFact, and other text-based blocks
-                const content = block.content?.fact || block.content?.text || '';
-                const followupQuestions = block.content?.rabbitHoles || [];
-                
-                return (
-                  <SpecialistBlock
-                    key={block.id}
-                    blockId={block.id}
-                    specialistId={block.specialist_id}
-                    content={content}
-                    followupQuestions={followupQuestions}
-                    onRabbitHoleClick={onRabbitHoleClick}
-                    onLike={() => onLike && onLike(block.id)}
-                    onBookmark={() => onBookmark && onBookmark(block.id)}
-                    onReply={(blockId, message) => onReply && onReply(blockId, message)}
-                    onReadAloud={onReadAloud}
-                    childAge={childAge}
-                  />
-                );
+              switch (block.type) {
+                case 'quiz':
+                  return (
+                    <FireflyQuizBlock
+                      key={block.id}
+                      question={block.content.question}
+                      options={block.content.options}
+                      correctIndex={block.content.correctIndex}
+                      explanation={block.content.explanation}
+                      specialistId={block.specialist_id}
+                      onQuizCorrect={() => onLike && onLike(block.id)}
+                      childAge={childAge}
+                    />
+                  );
+                  
+                case 'mindfulness':
+                  return (
+                    <MindfulnessBlock
+                      key={block.id}
+                      title={block.content.title || "Mindfulness Exercise"}
+                      instructions={block.content.instruction || block.content.exercise}
+                      duration={block.content.duration || 180}
+                      benefit={block.content.benefit}
+                      onComplete={() => onLike && onLike(block.id)}
+                      childAge={childAge}
+                    />
+                  );
+                  
+                case 'creative':
+                  return (
+                    <CreativeBlock
+                      key={block.id}
+                      content={block.content}
+                      specialistId={block.specialist_id}
+                      onCreativeUpload={() => onLike && onLike(block.id)}
+                      childAge={childAge}
+                    />
+                  );
+                  
+                case 'activity':
+                  return (
+                    <ActivityBlock
+                      key={block.id}
+                      content={block.content}
+                      specialistId={block.specialist_id}
+                      onActivityComplete={() => onLike && onLike(block.id)}
+                      updateHeight={() => {}}
+                      childAge={childAge}
+                    />
+                  );
+                  
+                case 'task':
+                  return (
+                    <TaskBlock
+                      key={block.id}
+                      content={block.content}
+                      specialistId={block.specialist_id}
+                      onTaskComplete={() => onLike && onLike(block.id)}
+                      updateHeight={() => {}}
+                      childAge={childAge}
+                    />
+                  );
+                  
+                case 'riddle':
+                  return (
+                    <RiddleBlock
+                      key={block.id}
+                      content={block.content}
+                      specialistId={block.specialist_id}
+                      updateHeight={() => {}}
+                    />
+                  );
+                  
+                case 'flashcard':
+                  return (
+                    <FlashcardBlock
+                      key={block.id}
+                      content={block.content}
+                      specialistId={block.specialist_id}
+                      updateHeight={() => {}}
+                      childAge={childAge}
+                    />
+                  );
+                  
+                default:
+                  // Handle text-based blocks (fact, funFact, news)
+                  return (
+                    <SpecialistBlock
+                      key={block.id}
+                      blockId={block.id}
+                      specialistId={block.specialist_id}
+                      content={block.content?.fact || block.content?.text || block.content?.body || ''}
+                      followupQuestions={block.content?.rabbitHoles || []}
+                      onRabbitHoleClick={onRabbitHoleClick}
+                      onLike={() => onLike && onLike(block.id)}
+                      onBookmark={() => onBookmark && onBookmark(block.id)}
+                      onReply={(blockId, message) => onReply && onReply(blockId, message)}
+                      onReadAloud={onReadAloud}
+                      childAge={childAge}
+                    />
+                  );
               }
             })
           ) : (
