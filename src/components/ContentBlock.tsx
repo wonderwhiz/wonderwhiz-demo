@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import EnhancedQuizBlock from './content-blocks/EnhancedQuizBlock';
 import FactBlock from './content-blocks/FactBlock';
 import NewsBlock from './content-blocks/NewsBlock';
+import RiddleBlock from './content-blocks/RiddleBlock';
 import { blockContainer } from './content-blocks/utils/blockStyles';
 import { ContentBlockType, isValidContentBlockType } from '@/types/curio';
 
@@ -46,7 +47,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   profileId
 }) => {
   // Verify the block type to ensure it's valid for the blockContainer function
-  const blockType = isValidContentBlockType(block.type) ? block.type : 'fact';
+  const blockType = isValidContentBlockType(block.type) ? block.type as ContentBlockType : 'fact';
   
   // Render different block types
   const renderBlockContent = () => {
@@ -80,6 +81,14 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
             content={block.content}
             specialistId={block.specialist_id}
             onNewsRead={onNewsRead}
+          />
+        );
+        
+      case 'riddle':
+        return (
+          <RiddleBlock
+            content={block.content}
+            specialistId={block.specialist_id}
           />
         );
         

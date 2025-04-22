@@ -13,11 +13,6 @@ export const contentVariants = {
   exit: { opacity: 0, scale: 0.95 }
 };
 
-export const successAnimation = {
-  scale: [1, 1.05, 1],
-  transition: { duration: 0.5 }
-};
-
 export const getBlockStyle = (type: string) => {
   switch (type) {
     case 'fact':
