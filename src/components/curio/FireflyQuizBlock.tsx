@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -11,7 +10,7 @@ interface FireflyQuizBlockProps {
   onAnswerSelected?: (isCorrect: boolean) => void;
   onQuizCorrect?: () => void;
   explanation?: string;
-  specialistId: string;  // Added this prop to match how it's used
+  specialistId: string;
   childAge?: number;
 }
 
@@ -62,18 +61,18 @@ const FireflyQuizBlock: React.FC<FireflyQuizBlockProps> = ({
   };
   
   return (
-    <div className="bg-wonderwhiz-purple/30 rounded-xl p-6 my-6">
-      <h3 className="text-xl font-bold text-white mb-6">{question}</h3>
+    <div className="bg-wonderwhiz-purple/30 rounded-xl p-4 sm:p-6 my-4 sm:my-6">
+      <h3 className="text-lg sm:text-xl font-bold text-white mb-4 sm:mb-6">{question}</h3>
       
-      <div className="space-y-3 mb-6">
+      <div className="space-y-2 sm:space-y-3 mb-4 sm:mb-6">
         {options.map((option, index) => (
           <motion.button
             key={index}
             whileHover={{ scale: selectedIndex === null ? 1.01 : 1 }}
-            whileTap={{ scale: selectedIndex === null ? 0.99 : 1 }}
-            className={`w-full text-left p-4 rounded-lg transition-colors ${
+            whileTap={{ scale: selectedIndex === null ? 0.98 : 1 }}
+            className={`w-full text-left p-3 sm:p-4 rounded-lg transition-colors touch-manipulation ${
               selectedIndex === null
-                ? 'bg-white/10 hover:bg-white/15 text-white'
+                ? 'bg-white/10 hover:bg-white/15 text-white active:bg-white/20'
                 : selectedIndex === index
                   ? index === correctIndex
                     ? 'bg-green-500/20 text-green-200 border border-green-500/30'
@@ -85,7 +84,7 @@ const FireflyQuizBlock: React.FC<FireflyQuizBlockProps> = ({
             onClick={() => handleOptionClick(index)}
             disabled={selectedIndex !== null}
           >
-            {option}
+            <span className="text-sm sm:text-base">{option}</span>
           </motion.button>
         ))}
       </div>
