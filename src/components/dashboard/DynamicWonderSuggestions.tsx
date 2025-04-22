@@ -1,8 +1,10 @@
 
 import React, { useEffect, useState } from "react";
 import CurioSuggestion from "@/components/CurioSuggestion";
-import { RefreshCw, Compass } from "lucide-react";
+import { RefreshCw, Compass, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 // This component fetches and shows dynamic, Groq-generated topic suggestions based on child interests.
 interface DynamicWonderSuggestionsProps {
@@ -25,22 +27,40 @@ const DynamicWonderSuggestions: React.FC<DynamicWonderSuggestionsProps> = ({
   const fetchDynamicSuggestions = async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/groq-wonder-suggestions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ interests: childInterests })
+      // Show feedback toast
+      toast.info("Discovering new wonders for you...", {
+        id: "wonder-suggestions",
+        duration: 3000,
       });
-      const data = await response.json();
-      // Expect: { suggestions: ["..."] }
-      if (data && Array.isArray(data.suggestions)) {
-        setSuggestions(data.suggestions);
-      } else {
+      
+      const response = await supabase.functions.invoke("groq-wonder-suggestions", {
+        body: { interests: childInterests }
+      });
+      
+      if (response.error) {
+        console.error("Error fetching wonder suggestions:", response.error);
+        toast.error("Couldn't fetch new wonders", {
+          id: "wonder-suggestions",
+          duration: 2000,
+        });
+        
+        // Use default fallbacks instead
         setSuggestions(["Explore volcanoes", "What are tardigrades?", "Mysteries of black holes"]);
+        return;
+      }
+      
+      if (response.data && Array.isArray(response.data.suggestions)) {
+        setSuggestions(response.data.suggestions);
+        toast.success("Found exciting new wonders!", {
+          id: "wonder-suggestions",
+          duration: 2000,
+        });
+      } else {
+        setSuggestions(["Amazing ocean facts", "How do rainbows work?", "Who were the pharaohs?"]);
       }
     } catch (err) {
-      setSuggestions(["Amazing ocean facts", "How do rainbows work?", "Who were the pharaohs?"]);
+      console.error("Error fetching dynamic suggestions:", err);
+      setSuggestions(["Amazing animal adaptations", "Secrets of ancient civilizations", "How do computers think?"]);
     } finally {
       setLoading(false);
     }
@@ -56,11 +76,11 @@ const DynamicWonderSuggestions: React.FC<DynamicWonderSuggestionsProps> = ({
   // Card type helper for icon/color logic (reuse main dashboard logic)
   const getCardType = (suggestion: string): "space" | "animals" | "science" | "history" | "technology" | "general" => {
     const s = suggestion.toLowerCase();
-    if (s.includes("space")) return "space";
-    if (s.includes("animal")) return "animals";
-    if (s.includes("science")) return "science";
-    if (s.includes("history")) return "history";
-    if (s.includes("technology")) return "technology";
+    if (s.includes("space") || s.includes("planet") || s.includes("star") || s.includes("galaxy")) return "space";
+    if (s.includes("animal") || s.includes("creature") || s.includes("dinosaur")) return "animals";
+    if (s.includes("science") || s.includes("experiment") || s.includes("chemical")) return "science";
+    if (s.includes("history") || s.includes("ancient") || s.includes("past")) return "history";
+    if (s.includes("technology") || s.includes("computer") || s.includes("robot")) return "technology";
     return "general";
   };
 

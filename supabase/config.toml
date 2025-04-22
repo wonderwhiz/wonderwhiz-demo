@@ -1,19 +1,14 @@
 
-project_id = "turexhnvsvmllwitllmg"
+project_id = "wonderwhiz-production"
 
-[functions]
+[functions.generate-curiosity-blocks]
+verify_jwt = true
 
-[functions.generate-gemini-image]
-verify_jwt = false
+[functions.generate-quick-answer]
+verify_jwt = true
 
-[functions.text-to-speech]
-verify_jwt = false
+[functions.groq-wonder-suggestions]
+verify_jwt = true
 
-[functions.generate-curio-suggestions]
-verify_jwt = false
-
-[functions.analyze-image]
-verify_jwt = false
-
-[functions.generate-contextual-image]
-verify_jwt = false
+[functions.increment-sparks-balance]
+verify_jwt = true

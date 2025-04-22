@@ -1,16 +1,14 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
-import { RefreshCw, Compass, Lightbulb } from 'lucide-react';
+import { Compass, Lightbulb } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import CurioSuggestion from '@/components/CurioSuggestion';
 import TopicExplorer from './TopicExplorer';
 import MemoryJourney from './MemoryJourney';
+import DynamicWonderSuggestions from './DynamicWonderSuggestions';
 
 type CardType = 'space' | 'animals' | 'science' | 'history' | 'technology' | 'general';
 
-// Helper function to determine card type from suggestion
 const getCardTypeForSuggestion = (suggestion: string): CardType => {
   suggestion = suggestion.toLowerCase();
   if (suggestion.includes('space')) return 'space';
@@ -40,22 +38,18 @@ const SmartDashboard: React.FC<SmartDashboardProps> = ({
   handleRefreshSuggestions,
   pastCurios = []
 }) => {
-  // Handle topic click
   const handleTopicClick = (topicQuery: string) => {
     onCurioSuggestionClick(topicQuery);
   };
 
-  // Handle curio click
   const handleCurioClick = (curio: any) => {
     if (curio && curio.query) {
       onCurioSuggestionClick(curio.query);
     }
   };
 
-  // Make sure curioSuggestions is always an array
   const safeCurioSuggestions = Array.isArray(curioSuggestions) ? curioSuggestions : [];
 
-  // Main container animations
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -82,51 +76,16 @@ const SmartDashboard: React.FC<SmartDashboardProps> = ({
       initial="hidden"
       animate="visible"
     >
-      {/* Wonder Journeys Section - Simplified */}
       <motion.div variants={itemVariants} className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center">
-            <div className="w-8 h-8 rounded-full bg-wonderwhiz-bright-pink/20 flex items-center justify-center mr-3">
-              <Compass className="h-4 w-4 text-wonderwhiz-bright-pink" />
-            </div>
-            <h2 className="text-xl font-bold text-white font-nunito">Wonder Journeys</h2>
-          </div>
-          
-          <Button
-            variant="ghost"
-            size="icon"
-            className="bg-white/5 hover:bg-white/10 text-white rounded-full h-8 w-8"
-            onClick={handleRefreshSuggestions}
-            disabled={isLoadingSuggestions}
-          >
-            <RefreshCw className={`h-4 w-4 ${isLoadingSuggestions ? 'animate-spin' : ''}`} />
-          </Button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {safeCurioSuggestions.slice(0, 3).map((suggestion, index) => (
-            <motion.div
-              key={index}
-              variants={itemVariants}
-              whileHover={{ y: -5, transition: { duration: 0.2 } }}
-              className="h-full"
-            >
-              <CurioSuggestion
-                suggestion={suggestion}
-                onClick={() => onCurioSuggestionClick(suggestion)}
-                type={getCardTypeForSuggestion(suggestion)}
-                loading={isLoadingSuggestions}
-                index={index}
-                profileId={childId}
-              />
-            </motion.div>
-          ))}
-        </div>
+        <DynamicWonderSuggestions
+          childId={childId}
+          childInterests={childProfile?.interests || ["science", "space", "animals"]}
+          isLoading={isLoadingSuggestions}
+          onSuggestionClick={onCurioSuggestionClick}
+        />
       </motion.div>
 
-      {/* Main Dashboard content - simplified to 2 main sections */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Topic Explorer */}
         <motion.div variants={itemVariants}>
           <TopicExplorer 
             childId={childId} 
@@ -135,21 +94,19 @@ const SmartDashboard: React.FC<SmartDashboardProps> = ({
           />
         </motion.div>
 
-        {/* Memory Journey */}
         <motion.div variants={itemVariants}>
           <Card className="bg-transparent border-0 overflow-hidden shadow-none">
             <CardContent className="p-0">
               <MemoryJourney 
                 childId={childId} 
                 pastCurios={pastCurios}
-                onCurioClick={handleCurioClick}
+                onCurioClick={handleCurioClick => onCurioSuggestionClick(handleCurioClick.query || handleCurioClick.title)}
               />
             </CardContent>
           </Card>
         </motion.div>
       </div>
 
-      {/* "Ask anything" centered prompt - simplified */}
       <motion.div 
         variants={itemVariants}
         className="flex justify-center pt-6"
