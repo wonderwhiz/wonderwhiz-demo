@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -201,6 +202,7 @@ const App = () => {
               <meta name="theme-color" content="#000000" />
               <meta name="description" content="WonderWhiz - AI-powered educational platform for kids" />
             </Helmet>
+            {/* Place the Toaster components within the main React tree */}
             <Toaster />
             <Sonner />
             <CustomCursorStyles />
