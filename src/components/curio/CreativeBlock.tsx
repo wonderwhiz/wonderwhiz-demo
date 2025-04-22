@@ -4,20 +4,28 @@ import { motion } from 'framer-motion';
 import { Sparkles, Brush, FileEdit, Box } from 'lucide-react';
 
 interface CreativeBlockProps {
-  prompt: string;
-  examples?: string[];
-  specialistId?: string;
-  onCreativeSubmit?: () => void;
+  content: {
+    prompt: string;
+    description?: string;
+    guidelines?: string;
+    examples?: string[];
+  };
+  specialistId: string;
+  onCreativeUpload?: () => void;
+  uploadFeedback?: string | null;
   childAge?: number;
 }
 
 const CreativeBlock: React.FC<CreativeBlockProps> = ({
-  prompt,
-  examples = [],
+  content,
   specialistId = 'spark',
-  onCreativeSubmit,
+  onCreativeUpload,
+  uploadFeedback,
   childAge = 10
 }) => {
+  const prompt = content.prompt || '';
+  const examples = content.examples || [];
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -30,6 +38,10 @@ const CreativeBlock: React.FC<CreativeBlockProps> = ({
         </div>
         <h3 className="text-xl font-bold text-[#1EAEDB]">{prompt}</h3>
       </div>
+
+      {content.description && (
+        <p className="mb-4 text-[#8E9196]">{content.description}</p>
+      )}
 
       {examples.length > 0 && (
         <div className="mb-4">
@@ -50,19 +62,19 @@ const CreativeBlock: React.FC<CreativeBlockProps> = ({
           icon={<Brush className="h-5 w-5" />}
           title="Draw a picture"
           description={childAge < 10 ? "Draw what you imagine!" : "Express your ideas visually"}
-          onClick={onCreativeSubmit}
+          onClick={onCreativeUpload}
         />
         <CreativeOption
           icon={<FileEdit className="h-5 w-5" />}
           title="Write a story"
           description={childAge < 10 ? "Tell a fun story!" : "Create a narrative about this topic"}
-          onClick={onCreativeSubmit}
+          onClick={onCreativeUpload}
         />
         <CreativeOption
           icon={<Box className="h-5 w-5" />}
           title="Make a model"
           description={childAge < 10 ? "Build something cool!" : "Create a physical representation"}
-          onClick={onCreativeSubmit}
+          onClick={onCreativeUpload}
         />
       </div>
     </motion.div>

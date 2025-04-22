@@ -9,7 +9,9 @@ interface FireflyQuizBlockProps {
   options: string[];
   correctIndex: number;
   onAnswerSelected?: (isCorrect: boolean) => void;
+  onQuizCorrect?: () => void;
   explanation?: string;
+  specialistId: string;  // Added this prop to match how it's used
   childAge?: number;
 }
 
@@ -19,6 +21,7 @@ const FireflyQuizBlock: React.FC<FireflyQuizBlockProps> = ({
   correctIndex,
   onAnswerSelected,
   explanation,
+  onQuizCorrect,
   childAge = 10
 }) => {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -35,7 +38,8 @@ const FireflyQuizBlock: React.FC<FireflyQuizBlockProps> = ({
       onAnswerSelected(isCorrect);
     }
     
-    if (isCorrect) {
+    if (isCorrect && onQuizCorrect) {
+      onQuizCorrect();
       toast.success("That's correct! 🎉", {
         duration: 3000
       });

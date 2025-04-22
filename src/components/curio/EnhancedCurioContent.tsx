@@ -260,21 +260,6 @@ const SpecialistBlock: React.FC<{
   );
 };
 
-interface EnhancedCurioContentProps {
-  title: string;
-  blocks: any[];
-  onSearch: (query: string) => void;
-  onVoiceCapture?: (transcript: string) => void;
-  onImageCapture?: (file: File) => void;
-  onLike?: (blockId: string) => void;
-  onBookmark?: (blockId: string) => void;
-  onReply?: (blockId: string, message: string) => void;
-  onReadAloud?: (text: string, specialistId: string) => void;
-  onExplore?: () => void;
-  onRabbitHoleClick?: (question: string) => void;
-  childAge?: number;
-}
-
 const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
   title,
   blocks,
