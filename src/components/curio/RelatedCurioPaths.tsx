@@ -1,117 +1,211 @@
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Compass, MapPin, ExternalLink } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useAgeAdaptation } from '@/hooks/useAgeAdaptation';
+import { Compass, ExternalLink, Globe, Lightbulb, Map, Sparkles, Target } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import confetti from 'canvas-confetti';
+import SpecialistAvatar from '../SpecialistAvatar';
 
 interface RelatedCurioPathsProps {
   currentTopic: string;
-  onPathSelect: (question: string) => void;
+  onPathSelect?: (path: string) => void;
   childAge?: number;
+  profileId?: string;
+  className?: string;
 }
 
 const RelatedCurioPaths: React.FC<RelatedCurioPathsProps> = ({
   currentTopic,
   onPathSelect,
-  childAge = 10
+  childAge = 10,
+  profileId,
+  className = ''
 }) => {
-  const [relatedPaths, setRelatedPaths] = useState<string[]>([]);
-  const { textSize, messageStyle } = useAgeAdaptation(childAge);
+  const navigate = useNavigate();
   
-  useEffect(() => {
-    if (!currentTopic) return;
+  // Generate paths based on the current topic and child age
+  const generatePaths = () => {
+    const cleanTopic = currentTopic
+      .replace(/^(why|how|what|when|where|who)\s(can|do|does|is|are|did|would|will|should|could|has|have|had)\s/i, '')
+      .replace(/\?$/, '');
     
-    // Generate related paths based on the current topic
-    // This would ideally be replaced with an API call to get actual related topics
-    const generateRelatedPaths = () => {
-      const topic = currentTopic.toLowerCase();
-      const paths = [
-        `How does ${topic} work?`,
-        `Why is ${topic} important?`,
-        `What's the history of ${topic}?`,
-        `Fun facts about ${topic}`,
-        `${topic} in everyday life`,
-        `The future of ${topic}`
+    if (childAge <= 7) {
+      // Simpler, more fun oriented paths for younger children
+      return [
+        { 
+          title: `Fun facts about ${cleanTopic}`,
+          icon: <Sparkles className="h-4 w-4 text-wonderwhiz-vibrant-yellow" />,
+          specialistId: 'spark'
+        },
+        { 
+          title: `How to draw ${cleanTopic}`,
+          icon: <Lightbulb className="h-4 w-4 text-wonderwhiz-cyan" />,
+          specialistId: 'nova'
+        },
+        { 
+          title: `${cleanTopic} for kids`,
+          icon: <Compass className="h-4 w-4 text-wonderwhiz-bright-pink" />,
+          specialistId: 'whizzy'
+        }
       ];
-      
-      // Shuffle and limit based on age
-      const maxPaths = childAge <= 7 ? 3 : 4;
-      return shuffleArray(paths).slice(0, maxPaths);
-    };
+    } else if (childAge <= 11) {
+      // More diverse, still accessible paths for middle age
+      return [
+        { 
+          title: `How does ${cleanTopic} work?`,
+          icon: <Compass className="h-4 w-4 text-wonderwhiz-bright-pink" />,
+          specialistId: 'prism'
+        },
+        { 
+          title: `Interesting facts about ${cleanTopic}`,
+          icon: <Sparkles className="h-4 w-4 text-wonderwhiz-vibrant-yellow" />,
+          specialistId: 'spark'
+        },
+        { 
+          title: `${cleanTopic} in history`,
+          icon: <Map className="h-4 w-4 text-wonderwhiz-light-purple" />,
+          specialistId: 'atlas'
+        },
+        { 
+          title: `The future of ${cleanTopic}`,
+          icon: <Target className="h-4 w-4 text-wonderwhiz-blue" />,
+          specialistId: 'pixel'
+        }
+      ];
+    } else {
+      // More advanced, thought-provoking paths for older kids
+      return [
+        { 
+          title: `The science behind ${cleanTopic}`,
+          icon: <Compass className="h-4 w-4 text-wonderwhiz-bright-pink" />,
+          specialistId: 'prism'
+        },
+        { 
+          title: `Impact of ${cleanTopic} on society`,
+          icon: <Globe className="h-4 w-4 text-wonderwhiz-cyan" />,
+          specialistId: 'atlas'
+        },
+        { 
+          title: `How ${cleanTopic} has evolved over time`,
+          icon: <Map className="h-4 w-4 text-wonderwhiz-light-purple" />,
+          specialistId: 'whizzy'
+        },
+        { 
+          title: `Future innovations in ${cleanTopic}`,
+          icon: <Target className="h-4 w-4 text-wonderwhiz-blue" />,
+          specialistId: 'pixel'
+        }
+      ];
+    }
+  };
+  
+  const paths = generatePaths();
+  
+  const handlePathSelect = async (path: string) => {
+    if (onPathSelect) {
+      onPathSelect(path);
+    }
     
-    setRelatedPaths(generateRelatedPaths());
-  }, [currentTopic, childAge]);
-  
-  // Helper function to shuffle array
-  const shuffleArray = (array: string[]) => {
-    const newArray = [...array];
-    for (let i = newArray.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+    // If we have a profileId, we can create a new curio
+    if (profileId) {
+      toast.loading("Creating new exploration...");
+      
+      try {
+        const { data: newCurio, error } = await supabase
+          .from('curios')
+          .insert({
+            child_id: profileId,
+            title: path,
+            query: path,
+          })
+          .select('id')
+          .single();
+        
+        if (error) {
+          console.error('Error creating curio:', error);
+          toast.error("Could not create new exploration");
+          return;
+        }
+        
+        if (newCurio && newCurio.id) {
+          toast.success("New exploration created!");
+          
+          // Award sparks for following curiosity
+          try {
+            await supabase.functions.invoke('increment-sparks-balance', {
+              body: JSON.stringify({
+                profileId,
+                amount: 2
+              })
+            });
+            
+            confetti({
+              particleCount: 70,
+              spread: 80,
+              origin: { y: 0.6 },
+              zIndex: 1000,
+              colors: ['#FF5BA3', '#00E2FF', '#4A6FFF']
+            });
+            
+            toast.success("You earned 2 sparks for your curiosity!", {
+              icon: "✨"
+            });
+          } catch (err) {
+            console.error('Error awarding sparks:', err);
+          }
+          
+          // Navigate to the new curio
+          navigate(`/curio/${profileId}/${newCurio.id}`);
+        }
+      } catch (error) {
+        console.error('Error creating curio:', error);
+        toast.error("Could not create new exploration");
+      }
     }
-    return newArray;
   };
   
-  // Get title based on age/message style
-  const getTitle = () => {
-    switch (messageStyle) {
-      case 'playful':
-        return "Where To Explore Next?";
-      case 'casual':
-        return "Continue Your Journey";
-      default:
-        return "Related Explorations";
-    }
-  };
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: 0.2 }}
-      className="mt-10 mb-8 px-2 py-4 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 rounded-lg border border-white/10"
+      transition={{ duration: 0.5 }}
+      className={`bg-gradient-to-br from-wonderwhiz-deep-purple/40 to-wonderwhiz-light-purple/30 backdrop-blur-md border border-wonderwhiz-light-purple/30 rounded-xl p-4 mb-6 ${className}`}
     >
-      <div className="flex items-center gap-2 mb-4">
-        <Compass className="h-5 w-5 text-wonderwhiz-blue-accent" />
-        <h3 className={`text-white font-medium ${childAge <= 7 ? 'text-xl' : 'text-lg'}`}>
-          {getTitle()}
-        </h3>
+      <div className="flex items-center mb-3">
+        <div className="w-8 h-8 rounded-full bg-wonderwhiz-light-purple/50 flex items-center justify-center mr-3">
+          <Map className="h-4 w-4 text-white" />
+        </div>
+        <h2 className="text-lg font-bold text-white font-nunito">Explore Related Paths</h2>
       </div>
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {relatedPaths.map((path, index) => (
-          <motion.div
-            key={`related-${index}`}
-            whileHover={{ x: 4 }}
-            className="group"
+      <p className="text-white/80 text-sm mb-4 font-inter">
+        Discover more about this topic by exploring these connected paths.
+      </p>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {paths.map((path, index) => (
+          <motion.button
+            key={index}
+            className="flex items-start bg-white/5 hover:bg-white/10 transition-colors p-3 rounded-lg border border-white/10 text-left group"
+            onClick={() => handlePathSelect(path.title)}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
           >
-            <Button
-              variant="ghost"
-              onClick={() => onPathSelect(path)}
-              className="w-full justify-between bg-white/5 hover:bg-white/10 text-left h-auto py-3"
-            >
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-wonderwhiz-bright-pink" />
-                <span className={`text-white ${textSize}`}>{path}</span>
+            <SpecialistAvatar specialistId={path.specialistId} size="sm" className="mt-0.5 mr-2 flex-shrink-0" />
+            <div>
+              <div className="flex items-center mb-1">
+                {path.icon}
+                <span className="ml-1.5 text-wonderwhiz-vibrant-yellow/80 text-xs">Explore</span>
               </div>
-              <ArrowRight className="h-4 w-4 text-white/50 group-hover:text-wonderwhiz-blue-accent transition-colors" />
-            </Button>
-          </motion.div>
+              <p className="text-white text-sm group-hover:text-wonderwhiz-bright-pink transition-colors font-inter">
+                {path.title}
+              </p>
+            </div>
+            <ExternalLink className="h-3.5 w-3.5 text-white/40 ml-auto self-start mt-1" />
+          </motion.button>
         ))}
-      </div>
-      
-      <div className="mt-4 flex justify-center">
-        <Button
-          variant="link"
-          onClick={() => onPathSelect(`Tell me more about ${currentTopic}`)}
-          className="text-wonderwhiz-blue-accent hover:text-wonderwhiz-blue-accent/80"
-        >
-          <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
-          <span className={textSize}>
-            {childAge <= 7 ? "More about this topic!" : "Explore this topic further"}
-          </span>
-        </Button>
       </div>
     </motion.div>
   );

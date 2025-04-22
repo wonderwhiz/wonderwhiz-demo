@@ -72,7 +72,7 @@ serve(async (req) => {
         if (fallbackImage) {
           return new Response(
             JSON.stringify({ 
-              fallbackImageUrl: fallbackImage,
+              imageUrl: fallbackImage,
               originalError: errorData.error?.message || 'OpenAI API error',
               source: 'fallback'
             }),

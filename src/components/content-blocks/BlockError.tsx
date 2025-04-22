@@ -1,126 +1,80 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { AlertCircle, RefreshCw, LightbulbOff, Lightbulb, Sparkles } from 'lucide-react';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAgeAdaptation } from '@/hooks/useAgeAdaptation';
 
 interface BlockErrorProps {
+  message: string;
   error?: Error;
-  message?: string;
   onRetry?: () => void;
   childAge?: number;
 }
 
 export const BlockError: React.FC<BlockErrorProps> = ({
+  message,
   error,
-  message = "Something went wrong while loading this content.",
   onRetry,
   childAge = 10
 }) => {
-  const { textSize, interactionSize } = useAgeAdaptation(childAge);
-  
-  const getFriendlyErrorMessage = (): string => {
+  // Adapt the messaging based on child age
+  const getTitle = () => {
     if (childAge <= 7) {
-      return "Oops! This magical part is taking a little nap. Let's wake it up!";
+      return "Oops! Something went wrong";
     } else if (childAge <= 11) {
-      return "Hmm, we're having trouble with this part of your learning adventure. Let's try again!";
+      return "We hit a small problem";
     } else {
-      return message || "We couldn't load this content. Let's try refreshing it.";
+      return "Error Occurred";
     }
   };
   
-  const getIcon = () => {
+  const getDescription = () => {
     if (childAge <= 7) {
-      return <LightbulbOff className="h-12 w-12 text-amber-300/70" />;
-    } else if (childAge <= 11) {
-      return <Lightbulb className="h-12 w-12 text-amber-300/70" />;
+      return message || "We couldn't show this part. Let's try again!";
     } else {
-      return <AlertCircle className="h-12 w-12 text-amber-300/70" />;
-    }
-  };
-  
-  const getButtonLabel = (): string => {
-    if (childAge <= 7) {
-      return "Make it Magical Again!";
-    } else if (childAge <= 11) {
-      return "Try Again!";
-    } else {
-      return "Retry";
-    }
-  };
-  
-  const getButtonSize = (): "default" | "sm" | "lg" | "icon" => {
-    switch (interactionSize) {
-      case 'large':
-        return 'lg';
-      case 'small':
-        return 'sm';
-      default:
-        return 'default';
+      return message || "There was an error loading this content.";
     }
   };
   
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.4 }}
-      className="rounded-xl bg-gradient-to-br from-purple-900/30 to-red-900/30 border border-red-500/20 overflow-hidden p-5 text-center shadow-glow-brand-red"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="bg-red-500/10 backdrop-blur-sm border border-red-500/20 rounded-xl p-5 mb-6"
     >
-      <div className="flex flex-col items-center justify-center py-6">
-        <motion.div
-          initial={{ rotate: -10 }}
-          animate={{ rotate: 10 }}
-          transition={{ 
-            duration: 2,
-            repeat: Infinity,
-            repeatType: "reverse",
-            ease: "easeInOut"
-          }}
-        >
-          {getIcon()}
-        </motion.div>
+      <div className="flex items-start">
+        <div className="bg-red-500/20 p-2 rounded-full mr-4">
+          <AlertCircle className="h-5 w-5 text-red-300" />
+        </div>
         
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mt-4 space-y-2"
-        >
-          <h3 className={`font-semibold text-white ${textSize === 'text-lg' ? 'text-xl' : textSize}`}>
-            {getFriendlyErrorMessage()}
+        <div className="flex-1">
+          <h3 className="text-lg font-semibold text-white mb-1">
+            {getTitle()}
           </h3>
           
-          {childAge > 11 && error?.message && (
-            <p className="text-white/60 text-sm mt-1 mb-3 max-w-lg mx-auto">
-              {error.message.substring(0, 120)}
-              {error.message.length > 120 ? '...' : ''}
-            </p>
+          <p className="text-white/80 mb-3">
+            {getDescription()}
+          </p>
+          
+          {childAge >= 12 && error && (
+            <div className="bg-black/20 rounded p-3 mb-3 overflow-auto max-h-24 text-xs text-white/70 font-mono">
+              {error.message}
+            </div>
           )}
-        </motion.div>
-        
-        {onRetry && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <Button
+          
+          {onRetry && (
+            <Button 
+              size="sm" 
               onClick={onRetry}
-              variant="outline"
-              size={getButtonSize()}
-              className="mt-5 border-purple-400/30 bg-purple-900/30 text-white hover:bg-purple-800/50 group"
+              className="bg-red-500/30 text-white hover:bg-red-500/50 border border-red-500/20"
             >
-              <RefreshCw className="mr-2 h-4 w-4 group-hover:rotate-180 transition-transform duration-500" />
-              {getButtonLabel()}
-              <Sparkles className="ml-2 h-4 w-4 text-amber-300/70" />
+              <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+              Try Again
             </Button>
-          </motion.div>
-        )}
+          )}
+        </div>
       </div>
     </motion.div>
   );
 };
-
-export default BlockError;
