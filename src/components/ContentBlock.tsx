@@ -1,6 +1,8 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import ContentBlockErrorBoundary from './content-blocks/ContentBlockErrorBoundary';
+import ContentBlockLoading from './content-blocks/ContentBlockLoading';
 import EnhancedQuizBlock from './content-blocks/EnhancedQuizBlock';
 import FactBlock from './content-blocks/FactBlock';
 import NewsBlock from './content-blocks/NewsBlock';
@@ -29,6 +31,7 @@ interface ContentBlockProps {
   onReadAloud?: (text: string) => void;
   childAge?: number;
   profileId?: string;
+  isLoading?: boolean;
 }
 
 const ContentBlock: React.FC<ContentBlockProps> = ({
@@ -45,8 +48,13 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   onRabbitHoleClick,
   onReadAloud,
   childAge = 10,
-  profileId
+  profileId,
+  isLoading
 }) => {
+  if (isLoading) {
+    return <ContentBlockLoading childAge={childAge} />;
+  }
+
   // Verify the block type to ensure it's valid for the blockContainer function
   const blockType = isValidContentBlockType(block.type) ? block.type as ContentBlockType : 'fact';
   
@@ -159,15 +167,17 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   };
 
   return (
-    <motion.div
-      variants={blockVariants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
-      className="mb-6"
-    >
-      {renderBlockContent()}
-    </motion.div>
+    <ContentBlockErrorBoundary onRetry={() => window.location.reload()} childAge={childAge}>
+      <motion.div
+        variants={blockVariants}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        className="mb-6"
+      >
+        {renderBlockContent()}
+      </motion.div>
+    </ContentBlockErrorBoundary>
   );
 };
 

@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Star, Trophy, Sparkles, CheckCircle } from 'lucide-react';
@@ -95,13 +94,9 @@ const ExplorationProgress: React.FC<ExplorationProgressProps> = ({
           <span className={`text-white/70 ${getTextSize()}`}>Content Explored</span>
           <span className={`text-white/90 ${getTextSize()} font-medium`}>{viewedBlocks}/{totalBlocks}</span>
         </div>
-        <div className="relative">
-          <Progress 
-            value={viewProgress} 
-            className="h-2 bg-white/10" 
-          />
+        <div className="relative h-2 bg-white/10 rounded-full overflow-hidden">
           <div 
-            className="absolute top-0 left-0 h-2 bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-purple rounded-full" 
+            className="absolute top-0 left-0 h-full bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-purple rounded-full transition-all duration-500"
             style={{ width: `${viewProgress}%` }}
           />
         </div>
@@ -112,13 +107,9 @@ const ExplorationProgress: React.FC<ExplorationProgressProps> = ({
           <span className={`text-white/70 ${getTextSize()}`}>Interactions</span>
           <span className={`text-white/90 ${getTextSize()} font-medium`}>{interactedBlocks}/{totalBlocks}</span>
         </div>
-        <div className="relative">
-          <Progress 
-            value={interactionProgress} 
-            className="h-2 bg-white/10"
-          />
+        <div className="relative h-2 bg-white/10 rounded-full overflow-hidden">
           <div 
-            className="absolute top-0 left-0 h-2 bg-gradient-to-r from-wonderwhiz-cyan to-wonderwhiz-blue rounded-full" 
+            className="absolute top-0 left-0 h-full bg-gradient-to-r from-wonderwhiz-cyan to-wonderwhiz-blue rounded-full transition-all duration-500"
             style={{ width: `${interactionProgress}%` }}
           />
         </div>
