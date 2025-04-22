@@ -363,6 +363,7 @@ const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
                       content={block.content}
                       specialistId={block.specialist_id}
                       updateHeight={() => {}}
+                      childAge={childAge}
                     />
                   );
                   
@@ -378,7 +379,6 @@ const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
                   );
                   
                 default:
-                  // Handle text-based blocks (fact, funFact, news)
                   return (
                     <SpecialistBlock
                       key={block.id}

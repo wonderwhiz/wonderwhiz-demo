@@ -12,7 +12,7 @@ interface BlockErrorProps {
   childAge?: number;
 }
 
-const BlockError: React.FC<BlockErrorProps> = ({
+export const BlockError: React.FC<BlockErrorProps> = ({
   error,
   message = "Something went wrong while loading this content.",
   onRetry,
