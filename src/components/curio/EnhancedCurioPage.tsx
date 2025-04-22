@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -282,7 +281,7 @@ const EnhancedCurioPage: React.FC = () => {
 
   const handlePlayContent = (text: string) => {
     if (text && playText) {
-      playText(text, 'whizzy'); // Fixed: Added the second argument 'whizzy'
+      playText(text, 'whizzy');
       
       if (childAge < 8) {
         toast.success("Reading to you!");
@@ -295,7 +294,6 @@ const EnhancedCurioPage: React.FC = () => {
     window.location.reload();
   };
 
-  // Use the new EnhancedCurioContent component
   return (
     <EnhancedCurioContent
       title={curioTitle || "Exploring Knowledge"}

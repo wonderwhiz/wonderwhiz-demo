@@ -64,16 +64,18 @@ const SpecialistBlock: React.FC<{
   specialistId: string;
   content: string;
   followupQuestions?: string[];
+  blockId: string;
   onRabbitHoleClick?: (question: string) => void;
-  onLike?: () => void;
-  onBookmark?: () => void;
-  onReply?: () => void;
-  onReadAloud?: () => void;
+  onLike?: (blockId: string) => void;
+  onBookmark?: (blockId: string) => void;
+  onReply?: (blockId: string, message: string) => void;
+  onReadAloud?: (text: string, specialistId: string) => void;
   childAge?: number;
 }> = ({ 
   specialistId, 
   content, 
   followupQuestions = [],
+  blockId,
   onRabbitHoleClick,
   onLike,
   onBookmark,
@@ -87,7 +89,7 @@ const SpecialistBlock: React.FC<{
   
   const handleReply = () => {
     if (replyText.trim() && onReply) {
-      onReply();
+      onReply(blockId, replyText);
       setReplyText('');
       setShowReplyInput(false);
       toast.success("Reply sent!");
@@ -147,7 +149,7 @@ const SpecialistBlock: React.FC<{
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={onLike}
+            onClick={() => onLike && onLike(blockId)}
             className="text-white/70 hover:text-white hover:bg-white/10"
           >
             <Heart className="h-4 w-4 mr-1" />
@@ -157,7 +159,7 @@ const SpecialistBlock: React.FC<{
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={onBookmark}
+            onClick={() => onBookmark && onBookmark(blockId)}
             className="text-white/70 hover:text-white hover:bg-white/10"
           >
             <Bookmark className="h-4 w-4 mr-1" />
@@ -178,7 +180,7 @@ const SpecialistBlock: React.FC<{
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={onReadAloud}
+              onClick={() => onReadAloud(content, specialistId)}
               className="text-white/70 hover:text-white hover:bg-white/10"
             >
               <VolumeIcon className="h-4 w-4 mr-1" />
@@ -237,89 +239,7 @@ const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
   onRabbitHoleClick,
   childAge = 10
 }) => {
-  // Example blocks for the design
-  const exampleBlocks = [
-    {
-      id: '1',
-      type: 'fact',
-      specialist_id: 'nova',
-      content: {
-        fact: "Fireflies, also known as lightning bugs, produce light through a chemical reaction in their bodies. They have a specialized light organ in their abdomen that uses a molecule called luciferin to produce light.",
-        rabbitHoles: [
-          "How do fireflies use their light to communicate?",
-          "What is the purpose of fireflies' bioluminescence?"
-        ]
-      }
-    },
-    {
-      id: '2',
-      type: 'funFact',
-      specialist_id: 'spark',
-      content: {
-        fact: "Did you know that fireflies can flash their lights in a specific pattern to signal to potential mates? It's like a secret language!"
-      }
-    },
-    {
-      id: '3',
-      type: 'quiz',
-      specialist_id: 'prism',
-      content: {
-        question: "What is the main source of light for fireflies?",
-        options: [
-          "The sun",
-          "The moon",
-          "A chemical reaction in their bodies",
-          "Electricity"
-        ],
-        correctIndex: 2,
-        explanation: "Fireflies produce light through a process called bioluminescence, which is a chemical reaction in their bodies that produces light without generating heat."
-      }
-    },
-    {
-      id: '4',
-      type: 'quiz',
-      specialist_id: 'prism',
-      content: {
-        question: "What is the name of the molecule that helps fireflies produce light?",
-        options: [
-          "Luciferase",
-          "Luciferin",
-          "Oxygen",
-          "Enzyme"
-        ],
-        correctIndex: 1,
-        explanation: "Luciferin is the molecule that produces light when it reacts with the enzyme luciferase in the presence of oxygen."
-      }
-    },
-    {
-      id: '5',
-      type: 'mindfulness',
-      specialist_id: 'spark',
-      content: {
-        title: "Firefly Light Meditation",
-        instruction: "Find a quiet and comfortable place to sit. Close your eyes and imagine you are a firefly. Visualize your light organ glowing softly. As you breathe in, imagine fresh air filling your light organ and making it shine brighter. As you breathe out, imagine any worries or stress leaving your body. Continue for 3 minutes.",
-        duration: 180,
-        benefit: "This meditation helps calm the mind and reduce stress by focusing on breathing and visualization."
-      }
-    },
-    {
-      id: '6',
-      type: 'creative',
-      specialist_id: 'spark',
-      content: {
-        prompt: "Use your imagination to explore How do fireflies make light? in a creative way.",
-        examples: [
-          "Draw a picture",
-          "Write a story",
-          "Make a model"
-        ]
-      }
-    }
-  ];
-  
-  // Use provided blocks or example blocks
-  const displayBlocks = blocks.length > 0 ? blocks : exampleBlocks;
-
+  // Use the actual blocks passed from props instead of hardcoded examples
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-indigo-950 to-purple-950">
       <div className="sticky top-0 z-40 bg-gradient-to-b from-indigo-950/95 to-indigo-950/90 backdrop-blur-sm py-4 px-4 border-b border-white/10">
@@ -337,60 +257,67 @@ const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
       
       <main className="flex-grow py-6">
         <div className="max-w-3xl mx-auto px-4">
-          {displayBlocks.map((block) => {
-            if (block.type === 'quiz') {
-              return (
-                <FireflyQuizBlock
-                  key={block.id}
-                  question={block.content.question}
-                  options={block.content.options}
-                  correctIndex={block.content.correctIndex}
-                  explanation={block.content.explanation}
-                  childAge={childAge}
-                />
-              );
-            } else if (block.type === 'mindfulness') {
-              return (
-                <MindfulnessBlock
-                  key={block.id}
-                  title={block.content.title}
-                  instructions={block.content.instruction}
-                  duration={block.content.duration}
-                  benefit={block.content.benefit}
-                  childAge={childAge}
-                />
-              );
-            } else if (block.type === 'creative') {
-              return (
-                <CreativeBlock
-                  key={block.id}
-                  prompt={block.content.prompt}
-                  examples={block.content.examples}
-                  specialistId={block.specialist_id}
-                  childAge={childAge}
-                />
-              );
-            } else {
-              // For fact and funFact blocks
-              const content = block.content?.fact || block.content?.text || '';
-              const followupQuestions = block.content?.rabbitHoles || [];
-              
-              return (
-                <SpecialistBlock
-                  key={block.id}
-                  specialistId={block.specialist_id}
-                  content={content}
-                  followupQuestions={followupQuestions}
-                  onRabbitHoleClick={onRabbitHoleClick}
-                  onLike={() => onLike && onLike(block.id)}
-                  onBookmark={() => onBookmark && onBookmark(block.id)}
-                  onReply={() => onReply && onReply(block.id, 'Great explanation!')}
-                  onReadAloud={() => onReadAloud && onReadAloud(content, block.specialist_id)}
-                  childAge={childAge}
-                />
-              );
-            }
-          })}
+          {blocks.length > 0 ? (
+            blocks.map((block) => {
+              if (block.type === 'quiz') {
+                return (
+                  <FireflyQuizBlock
+                    key={block.id}
+                    question={block.content.question}
+                    options={block.content.options}
+                    correctIndex={block.content.correctIndex}
+                    explanation={block.content.explanation}
+                    childAge={childAge}
+                  />
+                );
+              } else if (block.type === 'mindfulness') {
+                return (
+                  <MindfulnessBlock
+                    key={block.id}
+                    title={block.content.title}
+                    instructions={block.content.instruction}
+                    duration={block.content.duration}
+                    benefit={block.content.benefit}
+                    childAge={childAge}
+                  />
+                );
+              } else if (block.type === 'creative') {
+                return (
+                  <CreativeBlock
+                    key={block.id}
+                    prompt={block.content.prompt}
+                    examples={block.content.examples}
+                    specialistId={block.specialist_id}
+                    childAge={childAge}
+                  />
+                );
+              } else {
+                // For fact, funFact, and other text-based blocks
+                const content = block.content?.fact || block.content?.text || '';
+                const followupQuestions = block.content?.rabbitHoles || [];
+                
+                return (
+                  <SpecialistBlock
+                    key={block.id}
+                    blockId={block.id}
+                    specialistId={block.specialist_id}
+                    content={content}
+                    followupQuestions={followupQuestions}
+                    onRabbitHoleClick={onRabbitHoleClick}
+                    onLike={onLike}
+                    onBookmark={onBookmark}
+                    onReply={onReply}
+                    onReadAloud={onReadAloud}
+                    childAge={childAge}
+                  />
+                );
+              }
+            })
+          ) : (
+            <div className="text-center py-16">
+              <p className="text-white/60">No content blocks available for this curio.</p>
+            </div>
+          )}
         </div>
       </main>
     </div>
