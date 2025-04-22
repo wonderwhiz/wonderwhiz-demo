@@ -1,19 +1,24 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useAgeAdaptation } from '@/hooks/useAgeAdaptation';
 
 interface ContentBlockLoadingProps {
   childAge?: number;
 }
 
 const ContentBlockLoading: React.FC<ContentBlockLoadingProps> = ({ childAge = 10 }) => {
+  const { textSize, messageStyle } = useAgeAdaptation(childAge);
+
   const getMessage = () => {
-    if (childAge <= 7) {
-      return "Getting your amazing content ready...";
-    } else if (childAge <= 11) {
-      return "Loading your content...";
+    switch (messageStyle) {
+      case 'playful':
+        return "Getting your amazing content ready...";
+      case 'casual':
+        return "Loading your content...";
+      default:
+        return "Loading content...";
     }
-    return "Loading content...";
   };
 
   return (
@@ -30,7 +35,9 @@ const ContentBlockLoading: React.FC<ContentBlockLoadingProps> = ({ childAge = 10
           <div className="h-4 bg-white/10 rounded animate-pulse w-1/2" />
         </div>
       </div>
-      <div className="mt-4 text-white/60 text-center">{getMessage()}</div>
+      <div className={`mt-4 text-white/60 text-center ${textSize}`}>
+        {getMessage()}
+      </div>
     </motion.div>
   );
 };
