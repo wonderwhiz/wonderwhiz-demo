@@ -35,8 +35,9 @@ export const getBlockStyle = (type: string) => {
   }
 };
 
-export const successAnimation = {
-  scale: [1, 1.05, 1],
-  transition: { duration: 0.5 }
+// Enhanced success animation with additional effects
+export const enhancedSuccessAnimation = {
+  scale: [1, 1.08, 1],
+  rotate: [0, 2, -2, 0],
+  transition: { duration: 0.6, ease: "easeInOut" }
 };
-

@@ -5,6 +5,7 @@ import EnhancedQuizBlock from './content-blocks/EnhancedQuizBlock';
 import FactBlock from './content-blocks/FactBlock';
 import NewsBlock from './content-blocks/NewsBlock';
 import { blockContainer } from './content-blocks/utils/blockStyles';
+import { ContentBlockType, isValidContentBlockType } from '@/types/curio';
 
 interface ContentBlockProps {
   block: {
@@ -44,6 +45,9 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   childAge = 10,
   profileId
 }) => {
+  // Verify the block type to ensure it's valid for the blockContainer function
+  const blockType = isValidContentBlockType(block.type) ? block.type : 'fact';
+  
   // Render different block types
   const renderBlockContent = () => {
     switch (block.type) {
@@ -81,7 +85,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         
       default:
         return (
-          <div className={blockContainer({ type: block.type })}>
+          <div className={blockContainer({ type: blockType })}>
             <pre className="text-white/90 whitespace-pre-wrap">
               {JSON.stringify(block.content, null, 2)}
             </pre>
