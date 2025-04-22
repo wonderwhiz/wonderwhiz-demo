@@ -1,12 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
-import { Image as ImageIcon, Share2, RotateCw, Download } from 'lucide-react';
+import { Image as ImageIcon, Share2, RotateCw, Download, Sparkles, Wand2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { BlockError } from '@/components/content-blocks/BlockError';
+import { Progress } from '@/components/ui/progress';
 
 interface InteractiveImageBlockProps {
   topic: string;
@@ -27,15 +28,32 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [retries, setRetries] = useState(0);
+  const [generationProgress, setGenerationProgress] = useState(0);
 
   const generateImage = async () => {
     setIsLoading(true);
     setError(null);
+    setGenerationProgress(0);
+    
+    // Start progress animation
+    const progressInterval = setInterval(() => {
+      setGenerationProgress(prev => {
+        if (prev >= 90) return prev; // Cap at 90% until actual completion
+        return prev + Math.random() * 15;
+      });
+    }, 1000);
     
     try {
-      console.info(`Calling generate-gemini-image with prompt: "${getPrompt()}" and style: ${style}`);
+      toast.info(
+        childAge < 8 
+          ? "Drawing something magical just for you!" 
+          : "Generating your custom illustration...",
+        { duration: 3000 }
+      );
       
-      const { data, error } = await supabase.functions.invoke('generate-gemini-image', {
+      console.info(`Generating image for topic: "${topic}" with style: ${style}`);
+      
+      const { data, error } = await supabase.functions.invoke('generate-dalle-image', {
         body: { 
           prompt: getPrompt(),
           style,
@@ -44,27 +62,32 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
         }
       });
       
-      console.info('Image generation response:', JSON.stringify(data, null, 2));
+      clearInterval(progressInterval);
       
       if (error) {
-        throw new Error(`Image generation failed: ${error.message}`);
+        console.error('DALL-E generation error:', error);
+        throw new Error(error.message || "Image generation failed");
       }
       
-      if (!data || data.success === false) {
-        // Try fallback to Unsplash if AI generation fails
-        const unsplashUrl = await getFallbackImageUrl();
-        setImageUrl(unsplashUrl);
-        if (data?.error) {
-          console.warn('AI image generation failed, using fallback image. Error:', data.error);
-        }
-      } else if (data.imageUrl) {
+      if (data?.imageUrl) {
+        setGenerationProgress(100);
         setImageUrl(data.imageUrl);
+        
+        toast.success(
+          childAge < 8 
+            ? "Ta-da! Your magical picture is ready!" 
+            : "Image generated successfully!",
+          { duration: 3000 }
+        );
+      } else if (data?.fallbackImageUrl) {
+        setGenerationProgress(100);
+        setImageUrl(data.fallbackImageUrl);
+        console.log('Using fallback image from DALL-E function');
       } else {
-        // If data exists but no imageUrl, try Unsplash fallback
-        const fallbackUrl = await getFallbackImageUrl();
-        setImageUrl(fallbackUrl);
+        throw new Error("No image was generated");
       }
     } catch (err: any) {
+      clearInterval(progressInterval);
       console.error('Error generating image:', err);
       setError(err);
       
@@ -72,8 +95,8 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
       try {
         const fallbackUrl = await getFallbackImageUrl();
         setImageUrl(fallbackUrl);
+        setGenerationProgress(100);
       } catch (fallbackErr) {
-        // If even fallback fails, show error state
         console.error('Fallback image also failed:', fallbackErr);
       }
     } finally {
@@ -126,46 +149,17 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
     a.click();
     document.body.removeChild(a);
     
-    toast.success("Image downloaded!");
+    toast.success(
+      childAge < 8 
+        ? "Your magical picture has been saved!" 
+        : "Image downloaded successfully!"
+    );
   };
 
   useEffect(() => {
     generateImage();
   }, [topic, style, childAge, retries]);
 
-  // Display skeleton while loading
-  if (isLoading) {
-    return (
-      <div className="mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-wonderwhiz-deep-purple/30 to-wonderwhiz-light-purple/20 p-4">
-        <div className="flex justify-between items-center mb-3">
-          <div className="flex items-center">
-            <ImageIcon className="h-5 w-5 text-wonderwhiz-bright-pink mr-2" />
-            <h3 className="text-lg font-semibold text-white">Generating Wonder Image</h3>
-          </div>
-        </div>
-        
-        <Skeleton className="h-64 w-full bg-white/5" />
-        
-        <div className="mt-3 text-sm text-white/70 text-center">
-          Creating a visual for "{topic}"...
-        </div>
-      </div>
-    );
-  }
-
-  // Display error if something went wrong and we have no image
-  if (error && !imageUrl) {
-    return (
-      <BlockError 
-        error={error}
-        message="We couldn't generate an image for this topic."
-        onRetry={handleRetry}
-        childAge={childAge}
-      />
-    );
-  }
-
-  // Display the generated or fallback image
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -176,8 +170,14 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
       <div className="p-4">
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center">
-            <ImageIcon className="h-5 w-5 text-wonderwhiz-bright-pink mr-2" />
-            <h3 className="text-lg font-semibold text-white">Wonder Image</h3>
+            {isLoading ? (
+              <Wand2 className="h-5 w-5 text-wonderwhiz-bright-pink mr-2 animate-pulse" />
+            ) : (
+              <Sparkles className="h-5 w-5 text-wonderwhiz-bright-pink mr-2" />
+            )}
+            <h3 className="text-lg font-semibold text-white">
+              {isLoading ? "Creating Wonder" : "Wonder Image"}
+            </h3>
           </div>
           
           <div className="flex space-x-2">
@@ -185,48 +185,99 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
               variant="ghost" 
               size="sm"
               onClick={handleRetry}
+              disabled={isLoading}
               className="text-white/80 hover:text-white hover:bg-white/10"
             >
-              <RotateCw className="h-4 w-4" />
+              <RotateCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             </Button>
             
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={handleDownload}
-              className="text-white/80 hover:text-white hover:bg-white/10"
-            >
-              <Download className="h-4 w-4" />
-            </Button>
-            
-            {onShare && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={onShare}
-                className="text-white/80 hover:text-white hover:bg-white/10"
-              >
-                <Share2 className="h-4 w-4" />
-              </Button>
+            {imageUrl && (
+              <>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={handleDownload}
+                  className="text-white/80 hover:text-white hover:bg-white/10"
+                >
+                  <Download className="h-4 w-4" />
+                </Button>
+                
+                {onShare && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={onShare}
+                    className="text-white/80 hover:text-white hover:bg-white/10"
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </>
             )}
           </div>
         </div>
         
-        {imageUrl && (
-          <div className="relative rounded-lg overflow-hidden bg-black/20">
-            <img 
-              src={imageUrl} 
-              alt={`Illustration of ${topic}`}
-              className="w-full h-auto object-cover rounded-lg"
-              onError={handleRetry}
-            />
+        {isLoading && (
+          <div className="space-y-4">
+            <div className="h-64 w-full bg-white/5 rounded-lg overflow-hidden relative">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center">
+                  <Wand2 className="h-8 w-8 text-wonderwhiz-bright-pink mx-auto mb-3 animate-pulse" />
+                  <p className="text-white/70 text-sm px-4">
+                    {childAge < 8 
+                      ? "Drawing something amazing..." 
+                      : "Generating your custom illustration..."}
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Progress value={generationProgress} className="h-2 bg-white/10" />
+              <p className="text-white/50 text-xs text-center">
+                {generationProgress < 100 
+                  ? "Creating your unique image..." 
+                  : "Almost there..."}
+              </p>
+            </div>
           </div>
         )}
         
+        {!isLoading && imageUrl && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            className="relative rounded-lg overflow-hidden bg-black/20 group"
+          >
+            <img 
+              src={imageUrl} 
+              alt={`Illustration of ${topic}`}
+              className="w-full h-auto object-cover rounded-lg transition-transform duration-700 group-hover:scale-105"
+              onError={handleRetry}
+            />
+            
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          </motion.div>
+        )}
+        
+        {!isLoading && error && !imageUrl && (
+          <BlockError 
+            error={error}
+            message={childAge < 8 
+              ? "Oops! The magical drawing machine needs a break. Let's try again!" 
+              : "We couldn't generate this image. Please try again."}
+            onRetry={handleRetry}
+            childAge={childAge}
+          />
+        )}
+        
         <div className="mt-3 text-sm text-white/70 text-center">
-          {error ? 
-            "Using a backup image - we'll try to generate a better one next time!" : 
-            `Visual representation of "${topic}"`
+          {error && imageUrl 
+            ? (childAge < 8 
+                ? "I found a similar picture for you!" 
+                : "Using an alternative image for this topic")
+            : `A magical illustration about "${topic}"`
           }
         </div>
       </div>
