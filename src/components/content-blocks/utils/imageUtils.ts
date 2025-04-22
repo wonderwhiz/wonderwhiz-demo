@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 // Cute character images as placeholders
@@ -87,32 +88,74 @@ export const getContextualImage = async (
     result.imageLoading = true;
     result.imageRequestInProgress = true;
 
-    // Use Supabase edge function for DALL-E/OpenAI
-    const { data, error } = await supabase.functions.invoke('generate-gemini-image', {
-      body: {
-        prompt: `${basePrompt}. Style: ${style}`,
-        style,
-        childAge: block.childAge || 10,
-        retryOnFail: true
+    // Try to generate image using OpenAI DALL-E
+    try {
+      const { data: openaiData, error: openaiError } = await supabase.functions.invoke('generate-dalle-image', {
+        body: {
+          prompt: `${basePrompt}. Style: ${style}`,
+          childAge: block.childAge || 10
+        }
+      });
+
+      if (openaiError) {
+        throw new Error(openaiError.message || "OpenAI image generation failed");
       }
-    });
 
-    if (error) {
-      throw new Error(error.message || "Image generation failed");
+      if (openaiData?.imageUrl) {
+        result.contextualImage = openaiData.imageUrl;
+        result.imageDescription = openaiData.altText || `Magical image of "${basePrompt}"`;
+        localStorage.setItem(imageKey, openaiData.imageUrl);
+        result.imageLoading = false;
+        return result;
+      }
+    } catch (openaiErr) {
+      console.error('OpenAI image generation failed:', openaiErr);
+      // Continue to fallback options
     }
 
-    if (data?.imageUrl) {
-      result.contextualImage = data.imageUrl;
-      result.imageDescription = data.textResponse || `Magical image of "${basePrompt}"`;
-      localStorage.setItem(imageKey, data.imageUrl);
-    } else {
-      throw new Error('No image URL returned from Supabase edge function');
+    // Fallback to Gemini if OpenAI fails
+    try {
+      const { data: geminiData, error: geminiError } = await supabase.functions.invoke('generate-gemini-image', {
+        body: {
+          prompt: `${basePrompt}. Style: ${style}`,
+          style,
+          childAge: block.childAge || 10,
+          retryOnFail: true
+        }
+      });
+
+      if (geminiError) {
+        throw new Error(geminiError.message || "Gemini image generation failed");
+      }
+
+      if (geminiData?.imageUrl) {
+        result.contextualImage = geminiData.imageUrl;
+        result.imageDescription = geminiData.textResponse || `Magical image of "${basePrompt}"`;
+        localStorage.setItem(imageKey, geminiData.imageUrl);
+        result.imageLoading = false;
+        return result;
+      }
+    } catch (geminiErr) {
+      console.error('Gemini image generation failed:', geminiErr);
+      // Continue to fallback options
     }
+
+    // Last resort: use placeholder image if both OpenAI and Gemini fail
+    const fallbackImage = PLACEHOLDER_IMAGES[Math.floor(Math.random() * PLACEHOLDER_IMAGES.length)];
+    result.contextualImage = fallbackImage;
+    result.imageDescription = `Illustration related to ${basePrompt}`;
+    localStorage.setItem(imageKey, fallbackImage);
+    
   } catch (err: any) {
     result.imageError = err?.message || 'Could not generate image';
     if (retryCountRef.current < 2) {
       result.imageRequestInProgress = false;
     }
+    
+    // Even if there's an error, provide a placeholder image
+    const fallbackImage = PLACEHOLDER_IMAGES[Math.floor(Math.random() * PLACEHOLDER_IMAGES.length)];
+    result.contextualImage = fallbackImage;
+    result.imageDescription = "A magical learning adventure awaits!";
   } finally {
     result.imageLoading = false;
   }

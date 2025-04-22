@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { RefreshCw, Sparkles } from 'lucide-react';
 import { useWonderSuggestions } from '@/hooks/use-wonder-suggestions';
 import { useBlockInteractions } from '@/hooks/useBlockInteractions';
+import { toast } from 'sonner';
 
 interface DynamicWonderSuggestionsProps {
   childId: string;
@@ -24,7 +25,8 @@ const DynamicWonderSuggestions: React.FC<DynamicWonderSuggestionsProps> = ({
   const { 
     suggestions, 
     isLoading, 
-    refresh 
+    refresh,
+    error 
   } = useWonderSuggestions({
     childId,
     childAge,
@@ -32,6 +34,11 @@ const DynamicWonderSuggestions: React.FC<DynamicWonderSuggestionsProps> = ({
   });
 
   const { handleToggleBookmark } = useBlockInteractions(childId);
+
+  const handleRefresh = () => {
+    refresh();
+    toast.info("Refreshing wonder suggestions...");
+  };
 
   const handleSuggestionClick = (suggestion: string) => {
     onSuggestionClick(suggestion);
@@ -48,7 +55,7 @@ const DynamicWonderSuggestions: React.FC<DynamicWonderSuggestionsProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={refresh}
+            onClick={handleRefresh}
             disabled={isLoading}
             className="text-white/70 hover:text-white hover:bg-white/10"
           >
@@ -84,6 +91,23 @@ const DynamicWonderSuggestions: React.FC<DynamicWonderSuggestionsProps> = ({
             ))
           )}
         </div>
+        
+        {error && !isLoading && suggestions.length === 0 && (
+          <div className="bg-white/5 border border-red-500/30 rounded-lg p-4 mt-3">
+            <p className="text-white/70 text-sm">
+              Couldn't load new suggestions. Using default wonders instead.
+            </p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleRefresh}
+              className="mt-2 bg-white/10 border-white/20 text-white hover:bg-white/20"
+            >
+              <RefreshCw className="h-3 w-3 mr-2" />
+              Try Again
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
