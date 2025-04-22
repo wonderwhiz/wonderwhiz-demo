@@ -13,6 +13,7 @@ import ActivityBlock from './content-blocks/ActivityBlock';
 import MindfulnessBlock from './content-blocks/MindfulnessBlock';
 import TaskBlock from './content-blocks/TaskBlock';
 import FunFactBlock from './content-blocks/FunFactBlock';
+import BlockInteractions from './content-blocks/BlockInteractions';
 import { blockContainer } from './content-blocks/utils/blockStyles';
 import { blockVariants } from './content-blocks/utils/blockAnimations';
 import { ContentBlockType, isValidContentBlockType } from '@/types/curio';
@@ -23,6 +24,8 @@ interface ContentBlockProps {
     type: string;
     content: any;
     specialist_id: string;
+    liked?: boolean;
+    bookmarked?: boolean;
   };
   onLike?: () => void;
   onBookmark?: () => void;
@@ -71,150 +74,320 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     return 'middle';
   };
   
+  // Create interaction handlers
+  const handleToggleLike = () => {
+    if (onLike) onLike();
+  };
+  
+  const handleToggleBookmark = () => {
+    if (onBookmark) onBookmark();
+  };
+  
+  const [showReplyForm, setShowReplyForm] = React.useState(false);
+  
+  // Get related questions or rabbit holes from content if available
+  const getRelatedQuestions = () => {
+    if (!block.content) return [];
+    if (Array.isArray(block.content.rabbitHoles)) return block.content.rabbitHoles;
+    if (Array.isArray(block.content.relatedQuestions)) return block.content.relatedQuestions;
+    return [];
+  };
+  
   // Render different block types
   const renderBlockContent = () => {
+    const commonProps = {
+      onLike: handleToggleLike,
+      onBookmark: handleToggleBookmark,
+      onReply,
+      onRabbitHoleClick,
+      childAge
+    };
+    
     switch (block.type) {
       case 'quiz':
         return (
-          <EnhancedQuizBlock 
-            question={block.content.question}
-            options={block.content.options}
-            correctIndex={block.content.correctIndex}
-            explanation={block.content.explanation}
-            onCorrect={onQuizCorrect}
-            childAge={childAge}
-          />
+          <div>
+            <EnhancedQuizBlock 
+              question={block.content.question}
+              options={block.content.options}
+              correctIndex={block.content.correctIndex}
+              explanation={block.content.explanation}
+              onCorrect={onQuizCorrect}
+              childAge={childAge}
+            />
+            <BlockInteractions
+              id={block.id}
+              liked={block.liked}
+              bookmarked={block.bookmarked}
+              type={block.type}
+              onToggleLike={handleToggleLike}
+              onToggleBookmark={handleToggleBookmark}
+              setShowReplyForm={setShowReplyForm}
+              onRabbitHoleClick={onRabbitHoleClick}
+              relatedQuestions={getRelatedQuestions()}
+            />
+          </div>
         );
         
       case 'fact':
         return (
-          <FactBlock 
-            fact={block.content.fact}
-            title={block.content.title}
-            specialistId={block.specialist_id}
-            rabbitHoles={block.content.rabbitHoles}
-            onRabbitHoleClick={onRabbitHoleClick}
-            onReadAloud={onReadAloud}
-          />
+          <div>
+            <FactBlock 
+              fact={block.content.fact}
+              title={block.content.title}
+              specialistId={block.specialist_id}
+              rabbitHoles={block.content.rabbitHoles}
+              onRabbitHoleClick={onRabbitHoleClick}
+              onReadAloud={onReadAloud}
+            />
+            <BlockInteractions
+              id={block.id}
+              liked={block.liked}
+              bookmarked={block.bookmarked}
+              type={block.type}
+              onToggleLike={handleToggleLike}
+              onToggleBookmark={handleToggleBookmark}
+              setShowReplyForm={setShowReplyForm}
+              onRabbitHoleClick={onRabbitHoleClick}
+              relatedQuestions={getRelatedQuestions()}
+            />
+          </div>
         );
         
       case 'news':
         return (
-          <NewsBlock 
-            content={block.content}
-            specialistId={block.specialist_id}
-            onNewsRead={onNewsRead}
-          />
+          <div>
+            <NewsBlock 
+              content={block.content}
+              specialistId={block.specialist_id}
+              onNewsRead={onNewsRead}
+            />
+            <BlockInteractions
+              id={block.id}
+              liked={block.liked}
+              bookmarked={block.bookmarked}
+              type={block.type}
+              onToggleLike={handleToggleLike}
+              onToggleBookmark={handleToggleBookmark}
+              setShowReplyForm={setShowReplyForm}
+              onRabbitHoleClick={onRabbitHoleClick}
+              relatedQuestions={getRelatedQuestions()}
+            />
+          </div>
         );
         
       case 'riddle':
         return (
-          <RiddleBlock
-            content={block.content}
-            specialistId={block.specialist_id}
-          />
+          <div>
+            <RiddleBlock
+              content={block.content}
+              specialistId={block.specialist_id}
+            />
+            <BlockInteractions
+              id={block.id}
+              liked={block.liked}
+              bookmarked={block.bookmarked}
+              type={block.type}
+              onToggleLike={handleToggleLike}
+              onToggleBookmark={handleToggleBookmark}
+              setShowReplyForm={setShowReplyForm}
+              onRabbitHoleClick={onRabbitHoleClick}
+              relatedQuestions={getRelatedQuestions()}
+            />
+          </div>
         );
         
       case 'funFact':
         return (
-          <FunFactBlock 
-            fact={block.content.text || block.content.fact}
-            specialistId={block.specialist_id}
-            onLike={onLike}
-            onBookmark={onBookmark}
-            onReply={onReply}
-            onRabbitHoleClick={onRabbitHoleClick}
-            childAge={childAge}
-          />
+          <div>
+            <FunFactBlock 
+              fact={block.content.text || block.content.fact}
+              specialistId={block.specialist_id}
+              onLike={handleToggleLike}
+              onBookmark={handleToggleBookmark}
+              onReply={onReply}
+              onRabbitHoleClick={onRabbitHoleClick}
+              childAge={childAge}
+            />
+            <BlockInteractions
+              id={block.id}
+              liked={block.liked}
+              bookmarked={block.bookmarked}
+              type={block.type}
+              onToggleLike={handleToggleLike}
+              onToggleBookmark={handleToggleBookmark}
+              setShowReplyForm={setShowReplyForm}
+              onRabbitHoleClick={onRabbitHoleClick}
+              relatedQuestions={getRelatedQuestions()}
+            />
+          </div>
         );
         
       case 'flashcard':
         return (
-          <FlashcardBlock
-            content={block.content}
-            specialistId={block.specialist_id}
-            childAge={childAge}
-          />
+          <div>
+            <FlashcardBlock
+              content={block.content}
+              specialistId={block.specialist_id}
+              childAge={childAge}
+            />
+            <BlockInteractions
+              id={block.id}
+              liked={block.liked}
+              bookmarked={block.bookmarked}
+              type={block.type}
+              onToggleLike={handleToggleLike}
+              onToggleBookmark={handleToggleBookmark}
+              setShowReplyForm={setShowReplyForm}
+              onRabbitHoleClick={onRabbitHoleClick}
+              relatedQuestions={getRelatedQuestions()}
+            />
+          </div>
         );
         
       case 'creative':
         return (
-          <CreativeBlock
-            content={block.content}
-            specialistId={block.specialist_id}
-            onCreativeUpload={onCreativeUpload}
-            childAge={childAge}
-          />
+          <div>
+            <CreativeBlock
+              content={block.content}
+              specialistId={block.specialist_id}
+              onCreativeUpload={onCreativeUpload}
+              childAge={childAge}
+            />
+            <BlockInteractions
+              id={block.id}
+              liked={block.liked}
+              bookmarked={block.bookmarked}
+              type={block.type}
+              onToggleLike={handleToggleLike}
+              onToggleBookmark={handleToggleBookmark}
+              setShowReplyForm={setShowReplyForm}
+              onRabbitHoleClick={onRabbitHoleClick}
+              relatedQuestions={getRelatedQuestions()}
+            />
+          </div>
         );
         
       case 'activity':
         return (
-          <ActivityBlock
-            content={block.content}
-            specialistId={block.specialist_id}
-            onActivityComplete={onActivityComplete}
-            childAge={childAge}
-          />
+          <div>
+            <ActivityBlock
+              content={block.content}
+              specialistId={block.specialist_id}
+              onActivityComplete={onActivityComplete}
+              childAge={childAge}
+            />
+            <BlockInteractions
+              id={block.id}
+              liked={block.liked}
+              bookmarked={block.bookmarked}
+              type={block.type}
+              onToggleLike={handleToggleLike}
+              onToggleBookmark={handleToggleBookmark}
+              setShowReplyForm={setShowReplyForm}
+              onRabbitHoleClick={onRabbitHoleClick}
+              relatedQuestions={getRelatedQuestions()}
+            />
+          </div>
         );
         
       case 'mindfulness':
         return (
-          <MindfulnessBlock
-            content={block.content}
-            specialistId={block.specialist_id}
-            onMindfulnessComplete={onMindfulnessComplete}
-            childAge={childAge}
-          />
+          <div>
+            <MindfulnessBlock
+              content={block.content}
+              specialistId={block.specialist_id}
+              onMindfulnessComplete={onMindfulnessComplete}
+              childAge={childAge}
+            />
+            <BlockInteractions
+              id={block.id}
+              liked={block.liked}
+              bookmarked={block.bookmarked}
+              type={block.type}
+              onToggleLike={handleToggleLike}
+              onToggleBookmark={handleToggleBookmark}
+              setShowReplyForm={setShowReplyForm}
+              onRabbitHoleClick={onRabbitHoleClick}
+              relatedQuestions={getRelatedQuestions()}
+            />
+          </div>
         );
         
       case 'task':
         return (
-          <TaskBlock
-            content={block.content}
-            specialistId={block.specialist_id}
-            onTaskComplete={onTaskComplete}
-            childAge={childAge}
-          />
+          <div>
+            <TaskBlock
+              content={block.content}
+              specialistId={block.specialist_id}
+              onTaskComplete={onTaskComplete}
+              childAge={childAge}
+            />
+            <BlockInteractions
+              id={block.id}
+              liked={block.liked}
+              bookmarked={block.bookmarked}
+              type={block.type}
+              onToggleLike={handleToggleLike}
+              onToggleBookmark={handleToggleBookmark}
+              setShowReplyForm={setShowReplyForm}
+              onRabbitHoleClick={onRabbitHoleClick}
+              relatedQuestions={getRelatedQuestions()}
+            />
+          </div>
         );
         
       // Add simple fallback for other block types
       default:
         return (
-          <div className={blockContainer({ type: blockType, childAge: getAgeVariant() })}>
-            {block.content && typeof block.content === 'object' ? (
-              <div className="space-y-2">
-                {block.content.title && (
-                  <h3 className="text-lg font-medium text-white">{block.content.title}</h3>
-                )}
-                
-                {block.content.text && (
-                  <p className="text-white/90">{block.content.text}</p>
-                )}
-                
-                {block.content.description && (
-                  <p className="text-white/90">{block.content.description}</p>
-                )}
-                
-                {block.content.prompt && (
-                  <p className="text-white/90">{block.content.prompt}</p>
-                )}
-                
-                {block.content.instruction && (
-                  <p className="text-white/90">{block.content.instruction}</p>
-                )}
-                
-                {!block.content.title && !block.content.text && !block.content.description && 
-                 !block.content.prompt && !block.content.instruction && (
-                  <pre className="text-white/90 whitespace-pre-wrap text-sm">
-                    {JSON.stringify(block.content, null, 2)}
-                  </pre>
-                )}
-              </div>
-            ) : (
-              <pre className="text-white/90 whitespace-pre-wrap text-sm">
-                {JSON.stringify(block.content, null, 2)}
-              </pre>
-            )}
+          <div>
+            <div className={blockContainer({ type: blockType, childAge: getAgeVariant() })}>
+              {block.content && typeof block.content === 'object' ? (
+                <div className="space-y-2">
+                  {block.content.title && (
+                    <h3 className="text-lg font-medium text-white">{block.content.title}</h3>
+                  )}
+                  
+                  {block.content.text && (
+                    <p className="text-white/90">{block.content.text}</p>
+                  )}
+                  
+                  {block.content.description && (
+                    <p className="text-white/90">{block.content.description}</p>
+                  )}
+                  
+                  {block.content.prompt && (
+                    <p className="text-white/90">{block.content.prompt}</p>
+                  )}
+                  
+                  {block.content.instruction && (
+                    <p className="text-white/90">{block.content.instruction}</p>
+                  )}
+                  
+                  {!block.content.title && !block.content.text && !block.content.description && 
+                  !block.content.prompt && !block.content.instruction && (
+                    <pre className="text-white/90 whitespace-pre-wrap text-sm">
+                      {JSON.stringify(block.content, null, 2)}
+                    </pre>
+                  )}
+                </div>
+              ) : (
+                <pre className="text-white/90 whitespace-pre-wrap text-sm">
+                  {JSON.stringify(block.content, null, 2)}
+                </pre>
+              )}
+            </div>
+            <BlockInteractions
+              id={block.id}
+              liked={block.liked}
+              bookmarked={block.bookmarked}
+              type={block.type}
+              onToggleLike={handleToggleLike}
+              onToggleBookmark={handleToggleBookmark}
+              setShowReplyForm={setShowReplyForm}
+              onRabbitHoleClick={onRabbitHoleClick}
+              relatedQuestions={getRelatedQuestions()}
+            />
           </div>
         );
     }
@@ -230,6 +403,30 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         className="mb-6"
       >
         {renderBlockContent()}
+        
+        {showReplyForm && onReply && (
+          <div className="mt-2 p-3 bg-white/5 rounded-lg">
+            <textarea
+              className="w-full bg-white/10 border border-white/20 rounded p-2 text-white placeholder-white/50"
+              placeholder="Write your reply..."
+              rows={3}
+              onBlur={(e) => {
+                if (e.target.value.trim()) {
+                  onReply(e.target.value);
+                  setShowReplyForm(false);
+                }
+              }}
+            />
+            <div className="flex justify-end mt-2">
+              <button 
+                className="px-3 py-1 text-sm bg-wonderwhiz-bright-pink rounded-md text-white"
+                onClick={() => setShowReplyForm(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
       </motion.div>
     </ContentBlockErrorBoundary>
   );

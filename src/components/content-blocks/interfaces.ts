@@ -1,4 +1,3 @@
-
 export interface BlockInteractionsProps {
   id: string;
   liked?: boolean;
@@ -99,4 +98,16 @@ export interface MindfulnessBlockProps {
   onMindfulnessComplete?: () => void;
   updateHeight?: (height: number) => void;
   childAge?: number;
+}
+
+// Ensure all block interfaces include interaction props
+export interface BlockCommonProps {
+  specialistId: string;
+  updateHeight?: (height: number) => void;
+  childAge?: number;
+  blockId?: string;
+  onToggleLike?: () => void;
+  onToggleBookmark?: () => void;
+  onReply?: (message: string) => void;
+  onRabbitHoleClick?: (question: string) => void;
 }

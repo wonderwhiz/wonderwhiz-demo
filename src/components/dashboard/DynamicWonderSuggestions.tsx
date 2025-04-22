@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, Sparkles } from 'lucide-react';
 import { useWonderSuggestions } from '@/hooks/use-wonder-suggestions';
+import { useBlockInteractions } from '@/hooks/useBlockInteractions';
 
 interface DynamicWonderSuggestionsProps {
   childId: string;
@@ -29,6 +30,8 @@ const DynamicWonderSuggestions: React.FC<DynamicWonderSuggestionsProps> = ({
     childAge,
     childInterests
   });
+
+  const { handleToggleBookmark } = useBlockInteractions(childId);
 
   const handleSuggestionClick = (suggestion: string) => {
     onSuggestionClick(suggestion);
