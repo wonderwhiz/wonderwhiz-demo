@@ -29,7 +29,14 @@ const FactBlock: React.FC<FactBlockProps> = ({
   childAge = 10
 }) => {
   const [isReading, setIsReading] = useState(false);
-  const specialist = getSpecialistInfo?.(specialistId) || { name: specialistId, color: 'purple' };
+  const specialist = getSpecialistInfo?.(specialistId) || { 
+    name: specialistId, 
+    fallbackColor: 'bg-purple-600',
+    fallbackInitial: 'S',
+    avatar: '',
+    title: ''
+  };
+  
   const blockType = isFunFact ? 'funFact' : 'fact';
   
   // Choose age-appropriate variant for styling
@@ -56,6 +63,20 @@ const FactBlock: React.FC<FactBlockProps> = ({
   
   // Determine if we should show reading controls
   const showReadAloud = !!onReadAloud && (childAge <= 9 || childAge === undefined);
+
+  // Get specialist color for text
+  const getSpecialistTextColor = () => {
+    switch (specialistId) {
+      case 'nova': return 'text-blue-400';
+      case 'spark': return 'text-amber-400';
+      case 'prism': return 'text-purple-400'; 
+      case 'pixel': return 'text-cyan-400';
+      case 'atlas': return 'text-amber-600';
+      case 'lotus': return 'text-emerald-400';
+      case 'whizzy': return 'text-purple-400';
+      default: return 'text-purple-400';
+    }
+  };
 
   return (
     <motion.div
@@ -132,7 +153,7 @@ const FactBlock: React.FC<FactBlockProps> = ({
         
         {/* Attribution to specialist */}
         <div className="mt-2 text-right">
-          <span className={`text-xs text-${specialist.color}-400`}>— {specialist.name}</span>
+          <span className={`text-xs ${getSpecialistTextColor()}`}>— {specialist.name}</span>
         </div>
       </motion.div>
     </motion.div>

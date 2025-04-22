@@ -3,6 +3,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Star, Trophy, Sparkles, CheckCircle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
 
 interface ExplorationProgressProps {
   totalBlocks: number;
@@ -64,8 +65,16 @@ const ExplorationProgress: React.FC<ExplorationProgressProps> = ({
           <span className="text-white/70 text-sm">Content Explored</span>
           <span className="text-white/90 text-sm font-medium">{viewedBlocks}/{totalBlocks}</span>
         </div>
-        <Progress value={viewProgress} className="h-2 bg-white/10" 
-          indicatorClassName="bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-purple" />
+        <div className="relative">
+          <Progress 
+            value={viewProgress} 
+            className="h-2 bg-white/10" 
+          />
+          <div 
+            className="absolute top-0 left-0 h-2 bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-purple rounded-full" 
+            style={{ width: `${viewProgress}%` }}
+          />
+        </div>
       </motion.div>
       
       <motion.div variants={itemVariants} className="mb-4">
@@ -73,8 +82,16 @@ const ExplorationProgress: React.FC<ExplorationProgressProps> = ({
           <span className="text-white/70 text-sm">Interactions</span>
           <span className="text-white/90 text-sm font-medium">{interactedBlocks}/{totalBlocks}</span>
         </div>
-        <Progress value={interactionProgress} className="h-2 bg-white/10"
-          indicatorClassName="bg-gradient-to-r from-wonderwhiz-cyan to-wonderwhiz-blue" />
+        <div className="relative">
+          <Progress 
+            value={interactionProgress} 
+            className="h-2 bg-white/10"
+          />
+          <div 
+            className="absolute top-0 left-0 h-2 bg-gradient-to-r from-wonderwhiz-cyan to-wonderwhiz-blue rounded-full" 
+            style={{ width: `${interactionProgress}%` }}
+          />
+        </div>
       </motion.div>
       
       <motion.div 
