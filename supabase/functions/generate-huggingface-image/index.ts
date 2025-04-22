@@ -54,42 +54,67 @@ serve(async (req) => {
       console.log('Prompt truncated to 500 characters');
     }
 
-    // Call HuggingFace API using the stabilityai/stable-diffusion-2 model
-    const response = await fetch(
-      "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${HUGGING_FACE_TOKEN}`
-        },
-        body: JSON.stringify({
-          inputs: safePrompt,
-          options: {
-            wait_for_model: true
+    // We'll use a different approach to retrieve and process the image
+    try {
+      // Call HuggingFace API using the stabilityai/stable-diffusion-2 model
+      console.log("Sending request to HuggingFace API");
+      const response = await fetch(
+        "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${HUGGING_FACE_TOKEN}`
           },
-          parameters: {
-            guidance_scale: 7.5,
-            num_inference_steps: 25,
-          }
-        })
-      }
-    );
+          body: JSON.stringify({
+            inputs: safePrompt,
+            options: {
+              wait_for_model: true
+            },
+            parameters: {
+              guidance_scale: 7.5,
+              num_inference_steps: 25,
+            }
+          })
+        }
+      );
 
-    // Check if response is OK
-    if (!response.ok) {
-      let errorMessage;
-      try {
-        // Clone the response before parsing it as json to avoid consuming the body
-        const errorData = await response.clone().json();
-        console.error('HuggingFace API error:', errorData);
-        errorMessage = errorData.error || `HuggingFace API error: ${response.status}`;
-      } catch (e) {
-        // If we can't parse JSON response, get text instead
+      console.log(`HuggingFace API response status: ${response.status}`);
+      
+      // Check if response is OK
+      if (!response.ok) {
+        // Create a new error with status information
         const errorText = await response.text();
-        console.error('HuggingFace API error (raw):', errorText);
-        errorMessage = `HTTP ${response.status}: ${errorText}`;
+        console.error(`HuggingFace API error (${response.status}):`, errorText);
+        throw new Error(`HuggingFace API error: ${response.status} - ${errorText}`);
       }
+
+      // For successful responses, we get binary image data
+      // We need to read it correctly without consuming the body multiple times
+      const imageArrayBuffer = await response.arrayBuffer();
+      
+      // Convert array buffer to base64
+      const base64Image = btoa(
+        new Uint8Array(imageArrayBuffer).reduce(
+          (data, byte) => data + String.fromCharCode(byte),
+          ''
+        )
+      );
+      
+      const imageUrl = `data:image/png;base64,${base64Image}`;
+      
+      console.log('Successfully generated image with HuggingFace (stable-diffusion-2)');
+      
+      // Return the image data URL
+      return new Response(
+        JSON.stringify({ 
+          imageUrl: imageUrl,
+          source: 'huggingface'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } catch (hfError) {
+      console.error('HuggingFace API call failed:', hfError);
       
       if (retryOnFail) {
         console.log('Attempting to fetch fallback image from Unsplash');
@@ -100,7 +125,7 @@ serve(async (req) => {
           return new Response(
             JSON.stringify({ 
               imageUrl: fallbackImage,
-              originalError: errorMessage,
+              originalError: hfError.message,
               source: 'unsplash'
             }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -108,32 +133,8 @@ serve(async (req) => {
         }
       }
       
-      throw new Error(errorMessage);
+      throw hfError;
     }
-
-    // For HuggingFace, we get back binary image data we need to convert to base64
-    // Clone the response before consuming the body to avoid the "Body already consumed" error
-    const imageArrayBuffer = await response.clone().arrayBuffer();
-    const base64Image = btoa(
-      new Uint8Array(imageArrayBuffer).reduce(
-        (data, byte) => data + String.fromCharCode(byte),
-        ''
-      )
-    );
-    
-    const imageUrl = `data:image/png;base64,${base64Image}`;
-    
-    console.log('Successfully generated image with HuggingFace (stable-diffusion-2)');
-    
-    // Return the image data URL
-    return new Response(
-      JSON.stringify({ 
-        imageUrl: imageUrl,
-        source: 'huggingface'
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-
   } catch (error) {
     console.error('Error generating image:', error);
     
