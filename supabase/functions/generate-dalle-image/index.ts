@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
 const corsHeaders = {
@@ -61,39 +62,142 @@ serve(async (req) => {
 
     // Call DALL-E 3 API with updated parameters according to OpenAI docs
     console.log('Calling OpenAI API with prompt:', safePrompt.substring(0, 50) + '...');
-    const response = await fetch('https://api.openai.com/v1/images/generations', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openAiApiKey}`
-      },
-      body: JSON.stringify({
-        model: "dall-e-3",
-        prompt: safePrompt,
-        n: 1,
-        size: size,
-        style: style,
-        quality: "standard",
-        response_format: "url" // URL is more efficient than b64_json
-      })
-    });
+    
+    try {
+      const response = await fetch('https://api.openai.com/v1/images/generations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${openAiApiKey}`
+        },
+        body: JSON.stringify({
+          model: "dall-e-3",
+          prompt: safePrompt,
+          n: 1,
+          size: size,
+          style: style,
+          quality: "standard",
+          response_format: "url" // URL is more efficient than b64_json
+        })
+      });
 
-    // Check if response is OK and handle error responses properly
-    if (!response.ok) {
-      let errorData;
+      // Check if response is OK and handle error responses properly
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = await response.json();
+          console.error('DALL-E API error:', errorData);
+        } catch (e) {
+          // If we can't parse JSON response, get text instead
+          const errorText = await response.text();
+          console.error('DALL-E API error (raw):', errorText);
+          errorData = { error: { message: `HTTP ${response.status}: ${errorText}` } };
+        }
+        
+        // If this is a content policy violation or similar issue, try to get a fallback image
+        if (retryOnFail) {
+          console.log('DALL-E failed. Attempting to fetch fallback image from Unsplash');
+          const fallbackImage = await getFallbackImage(prompt);
+          
+          if (fallbackImage) {
+            console.log('Successfully retrieved fallback image from Unsplash');
+            return new Response(
+              JSON.stringify({ 
+                imageUrl: fallbackImage,
+                originalError: errorData.error?.message || 'OpenAI API error',
+                source: 'unsplash'
+              }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+        }
+        
+        throw new Error(errorData.error?.message || `OpenAI API error: ${response.status}`);
+      }
+
+      // Process the successful response
       try {
-        errorData = await response.json();
-        console.error('DALL-E API error:', errorData);
-      } catch (e) {
-        // If we can't parse JSON response, get text instead
-        const errorText = await response.text();
-        console.error('DALL-E API error (raw):', errorText);
-        errorData = { error: { message: `HTTP ${response.status}: ${errorText}` } };
+        const data = await response.json();
+        
+        if (!data.data || !data.data[0] || !data.data[0].url) {
+          console.error('Unexpected API response structure:', data);
+          throw new Error('No image URL returned from OpenAI API');
+        }
+
+        console.log('Successfully generated image with revised prompt:', 
+          data.data[0].revised_prompt ? data.data[0].revised_prompt.substring(0, 50) + '...' : 'No revised prompt');
+        
+        // Return the image URL and additional metadata
+        return new Response(
+          JSON.stringify({ 
+            imageUrl: data.data[0].url,
+            revised_prompt: data.data[0].revised_prompt,
+            source: 'dalle'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } catch (parseError) {
+        console.error('Error parsing OpenAI response:', parseError);
+        throw new Error('Invalid response from OpenAI API');
+      }
+    } catch (openaiError) {
+      console.error('OpenAI API error:', openaiError);
+      
+      // Try to use HuggingFace as a fallback
+      console.log('Trying to use HuggingFace as a fallback...');
+      try {
+        // Call the HuggingFace function by invoking another edge function
+        const huggingFaceToken = Deno.env.get('HUGGING_FACE_ACCESS_TOKEN');
+        if (huggingFaceToken) {
+          // HuggingFace token exists, we can call that function directly
+          const hugResponse = await fetch(
+            "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${huggingFaceToken}`
+              },
+              body: JSON.stringify({
+                inputs: safePrompt,
+                parameters: {
+                  guidance_scale: 7.5,
+                  num_inference_steps: 25,
+                }
+              })
+            }
+          );
+          
+          if (hugResponse.ok) {
+            // Convert the binary response to a base64 data URL
+            const imageArrayBuffer = await hugResponse.arrayBuffer();
+            const base64Image = btoa(
+              new Uint8Array(imageArrayBuffer).reduce(
+                (data, byte) => data + String.fromCharCode(byte),
+                ''
+              )
+            );
+            
+            const imageUrl = `data:image/png;base64,${base64Image}`;
+            
+            console.log('Successfully generated fallback image with HuggingFace');
+            
+            return new Response(
+              JSON.stringify({ 
+                imageUrl: imageUrl,
+                source: 'huggingface'
+              }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+        }
+      } catch (hfError) {
+        console.error('HuggingFace fallback failed:', hfError);
       }
       
-      // If this is a content policy violation or similar issue, try to get a fallback image
+      // If all fails, try Unsplash
       if (retryOnFail) {
-        console.log('Attempting to fetch fallback image from Unsplash');
+        console.log('Trying Unsplash as a final fallback...');
         const fallbackImage = await getFallbackImage(prompt);
         
         if (fallbackImage) {
@@ -101,41 +205,16 @@ serve(async (req) => {
           return new Response(
             JSON.stringify({ 
               imageUrl: fallbackImage,
-              originalError: errorData.error?.message || 'OpenAI API error',
-              source: 'fallback'
+              originalError: openaiError.message || 'OpenAI and HuggingFace failed',
+              source: 'unsplash'
             }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
       }
       
-      throw new Error(errorData.error?.message || `OpenAI API error: ${response.status}`);
-    }
-
-    // Process the successful response
-    try {
-      const data = await response.json();
-      
-      if (!data.data || !data.data[0] || !data.data[0].url) {
-        console.error('Unexpected API response structure:', data);
-        throw new Error('No image URL returned from OpenAI API');
-      }
-
-      console.log('Successfully generated image with revised prompt:', 
-        data.data[0].revised_prompt ? data.data[0].revised_prompt.substring(0, 50) + '...' : 'No revised prompt');
-      
-      // Return the image URL and additional metadata
-      return new Response(
-        JSON.stringify({ 
-          imageUrl: data.data[0].url,
-          revised_prompt: data.data[0].revised_prompt,
-          source: 'dalle'
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    } catch (parseError) {
-      console.error('Error parsing OpenAI response:', parseError);
-      throw new Error('Invalid response from OpenAI API');
+      // If all fallbacks fail, rethrow the original error
+      throw openaiError;
     }
   } catch (error) {
     console.error('Error generating image:', error);

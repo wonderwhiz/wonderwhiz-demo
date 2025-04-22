@@ -3,11 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Image, Download, Share2, Sparkles, AlertCircle, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { BlockError } from './BlockError';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
+import { useHuggingFaceImageGeneration } from '@/hooks/useHuggingFaceImageGeneration';
 
 interface InteractiveImageBlockProps {
   topic: string;
@@ -26,21 +26,19 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
   className = '',
   showHeader = true
 }) => {
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
-  const [fallbackSource, setFallbackSource] = useState<string | null>(null);
   
-  // Determine the appropriate image style based on child age
-  const getImageStyle = () => {
-    if (childAge <= 7) {
-      return 'vivid'; // Bright, colorful style for young children
-    } else {
-      return 'natural'; // More realistic style for older children
-    }
-  };
+  // Use our new hook for image generation
+  const {
+    generateImage,
+    isGenerating,
+    imageUrl,
+    fallbackSource,
+    generationError,
+    resetImage
+  } = useHuggingFaceImageGeneration({ childAge });
   
   // Clean up the topic to make a better prompt
   const cleanTopic = (topic: string) => {
@@ -79,13 +77,11 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
     return `linear-gradient(135deg, hsl(${hue}, 70%, 60%), hsl(${(hue + 40) % 360}, 70%, 50%))`;
   };
   
-  const generateImage = async () => {
-    if (isLoading) return;
+  const handleImageGeneration = async () => {
+    if (isGenerating) return;
     
-    setIsLoading(true);
-    setProgress(10);
     setError(null);
-    setFallbackSource(null);
+    setProgress(0);
     
     try {
       // Ensure we have a valid topic before proceeding
@@ -94,80 +90,45 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
       }
       
       const prompt = generatePrompt();
-      const style = getImageStyle();
       
-      toast.loading("Generating image...");
-      setProgress(30);
+      // Update progress as we go
+      setProgress(10);
       
-      console.log('Calling generate-dalle-image with prompt:', prompt.substring(0, 50) + '...');
+      // Initial progress steps
+      const progressInterval = setInterval(() => {
+        setProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return prev;
+          }
+          return prev + 5;
+        });
+      }, 800);
       
-      // Call the Supabase edge function with proper JSON body
-      const { data, error: functionError } = await supabase.functions.invoke('generate-dalle-image', {
-        body: {
-          prompt,
-          style,
-          childAge,
-          retryOnFail: true
-        }
-      });
+      // Generate image with our new hook
+      await generateImage(prompt);
       
-      setProgress(90);
-      
-      if (functionError) {
-        console.error('Edge function error:', functionError);
-        throw new Error(`Failed to generate image: ${functionError.message || functionError}`);
-      }
-      
-      if (!data) {
-        console.error('No data returned from edge function');
-        throw new Error('No response from image generation service');
-      }
-      
-      if (data.error) {
-        console.error('API Error:', data.error);
-        throw new Error(`Failed to generate image: ${data.error}`);
-      }
-      
-      // Handle missing image URL
-      if (!data.imageUrl && !data.fallbackImageUrl) {
-        console.error('No image URL in response:', data);
-        throw new Error('No image URL returned');
-      }
-      
-      // Use fallback URL if main URL is missing
-      const finalImageUrl = data.imageUrl || data.fallbackImageUrl;
-      
-      // If we got a fallback image from Unsplash
-      if (data.source === 'fallback' || data.fallbackImageUrl) {
-        console.log('Using fallback image source:', data.source || 'unsplash');
-        setFallbackSource('unsplash');
-        toast.success("Generated an alternative image");
-      } else {
-        toast.success("Image generated!");
-      }
-      
-      setImageUrl(finalImageUrl);
+      // Cleanup and set final progress
+      clearInterval(progressInterval);
       setProgress(100);
       
     } catch (err: any) {
-      console.error('Error generating image:', err);
+      console.error('Error in handleImageGeneration:', err);
       setError(`Error: ${err.message || 'Unknown error'}`);
-      toast.error("Could not generate image");
       
-      // Try a fallback color background
-      const colorBackground = generateColorBackground(topic);
-      setFallbackSource('color');
-      setImageUrl(colorBackground);
-    } finally {
-      setIsLoading(false);
-      toast.dismiss();
+      // Final fallback to colored background if all else fails
+      if (!imageUrl) {
+        const colorBackground = generateColorBackground(topic);
+        resetImage();
+        return colorBackground;
+      }
     }
   };
   
-  // Generate the image when the component mounts or when the topic changes significantly
+  // Generate the image when the component mounts or when the topic/retryCount changes
   useEffect(() => {
     if (topic) {
-      generateImage();
+      handleImageGeneration();
     }
   }, [topic, retryCount]);
   
@@ -187,14 +148,27 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
     if (!imageUrl || fallbackSource === 'color') return;
     
     // If it's a real image URL (not a CSS gradient), create a download link
-    const a = document.createElement('a');
-    a.href = imageUrl;
-    a.download = `wonderwhiz-${cleanTopic(topic).replace(/\s+/g, '-')}.jpg`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    
-    toast.success("Image saved!");
+    try {
+      const isDataUrl = imageUrl.startsWith('data:');
+      const a = document.createElement('a');
+      
+      if (isDataUrl) {
+        // For data URLs, we need to handle them differently
+        a.href = imageUrl;
+      } else {
+        a.href = imageUrl;
+      }
+      
+      a.download = `wonderwhiz-${cleanTopic(topic).replace(/\s+/g, '-')}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
+      toast.success("Image saved!");
+    } catch (err) {
+      console.error('Download error:', err);
+      toast.error("Couldn't download image");
+    }
   };
   
   // Age-appropriate messages
@@ -217,6 +191,67 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
       return "Error: Could not generate the requested image.";
     }
   };
+
+  // For data URLs from HuggingFace, we need some special handling for styling
+  const getImageElement = () => {
+    if (!imageUrl) return null;
+    
+    if (fallbackSource === 'color') {
+      return (
+        <div 
+          className="w-full aspect-video rounded-t-xl flex items-center justify-center"
+          style={{ background: imageUrl }}
+        >
+          <div className="bg-black/30 backdrop-blur-sm p-4 rounded-lg">
+            <Camera className="h-8 w-8 mx-auto mb-2 text-white/80" />
+            <p className="text-white text-center text-sm">
+              {childAge <= 7 
+                ? "Use your imagination!" 
+                : "No image available - use your imagination"}
+            </p>
+          </div>
+        </div>
+      );
+    }
+    
+    // Handle both URL images and data URLs from HuggingFace
+    return (
+      <div className="w-full aspect-video rounded-t-xl overflow-hidden bg-black/30">
+        <img 
+          src={imageUrl} 
+          alt={`Visualization of ${topic}`}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            console.error('Image loading error:', e);
+            setError("The image failed to load");
+            // Set a color background as final fallback
+            const colorBackground = generateColorBackground(topic);
+            resetImage();
+          }}
+        />
+      </div>
+    );
+  };
+  
+  // Determine fallback label based on source
+  const getFallbackLabel = () => {
+    switch (fallbackSource) {
+      case 'unsplash':
+        return childAge <= 7 
+          ? "We found a nice picture instead!" 
+          : "We used a stock image";
+      case 'huggingface':
+        return childAge <= 7 
+          ? "Our AI drew this just for you!" 
+          : "Created with AI";
+      case 'dalle':
+        return childAge <= 7 
+          ? "Our AI drew this just for you!" 
+          : "Created with DALL-E AI";
+      default:
+        return null;
+    }
+  };
   
   return (
     <div className={cn("mb-6", className)}>
@@ -230,7 +265,7 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
       )}
       
       <AnimatePresence mode="wait">
-        {isLoading ? (
+        {isGenerating ? (
           <motion.div
             key="loading"
             initial={{ opacity: 0 }}
@@ -247,7 +282,7 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
               <p className="text-white/60 text-sm">{progress}% complete</p>
             </div>
           </motion.div>
-        ) : error && !imageUrl ? (
+        ) : (error || generationError) && !imageUrl ? (
           <motion.div
             key="error"
             initial={{ opacity: 0 }}
@@ -256,7 +291,7 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
           >
             <BlockError
               message={getErrorMessage()}
-              error={new Error(error)}
+              error={new Error(error || generationError || "Unknown error")}
               onRetry={handleRetry}
               childAge={childAge}
             />
@@ -269,43 +304,12 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
             exit={{ opacity: 0 }}
             className="bg-gradient-to-br from-wonderwhiz-deep-purple/40 to-wonderwhiz-light-purple/30 backdrop-blur-md border border-wonderwhiz-light-purple/30 rounded-xl overflow-hidden"
           >
-            {fallbackSource === 'color' ? (
-              <div 
-                className="w-full aspect-video rounded-t-xl flex items-center justify-center"
-                style={{ background: imageUrl }}
-              >
-                <div className="bg-black/30 backdrop-blur-sm p-4 rounded-lg">
-                  <Camera className="h-8 w-8 mx-auto mb-2 text-white/80" />
-                  <p className="text-white text-center text-sm">
-                    {childAge <= 7 
-                      ? "Use your imagination!" 
-                      : "No image available - use your imagination"}
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="w-full aspect-video rounded-t-xl overflow-hidden bg-black/30">
-                <img 
-                  src={imageUrl} 
-                  alt={`Visualization of ${topic}`}
-                  className="w-full h-full object-cover"
-                  onError={() => {
-                    console.error('Image loading error');
-                    setError("The image failed to load");
-                    // Set a color background as final fallback
-                    setFallbackSource('color');
-                    setImageUrl(generateColorBackground(topic));
-                  }}
-                />
-              </div>
-            )}
+            {getImageElement()}
             
-            {fallbackSource === 'unsplash' && (
+            {getFallbackLabel() && (
               <div className="bg-wonderwhiz-deep-purple/80 text-white/80 px-3 py-1 text-xs flex items-center">
                 <AlertCircle className="h-3 w-3 mr-1" />
-                {childAge <= 7 
-                  ? "We found a nice picture instead!" 
-                  : "We used an alternative image source"}
+                {getFallbackLabel()}
               </div>
             )}
             
