@@ -1,8 +1,10 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Lightbulb } from 'lucide-react';
 import BlockHeader from './BlockHeader';
 import BlockInteractions from './BlockInteractions';
-import { Card } from '@/components/ui/card';
+import { useAgeAdaptation } from '@/hooks/useAgeAdaptation';
 
 interface FunFactBlockProps {
   fact: string;
@@ -12,6 +14,7 @@ interface FunFactBlockProps {
   onReply?: (message: string) => void;
   onRabbitHoleClick?: (question: string) => void;
   updateHeight?: (height: number) => void;
+  childAge?: number;
 }
 
 const FunFactBlock: React.FC<FunFactBlockProps> = ({
@@ -21,23 +24,38 @@ const FunFactBlock: React.FC<FunFactBlockProps> = ({
   onBookmark,
   onReply,
   onRabbitHoleClick,
-  updateHeight
+  updateHeight,
+  childAge = 10
 }) => {
-  const blockRef = useRef<HTMLDivElement>(null);
   const [showReplyForm, setShowReplyForm] = useState(false);
+  const { textSize, messageStyle } = useAgeAdaptation(childAge);
   
-  useEffect(() => {
-    if (blockRef.current && updateHeight) {
-      updateHeight(blockRef.current.offsetHeight);
+  const getHeader = () => {
+    if (messageStyle === 'playful') {
+      return "Wow! Did You Know?";
+    } else if (messageStyle === 'casual') {
+      return "Fun Fact";
+    } else {
+      return "Interesting Fact";
     }
-  }, [fact, updateHeight]);
+  };
 
   return (
-    <Card ref={blockRef} className="overflow-hidden bg-white/5 backdrop-blur-lg border-primary/10 shadow-md">
-      <BlockHeader type="Fun Fact" specialistId={specialistId} />
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="overflow-hidden bg-gradient-to-br from-pink-500/20 to-yellow-500/20 rounded-lg border border-white/10 shadow-md"
+    >
+      <BlockHeader type={getHeader()} specialistId={specialistId} />
       
       <div className="p-4">
-        <p className="text-white/90 mb-4">{fact}</p>
+        <div className="flex gap-3 items-start">
+          <div className="bg-yellow-500/20 p-2 rounded-full flex-shrink-0 mt-1">
+            <Lightbulb className="h-4 w-4 text-yellow-400" />
+          </div>
+          <p className={`text-white/90 ${textSize}`}>{fact}</p>
+        </div>
       </div>
       
       <BlockInteractions 
@@ -51,7 +69,7 @@ const FunFactBlock: React.FC<FunFactBlockProps> = ({
         onRabbitHoleClick={onRabbitHoleClick}
         relatedQuestions={[]}
       />
-    </Card>
+    </motion.div>
   );
 };
 

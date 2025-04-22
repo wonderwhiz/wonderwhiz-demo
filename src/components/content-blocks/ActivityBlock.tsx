@@ -1,109 +1,93 @@
-import React, { useState } from 'react';
 
-export interface ActivityBlockProps {
-  content: {
-    activity: string;
-    title: string;
-    instructions: string;
-    steps: string[];
-  };
-  specialistId: string;
-  onActivityComplete?: () => void;
-  updateHeight?: (height: number) => void;
-}
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Activity, CheckCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ActivityBlockProps } from './interfaces';
+import { useAgeAdaptation } from '@/hooks/useAgeAdaptation';
 
 const ActivityBlock: React.FC<ActivityBlockProps> = ({
   content,
   specialistId,
   onActivityComplete,
-  updateHeight
+  updateHeight,
+  childAge = 10
 }) => {
-  const [isStarted, setIsStarted] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
-  const [containerHeight, setContainerHeight] = useState<number | null>(null);
+  const { textSize, interactionStyle, messageStyle } = useAgeAdaptation(childAge);
   
-  const containerRef = React.useRef<HTMLDivElement>(null);
-  
-  React.useEffect(() => {
-    if (containerRef.current && updateHeight) {
-      const height = containerRef.current.offsetHeight;
-      setContainerHeight(height);
-      updateHeight(height);
-    }
-  }, [isStarted, currentStep, isCompleted, updateHeight]);
-  
-  const handleStart = () => {
-    setIsStarted(true);
-  };
-  
-  const handleNextStep = () => {
-    if (currentStep < content.steps.length - 1) {
-      setCurrentStep(currentStep + 1);
-    } else {
-      setIsCompleted(true);
-      if (onActivityComplete) {
-        onActivityComplete();
-      }
+  const handleComplete = () => {
+    setIsCompleted(true);
+    if (onActivityComplete) {
+      onActivityComplete();
     }
   };
   
+  const getTitle = () => {
+    return content.title || (messageStyle === 'playful' ? 
+      "Fun Activity Time!" : 
+      messageStyle === 'casual' ? 
+        "Let's Try This Activity" : 
+        "Activity"
+    );
+  };
+
   return (
-    <div ref={containerRef} className="p-3 bg-indigo-500/10 backdrop-blur-md rounded-lg">
-      <div className="p-4 border border-indigo-500/20 rounded-lg">
-        <h3 className="text-white font-medium mb-2">{content.title || 'Fun Activity'}</h3>
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="bg-gradient-to-br from-blue-600/20 to-indigo-600/20 p-4 rounded-lg border border-white/10"
+    >
+      <div className="flex items-center gap-3 mb-4">
+        <div className="p-2 bg-blue-500/20 rounded-full">
+          <Activity className="h-5 w-5 text-blue-400" />
+        </div>
+        <h3 className={`text-white font-medium ${textSize}`}>{getTitle()}</h3>
+      </div>
+      
+      <div className={`mb-6 ${textSize}`}>
+        <p className="text-white/90 mb-4">{content.activity || content.instructions}</p>
         
-        {!isStarted ? (
-          <>
-            <p className="text-white/90 mb-4">{content.instructions || content.activity}</p>
-            <button
-              onClick={handleStart}
-              className="w-full py-2 bg-indigo-500/60 hover:bg-indigo-500/80 text-white text-sm rounded-md transition-colors"
-            >
-              Start Activity
-            </button>
-          </>
-        ) : !isCompleted ? (
-          <div className="space-y-4">
-            <div className="bg-white/10 p-3 rounded-md">
-              <p className="text-white/90">{content.steps[currentStep]}</p>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="text-xs text-white/60">
-                Step {currentStep + 1} of {content.steps.length}
-              </div>
-              <button
-                onClick={handleNextStep}
-                className="px-4 py-1.5 bg-indigo-500/60 hover:bg-indigo-500/80 text-white text-sm rounded-md transition-colors"
-              >
-                {currentStep < content.steps.length - 1 ? 'Next Step' : 'Complete Activity'}
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="text-center py-2">
-            <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <h4 className="text-white font-medium mb-1">Activity Completed!</h4>
-            <p className="text-white/70 text-sm mb-3">Great job! You've earned sparks for completing this activity.</p>
-            <button
-              onClick={() => {
-                setIsStarted(false);
-                setIsCompleted(false);
-                setCurrentStep(0);
-              }}
-              className="px-4 py-1.5 bg-white/10 hover:bg-white/20 text-white text-sm rounded-md transition-colors"
-            >
-              Do it again
-            </button>
+        {content.steps && Array.isArray(content.steps) && content.steps.length > 0 && (
+          <div className="mt-4 bg-white/5 p-3 rounded-lg">
+            <h4 className={`text-white/90 font-medium mb-2 ${
+              childAge <= 7 ? 'text-base' : 'text-sm'
+            }`}>
+              {childAge <= 7 ? "Here's what to do:" : "Steps:"}
+            </h4>
+            <ol className={`list-decimal pl-5 ${
+              childAge <= 7 ? 'space-y-3 text-base' : 'space-y-2 text-sm'
+            }`}>
+              {content.steps.map((step, index) => (
+                <li key={index} className="text-white/80">{step}</li>
+              ))}
+            </ol>
           </div>
         )}
       </div>
-    </div>
+      
+      {!isCompleted ? (
+        <Button
+          onClick={handleComplete}
+          className={`w-full bg-blue-500/80 hover:bg-blue-500 ${interactionStyle}`}
+        >
+          {childAge <= 7 ? "I Did It!" : "Mark as Completed"}
+        </Button>
+      ) : (
+        <div className="flex items-center justify-center gap-2 p-3 bg-green-500/20 rounded-lg text-white">
+          <CheckCircle className="h-5 w-5 text-green-400" />
+          <span className={textSize}>
+            {messageStyle === 'playful' ? 
+              "Awesome job! You completed the activity!" : 
+              messageStyle === 'casual' ? 
+                "Great work! Activity completed." : 
+                "Activity completed successfully."
+            }
+          </span>
+        </div>
+      )}
+    </motion.div>
   );
 };
 

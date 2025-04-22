@@ -7,6 +7,12 @@ import EnhancedQuizBlock from './content-blocks/EnhancedQuizBlock';
 import FactBlock from './content-blocks/FactBlock';
 import NewsBlock from './content-blocks/NewsBlock';
 import RiddleBlock from './content-blocks/RiddleBlock';
+import FlashcardBlock from './content-blocks/FlashcardBlock';
+import CreativeBlock from './content-blocks/CreativeBlock';
+import ActivityBlock from './content-blocks/ActivityBlock';
+import MindfulnessBlock from './content-blocks/MindfulnessBlock';
+import TaskBlock from './content-blocks/TaskBlock';
+import FunFactBlock from './content-blocks/FunFactBlock';
 import { blockContainer } from './content-blocks/utils/blockStyles';
 import { blockVariants } from './content-blocks/utils/blockAnimations';
 import { ContentBlockType, isValidContentBlockType } from '@/types/curio';
@@ -109,17 +115,65 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
           />
         );
         
-      // Handle funFact type
       case 'funFact':
         return (
-          <FactBlock 
+          <FunFactBlock 
             fact={block.content.text || block.content.fact}
-            title="Did You Know?"
             specialistId={block.specialist_id}
-            rabbitHoles={block.content.rabbitHoles || []}
+            onLike={onLike}
+            onBookmark={onBookmark}
+            onReply={onReply}
             onRabbitHoleClick={onRabbitHoleClick}
-            onReadAloud={onReadAloud}
-            isFunFact={true}
+            childAge={childAge}
+          />
+        );
+        
+      case 'flashcard':
+        return (
+          <FlashcardBlock
+            content={block.content}
+            specialistId={block.specialist_id}
+            childAge={childAge}
+          />
+        );
+        
+      case 'creative':
+        return (
+          <CreativeBlock
+            content={block.content}
+            specialistId={block.specialist_id}
+            onCreativeUpload={onCreativeUpload}
+            childAge={childAge}
+          />
+        );
+        
+      case 'activity':
+        return (
+          <ActivityBlock
+            content={block.content}
+            specialistId={block.specialist_id}
+            onActivityComplete={onActivityComplete}
+            childAge={childAge}
+          />
+        );
+        
+      case 'mindfulness':
+        return (
+          <MindfulnessBlock
+            content={block.content}
+            specialistId={block.specialist_id}
+            onMindfulnessComplete={onMindfulnessComplete}
+            childAge={childAge}
+          />
+        );
+        
+      case 'task':
+        return (
+          <TaskBlock
+            content={block.content}
+            specialistId={block.specialist_id}
+            onTaskComplete={onTaskComplete}
+            childAge={childAge}
           />
         );
         

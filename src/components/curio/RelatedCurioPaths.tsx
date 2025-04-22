@@ -1,20 +1,14 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Star, Map, Compass } from 'lucide-react';
+import { ArrowRight, Compass, MapPin, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
+import { useAgeAdaptation } from '@/hooks/useAgeAdaptation';
 
 interface RelatedCurioPathsProps {
   currentTopic: string;
-  onPathSelect: (path: string) => void;
+  onPathSelect: (question: string) => void;
   childAge?: number;
-}
-
-interface RelatedPath {
-  title: string;
-  description: string;
-  type: 'deeper' | 'broader' | 'related';
 }
 
 const RelatedCurioPaths: React.FC<RelatedCurioPathsProps> = ({
@@ -22,163 +16,102 @@ const RelatedCurioPaths: React.FC<RelatedCurioPathsProps> = ({
   onPathSelect,
   childAge = 10
 }) => {
-  const [loading, setLoading] = useState(true);
-  const [relatedPaths, setRelatedPaths] = useState<RelatedPath[]>([]);
+  const [relatedPaths, setRelatedPaths] = useState<string[]>([]);
+  const { textSize, messageStyle } = useAgeAdaptation(childAge);
   
   useEffect(() => {
-    // In a real implementation this would call an API or database
-    // For now, we'll generate related paths based on the topic
+    if (!currentTopic) return;
+    
+    // Generate related paths based on the current topic
+    // This would ideally be replaced with an API call to get actual related topics
     const generateRelatedPaths = () => {
-      setLoading(true);
-      
       const topic = currentTopic.toLowerCase();
-      const paths: RelatedPath[] = [];
+      const paths = [
+        `How does ${topic} work?`,
+        `Why is ${topic} important?`,
+        `What's the history of ${topic}?`,
+        `Fun facts about ${topic}`,
+        `${topic} in everyday life`,
+        `The future of ${topic}`
+      ];
       
-      // Generate a deeper path
-      paths.push({
-        title: `How does ${topic} work?`,
-        description: `Dive deeper into the mechanics and processes of ${topic}.`,
-        type: 'deeper'
-      });
-      
-      // Generate a broader path
-      paths.push({
-        title: `${topic} in our world`,
-        description: `Explore how ${topic} connects to our everyday lives.`,
-        type: 'broader'
-      });
-      
-      // Generate related paths
-      paths.push({
-        title: `Fun facts about ${topic}`,
-        description: `Discover surprising and interesting tidbits about ${topic}.`,
-        type: 'related'
-      });
-      
-      // Add age-appropriate paths
-      if (childAge <= 7) {
-        paths.push({
-          title: `${topic} adventures!`,
-          description: `Join an exciting adventure to learn more about ${topic}.`,
-          type: 'related'
-        });
-      } else if (childAge <= 11) {
-        paths.push({
-          title: `${topic} mysteries`,
-          description: `Uncover mysteries and puzzles related to ${topic}.`,
-          type: 'related'
-        });
-      } else {
-        paths.push({
-          title: `The science behind ${topic}`,
-          description: `Explore the scientific principles and research about ${topic}.`,
-          type: 'deeper'
-        });
-      }
-      
-      setRelatedPaths(paths);
-      setLoading(false);
+      // Shuffle and limit based on age
+      const maxPaths = childAge <= 7 ? 3 : 4;
+      return shuffleArray(paths).slice(0, maxPaths);
     };
     
-    const timer = setTimeout(() => {
-      generateRelatedPaths();
-    }, 500);
-    
-    return () => clearTimeout(timer);
+    setRelatedPaths(generateRelatedPaths());
   }, [currentTopic, childAge]);
   
-  // Get path icon based on type
-  const getPathIcon = (type: string) => {
-    switch (type) {
-      case 'deeper': return <Compass className="h-4 w-4 text-wonderwhiz-vibrant-yellow" />;
-      case 'broader': return <Map className="h-4 w-4 text-cyan-400" />;
-      case 'related': 
-      default: return <Star className="h-4 w-4 text-pink-400" />;
+  // Helper function to shuffle array
+  const shuffleArray = (array: string[]) => {
+    const newArray = [...array];
+    for (let i = newArray.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
     }
+    return newArray;
   };
   
-  // Get path style based on type
-  const getPathStyle = (type: string) => {
-    switch (type) {
-      case 'deeper': 
-        return 'from-amber-500/10 to-orange-500/10 hover:from-amber-500/20 hover:to-orange-500/20 border-amber-500/20';
-      case 'broader': 
-        return 'from-cyan-500/10 to-blue-500/10 hover:from-cyan-500/20 hover:to-blue-500/20 border-cyan-500/20';
-      case 'related': 
+  // Get title based on age/message style
+  const getTitle = () => {
+    switch (messageStyle) {
+      case 'playful':
+        return "Where To Explore Next?";
+      case 'casual':
+        return "Continue Your Journey";
       default:
-        return 'from-pink-500/10 to-purple-500/10 hover:from-pink-500/20 hover:to-purple-500/20 border-pink-500/20';
+        return "Related Explorations";
     }
   };
-  
-  // Get button text based on child age
-  const getButtonText = (type: string) => {
-    if (childAge <= 7) {
-      switch (type) {
-        case 'deeper': return "Let's explore!";
-        case 'broader': return "Show me!";
-        case 'related': return "Let's go!";
-        default: return "Discover!";
-      }
-    } else {
-      return "Explore";
-    }
-  };
-  
-  // UI States
-  if (loading) {
-    return (
-      <div className="mt-8 bg-black/20 border border-white/10 rounded-lg p-4">
-        <h3 className="text-lg font-medium text-white mb-2">Related Paths</h3>
-        <div className="space-y-2">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="h-20 bg-white/5 rounded-lg animate-pulse" />
-          ))}
-        </div>
-      </div>
-    );
-  }
-  
+
   return (
-    <motion.div 
-      className="mt-8 bg-black/20 border border-white/10 rounded-lg p-4"
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
+      transition={{ duration: 0.4, delay: 0.2 }}
+      className="mt-10 mb-8 px-2 py-4 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 rounded-lg border border-white/10"
     >
-      <h3 className="text-lg font-medium text-white mb-3">Continue Your Journey</h3>
+      <div className="flex items-center gap-2 mb-4">
+        <Compass className="h-5 w-5 text-wonderwhiz-blue-accent" />
+        <h3 className={`text-white font-medium ${childAge <= 7 ? 'text-xl' : 'text-lg'}`}>
+          {getTitle()}
+        </h3>
+      </div>
       
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {relatedPaths.map((path, index) => (
-          <motion.div 
-            key={index}
-            className={`bg-gradient-to-r ${getPathStyle(path.type)} border rounded-lg p-3 flex items-start justify-between`}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.3, delay: index * 0.1 }}
-            whileHover={{ scale: 1.02 }}
+          <motion.div
+            key={`related-${index}`}
+            whileHover={{ x: 4 }}
+            className="group"
           >
-            <div className="flex-1">
-              <div className="flex items-center">
-                {getPathIcon(path.type)}
-                <h4 className="ml-2 text-white font-medium">{path.title}</h4>
-              </div>
-              <p className="mt-1 text-sm text-white/70">{path.description}</p>
-            </div>
-            
-            <Button 
-              size="sm" 
+            <Button
               variant="ghost"
-              className="bg-white/10 hover:bg-white/20 text-white mt-1 flex-shrink-0"
-              onClick={() => {
-                toast.success(`Starting new journey: ${path.title}`);
-                onPathSelect(path.title);
-              }}
+              onClick={() => onPathSelect(path)}
+              className="w-full justify-between bg-white/5 hover:bg-white/10 text-left h-auto py-3"
             >
-              {getButtonText(path.type)}
-              <ArrowRight className="ml-1 h-3.5 w-3.5" />
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-wonderwhiz-bright-pink" />
+                <span className={`text-white ${textSize}`}>{path}</span>
+              </div>
+              <ArrowRight className="h-4 w-4 text-white/50 group-hover:text-wonderwhiz-blue-accent transition-colors" />
             </Button>
           </motion.div>
         ))}
+      </div>
+      
+      <div className="mt-4 flex justify-center">
+        <Button
+          variant="link"
+          onClick={() => onPathSelect(`Tell me more about ${currentTopic}`)}
+          className="text-wonderwhiz-blue-accent hover:text-wonderwhiz-blue-accent/80"
+        >
+          <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+          <span className={textSize}>
+            {childAge <= 7 ? "More about this topic!" : "Explore this topic further"}
+          </span>
+        </Button>
       </div>
     </motion.div>
   );
