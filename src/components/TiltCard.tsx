@@ -88,13 +88,22 @@ const TiltCard: React.FC<TiltCardProps> = ({
           className="absolute inset-0 pointer-events-none transition-opacity duration-300"
           style={{
             background: `radial-gradient(circle at ${glarePosition ? glarePosition.x + '%' : glare.x + '%'} ${glarePosition ? glarePosition.y + '%' : glare.y + '%'}, rgba(255, 255, 255, ${isHovered ? glare.opacity : 0}) 0%, rgba(255, 255, 255, 0) 80%)`,
-            opacity: isHovered ? 1 : 0,
+            opacity: isHovered || glarePosition ? 1 : 0,
           }}
         />
       )}
       
-      {/* Edge highlight */}
-      <div className={`absolute inset-0 border border-white rounded-inherit pointer-events-none transition-opacity duration-300 ${isHovered ? 'opacity-30' : 'opacity-0'}`} />
+      {/* Enhanced edge highlight effect */}
+      <div className={`absolute inset-0 border border-white/20 rounded-inherit pointer-events-none transition-opacity duration-300 ${isHovered ? 'opacity-30' : 'opacity-0'}`} />
+      
+      {/* Depth shadow effect */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-0 transition-opacity duration-300"
+        style={{
+          boxShadow: 'inset 0 0 30px rgba(0, 0, 0, 0.2)',
+          opacity: isHovered ? 0.6 : 0,
+        }}
+      />
     </motion.div>
   );
 };

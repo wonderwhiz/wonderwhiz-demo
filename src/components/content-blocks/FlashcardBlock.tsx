@@ -49,34 +49,34 @@ const FlashcardBlock: React.FC<FlashcardBlockProps> = ({
     }, 600);
   };
   
-  // Define gradients based on the specialist ID for variety
+  // Define enhanced gradients based on the specialist ID for variety
   const getFrontGradient = () => {
     switch(specialistId) {
       case 'nova':
-        return 'from-indigo-600/30 to-purple-600/30';
+        return 'from-purple-600/30 via-indigo-500/30 to-pink-400/30';
       case 'prism':
-        return 'from-blue-600/30 to-cyan-600/30';
+        return 'from-blue-600/30 via-cyan-500/30 to-sky-400/30';
       case 'spark':
-        return 'from-amber-600/30 to-pink-600/30';
+        return 'from-amber-600/30 via-orange-500/30 to-pink-400/30';
       case 'atlas':
-        return 'from-emerald-600/30 to-teal-600/30';
+        return 'from-emerald-600/30 via-teal-500/30 to-green-400/30';
       default:
-        return 'from-purple-600/30 to-indigo-600/30';
+        return 'from-purple-600/30 via-indigo-500/30 to-pink-400/30';
     }
   };
   
   const getBackGradient = () => {
     switch(specialistId) {
       case 'nova':
-        return 'from-purple-600/30 to-pink-600/30';
+        return 'from-pink-400/30 via-purple-500/30 to-indigo-600/30';
       case 'prism':
-        return 'from-cyan-600/30 to-blue-600/30';
+        return 'from-sky-400/30 via-blue-500/30 to-cyan-600/30';
       case 'spark':
-        return 'from-pink-600/30 to-amber-600/30';
+        return 'from-pink-400/30 via-amber-500/30 to-orange-600/30';
       case 'atlas':
-        return 'from-teal-600/30 to-emerald-600/30';
+        return 'from-green-400/30 via-emerald-500/30 to-teal-600/30';
       default:
-        return 'from-indigo-600/30 to-purple-600/30';
+        return 'from-pink-400/30 via-purple-500/30 to-indigo-600/30';
     }
   };
 
@@ -86,7 +86,7 @@ const FlashcardBlock: React.FC<FlashcardBlockProps> = ({
         <div className="relative mx-auto w-full max-w-lg min-h-[200px]">
           {/* Floating sparkles */}
           {sparkles.map((sparkle, index) => (
-            <div
+            <motion.div
               key={`sparkle-${index}`}
               className="absolute w-1 h-1 rounded-full bg-yellow-300 z-20 pointer-events-none"
               style={{
@@ -95,8 +95,17 @@ const FlashcardBlock: React.FC<FlashcardBlockProps> = ({
                 width: `${sparkle.size}px`,
                 height: `${sparkle.size}px`,
                 boxShadow: '0 0 8px 2px rgba(255, 221, 87, 0.6)',
-                animation: `floatingSpark ${3 + sparkle.delay}s ease-in-out infinite, sparkGlow 2s ease-in-out infinite`,
-                animationDelay: `${sparkle.delay}s`
+              }}
+              animate={{
+                y: [0, -15, 0],
+                opacity: [1, 0.7, 1],
+                scale: [1, 1.1, 1]
+              }}
+              transition={{
+                duration: 3 + sparkle.delay,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: sparkle.delay
               }}
             />
           ))}
@@ -118,26 +127,33 @@ const FlashcardBlock: React.FC<FlashcardBlockProps> = ({
             <TiltCard
               className={`absolute w-full h-full backface-hidden ${
                 isFlipped ? 'hidden' : 'block'
-              } bg-gradient-to-br ${getFrontGradient()} rounded-xl border-2 border-white/20`}
+              } bg-gradient-to-br ${getFrontGradient()} rounded-xl border-2 border-white/20 shadow-lg shadow-indigo-500/10`}
               glareEnabled={true}
               glarePosition={glarePosition}
               maxTilt={6}
             >
               <div className="p-6 flex flex-col justify-between h-full">
                 <div className="flex items-start justify-between mb-4">
-                  <div className="h-6 w-6 rounded-full bg-white/20 flex items-center justify-center">
+                  <motion.div 
+                    className="h-6 w-6 rounded-full bg-white/20 flex items-center justify-center"
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                  >
                     <Sparkles className="h-3.5 w-3.5 text-white/80" />
-                  </div>
+                  </motion.div>
                   <div className="text-xs text-white/60 bg-white/10 px-2 py-1 rounded-full backdrop-blur-sm">
                     Flashcard
                   </div>
                 </div>
                 
-                <div className="flex-grow flex items-center justify-center py-4">
-                  <p className={`text-white font-medium ${childAge && childAge <= 8 ? 'text-xl' : 'text-lg'} text-center`}>
+                <motion.div 
+                  className="flex-grow flex items-center justify-center py-4"
+                  animate={{ scale: isFlipped ? 0.9 : 1 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <p className={`text-white font-medium ${childAge && childAge <= 8 ? 'text-xl' : 'text-lg'} text-center drop-shadow-lg`}>
                     {content.front}
                   </p>
-                </div>
+                </motion.div>
                 
                 <div className="pt-4 mt-auto border-t border-white/10">
                   <p className="text-xs text-white/60 mb-2 text-center">
@@ -151,26 +167,34 @@ const FlashcardBlock: React.FC<FlashcardBlockProps> = ({
             <TiltCard
               className={`absolute w-full h-full backface-hidden ${
                 isFlipped ? 'block' : 'hidden'
-              } bg-gradient-to-br ${getBackGradient()} rounded-xl border-2 border-white/20`}
+              } bg-gradient-to-br ${getBackGradient()} rounded-xl border-2 border-white/20 shadow-lg shadow-purple-500/10`}
               glareEnabled={true}
               glarePosition={glarePosition}
               maxTilt={6}
             >
               <div className="p-6 flex flex-col justify-between h-full" style={{ transform: 'rotateY(180deg)' }}>
                 <div className="flex items-start justify-between mb-4">
-                  <div className="h-6 w-6 rounded-full bg-white/20 flex items-center justify-center">
+                  <motion.div 
+                    className="h-6 w-6 rounded-full bg-white/20 flex items-center justify-center"
+                    whileHover={{ scale: 1.1, rotate: -5 }}
+                  >
                     <Sparkles className="h-3.5 w-3.5 text-white/80" />
-                  </div>
+                  </motion.div>
                   <div className="text-xs text-white/60 bg-white/10 px-2 py-1 rounded-full backdrop-blur-sm">
                     Answer
                   </div>
                 </div>
                 
-                <div className="flex-grow flex items-center justify-center py-4">
-                  <p className={`text-white font-medium ${childAge && childAge <= 8 ? 'text-xl' : 'text-lg'} text-center`}>
+                <motion.div 
+                  className="flex-grow flex items-center justify-center py-4"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: isFlipped ? 1 : 0, scale: isFlipped ? 1 : 0.9 }}
+                  transition={{ duration: 0.3, delay: 0.1 }}
+                >
+                  <p className={`text-white font-medium ${childAge && childAge <= 8 ? 'text-xl' : 'text-lg'} text-center drop-shadow-lg`}>
                     {content.back}
                   </p>
-                </div>
+                </motion.div>
                 
                 <div className="pt-4 mt-auto border-t border-white/10">
                   <p className="text-xs text-white/60 mb-2 text-center">
@@ -206,7 +230,7 @@ const FlashcardBlock: React.FC<FlashcardBlockProps> = ({
         </motion.div>
       )}
       
-      {/* Add CSS classes as regular CSS instead of using JSX-specific style tag */}
+      {/* Add CSS classes as regular CSS */}
       <style>
         {`
         .preserve-3d {

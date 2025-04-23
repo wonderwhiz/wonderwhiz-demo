@@ -19,8 +19,10 @@ const ActivityBlock: React.FC<ActivityBlockProps> = ({
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
   const { textSize, interactionStyle, messageStyle } = useAgeAdaptation(childAge);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dropZoneRef = useRef<HTMLDivElement>(null);
   
   const handleComplete = () => {
     setIsCompleted(true);
@@ -33,6 +35,10 @@ const ActivityBlock: React.FC<ActivityBlockProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
     
+    processFile(file);
+  };
+
+  const processFile = async (file: File) => {
     // Check file size (limit to 5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast.error(childAge <= 7 
@@ -63,6 +69,10 @@ const ActivityBlock: React.FC<ActivityBlockProps> = ({
         if (prev >= 100) {
           clearInterval(interval);
           setIsUploading(false);
+          toast.success(
+            childAge <= 7 
+              ? "Yay! Your picture is uploaded!" 
+              : "Image uploaded successfully");
           return 100;
         }
         return prev + 10;
@@ -97,6 +107,35 @@ const ActivityBlock: React.FC<ActivityBlockProps> = ({
   
   const triggerFileInput = () => {
     fileInputRef.current?.click();
+  };
+  
+  // Handle drag events for drag-and-drop
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+  
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+  
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+  
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      processFile(files[0]);
+    }
   };
   
   const getTitle = () => {
@@ -143,7 +182,7 @@ const ActivityBlock: React.FC<ActivityBlockProps> = ({
         )}
       </div>
       
-      {/* Image upload section */}
+      {/* Image upload section with drag-and-drop */}
       <div className="mb-6">
         <div className="relative">
           <input
@@ -156,12 +195,20 @@ const ActivityBlock: React.FC<ActivityBlockProps> = ({
           
           {!uploadedImage ? (
             <div 
-              className="border-2 border-dashed border-blue-400/30 rounded-lg p-6 flex flex-col items-center justify-center gap-3 bg-blue-500/5 cursor-pointer hover:bg-blue-500/10 transition-colors"
+              ref={dropZoneRef}
+              className={`border-2 border-dashed ${isDragging ? 'border-blue-400 bg-blue-500/20' : 'border-blue-400/30 bg-blue-500/5'} rounded-lg p-6 flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-blue-500/10 transition-colors`}
               onClick={triggerFileInput}
+              onDragEnter={handleDragEnter}
+              onDragLeave={handleDragLeave}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
             >
-              <div className="p-3 bg-blue-500/20 rounded-full">
+              <motion.div 
+                className="p-3 bg-blue-500/20 rounded-full"
+                animate={isDragging ? { scale: 1.1, y: -5 } : { scale: 1, y: 0 }}
+              >
                 <ArrowUpFromLine className="h-6 w-6 text-blue-300" />
-              </div>
+              </motion.div>
               <div className="text-center">
                 <p className="text-white/80 font-medium mb-1">
                   {childAge <= 7 ? "Add a picture of what you made!" : "Upload an image of your activity"}
