@@ -1,9 +1,11 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Star, Search } from 'lucide-react';
+import { Sparkles, Star, Search, Image } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import MagicalSearchBar from './MagicalSearchBar';
 import SparksBalance from '@/components/SparksBalance';
+
 interface DashboardControlsProps {
   childName: string;
   childId: string;
@@ -13,7 +15,9 @@ interface DashboardControlsProps {
   setQuery: (query: string) => void;
   handleSubmitQuery: () => void;
   isGenerating: boolean;
+  onImageCapture?: (file: File) => void;
 }
+
 const DashboardControls: React.FC<DashboardControlsProps> = ({
   childName,
   childId,
@@ -22,7 +26,8 @@ const DashboardControls: React.FC<DashboardControlsProps> = ({
   query,
   setQuery,
   handleSubmitQuery,
-  isGenerating
+  isGenerating,
+  onImageCapture
 }) => {
   return <div className="px-4 py-6 bg-gradient-to-r from-wonderwhiz-deep-purple/90 via-wonderwhiz-purple/90 to-wonderwhiz-light-purple/90 backdrop-blur-md border-b border-wonderwhiz-light-purple/30">
       <div className="max-w-5xl mx-auto">
@@ -58,9 +63,17 @@ const DashboardControls: React.FC<DashboardControlsProps> = ({
       }} transition={{
         delay: 0.2
       }} className="w-full">
-          <MagicalSearchBar query={query} setQuery={setQuery} handleSubmitQuery={handleSubmitQuery} isGenerating={isGenerating} placeholder="What do you want to learn about today?" />
+          <MagicalSearchBar 
+            query={query} 
+            setQuery={setQuery} 
+            handleSubmitQuery={handleSubmitQuery} 
+            isGenerating={isGenerating} 
+            placeholder="What do you want to learn about today?" 
+            onImageCapture={onImageCapture}
+          />
         </motion.div>
       </div>
     </div>;
 };
+
 export default DashboardControls;

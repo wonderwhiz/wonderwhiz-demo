@@ -15,6 +15,8 @@ import { useElevenLabsVoice } from '@/hooks/useElevenLabsVoice';
 import VoiceInputButton from '@/components/curio/VoiceInputButton';
 import DashboardControls from '@/components/dashboard/DashboardControls';
 import ConsolidatedDashboard from '@/components/dashboard/ConsolidatedDashboard';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface Curio {
   id: string;
@@ -30,6 +32,7 @@ const DashboardContainer = () => {
   const [ageGroup, setAgeGroup] = useState<'5-7' | '8-11' | '12-16'>('8-11');
   const [childAge, setChildAge] = useState<number>(10);
   const [isVoiceActive, setIsVoiceActive] = useState(false);
+  const [processingImage, setProcessingImage] = useState(false);
 
   const {
     childProfile,
@@ -111,6 +114,100 @@ const DashboardContainer = () => {
     }
   };
 
+  // Handle image uploads
+  const handleImageCapture = async (file: File) => {
+    if (!profileId || processingImage) return;
+    
+    setProcessingImage(true);
+    
+    try {
+      toast.loading("Analyzing your image with AI...");
+      
+      // Create a FormData object to send the image
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      // Call the analyze-image edge function
+      const { data, error } = await supabase.functions.invoke('analyze-image', {
+        body: formData,
+      });
+      
+      if (error) throw new Error(error.message);
+      
+      if (data?.block) {
+        toast.dismiss();
+        toast.success(data.feedback || "Image analyzed successfully!");
+        
+        // Create a new curio based on the image analysis
+        const imageDescription = data.block.content.fact.split('.')[0] + ".";
+        const curioTitle = `About my ${file.name.split('.')[0]}`;
+        
+        // Create the curio in the database
+        const { data: newCurio, error: curioError } = await supabase
+          .from('curios')
+          .insert({
+            child_id: profileId,
+            query: `Tell me about ${file.name.split('.')[0]}`,
+            title: curioTitle
+          })
+          .select()
+          .single();
+          
+        if (curioError) throw curioError;
+        
+        // Add the block to the curio
+        if (newCurio) {
+          const { error: blockError } = await supabase
+            .from('content_blocks')
+            .insert({
+              ...data.block,
+              curio_id: newCurio.id
+            });
+            
+          if (blockError) throw blockError;
+          
+          // Add the curio to the list of past curios
+          setPastCurios(prev => [newCurio, ...prev]);
+          
+          // Set the current curio to the new one
+          setCurrentCurio(newCurio);
+          
+          // Award sparks for uploading an image
+          try {
+            await supabase.functions.invoke('increment-sparks-balance', {
+              body: JSON.stringify({
+                profileId: profileId,
+                amount: 3
+              })
+            });
+            
+            if (childProfile && setChildProfile) {
+              setChildProfile({
+                ...childProfile,
+                sparks_balance: (childProfile.sparks_balance || 0) + 3
+              });
+            }
+            
+            toast.success('You earned 3 sparks for your creative exploration!', {
+              duration: 3000,
+              position: 'bottom-right'
+            });
+          } catch (err) {
+            console.error('Error awarding sparks for image upload:', err);
+          }
+        }
+      } else {
+        throw new Error('No analysis result returned');
+      }
+    } catch (error) {
+      console.error('Error analyzing image:', error);
+      toast.dismiss();
+      toast.error("Sorry, we couldn't analyze your image. Please try again.");
+    } finally {
+      setProcessingImage(false);
+    }
+  };
+
   // Use the logic from the local function but call the one from useCurioCreation
   const handleSuggestionClick = (suggestion: string) => {
     setCurrentCurio(null);
@@ -149,7 +246,8 @@ const DashboardContainer = () => {
           query={query}
           setQuery={setQuery}
           handleSubmitQuery={handleSubmitQuery}
-          isGenerating={isGenerating || isGeneratingContent}
+          isGenerating={isGenerating || isGeneratingContent || processingImage}
+          onImageCapture={handleImageCapture}
         />
         
         <div className="flex-1 overflow-y-auto">

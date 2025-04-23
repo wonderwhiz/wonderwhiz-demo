@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Search, Sparkles, Mic, Image } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -13,6 +14,7 @@ interface MagicalSearchBarProps {
   isGenerating: boolean;
   placeholder?: string;
   recentQueries?: string[];
+  onImageCapture?: (file: File) => void;
 }
 
 const BANNED_TOPICS = [
@@ -32,7 +34,8 @@ const MagicalSearchBar: React.FC<MagicalSearchBarProps> = ({
   handleSubmitQuery,
   isGenerating,
   placeholder = "What would you like to learn about?",
-  recentQueries = []
+  recentQueries = [],
+  onImageCapture
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -185,9 +188,8 @@ const MagicalSearchBar: React.FC<MagicalSearchBarProps> = ({
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      toast.success("Image uploaded! (Demo: image received)");
-      // Real implementation goes here.
+    if (file && onImageCapture) {
+      onImageCapture(file);
     }
     e.target.value = "";
   };
@@ -236,17 +238,21 @@ const MagicalSearchBar: React.FC<MagicalSearchBarProps> = ({
             >
               <Mic className={`h-5 w-5 ${isRecording ? "animate-pulse" : ""}`} />
             </Button>
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              className="h-10 w-10 rounded-full text-white/60 hover:text-white hover:bg-white/10"
-              onClick={handleImageClick}
-              disabled={isGenerating || isRecording}
-              aria-label="Upload image"
-            >
-              <Image className="h-5 w-5" />
-            </Button>
+
+            {onImageCapture && (
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="h-10 w-10 rounded-full text-white/60 hover:text-white hover:bg-white/10"
+                onClick={handleImageClick}
+                disabled={isGenerating || isRecording}
+                aria-label="Upload image"
+              >
+                <Image className="h-5 w-5" />
+              </Button>
+            )}
+            
             <input
               type="file"
               ref={fileInputRef}
