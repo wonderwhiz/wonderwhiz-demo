@@ -113,10 +113,10 @@ const DynamicWonderSuggestions: React.FC<DynamicWonderSuggestionsProps> = ({
           </div>
         )}
         
-        {source === 'fallback' && !isLoading && !error && (
+        {(source === 'fallback' || source === 'client-fallback') && !isLoading && !error && (
           <div className="mt-4">
             <p className="text-white/60 text-xs text-center">
-              Using local suggestions while we prepare more personalized wonders for you!
+              Using {source === 'client-fallback' ? 'local' : 'AI-generated'} suggestions while we prepare more personalized wonders!
             </p>
           </div>
         )}

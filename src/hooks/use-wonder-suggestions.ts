@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -21,7 +21,7 @@ export const useWonderSuggestions = ({
   const [error, setError] = useState<Error | null>(null);
   const [source, setSource] = useState<string>('loading');
 
-  const fetchSuggestions = async () => {
+  const fetchSuggestions = useCallback(async () => {
     if (!childId) return;
     
     setIsLoading(true);
@@ -30,6 +30,7 @@ export const useWonderSuggestions = ({
     try {
       console.log(`Fetching wonder suggestions for child age ${childAge} with interests: ${childInterests.join(', ')}`);
       
+      // Try to get suggestions from our edge function
       const { data, error } = await supabase.functions.invoke('groq-wonder-suggestions', {
         body: {
           childAge,
@@ -58,20 +59,22 @@ export const useWonderSuggestions = ({
       console.error('Error fetching wonder suggestions:', err);
       setError(err as Error);
       
-      // Use fallback suggestions
+      // Use local fallback suggestions when everything else fails
       const fallbacks = getFallbackSuggestions(childAge);
       setSuggestions(fallbacks);
       setSource('client-fallback');
       
-      // Only show toast for actual errors, not when using fallbacks by design
-      if (!(err as Error).message.includes('fallback')) {
-        // Silent failure to avoid interrupting user experience
-        console.warn('Using fallback wonder suggestions due to API error');
+      // Only show toast for network errors, not for expected fallbacks
+      if ((err as Error).message.includes('network') || (err as Error).message.includes('fetch')) {
+        toast.error("Couldn't connect to wonder generator. Using local suggestions instead.", {
+          id: "wonder-fetch-error",
+          duration: 3000
+        });
       }
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [childId, childAge, childInterests, count]);
 
   const getFallbackSuggestions = (age: number): string[] => {
     // Age-appropriate fallback suggestions
@@ -107,7 +110,7 @@ export const useWonderSuggestions = ({
 
   useEffect(() => {
     fetchSuggestions();
-  }, [childId, childAge, JSON.stringify(childInterests)]);
+  }, [fetchSuggestions]);
 
   return {
     suggestions,

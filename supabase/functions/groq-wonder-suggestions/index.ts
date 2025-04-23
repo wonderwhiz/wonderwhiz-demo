@@ -1,6 +1,5 @@
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -26,10 +25,10 @@ serve(async (req) => {
     const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
     const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
     
-    let questions = [];
+    let questions: string[] = [];
     let apiUsed = 'none';
     
-    // First try with available API keys
+    // First try with available API keys, but with improved timeout handling
     if (GROQ_API_KEY || OPENAI_API_KEY) {
       try {
         // Create prompt based on child's age and interests
@@ -59,12 +58,17 @@ serve(async (req) => {
         if (GROQ_API_KEY) {
           console.log("Attempting to use Groq API");
           try {
+            // Use AbortController to set a timeout
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 seconds timeout
+            
             const groqCompletion = await fetch('https://api.groq.com/openai/v1/chat/completions', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${GROQ_API_KEY}`,
               },
+              signal: controller.signal,
               body: JSON.stringify({
                 model: 'llama3-70b-8192',
                 messages: [
@@ -81,6 +85,8 @@ serve(async (req) => {
                 max_tokens: 1000,
               }),
             });
+            
+            clearTimeout(timeoutId);
 
             if (groqCompletion.ok) {
               const data = await groqCompletion.json();
@@ -106,12 +112,17 @@ serve(async (req) => {
         if (questions.length === 0 && OPENAI_API_KEY) {
           console.log("Attempting to use OpenAI API");
           try {
+            // Use AbortController to set a timeout
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 seconds timeout
+            
             const completion = await fetch('https://api.openai.com/v1/chat/completions', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${OPENAI_API_KEY}`,
               },
+              signal: controller.signal,
               body: JSON.stringify({
                 model: 'gpt-4o-mini',
                 messages: [
@@ -128,6 +139,8 @@ serve(async (req) => {
                 max_tokens: 1000,
               }),
             });
+            
+            clearTimeout(timeoutId);
 
             if (!completion.ok) {
               throw new Error(`OpenAI API error: ${completion.status}`);
