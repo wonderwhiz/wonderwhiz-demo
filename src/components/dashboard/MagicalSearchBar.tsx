@@ -1,8 +1,10 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Sparkles } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Search, Sparkles, Mic, Image } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface MagicalSearchBarProps {
   query: string;
@@ -13,16 +15,15 @@ interface MagicalSearchBarProps {
   recentQueries?: string[];
 }
 
-// BANNED_TOPICS list to prevent inappropriate suggestions
 const BANNED_TOPICS = [
-  'chicken',
-  'butter',
-  'food',
-  'recipe',
-  'test',
-  'temporary',
-  'standalone',
-  'curio'
+  "chicken",
+  "butter",
+  "food",
+  "recipe",
+  "test",
+  "temporary",
+  "standalone",
+  "curio"
 ];
 
 const MagicalSearchBar: React.FC<MagicalSearchBarProps> = ({
@@ -36,91 +37,93 @@ const MagicalSearchBar: React.FC<MagicalSearchBarProps> = ({
   const [isFocused, setIsFocused] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
-  
-  // Function to validate a suggestion's quality
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isRecording, setIsRecording] = useState(false);
+
   const isValidSuggestion = useCallback((suggestion: string): boolean => {
     if (!suggestion) return false;
-    
     const lowercased = suggestion.toLowerCase();
-    
-    // Check against banned topics
     for (const banned of BANNED_TOPICS) {
       if (lowercased.includes(banned)) {
         return false;
       }
     }
-    
-    // Ensure it's likely a question or educational
     if (suggestion.length < 10) return false;
-    
-    // Check if it has educational value
     const educationalTerms = [
-      'how', 'why', 'what', 'when', 'where', 'who', 'which',
-      'learn', 'discover', 'explore', 'understand', 'science', 
-      'history', 'animal', 'space', 'earth', 'work', 'function'
+      "how", "why", "what", "when", "where", "who", "which",
+      "learn", "discover", "explore", "understand", "science",
+      "history", "animal", "space", "earth", "work", "function"
     ];
-    
-    const hasEducationalTerm = educationalTerms.some(term => 
+    const hasEducationalTerm = educationalTerms.some(term =>
       lowercased.includes(term)
     );
-    
     return hasEducationalTerm;
   }, []);
-  
-  // Use useCallback to prevent regenerating this function on every render
+
   const generateSuggestions = useCallback((input: string): string[] => {
     const lowercaseInput = input.toLowerCase();
-    
-    // Simple but effective suggestion system
-    if (lowercaseInput.includes('space')) {
-      return ['How big is the universe?', 'Why is Mars red?', 'What are black holes?'];
-    } else if (lowercaseInput.includes('animal')) {
-      return ['Which animal sleeps the most?', 'How do animals communicate?', 'What are the fastest animals?'];
-    } else if (lowercaseInput.includes('dinosaur')) {
-      return ['When did dinosaurs live?', 'Why did dinosaurs go extinct?', 'Were there flying dinosaurs?'];
-    } else if (lowercaseInput.includes('how')) {
-      return [`How does ${lowercaseInput.replace('how', '').trim() || 'gravity'} work?`];
-    } else if (lowercaseInput.includes('why')) {
-      return [`Why do ${lowercaseInput.replace('why', '').trim() || 'rainbows'} exist?`];
+    if (lowercaseInput.includes("space")) {
+      return [
+        "How big is the universe?",
+        "Why is Mars red?",
+        "What are black holes?"
+      ];
+    } else if (lowercaseInput.includes("animal")) {
+      return [
+        "Which animal sleeps the most?",
+        "How do animals communicate?",
+        "What are the fastest animals?"
+      ];
+    } else if (lowercaseInput.includes("dinosaur")) {
+      return [
+        "When did dinosaurs live?",
+        "Why did dinosaurs go extinct?",
+        "Were there flying dinosaurs?"
+      ];
+    } else if (lowercaseInput.includes("how")) {
+      return [
+        `How does ${lowercaseInput.replace("how", "").trim() || "gravity"} work?`
+      ];
+    } else if (lowercaseInput.includes("why")) {
+      return [
+        `Why do ${lowercaseInput.replace("why", "").trim() || "rainbows"} exist?`
+      ];
     }
-    
     return [];
   }, []);
-  
+
   useEffect(() => {
     if (isFocused && query.length > 0) {
-      // Filter recent queries that match the current input and are valid
       const matchingQueries = recentQueries
-        .filter(q => 
+        .filter(q =>
           q.toLowerCase().includes(query.toLowerCase()) && isValidSuggestion(q)
         )
         .slice(0, 3);
-      
-      // Add intelligent suggestions based on the query
-      const intelligentSuggestions = generateSuggestions(query)
-        .filter(isValidSuggestion);
-      
-      // Combine both, remove duplicates, and take up to 5
+
+      const intelligentSuggestions = generateSuggestions(query).filter(
+        isValidSuggestion
+      );
+
       const allSuggestions = [...matchingQueries, ...intelligentSuggestions];
-      
-      // Create a Set to track lowercase suggestions we've already seen
+
       const seenSuggestions = new Set<string>();
       const uniqueSuggestions = allSuggestions
         .filter(suggestion => {
           const lowercased = suggestion.toLowerCase();
-          if (seenSuggestions.has(lowercased) || !isValidSuggestion(suggestion)) return false;
+          if (seenSuggestions.has(lowercased) || !isValidSuggestion(suggestion))
+            return false;
           seenSuggestions.add(lowercased);
           return true;
         })
         .slice(0, 5);
-        
+
       setSuggestions(uniqueSuggestions);
       setShowSuggestions(uniqueSuggestions.length > 0);
     } else {
       setShowSuggestions(false);
     }
   }, [query, isFocused, recentQueries, generateSuggestions, isValidSuggestion]);
-  
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim() && !isGenerating) {
@@ -128,7 +131,7 @@ const MagicalSearchBar: React.FC<MagicalSearchBarProps> = ({
       setShowSuggestions(false);
     }
   };
-  
+
   const handleSuggestionClick = (suggestion: string) => {
     setQuery(suggestion);
     setShowSuggestions(false);
@@ -137,39 +140,112 @@ const MagicalSearchBar: React.FC<MagicalSearchBarProps> = ({
     }
   };
 
+  // Voice input simulation/placeholder
+  const handleVoiceInput = () => {
+    if (!isRecording) {
+      setIsRecording(true);
+      toast.info("Listening! Speak your question...");
+      setTimeout(() => {
+        setIsRecording(false);
+        const simulatedTranscript = "How do rainbows form?";
+        setQuery(simulatedTranscript);
+        toast.success("I heard: " + simulatedTranscript);
+      }, 2300);
+    } else {
+      setIsRecording(false);
+      toast.info("Voice input stopped.");
+    }
+  };
+
+  // Image upload handler/placeholder
+  const handleImageClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      toast.success("Image uploaded! (Demo: image received)");
+      // Real implementation goes here.
+    }
+    e.target.value = "";
+  };
+
   return (
     <div className="relative z-10 w-full max-w-3xl mx-auto">
       <form onSubmit={handleSubmit} className="relative">
-        <div 
+        <div
           className={`
             relative flex items-center overflow-hidden transition-all duration-300
-            ${isFocused ? 'bg-white/10 shadow-lg ring-2 ring-indigo-500/30' : 'bg-white/5 hover:bg-white/8'}
+            ${isFocused ? "bg-white/10 shadow-lg ring-2 ring-indigo-500/30" : "bg-white/5 hover:bg-white/8"}
             rounded-full border border-white/10
           `}
         >
           <Search className="absolute left-4 text-white/60 h-5 w-5" />
-          
+
           <input
             type="text"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={e => setQuery(e.target.value)}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setTimeout(() => setIsFocused(false), 200)}
-            placeholder={placeholder}
-            className="h-14 w-full pl-12 pr-32 bg-transparent text-white placeholder:text-white/50 focus:outline-none text-base sm:text-lg"
-            disabled={isGenerating}
+            placeholder={
+              isRecording
+                ? "I'm listening..."
+                : placeholder
+            }
+            className="h-14 w-full pl-12 pr-[132px] bg-transparent text-white placeholder:text-white/50 focus:outline-none text-base sm:text-lg"
+            disabled={isGenerating || isRecording}
           />
-          
-          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+
+          {/* Input buttons */}
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center space-x-1">
+            {/* Voice input */}
+            <Button
+              type="button"
+              size="icon"
+              variant={isRecording ? "default" : "ghost"}
+              className={cn(
+                "h-10 w-10 rounded-full",
+                isRecording
+                  ? "bg-wonderwhiz-bright-pink text-white"
+                  : "text-white/60 hover:text-white hover:bg-white/10"
+              )}
+              onClick={handleVoiceInput}
+              disabled={isGenerating}
+              aria-label="Voice input"
+            >
+              <Mic className={`h-5 w-5 ${isRecording ? "animate-pulse" : ""}`} />
+            </Button>
+            {/* Image upload */}
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="h-10 w-10 rounded-full text-white/60 hover:text-white hover:bg-white/10"
+              onClick={handleImageClick}
+              disabled={isGenerating || isRecording}
+              aria-label="Upload image"
+            >
+              <Image className="h-5 w-5" />
+            </Button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              accept="image/*"
+              onChange={handleFileChange}
+            />
+
             <Button
               type="submit"
               className={`
                 h-10 px-4 rounded-full text-white font-medium
-                ${isGenerating 
-                  ? 'bg-indigo-600/50 cursor-not-allowed' 
-                  : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500'}
+                ${isGenerating
+                  ? "bg-indigo-600/50 cursor-not-allowed"
+                  : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500"}
               `}
-              disabled={isGenerating || !query.trim()}
+              disabled={isGenerating || !query.trim() || isRecording}
             >
               {isGenerating ? (
                 <>
@@ -186,8 +262,7 @@ const MagicalSearchBar: React.FC<MagicalSearchBarProps> = ({
           </div>
         </div>
       </form>
-      
-      {/* Intelligent Suggestions */}
+
       <AnimatePresence>
         {showSuggestions && (
           <motion.div
