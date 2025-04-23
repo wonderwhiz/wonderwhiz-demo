@@ -3,3 +3,4 @@ project_id = "REPLACE_WITH_ACTUAL_PROJECT_ID"
 
 [functions.analyze-image]
 verify_jwt = false
+

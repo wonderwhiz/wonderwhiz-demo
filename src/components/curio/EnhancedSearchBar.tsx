@@ -157,6 +157,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                 variant="default"
                 size="sm"
                 onClick={onExplore}
+                disabled={isProcessing}
                 className="h-8 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white ml-1 flex items-center"
               >
                 <Sparkles className="h-3.5 w-3.5 mr-1" />
