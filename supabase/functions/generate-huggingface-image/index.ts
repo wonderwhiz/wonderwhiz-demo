@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
@@ -89,25 +88,19 @@ serve(async (req) => {
         throw new Error(`HuggingFace API error: ${response.status} - ${errorText}`);
       }
 
-      // Clone the response before consuming it
-      const responseClone = response.clone();
-      
+      // Read the response as arrayBuffer ONCE (no clone)
       try {
-        // Get the response as an array buffer
-        const responseBuffer = await responseClone.arrayBuffer();
-        
-        // Convert array buffer to base64
+        const responseBuffer = await response.arrayBuffer();
+        // Convert arrayBuffer to base64
         const base64Image = btoa(
           new Uint8Array(responseBuffer).reduce(
             (data, byte) => data + String.fromCharCode(byte),
             ''
           )
         );
-        
         const imageUrl = `data:image/png;base64,${base64Image}`;
-        
+
         console.log('Successfully generated image with HuggingFace (stable-diffusion-2)');
-        
         // Return the image data URL
         return new Response(
           JSON.stringify({ 
