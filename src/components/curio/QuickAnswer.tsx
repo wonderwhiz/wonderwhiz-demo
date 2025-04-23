@@ -12,21 +12,20 @@ interface QuickAnswerProps {
   onToggleExpand: () => void;
   onStartJourney: () => void;
   childId?: string;
+  isExpanded?: boolean;
 }
 
 const QuickAnswer: React.FC<QuickAnswerProps> = ({
   question,
   onToggleExpand,
   onStartJourney,
-  childId
+  childId,
+  isExpanded = true // Default to true if not provided
 }) => {
   const [answer, setAnswer] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
   
-  // Always expanded by default
-  const [isExpanded, setIsExpanded] = useState(true);
-
   useEffect(() => {
     const generateQuickAnswer = async () => {
       if (!question) return;
@@ -64,7 +63,6 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
   }, [question]);
   
   const handleToggleExpand = () => {
-    setIsExpanded(!isExpanded);
     onToggleExpand();
   };
 
