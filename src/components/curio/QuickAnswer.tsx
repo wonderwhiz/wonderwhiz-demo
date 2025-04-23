@@ -9,7 +9,6 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface QuickAnswerProps {
   question: string;
-  isExpanded: boolean;
   onToggleExpand: () => void;
   onStartJourney: () => void;
   childId?: string;
@@ -17,7 +16,6 @@ interface QuickAnswerProps {
 
 const QuickAnswer: React.FC<QuickAnswerProps> = ({
   question,
-  isExpanded = true,
   onToggleExpand,
   onStartJourney,
   childId
@@ -26,6 +24,9 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
   
+  // Always expanded by default
+  const [isExpanded, setIsExpanded] = useState(true);
+
   useEffect(() => {
     const generateQuickAnswer = async () => {
       if (!question) return;
@@ -62,12 +63,10 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
     generateQuickAnswer();
   }, [question]);
   
-  // Always ensure the component is expanded initially
-  useEffect(() => {
-    if (!isExpanded) {
-      onToggleExpand();
-    }
-  }, []);
+  const handleToggleExpand = () => {
+    setIsExpanded(!isExpanded);
+    onToggleExpand();
+  };
 
   const handleToggleAudio = () => {
     if (isPlaying) {
@@ -96,7 +95,7 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
           <Button
             variant="ghost"
             size="icon"
-            onClick={onToggleExpand}
+            onClick={handleToggleExpand}
             className="h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 text-white"
           >
             {isExpanded ? (
