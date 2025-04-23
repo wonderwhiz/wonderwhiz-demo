@@ -189,7 +189,7 @@ const FlashcardBlock: React.FC<FlashcardBlockProps> = ({
           className="bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm shadow-lg"
         >
           <FlipHorizontal className="h-4 w-4 mr-2" />
-          {childAge && childAge <= 8 ? "Flip Card!" : "Flip Card"}
+          {childAge && childAge < 8 ? "Flip Card!" : "Flip Card"}
         </Button>
       </div>
       
@@ -206,8 +206,9 @@ const FlashcardBlock: React.FC<FlashcardBlockProps> = ({
         </motion.div>
       )}
       
-      {/* Add CSS for the animation */}
-      <style jsx>{`
+      {/* Add CSS classes as regular CSS instead of using JSX-specific style tag */}
+      <style>
+        {`
         .preserve-3d {
           transform-style: preserve-3d;
         }
@@ -219,7 +220,8 @@ const FlashcardBlock: React.FC<FlashcardBlockProps> = ({
         .perspective-1000 {
           perspective: 1000px;
         }
-      `}</style>
+        `}
+      </style>
     </div>
   );
 };
