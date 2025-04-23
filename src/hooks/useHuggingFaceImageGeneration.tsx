@@ -82,40 +82,7 @@ export function useHuggingFaceImageGeneration({ childAge = 10, maxRetries = 2 }:
         duration: 3000
       });
       
-      // Try DALL-E as fallback if we're not already in a retry loop
-      if (retryCount < maxRetries) {
-        setRetryCount(prev => prev + 1);
-        try {
-          console.log('Trying DALL-E as fallback...');
-          // Try fallback to DALL-E
-          const { data: dalleData, error: dalleError } = await supabase.functions.invoke('generate-dalle-image', {
-            body: {
-              prompt,
-              childAge,
-              retryOnFail: true
-            }
-          });
-          
-          if (dalleError) {
-            console.error('DALL-E fallback error:', dalleError);
-            throw new Error(`DALL-E fallback failed: ${dalleError.message || 'Unknown error'}`);
-          }
-          
-          if (dalleData?.imageUrl) {
-            setImageUrl(dalleData.imageUrl);
-            setFallbackSource('dalle');
-            toast.success("Used DALL-E as fallback");
-            return dalleData.imageUrl;
-          }
-          
-          throw new Error('DALL-E fallback produced no image');
-        } catch (fallbackErr) {
-          console.error('DALL-E fallback also failed:', fallbackErr);
-          // Continue to placeholder
-        }
-      }
-      
-      // Set a placeholder image as final fallback
+      // Use a color fallback as final resort
       const placeholderUrl = `https://placehold.co/600x400/252238/FFFFFF?text=${encodeURIComponent('Image Generation Failed')}`;
       setImageUrl(placeholderUrl);
       setFallbackSource('error');
