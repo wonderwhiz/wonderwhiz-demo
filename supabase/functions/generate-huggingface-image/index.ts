@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { HfInference } from 'https://esm.sh/@huggingface/inference@2.3.2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -54,66 +55,38 @@ serve(async (req) => {
     }
 
     try {
-      // Call HuggingFace API using the stabilityai/stable-diffusion-2 model
-      console.log("Sending request to HuggingFace API");
+      // Use HuggingFace inference library with a working model (FLUX.1-schnell is fast and high quality)
+      console.log("Sending request to HuggingFace API using FLUX.1-schnell model");
       
-      // IMPORTANT: Create a proper request with better error handling
-      const response = await fetch(
-        "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${HUGGING_FACE_TOKEN}`
-          },
-          body: JSON.stringify({
-            inputs: safePrompt,
-            options: {
-              wait_for_model: true
-            },
-            parameters: {
-              guidance_scale: 7.5,
-              num_inference_steps: 25,
-            }
-          })
-        }
+      const hf = new HfInference(HUGGING_FACE_TOKEN);
+      
+      // Call the HuggingFace API with the FLUX.1-schnell model which is supported
+      const result = await hf.textToImage({
+        inputs: safePrompt,
+        model: 'black-forest-labs/FLUX.1-schnell',
+        // Using default parameters for optimal generation
+      });
+      
+      // Convert the result to a base64 string for the image
+      const imageBytes = await result.arrayBuffer();
+      const base64Image = btoa(
+        new Uint8Array(imageBytes).reduce(
+          (data, byte) => data + String.fromCharCode(byte),
+          ''
+        )
       );
+      const imageUrl = `data:image/png;base64,${base64Image}`;
 
-      console.log(`HuggingFace API response status: ${response.status}`);
+      console.log('Successfully generated image with HuggingFace FLUX.1-schnell model');
       
-      // Check if response is OK
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`HuggingFace API error (${response.status}):`, errorText);
-        throw new Error(`HuggingFace API error: ${response.status} - ${errorText}`);
-      }
-
-      // Read the response as arrayBuffer ONCE (no clone)
-      try {
-        const responseBuffer = await response.arrayBuffer();
-        // Convert arrayBuffer to base64
-        const base64Image = btoa(
-          new Uint8Array(responseBuffer).reduce(
-            (data, byte) => data + String.fromCharCode(byte),
-            ''
-          )
-        );
-        const imageUrl = `data:image/png;base64,${base64Image}`;
-
-        console.log('Successfully generated image with HuggingFace (stable-diffusion-2)');
-        // Return the image data URL
-        return new Response(
-          JSON.stringify({ 
-            imageUrl: imageUrl,
-            source: 'huggingface'
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      } catch (conversionError) {
-        console.error('Error converting image response:', conversionError);
-        throw new Error(`Failed to process image: ${conversionError.message}`);
-      }
-      
+      // Return the image data URL
+      return new Response(
+        JSON.stringify({ 
+          imageUrl: imageUrl,
+          source: 'huggingface'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     } catch (hfError) {
       console.error('HuggingFace API call failed:', hfError);
       
