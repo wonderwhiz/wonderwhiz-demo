@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/card';
@@ -17,7 +16,7 @@ interface QuickAnswerProps {
 
 const QuickAnswer: React.FC<QuickAnswerProps> = ({
   question,
-  isExpanded,
+  isExpanded = true,
   onToggleExpand,
   onStartJourney,
   childId
@@ -62,6 +61,12 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
     generateQuickAnswer();
   }, [question]);
   
+  useEffect(() => {
+    if (!isExpanded) {
+      onToggleExpand();
+    }
+  }, []);
+
   const handleToggleAudio = () => {
     if (isPlaying) {
       // Stop audio logic would go here

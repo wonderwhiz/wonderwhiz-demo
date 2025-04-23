@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -23,6 +23,9 @@ export const useWonderSuggestions = ({
   const [error, setError] = useState<Error | null>(null);
   const [source, setSource] = useState<string>('loading');
   const [lastFetchTime, setLastFetchTime] = useState<number>(0);
+  
+  // Add a mount ref to prevent duplicate fetches on initial load
+  const isMounted = useRef(false);
   
   // Cache key based on child properties and retry count
   const cacheKey = `wonder-suggestions-${childId}-${childAge}-${childInterests.join(',')}-${retryCount}`;
@@ -208,8 +211,12 @@ export const useWonderSuggestions = ({
   };
 
   useEffect(() => {
-    fetchSuggestions();
-  }, [fetchSuggestions]);
+    // Only fetch on first mount or when retryCount/dependencies change 
+    if (!isMounted.current || retryCount > 0) {
+      fetchSuggestions();
+      isMounted.current = true;
+    }
+  }, [fetchSuggestions, retryCount]);
 
   return {
     suggestions,
