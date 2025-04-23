@@ -62,6 +62,7 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
     generateQuickAnswer();
   }, [question]);
   
+  // Always ensure the component is expanded initially
   useEffect(() => {
     if (!isExpanded) {
       onToggleExpand();

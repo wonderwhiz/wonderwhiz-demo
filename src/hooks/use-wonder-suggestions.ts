@@ -26,12 +26,20 @@ export const useWonderSuggestions = ({
   
   // Add a mount ref to prevent duplicate fetches on initial load
   const isMounted = useRef(false);
+  // Add a fetchInProgress ref to prevent concurrent fetches
+  const fetchInProgress = useRef(false);
   
   // Cache key based on child properties and retry count
   const cacheKey = `wonder-suggestions-${childId}-${childAge}-${childInterests.join(',')}-${retryCount}`;
 
   const fetchSuggestions = useCallback(async () => {
     if (!childId) return;
+    
+    // Prevent concurrent fetches
+    if (fetchInProgress.current) {
+      console.log('Fetch already in progress, skipping');
+      return;
+    }
     
     // Implement a minimum fetch interval to prevent spamming the API
     const now = Date.now();
@@ -41,6 +49,7 @@ export const useWonderSuggestions = ({
       return;
     }
     
+    fetchInProgress.current = true;
     setIsLoading(true);
     setError(null);
     setLastFetchTime(now);
@@ -113,6 +122,7 @@ export const useWonderSuggestions = ({
       }
     } finally {
       setIsLoading(false);
+      fetchInProgress.current = false;
     }
   }, [childId, childAge, childInterests, count, lastFetchTime, suggestions.length, retryCount]);
 

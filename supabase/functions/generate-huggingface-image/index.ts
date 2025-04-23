@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { HfInference } from 'https://esm.sh/@huggingface/inference@2.3.2'
@@ -55,16 +56,19 @@ serve(async (req) => {
     }
 
     try {
-      // Use HuggingFace inference library with a working model (FLUX.1-schnell is fast and high quality)
-      console.log("Sending request to HuggingFace API using FLUX.1-schnell model");
+      // Use a different, more stable model (kandinsky-2.2)
+      console.log("Sending request to HuggingFace API using kandinsky-2.2 model");
       
       const hf = new HfInference(HUGGING_FACE_TOKEN);
       
-      // Call the HuggingFace API with the FLUX.1-schnell model which is supported
+      // Call the HuggingFace API with the kandinsky-2.2 model which is more stable
       const result = await hf.textToImage({
         inputs: safePrompt,
-        model: 'black-forest-labs/FLUX.1-schnell',
-        // Using default parameters for optimal generation
+        model: 'kandinsky-community/kandinsky-2.2',
+        parameters: {
+          negative_prompt: "ugly, blurry, poor quality, distorted, deformed",
+          guidance_scale: 7.5
+        }
       });
       
       // Convert the result to a base64 string for the image
@@ -77,7 +81,7 @@ serve(async (req) => {
       );
       const imageUrl = `data:image/png;base64,${base64Image}`;
 
-      console.log('Successfully generated image with HuggingFace FLUX.1-schnell model');
+      console.log('Successfully generated image with HuggingFace kandinsky-2.2 model');
       
       // Return the image data URL
       return new Response(
