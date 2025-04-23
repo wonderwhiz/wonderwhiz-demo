@@ -56,15 +56,15 @@ serve(async (req) => {
     }
 
     try {
-      // Use a different, more stable model (kandinsky-2.2)
-      console.log("Sending request to HuggingFace API using kandinsky-2.2 model");
+      // Use a different, currently available model (stabilityai/stable-diffusion-xl-base-1.0)
+      console.log("Sending request to HuggingFace API using stable-diffusion-xl model");
       
       const hf = new HfInference(HUGGING_FACE_TOKEN);
       
-      // Call the HuggingFace API with the kandinsky-2.2 model which is more stable
+      // Call the HuggingFace API with stable-diffusion-xl model
       const result = await hf.textToImage({
         inputs: safePrompt,
-        model: 'kandinsky-community/kandinsky-2.2',
+        model: 'stabilityai/stable-diffusion-xl-base-1.0',
         parameters: {
           negative_prompt: "ugly, blurry, poor quality, distorted, deformed",
           guidance_scale: 7.5
@@ -81,7 +81,7 @@ serve(async (req) => {
       );
       const imageUrl = `data:image/png;base64,${base64Image}`;
 
-      console.log('Successfully generated image with HuggingFace kandinsky-2.2 model');
+      console.log('Successfully generated image with HuggingFace stable-diffusion-xl model');
       
       // Return the image data URL
       return new Response(
