@@ -19,6 +19,7 @@ export const useWonderSuggestions = ({
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const [source, setSource] = useState<string>('loading');
 
   const fetchSuggestions = async () => {
     if (!childId) return;
@@ -27,12 +28,14 @@ export const useWonderSuggestions = ({
     setError(null);
     
     try {
+      console.log(`Fetching wonder suggestions for child age ${childAge} with interests: ${childInterests.join(', ')}`);
+      
       const { data, error } = await supabase.functions.invoke('groq-wonder-suggestions', {
-        body: JSON.stringify({
+        body: {
           childAge,
           interests: childInterests,
           count
-        })
+        }
       });
       
       if (error) {
@@ -42,9 +45,11 @@ export const useWonderSuggestions = ({
       
       if (data && data.suggestions && Array.isArray(data.suggestions)) {
         setSuggestions(data.suggestions);
-      } else if (data && data.fallback) {
-        console.log('Using fallback suggestions from API');
-        setSuggestions(data.suggestions || getFallbackSuggestions());
+        setSource(data.source || 'api');
+        
+        if (data.source === 'fallback' || data.source === 'error-fallback') {
+          console.log('Using fallback suggestions, API failed or not available');
+        }
       } else {
         console.error('Invalid response format:', data);
         throw new Error('Invalid response format');
@@ -54,21 +59,23 @@ export const useWonderSuggestions = ({
       setError(err as Error);
       
       // Use fallback suggestions
-      const fallbacks = getFallbackSuggestions();
+      const fallbacks = getFallbackSuggestions(childAge);
       setSuggestions(fallbacks);
+      setSource('client-fallback');
       
       // Only show toast for actual errors, not when using fallbacks by design
       if (!(err as Error).message.includes('fallback')) {
-        toast.error('Could not load wonder suggestions. Using defaults.');
+        // Silent failure to avoid interrupting user experience
+        console.warn('Using fallback wonder suggestions due to API error');
       }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const getFallbackSuggestions = () => {
+  const getFallbackSuggestions = (age: number): string[] => {
     // Age-appropriate fallback suggestions
-    if (childAge < 8) {
+    if (age < 8) {
       return [
         "Why do leaves change color in autumn?",
         "How do bees make honey?",
@@ -77,14 +84,14 @@ export const useWonderSuggestions = ({
         "How do plants grow from tiny seeds?",
         "Why do we need to sleep every night?"
       ];
-    } else if (childAge < 13) {
+    } else if (age < 13) {
       return [
-        "Why do leaves change color in autumn?",
-        "How do bees make honey?",
+        "How do earthquakes happen?",
         "What makes the ocean salty?",
-        "Why do we see lightning before we hear thunder?",
         "How do airplanes stay in the sky?",
-        "What happens when volcanoes erupt?"
+        "What happens when volcanoes erupt?",
+        "How do our eyes see colors?",
+        "Why do we have different seasons?"
       ];
     } else {
       return [
@@ -106,6 +113,7 @@ export const useWonderSuggestions = ({
     suggestions,
     isLoading,
     error,
+    source,
     refresh: fetchSuggestions
   };
 };

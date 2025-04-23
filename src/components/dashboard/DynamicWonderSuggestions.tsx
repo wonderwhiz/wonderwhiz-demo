@@ -3,7 +3,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Sparkles } from 'lucide-react';
+import { RefreshCw, Sparkles, AlertCircle } from 'lucide-react';
 import { useWonderSuggestions } from '@/hooks/use-wonder-suggestions';
 import { useBlockInteractions } from '@/hooks/useBlockInteractions';
 import { toast } from 'sonner';
@@ -26,7 +26,8 @@ const DynamicWonderSuggestions: React.FC<DynamicWonderSuggestionsProps> = ({
     suggestions, 
     isLoading, 
     refresh,
-    error 
+    error,
+    source
   } = useWonderSuggestions({
     childId,
     childAge,
@@ -94,8 +95,11 @@ const DynamicWonderSuggestions: React.FC<DynamicWonderSuggestionsProps> = ({
         
         {error && !isLoading && suggestions.length === 0 && (
           <div className="bg-white/5 border border-red-500/30 rounded-lg p-4 mt-3">
-            <p className="text-white/70 text-sm">
-              Couldn't load new suggestions. Using default wonders instead.
+            <p className="text-white/70 text-sm flex items-start">
+              <AlertCircle className="h-4 w-4 mr-2 mt-0.5 text-red-400" />
+              <span>
+                Couldn't load new suggestions. Using default wonders instead.
+              </span>
             </p>
             <Button 
               variant="outline" 
@@ -106,6 +110,14 @@ const DynamicWonderSuggestions: React.FC<DynamicWonderSuggestionsProps> = ({
               <RefreshCw className="h-3 w-3 mr-2" />
               Try Again
             </Button>
+          </div>
+        )}
+        
+        {source === 'fallback' && !isLoading && !error && (
+          <div className="mt-4">
+            <p className="text-white/60 text-xs text-center">
+              Using local suggestions while we prepare more personalized wonders for you!
+            </p>
           </div>
         )}
       </CardContent>
