@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Search, Sparkles, Mic, Image } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 
 interface MagicalSearchBarProps {
   query: string;
@@ -92,6 +92,25 @@ const MagicalSearchBar: React.FC<MagicalSearchBarProps> = ({
     return [];
   }, []);
 
+  const {
+    startListening,
+    stopListening
+  } = useSpeechRecognition({
+    onTranscript: (text) => {
+      if (text) {
+        setQuery(text);
+        setIsRecording(false);
+        toast.success("I heard: " + text);
+      } else {
+        setIsRecording(false);
+        toast.info("Didn't catch that, try again!");
+      }
+    },
+    onListeningChange: (listening) => {
+      setIsRecording(listening);
+    }
+  });
+
   useEffect(() => {
     if (isFocused && query.length > 0) {
       const matchingQueries = recentQueries
@@ -140,24 +159,26 @@ const MagicalSearchBar: React.FC<MagicalSearchBarProps> = ({
     }
   };
 
-  // Voice input simulation/placeholder
   const handleVoiceInput = () => {
+    if (!window.SpeechRecognition && !(window as any).webkitSpeechRecognition) {
+      toast.error('Speech recognition not supported');
+      return;
+    }
     if (!isRecording) {
       setIsRecording(true);
       toast.info("Listening! Speak your question...");
-      setTimeout(() => {
+      const started = startListening();
+      if (!started) {
         setIsRecording(false);
-        const simulatedTranscript = "How do rainbows form?";
-        setQuery(simulatedTranscript);
-        toast.success("I heard: " + simulatedTranscript);
-      }, 2300);
+        toast.error('Failed to start speech recognition');
+      }
     } else {
+      stopListening();
       setIsRecording(false);
       toast.info("Voice input stopped.");
     }
   };
 
-  // Image upload handler/placeholder
   const handleImageClick = () => {
     fileInputRef.current?.click();
   };
@@ -198,9 +219,7 @@ const MagicalSearchBar: React.FC<MagicalSearchBarProps> = ({
             disabled={isGenerating || isRecording}
           />
 
-          {/* Input buttons */}
           <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center space-x-1">
-            {/* Voice input */}
             <Button
               type="button"
               size="icon"
@@ -217,7 +236,6 @@ const MagicalSearchBar: React.FC<MagicalSearchBarProps> = ({
             >
               <Mic className={`h-5 w-5 ${isRecording ? "animate-pulse" : ""}`} />
             </Button>
-            {/* Image upload */}
             <Button
               type="button"
               size="icon"
