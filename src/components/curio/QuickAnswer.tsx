@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/card';
@@ -19,7 +20,7 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
   onToggleExpand,
   onStartJourney,
   childId,
-  isExpanded = true // Default to true if not provided
+  isExpanded = true
 }) => {
   const [answer, setAnswer] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
@@ -33,17 +34,23 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
       try {
         setIsLoading(true);
         
-        // Try to get an AI-generated answer from the Groq API
-        const { data, error } = await supabase.functions.invoke('generate-quick-answer', {
-          body: { 
-            question,
-            childProfile: { 
-              age: childId ? await getChildAge(childId) : 10
+        // Create a timeout promise
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Request timed out')), 8000)
+        );
+        
+        // Race between the actual request and the timeout
+        const { data, error } = await Promise.race([
+          supabase.functions.invoke('generate-quick-answer', {
+            body: { 
+              question,
+              childProfile: { 
+                age: childId ? await getChildAge(childId) : 10
+              }
             }
-          },
-          // Remove the 'options' property and adjust timeout handling
-          timeout: 8000 // 8 seconds timeout
-        });
+          }),
+          timeoutPromise
+        ]);
         
         if (error) {
           throw new Error(`API error: ${error.message}`);
@@ -63,6 +70,9 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
         setAnswerSource('fallback');
         const fallbackAnswer = generateFallbackAnswer(question);
         setAnswer(fallbackAnswer);
+        
+        // Optional: show a toast for the error
+        toast.error('Could not generate a detailed answer. A default summary is shown.');
       } finally {
         setIsLoading(false);
       }
