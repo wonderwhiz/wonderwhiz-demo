@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      api_usage_logs: {
+        Row: {
+          api_name: string
+          created_at: string
+          estimated_cost: number | null
+          id: string
+          request_data: Json | null
+          response_status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          api_name: string
+          created_at?: string
+          estimated_cost?: number | null
+          id?: string
+          request_data?: Json | null
+          response_status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          api_name?: string
+          created_at?: string
+          estimated_cost?: number | null
+          id?: string
+          request_data?: Json | null
+          response_status?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       block_replies: {
         Row: {
           block_id: string
@@ -588,6 +618,10 @@ export type Database = {
       }
       complete_child_task: {
         Args: { task_id: string }
+        Returns: undefined
+      }
+      create_api_usage_logs_table: {
+        Args: Record<PropertyKey, never>
         Returns: undefined
       }
       increment_sparks: {
