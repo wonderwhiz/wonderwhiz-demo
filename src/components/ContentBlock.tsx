@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import ContentBlockErrorBoundary from './content-blocks/ContentBlockErrorBoundary';
@@ -62,16 +61,12 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
 }) => {
   const [renderKey, setRenderKey] = React.useState(`block-${block.id}-${Date.now()}`);
   
-  // Added error handling state for debug purposes
   const [hasRenderError, setHasRenderError] = React.useState(false);
   const [renderErrorDetails, setRenderErrorDetails] = React.useState<string | null>(null);
   
   React.useEffect(() => {
-    // Reset error state when block changes
     setHasRenderError(false);
     setRenderErrorDetails(null);
-    
-    // Generate a new key when block changes to force re-render
     setRenderKey(`block-${block.id}-${Date.now()}`);
   }, [block.id, block.type]);
 
@@ -79,7 +74,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     return <ContentBlockLoading childAge={childAge} />;
   }
 
-  // Safety check for block existing and having required properties
   if (!block || !block.type || !block.id) {
     console.error('Invalid block data received:', block);
     return (
@@ -89,17 +83,14 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     );
   }
 
-  // Verify the block type to ensure it's valid for the blockContainer function
   const blockType = isValidContentBlockType(block.type) ? block.type as ContentBlockType : 'fact';
   
-  // Get age-appropriate class variant
   const getAgeVariant = () => {
     if (childAge <= 7) return 'young';
     if (childAge >= 12) return 'older';
     return 'middle';
   };
   
-  // Create interaction handlers
   const handleToggleLike = () => {
     if (onLike) onLike();
   };
@@ -110,7 +101,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   
   const [showReplyForm, setShowReplyForm] = React.useState(false);
   
-  // Get related questions or rabbit holes from content if available
   const getRelatedQuestions = () => {
     if (!block.content) return [];
     if (Array.isArray(block.content.rabbitHoles)) return block.content.rabbitHoles;
@@ -118,26 +108,22 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     return [];
   };
   
-  // Error handling function
   const handleBlockRenderError = (error: Error) => {
     console.error(`Error rendering block type '${block.type}':`, error);
     setHasRenderError(true);
     setRenderErrorDetails(error.message);
     
-    // Force a re-render with a simpler version after a short delay
     setTimeout(() => {
       setRenderKey(`block-${block.id}-fallback-${Date.now()}`);
     }, 100);
   };
   
-  // Safely render block content with error catching
   const safeRenderBlock = (renderFunction: () => React.ReactNode) => {
     try {
       return renderFunction();
     } catch (error: any) {
       handleBlockRenderError(error);
       
-      // Return a fallback rendering
       return (
         <div className="p-4 bg-wonderwhiz-purple/30 rounded-lg border border-white/10">
           <p className="text-white/90">This content couldn't be displayed properly.</p>
@@ -149,7 +135,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     }
   };
   
-  // Safely process content for fallback rendering
   const getSafeContent = () => {
     if (!block.content) return { title: "", text: "" };
     
@@ -159,7 +144,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         text: ""
       };
       
-      // Try to extract title
       if (typeof block.content.title === 'string') {
         extractedContent.title = block.content.title;
       } else if (typeof block.content.question === 'string') {
@@ -170,7 +154,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         extractedContent.title = block.content.headline;
       }
       
-      // Try to extract text content
       if (typeof block.content.fact === 'string') {
         extractedContent.text = block.content.fact;
       } else if (typeof block.content.text === 'string') {
@@ -194,7 +177,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     }
   };
   
-  // Fallback rendering in case the specific component fails
   const renderFallbackBlock = () => {
     const safeContent = getSafeContent();
     
@@ -219,9 +201,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
     );
   };
   
-  // Render different block types
   const renderBlockContent = () => {
-    // If we've had a render error and this is the fallback render, use simplified display
     if (hasRenderError && renderKey.includes('fallback')) {
       return renderFallbackBlock();
     }
@@ -243,7 +223,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
               options={block.content.options}
               correctIndex={block.content.correctIndex}
               explanation={block.content.explanation}
-              onCorrect={onQuizCorrect}
+              onQuizCorrect={onQuizCorrect}
               childAge={childAge}
             />
             <BlockInteractions
@@ -475,7 +455,6 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
           </div>
         ));
         
-      // Add simple fallback for other block types
       default:
         return safeRenderBlock(() => (
           <div>

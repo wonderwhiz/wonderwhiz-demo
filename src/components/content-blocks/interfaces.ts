@@ -1,4 +1,3 @@
-
 export interface BlockInteractionsProps {
   id: string;
   liked?: boolean;
@@ -9,6 +8,23 @@ export interface BlockInteractionsProps {
   setShowReplyForm?: (show: boolean) => void;
   onRabbitHoleClick?: (question: string) => void;
   relatedQuestions?: string[];
+}
+
+export interface QuizBlockProps {
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation?: string;
+  specialistId: string;
+  onLike?: () => void;
+  onBookmark?: () => void;
+  onReply?: (message: string) => void;
+  onCorrectAnswer?: () => void;
+  onRabbitHoleClick?: (question: string) => void;
+  onQuizCorrect?: () => void;
+  updateHeight?: (height: number) => void;
+  childAge?: number;
+  blockId?: string;
 }
 
 export interface FlashcardBlockProps {

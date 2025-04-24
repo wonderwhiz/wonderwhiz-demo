@@ -2,6 +2,7 @@
 import React from 'react';
 import EnhancedBlockInteractions from './EnhancedBlockInteractions';
 import { BlockInteractionsProps } from './interfaces';
+import { ContentBlockType, isValidContentBlockType } from '@/types/curio';
 
 // This component wraps the EnhancedBlockInteractions component for backward compatibility
 const BlockInteractions: React.FC<BlockInteractionsProps> = ({
@@ -21,12 +22,15 @@ const BlockInteractions: React.FC<BlockInteractionsProps> = ({
     // Note: actual message sending is handled differently in the old component
   } : undefined;
 
+  // Ensure type is a valid ContentBlockType
+  const validType = isValidContentBlockType(type) ? type : "fact" as ContentBlockType;
+
   return (
     <EnhancedBlockInteractions
       id={id}
       liked={liked}
       bookmarked={bookmarked}
-      type={type}
+      type={validType}
       onToggleLike={onToggleLike}
       onToggleBookmark={onToggleBookmark}
       onReply={handleReply}
