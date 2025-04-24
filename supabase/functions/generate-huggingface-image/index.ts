@@ -2,11 +2,21 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { HfInference } from 'https://esm.sh/@huggingface/inference@2.3.2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Rate limiting configuration
+const RATE_LIMIT_REQUESTS = 10;  // Max requests
+const RATE_LIMIT_WINDOW = 300;   // Time window in seconds (5 minutes)
+
+// Initialize Supabase client
+const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -15,7 +25,53 @@ serve(async (req) => {
   }
 
   try {
-    // Parse request data
+    // 1. Authenticate the user
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('Authorization header is required');
+    }
+
+    // Extract JWT token
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Verify the JWT token
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      console.error('Authentication error:', authError);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized: Invalid token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // 2. Rate limiting: Check if user has exceeded the rate limit
+    const userId = user.id;
+    const now = Math.floor(Date.now() / 1000); // Current time in seconds
+    const windowStart = now - RATE_LIMIT_WINDOW;
+    
+    // Get user's recent API calls
+    const { data: usageLogs, error: usageError } = await supabase
+      .from('api_usage_logs')
+      .select('created_at')
+      .eq('user_id', userId)
+      .eq('api_name', 'huggingface-image')
+      .gte('created_at', new Date(windowStart * 1000).toISOString());
+    
+    if (usageError) {
+      console.error('Error checking rate limit:', usageError);
+      // Continue execution but log the error
+    } else if (usageLogs && usageLogs.length >= RATE_LIMIT_REQUESTS) {
+      return new Response(
+        JSON.stringify({
+          error: 'Rate limit exceeded',
+          message: `You can only make ${RATE_LIMIT_REQUESTS} requests per ${RATE_LIMIT_WINDOW/60} minutes`,
+          retry_after: RATE_LIMIT_WINDOW - (now - Math.floor(new Date(usageLogs[0].created_at).getTime() / 1000))
+        }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // 3. Parse request data after authentication and rate limiting
     const requestData = await req.json().catch(err => {
       console.error("Error parsing request JSON:", err);
       throw new Error("Invalid request format: Could not parse JSON");
@@ -31,6 +87,7 @@ serve(async (req) => {
       throw new Error('Prompt is required');
     }
 
+    // 4. Get the API key from environment variables (never expose to client)
     const HUGGING_FACE_TOKEN = Deno.env.get('HUGGING_FACE_ACCESS_TOKEN');
     if (!HUGGING_FACE_TOKEN) {
       throw new Error('HUGGING_FACE_ACCESS_TOKEN environment variable not set');
@@ -38,7 +95,7 @@ serve(async (req) => {
 
     console.log(`Generating image with HuggingFace for prompt: "${prompt.substring(0, 50)}..."`);
 
-    // Adapt the prompt based on child age to ensure age-appropriate content
+    // 5. Adapt the prompt based on child age to ensure age-appropriate content
     let safePrompt = prompt;
     
     if (childAge <= 7) {
@@ -56,7 +113,7 @@ serve(async (req) => {
     }
 
     try {
-      // Use a different, currently available model (stabilityai/stable-diffusion-xl-base-1.0)
+      // 6. Use the HuggingFace API
       console.log("Sending request to HuggingFace API using stable-diffusion-xl model");
       
       const hf = new HfInference(HUGGING_FACE_TOKEN);
@@ -83,6 +140,22 @@ serve(async (req) => {
 
       console.log('Successfully generated image with HuggingFace stable-diffusion-xl model');
       
+      // 7. Log the API usage for rate limiting
+      const { error: logError } = await supabase
+        .from('api_usage_logs')
+        .insert({
+          user_id: userId,
+          api_name: 'huggingface-image',
+          request_data: { prompt_length: prompt.length },
+          response_status: 'success',
+          estimated_cost: 0.01, // Store estimated cost in cents for monitoring
+        });
+      
+      if (logError) {
+        console.error('Error logging API usage:', logError);
+        // Continue execution but log the error
+      }
+      
       // Return the image data URL
       return new Response(
         JSON.stringify({ 
@@ -100,6 +173,18 @@ serve(async (req) => {
         
         if (fallbackImage) {
           console.log('Successfully retrieved fallback image from Unsplash');
+          
+          // Log fallback usage
+          await supabase
+            .from('api_usage_logs')
+            .insert({
+              user_id: userId,
+              api_name: 'huggingface-image-fallback',
+              request_data: { prompt_length: prompt.length },
+              response_status: 'fallback',
+              estimated_cost: 0, // Unsplash is free
+            });
+            
           return new Response(
             JSON.stringify({ 
               imageUrl: fallbackImage,

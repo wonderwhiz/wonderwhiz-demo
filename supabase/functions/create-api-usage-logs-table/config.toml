@@ -1,0 +1,6 @@
+
+allowed_http_methods = [
+  "OPTIONS",
+  "POST"
+]
+verify_jwt = true
