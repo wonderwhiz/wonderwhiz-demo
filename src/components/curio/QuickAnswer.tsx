@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/card';
@@ -33,38 +34,34 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
       try {
         setIsLoading(true);
         
-        // Create a timeout promise that rejects after 8 seconds
-        const timeoutPromise = new Promise<never>((_, reject) => 
-          setTimeout(() => reject(new Error('Request timed out')), 8000)
-        );
-        
-        // Make the actual request to the Supabase function
-        const functionPromise = supabase.functions.invoke('generate-quick-answer', {
-          body: { 
-            question,
-            childProfile: { 
-              age: childId ? await getChildAge(childId) : 10
-            }
-          }
-        });
-        
-        // Race between the two promises
-        const result = await Promise.race([functionPromise, timeoutPromise]);
-        
-        // Since we're racing with a reject-only promise, if we get here, 
-        // it means the function promise resolved first
-        const { data, error } = result;
-        
-        if (error) {
-          throw new Error(`API error: ${error.message}`);
+        // Get child's age if childId is available
+        let childAge = 10;
+        if (childId) {
+          childAge = await getChildAge(childId);
         }
         
-        if (data && data.answer) {
-          setAnswer(data.answer);
-          setAnswerSource(data.source || 'api');
-        } else {
-          // If no proper answer, generate a local fallback
-          throw new Error('Invalid response format');
+        // Call the Supabase function with a try-catch block
+        try {
+          const { data, error } = await supabase.functions.invoke('generate-quick-answer', {
+            body: { 
+              query: question, // Changed from question to query based on logs
+              childAge // Using childAge instead of childProfile object
+            }
+          });
+          
+          if (error) {
+            throw new Error(`API error: ${error.message}`);
+          }
+          
+          if (data && data.answer) {
+            setAnswer(data.answer);
+            setAnswerSource(data.source || 'api');
+          } else {
+            throw new Error('Invalid response format');
+          }
+        } catch (error) {
+          console.error('Error generating quick answer:', error);
+          throw error; // Re-throw to be caught by the outer catch
         }
       } catch (error) {
         console.error('Error generating quick answer:', error);
@@ -75,7 +72,7 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
         setAnswer(fallbackAnswer);
         
         // Optional: show a toast for the error
-        toast.error('Could not generate a detailed answer. A default summary is shown.');
+        toast.error('Could not generate a detailed answer. Showing a basic summary instead.');
       } finally {
         setIsLoading(false);
       }
@@ -160,7 +157,7 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
   };
 
   return (
-    <Card className="bg-gradient-to-r from-indigo-900/60 to-purple-900/60 border-none overflow-hidden shadow-xl">
+    <Card className="bg-gradient-to-r from-indigo-900/60 to-purple-900/60 border-none overflow-hidden shadow-xl mb-6">
       <div className="p-4 sm:p-5">
         <div className="flex justify-between items-center mb-2">
           <h3 className="text-lg font-semibold text-white">Quick Summary</h3>

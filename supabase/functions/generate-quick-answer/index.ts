@@ -13,9 +13,13 @@ serve(async (req) => {
   }
 
   try {
-    const { query, childAge, curioContext } = await req.json();
+    const reqBody = await req.json();
+    const { query, question, childAge, childProfile } = reqBody;
+    
+    // Support both "query" and "question" fields for backward compatibility
+    const actualQuestion = query || question;
 
-    if (!query) {
+    if (!actualQuestion) {
       throw new Error('Query is required');
     }
 
@@ -26,14 +30,18 @@ serve(async (req) => {
 
     // Adapt the prompt based on child's age
     let ageGuidance = '';
-    if (childAge <= 7) {
+    // Get age from either childAge directly or from childProfile object
+    const age = childAge || (childProfile?.age ? childProfile.age : 10);
+    
+    if (age <= 7) {
       ageGuidance = 'Explain in very simple terms suitable for a 5-7 year old. Use short sentences and simple words.';
-    } else if (childAge <= 11) {
+    } else if (age <= 11) {
       ageGuidance = 'Explain in clear terms suitable for an 8-11 year old. Use accessible language but introduce some educational terms.';
     } else {
       ageGuidance = 'Explain in engaging terms suitable for a 12-16 year old. Use appropriate educational language and concepts.';
     }
 
+    const curioContext = reqBody.curioContext || ''; 
     const contextPrompt = curioContext ? 
       `The child is learning about "${curioContext}". ` : 
       '';
@@ -48,6 +56,8 @@ serve(async (req) => {
       Always be encouraging and positive.
     `;
 
+    console.log(`Generating quick answer for question: "${actualQuestion}"`);
+
     // Call Gemini API to generate the answer
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
@@ -61,7 +71,7 @@ serve(async (req) => {
             {
               parts: [
                 { text: systemPrompt },
-                { text: query }
+                { text: actualQuestion }
               ]
             }
           ],
@@ -89,8 +99,10 @@ serve(async (req) => {
       answer = data.candidates[0].content.parts[0].text || answer;
     }
 
+    console.log(`Successfully generated answer: "${answer.substring(0, 50)}..."`);
+    
     return new Response(
-      JSON.stringify({ answer }),
+      JSON.stringify({ answer, source: 'api' }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       },
