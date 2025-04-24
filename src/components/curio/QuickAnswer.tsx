@@ -12,7 +12,7 @@ interface QuickAnswerProps {
   onToggleExpand: () => void;
   onStartJourney: () => void;
   childId?: string;
-  isExpanded?: boolean;
+  isExpanded?: boolean; // Keep this prop for flexibility
 }
 
 const QuickAnswer: React.FC<QuickAnswerProps> = ({
@@ -20,7 +20,7 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
   onToggleExpand,
   onStartJourney,
   childId,
-  isExpanded = true
+  isExpanded = true // Default to true for fully expanded view
 }) => {
   const [answer, setAnswer] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
@@ -164,7 +164,7 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
           <Button
             variant="ghost"
             size="icon"
-            onClick={handleToggleExpand}
+            onClick={onToggleExpand}
             className="h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 text-white"
           >
             {isExpanded ? (
