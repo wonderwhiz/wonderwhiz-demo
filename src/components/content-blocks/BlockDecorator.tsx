@@ -3,6 +3,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { ContentBlockType } from '@/types/curio';
+import BlockAccent from './BlockAccent';
 
 interface BlockDecoratorProps {
   type: ContentBlockType;
@@ -10,6 +11,7 @@ interface BlockDecoratorProps {
   className?: string;
   specialistId?: string;
   childAge?: number;
+  accentVisible?: boolean;
 }
 
 const BlockDecorator: React.FC<BlockDecoratorProps> = ({
@@ -17,7 +19,8 @@ const BlockDecorator: React.FC<BlockDecoratorProps> = ({
   children,
   className,
   specialistId,
-  childAge = 10
+  childAge = 10,
+  accentVisible = true
 }) => {
   // Get accent color based on block type
   const getAccentColor = () => {
@@ -32,9 +35,26 @@ const BlockDecorator: React.FC<BlockDecoratorProps> = ({
         return 'from-wonderwhiz-purple/20 to-wonderwhiz-bright-pink/20 border-wonderwhiz-purple/30';
       case 'funFact':
         return 'from-wonderwhiz-vibrant-yellow/20 to-wonderwhiz-orange/20 border-wonderwhiz-vibrant-yellow/30';
+      case 'news':
+        return 'from-wonderwhiz-blue-accent/20 to-wonderwhiz-cyan/20 border-wonderwhiz-blue-accent/30';
+      case 'riddle':
+        return 'from-wonderwhiz-purple/20 to-wonderwhiz-bright-pink/20 border-wonderwhiz-purple/30';
+      case 'activity':
+        return 'from-wonderwhiz-green/20 to-wonderwhiz-blue/20 border-wonderwhiz-green/30';
+      case 'task':
+        return 'from-wonderwhiz-orange/20 to-wonderwhiz-vibrant-yellow/20 border-wonderwhiz-orange/30';
+      case 'flashcard':
+        return 'from-wonderwhiz-blue/20 to-wonderwhiz-cyan/20 border-wonderwhiz-blue/30';
       default:
         return 'from-wonderwhiz-blue/20 to-wonderwhiz-cyan/20 border-wonderwhiz-blue/30';
     }
+  };
+
+  const getHoverAnimation = () => {
+    if (childAge <= 7) {
+      return 'hover:scale-102 hover:-translate-y-1 hover:shadow-2xl';
+    }
+    return 'hover:shadow-xl';
   };
 
   return (
@@ -43,14 +63,17 @@ const BlockDecorator: React.FC<BlockDecoratorProps> = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
       className={cn(
-        'rounded-xl shadow-lg backdrop-blur-sm border p-5',
+        'rounded-xl shadow-lg backdrop-blur-sm border p-5 relative',
         `bg-gradient-to-br ${getAccentColor()}`,
-        'hover:shadow-xl transition-all duration-300',
+        getHoverAnimation(),
+        'transition-all duration-300',
         className
       )}
     >
+      {accentVisible && <BlockAccent type={type} specialistId={specialistId} childAge={childAge} />}
+      
       <div className="relative">
-        {/* Decorative accent line */}
+        {/* Decorative accent line based on block type */}
         <div className={cn(
           "absolute -left-5 top-0 bottom-0 w-1 rounded-full",
           type === 'fact' ? 'bg-wonderwhiz-cyan' :
@@ -58,6 +81,11 @@ const BlockDecorator: React.FC<BlockDecoratorProps> = ({
           type === 'creative' ? 'bg-wonderwhiz-green' :
           type === 'mindfulness' ? 'bg-wonderwhiz-purple' :
           type === 'funFact' ? 'bg-wonderwhiz-vibrant-yellow' :
+          type === 'news' ? 'bg-wonderwhiz-blue-accent' :
+          type === 'riddle' ? 'bg-wonderwhiz-purple' :
+          type === 'activity' ? 'bg-wonderwhiz-green' :
+          type === 'task' ? 'bg-wonderwhiz-orange' :
+          type === 'flashcard' ? 'bg-wonderwhiz-blue' :
           'bg-wonderwhiz-blue'
         )} />
         
