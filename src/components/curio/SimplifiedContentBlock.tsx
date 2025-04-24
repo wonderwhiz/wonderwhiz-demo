@@ -1,18 +1,50 @@
 
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Heart, Bookmark, MessageCircle, Share2, ThumbsUp, CheckCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { MessageCircle, Bookmark, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import AgeAdaptiveBlock from './AgeAdaptiveBlock';
+import { toast } from 'sonner';
+import BlockReplies from '@/components/content-blocks/BlockReplies';
 
 interface SimplifiedContentBlockProps {
   block: any;
   ageGroup: '5-7' | '8-11' | '12-16';
-  onLike?: () => void;
   onBookmark?: () => void;
   onReply?: (message: string) => void;
   onShare?: () => void;
 }
+
+const getSpecialistGradient = (specialistId: string) => {
+  switch (specialistId) {
+    case 'nova':
+      return 'from-blue-600/20 via-indigo-600/10 to-transparent';
+    case 'spark':
+      return 'from-amber-500/20 via-orange-500/10 to-transparent';
+    case 'prism':
+      return 'from-indigo-600/20 via-purple-600/10 to-transparent';
+    case 'pixel':
+      return 'from-cyan-500/20 via-blue-500/10 to-transparent';
+    case 'atlas':
+      return 'from-amber-700/20 via-yellow-600/10 to-transparent';
+    case 'lotus':
+      return 'from-emerald-500/20 via-green-500/10 to-transparent';
+    default:
+      return 'from-wonderwhiz-deep-purple/20 via-wonderwhiz-light-purple/10 to-transparent';
+  }
+};
+
+const getSpecialistAccent = (specialistId: string) => {
+  switch (specialistId) {
+    case 'nova': return 'border-blue-600/20';
+    case 'spark': return 'border-orange-500/20';
+    case 'prism': return 'border-purple-600/20';
+    case 'pixel': return 'border-cyan-500/20';
+    case 'atlas': return 'border-amber-700/20';
+    case 'lotus': return 'border-emerald-500/20';
+    default: return 'border-wonderwhiz-deep-purple/20';
+  }
+};
 
 // Extract the title based on block type
 const getBlockTitle = (block: any) => {
@@ -141,90 +173,109 @@ const renderBlockContent = (block: any, ageGroup: '5-7' | '8-11' | '12-16') => {
 const SimplifiedContentBlock: React.FC<SimplifiedContentBlockProps> = ({
   block,
   ageGroup,
-  onLike,
   onBookmark,
   onReply,
   onShare
 }) => {
-  const [showInteractions, setShowInteractions] = useState(false);
+  const [showReplyForm, setShowReplyForm] = useState(false);
+  const [replies, setReplies] = useState<any[]>([]);
   
   const blockTitle = getBlockTitle(block);
   const blockContent = renderBlockContent(block, ageGroup);
+  const specialistId = block.specialist_id || 'whizzy';
   
-  const handleInteraction = () => {
-    setShowInteractions(!showInteractions);
+  const handleSendReply = (message: string) => {
+    if (onReply) {
+      onReply(message);
+      // Add optimistic update for the reply
+      const newReply = {
+        id: Date.now().toString(),
+        block_id: block.id,
+        content: message,
+        from_user: true,
+        created_at: new Date().toISOString()
+      };
+      setReplies([...replies, newReply]);
+      toast.success('Reply sent!');
+    }
   };
   
   return (
-    <AgeAdaptiveBlock
-      content={blockContent}
-      title={blockTitle}
-      type={block.type}
-      ageGroup={ageGroup}
-      specialist={block.specialist_id}
-      onInteract={handleInteraction}
-      interactionLabel={ageGroup === '5-7' ? 'I like this!' : 'Engage'}
-      className="mb-10"
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className={`mb-8 rounded-xl overflow-hidden backdrop-blur-sm bg-gradient-to-b ${getSpecialistGradient(specialistId)} border ${getSpecialistAccent(specialistId)}`}
+      whileHover={{ scale: 1.01 }}
+      whileTap={{ scale: 0.99 }}
+      transition={{ type: "spring", stiffness: 400, damping: 30 }}
     >
-      {showInteractions && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          exit={{ opacity: 0, height: 0 }}
-          className="mt-3 p-3 rounded-lg bg-white/5"
-        >
-          <div className="flex items-center gap-2 justify-around">
-            {onLike && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onLike}
-                className="text-white/70 hover:text-pink-400 hover:bg-white/5"
-              >
-                <Heart className="h-4 w-4 mr-1.5" />
-                <span className="text-xs">Like</span>
-              </Button>
-            )}
-            
-            {onBookmark && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onBookmark}
-                className="text-white/70 hover:text-yellow-400 hover:bg-white/5"
-              >
-                <Bookmark className="h-4 w-4 mr-1.5" />
-                <span className="text-xs">Save</span>
-              </Button>
-            )}
-            
-            {onReply && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onReply('I love this!')}
-                className="text-white/70 hover:text-blue-400 hover:bg-white/5"
-              >
-                <MessageCircle className="h-4 w-4 mr-1.5" />
-                <span className="text-xs">Comment</span>
-              </Button>
-            )}
-            
-            {onShare && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onShare}
-                className="text-white/70 hover:text-green-400 hover:bg-white/5"
-              >
-                <Share2 className="h-4 w-4 mr-1.5" />
-                <span className="text-xs">Share</span>
-              </Button>
-            )}
-          </div>
-        </motion.div>
-      )}
-    </AgeAdaptiveBlock>
+      <AgeAdaptiveBlock
+        content={blockContent}
+        title={blockTitle}
+        type={block.type}
+        ageGroup={ageGroup}
+        specialist={specialistId}
+        className="relative z-10"
+      >
+        <AnimatePresence mode="wait">
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mt-3 pt-3 border-t border-white/10"
+          >
+            <div className="flex items-center gap-2 justify-end">
+              {onReply && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowReplyForm(!showReplyForm)}
+                  className="text-white/70 hover:text-blue-400 hover:bg-white/5"
+                >
+                  <MessageCircle className="h-4 w-4 mr-1.5" />
+                  <span className="text-xs">Reply</span>
+                </Button>
+              )}
+              
+              {onBookmark && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onBookmark}
+                  className="text-white/70 hover:text-yellow-400 hover:bg-white/5"
+                >
+                  <Bookmark className="h-4 w-4 mr-1.5" />
+                  <span className="text-xs">Save</span>
+                </Button>
+              )}
+              
+              {onShare && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onShare}
+                  className="text-white/70 hover:text-green-400 hover:bg-white/5"
+                >
+                  <Share2 className="h-4 w-4 mr-1.5" />
+                  <span className="text-xs">Share</span>
+                </Button>
+              )}
+            </div>
+          </motion.div>
+        </AnimatePresence>
+
+        <AnimatePresence mode="wait">
+          {showReplyForm && (
+            <BlockReplies
+              replies={replies}
+              specialistId={specialistId}
+              onSendReply={handleSendReply}
+            />
+          )}
+        </AnimatePresence>
+      </AgeAdaptiveBlock>
+    </motion.div>
   );
 };
 
