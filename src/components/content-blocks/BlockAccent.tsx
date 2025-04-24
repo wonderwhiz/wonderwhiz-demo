@@ -2,7 +2,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { ContentBlockType } from '@/types/curio';
-import { Brain, Star, Sparkles, BookOpen, Lightbulb, Newspaper, Puzzle, Mountains, CheckSquare } from 'lucide-react';
+import { Brain, Star, Sparkles, BookOpen, Lightbulb, Newspaper, Puzzle, Mountain, CheckSquare } from 'lucide-react';
 
 interface BlockAccentProps {
   type: ContentBlockType;
@@ -32,7 +32,7 @@ const BlockAccent: React.FC<BlockAccentProps> = ({
       case 'riddle':
         return <Puzzle className={getIconSize()} />;
       case 'activity':
-        return <Mountains className={getIconSize()} />;
+        return <Mountain className={getIconSize()} />;
       case 'task':
         return <CheckSquare className={getIconSize()} />;
       default:
