@@ -219,10 +219,12 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
         return safeRenderBlock(() => (
           <div>
             <EnhancedQuizBlock 
+              id={block.id}
               question={block.content.question}
               options={block.content.options}
               correctIndex={block.content.correctIndex}
               explanation={block.content.explanation}
+              specialistId={block.specialist_id}
               onQuizCorrect={onQuizCorrect}
               childAge={childAge}
             />
