@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/card';
@@ -42,10 +41,8 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
               age: childId ? await getChildAge(childId) : 10
             }
           },
-          // Add a timeout to prevent long-running requests
-          options: {
-            timeout: 8000 // 8 seconds timeout
-          }
+          // Remove the 'options' property and adjust timeout handling
+          timeout: 8000 // 8 seconds timeout
         });
         
         if (error) {
