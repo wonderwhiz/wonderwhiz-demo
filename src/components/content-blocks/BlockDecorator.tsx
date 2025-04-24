@@ -52,9 +52,12 @@ const BlockDecorator: React.FC<BlockDecoratorProps> = ({
 
   const getHoverAnimation = () => {
     if (childAge <= 7) {
-      return 'hover:scale-102 hover:-translate-y-1 hover:shadow-2xl';
+      return 'hover:scale-102 hover:-translate-y-1 hover:shadow-2xl transition-transform duration-300';
     }
-    return 'hover:shadow-xl';
+    if (childAge <= 11) {
+      return 'hover:-translate-y-0.5 hover:shadow-xl transition-transform duration-200';
+    }
+    return 'hover:shadow-lg transition-shadow duration-150';
   };
 
   return (
@@ -66,16 +69,17 @@ const BlockDecorator: React.FC<BlockDecoratorProps> = ({
         'rounded-xl shadow-lg backdrop-blur-sm border p-5 relative',
         `bg-gradient-to-br ${getAccentColor()}`,
         getHoverAnimation(),
-        'transition-all duration-300',
         className
       )}
+      role="article"
+      aria-label={`${type} content block`}
     >
       {accentVisible && <BlockAccent type={type} specialistId={specialistId} childAge={childAge} />}
       
       <div className="relative">
         {/* Decorative accent line based on block type */}
         <div className={cn(
-          "absolute -left-5 top-0 bottom-0 w-1 rounded-full",
+          "absolute -left-5 top-0 bottom-0 w-1 rounded-full opacity-80",
           type === 'fact' ? 'bg-wonderwhiz-cyan' :
           type === 'quiz' ? 'bg-wonderwhiz-bright-pink' :
           type === 'creative' ? 'bg-wonderwhiz-green' :
@@ -96,3 +100,4 @@ const BlockDecorator: React.FC<BlockDecoratorProps> = ({
 };
 
 export default BlockDecorator;
+
