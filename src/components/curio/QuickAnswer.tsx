@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/card';
@@ -34,23 +33,27 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
       try {
         setIsLoading(true);
         
-        // Create a timeout promise
-        const timeoutPromise = new Promise((_, reject) => 
+        // Create a timeout promise that rejects after 8 seconds
+        const timeoutPromise = new Promise<never>((_, reject) => 
           setTimeout(() => reject(new Error('Request timed out')), 8000)
         );
         
-        // Race between the actual request and the timeout
-        const { data, error } = await Promise.race([
-          supabase.functions.invoke('generate-quick-answer', {
-            body: { 
-              question,
-              childProfile: { 
-                age: childId ? await getChildAge(childId) : 10
-              }
+        // Make the actual request to the Supabase function
+        const functionPromise = supabase.functions.invoke('generate-quick-answer', {
+          body: { 
+            question,
+            childProfile: { 
+              age: childId ? await getChildAge(childId) : 10
             }
-          }),
-          timeoutPromise
-        ]);
+          }
+        });
+        
+        // Race between the two promises
+        const result = await Promise.race([functionPromise, timeoutPromise]);
+        
+        // Since we're racing with a reject-only promise, if we get here, 
+        // it means the function promise resolved first
+        const { data, error } = result;
         
         if (error) {
           throw new Error(`API error: ${error.message}`);
