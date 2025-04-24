@@ -471,7 +471,6 @@ const SimplifiedCurioPage: React.FC = () => {
                   <SimplifiedContentBlock
                     block={block}
                     ageGroup={ageGroup}
-                    onLike={() => handleToggleLike(block.id)}
                     onBookmark={() => handleToggleBookmark(block.id)}
                     onReply={(message) => handleReply(block.id, message)}
                     onShare={() => {

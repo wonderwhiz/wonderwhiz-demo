@@ -307,7 +307,6 @@ const EnhancedCurioPage: React.FC = () => {
         toast.success("Image received! Analyzing...");
         // Implement image analysis logic here
       }}
-      onLike={handleToggleLike}
       onBookmark={handleToggleBookmark}
       onReply={handleReply}
       onReadAloud={(text, specialistId) => {
