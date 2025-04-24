@@ -25,6 +25,7 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
   const [answer, setAnswer] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [answerSource, setAnswerSource] = useState<'api' | 'fallback' | 'error'>('api');
   
   useEffect(() => {
     const generateQuickAnswer = async () => {
@@ -33,34 +34,97 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
       try {
         setIsLoading(true);
         
-        // Generate a simple, short answer to the question
-        // In a real app, this would call an API to get an actual answer
-        const simplifiedQuestion = question.toLowerCase();
-        let generatedAnswer = '';
+        // Try to get an AI-generated answer from the Groq API
+        const { data, error } = await supabase.functions.invoke('generate-quick-answer', {
+          body: { 
+            question,
+            childProfile: { 
+              age: childId ? await getChildAge(childId) : 10
+            }
+          },
+          // Add a timeout to prevent long-running requests
+          options: {
+            timeout: 8000 // 8 seconds timeout
+          }
+        });
         
-        if (simplifiedQuestion.includes('space') || simplifiedQuestion.includes('planet')) {
-          generatedAnswer = "Space is incredibly vast! It contains billions of galaxies, each with billions of stars. Our solar system has 8 planets: Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, and Neptune. Earth is the only planet we know has life.";
-        } else if (simplifiedQuestion.includes('animal') || simplifiedQuestion.includes('wildlife')) {
-          generatedAnswer = "There are over 1 million known animal species on Earth! Animals range from tiny microscopic creatures to the massive blue whale, which is the largest animal ever known to exist.";
-        } else if (simplifiedQuestion.includes('dinosaur')) {
-          generatedAnswer = "Dinosaurs lived during the Mesozoic Era, from about 245 to 66 million years ago. They were the dominant land animals until a massive asteroid impact caused their extinction.";
-        } else if (simplifiedQuestion.includes('ocean') || simplifiedQuestion.includes('sea')) {
-          generatedAnswer = "Oceans cover about 71% of Earth's surface and contain 97% of Earth's water. The deepest part is the Mariana Trench, which reaches depths of almost 11,000 meters (36,000 feet)!";
-        } else {
-          generatedAnswer = `${question} is a fascinating topic! As you explore the content below, you'll discover amazing facts and knowledge about this subject. Let the journey of discovery begin!`;
+        if (error) {
+          throw new Error(`API error: ${error.message}`);
         }
         
-        setAnswer(generatedAnswer);
+        if (data && data.answer) {
+          setAnswer(data.answer);
+          setAnswerSource(data.source || 'api');
+        } else {
+          // If no proper answer, generate a local fallback
+          throw new Error('Invalid response format');
+        }
       } catch (error) {
         console.error('Error generating quick answer:', error);
-        setAnswer("Let's explore this fascinating topic together! Scroll down to begin your learning journey.");
+        
+        // Generate a fallback answer based on the question
+        setAnswerSource('fallback');
+        const fallbackAnswer = generateFallbackAnswer(question);
+        setAnswer(fallbackAnswer);
       } finally {
         setIsLoading(false);
       }
     };
     
     generateQuickAnswer();
-  }, [question]);
+  }, [question, childId]);
+  
+  const getChildAge = async (childId: string): Promise<number> => {
+    try {
+      const { data } = await supabase
+        .from('child_profiles')
+        .select('age')
+        .eq('id', childId)
+        .single();
+        
+      return data?.age ? Number(data.age) : 10;
+    } catch (err) {
+      console.error('Error fetching child age:', err);
+      return 10; // Default age
+    }
+  };
+  
+  const generateFallbackAnswer = (question: string): string => {
+    // Extract the core topic from the question
+    const simplifiedQuestion = question.toLowerCase();
+    let topic = question;
+    
+    // Try to extract the main topic by removing question words
+    if (simplifiedQuestion.includes('what is') || 
+        simplifiedQuestion.includes('what are')) {
+      topic = question.replace(/what is|what are/i, '').trim();
+    } else if (simplifiedQuestion.includes('how do') ||
+               simplifiedQuestion.includes('how does')) {
+      topic = question.replace(/how do|how does/i, '').trim();
+    } else if (simplifiedQuestion.includes('why do') ||
+               simplifiedQuestion.includes('why does')) {
+      topic = question.replace(/why do|why does/i, '').trim();
+    }
+    
+    // Remove trailing punctuation
+    topic = topic.replace(/[?.!,]$/, '').trim();
+    
+    // Generate an informative but generic answer
+    if (simplifiedQuestion.includes('space') || 
+        simplifiedQuestion.includes('planet') || 
+        simplifiedQuestion.includes('star')) {
+      return `${topic} is a fascinating subject in astronomy! Space is incredibly vast and contains billions of galaxies, each with billions of stars. As you explore below, you'll discover amazing facts about ${topic}.`;
+    } else if (simplifiedQuestion.includes('animal') || 
+               simplifiedQuestion.includes('wildlife') ||
+               simplifiedQuestion.includes('ocean')) {
+      return `${topic} is an interesting area of biology! Our planet has incredible biodiversity with millions of species. The content below will help you understand more about ${topic}.`;
+    } else if (simplifiedQuestion.includes('dinosaur')) {
+      return `Dinosaurs are fascinating prehistoric creatures! They ruled Earth for over 165 million years before going extinct about 66 million years ago. Let's explore more about ${topic} in the content below.`;
+    } else {
+      // Generic response for any topic
+      return `${topic} is a fascinating topic with many interesting aspects to explore! The content below will help you understand the key facts and concepts related to this subject.`;
+    }
+  };
   
   const handleToggleExpand = () => {
     onToggleExpand();
@@ -121,6 +185,12 @@ const QuickAnswer: React.FC<QuickAnswerProps> = ({
               ) : (
                 <div className="py-2">
                   <p className="text-white/90 leading-relaxed">{answer}</p>
+                  
+                  {answerSource === 'fallback' && (
+                    <p className="text-white/50 text-xs mt-2">
+                      Note: This is a quick summary. Explore the content below for more detailed information.
+                    </p>
+                  )}
                   
                   <div className="mt-4 flex flex-wrap gap-2">
                     <Button
