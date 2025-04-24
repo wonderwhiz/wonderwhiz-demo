@@ -19,9 +19,9 @@ export const blockContainer = cva(
         mindfulness: "bg-gradient-to-br from-wonderwhiz-cyan/20 to-wonderwhiz-blue/20 border-wonderwhiz-cyan/30 hover:from-wonderwhiz-cyan/30 hover:to-wonderwhiz-blue/30"
       },
       childAge: {
-        young: "text-lg leading-relaxed",
-        middle: "text-base leading-relaxed",
-        older: "text-sm leading-relaxed"
+        young: "text-lg leading-relaxed space-y-4",
+        middle: "text-base leading-relaxed space-y-3",
+        older: "text-sm leading-relaxed space-y-2"
       }
     },
     defaultVariants: {
