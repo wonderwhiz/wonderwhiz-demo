@@ -415,8 +415,6 @@ const SimplifiedCurioPage: React.FC = () => {
             {curioTitle && !isLoadingBlocks && !searchQuery && (
               <QuickAnswer 
                 question={curioTitle}
-                isExpanded={quickAnswerExpanded}
-                onToggleExpand={() => setQuickAnswerExpanded(!quickAnswerExpanded)}
                 onStartJourney={handleStartJourney}
                 childId={childId}
               />

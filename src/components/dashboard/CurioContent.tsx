@@ -177,7 +177,6 @@ const CurioBlock = ({
   const [replyText, setReplyText] = useState('');
   const [showReplyInput, setShowReplyInput] = useState(false);
 
-  // Enhanced animation variants
   const cardVariants = {
     initial: { opacity: 0, y: 20 },
     animate: { opacity: 1, y: 0 },
@@ -194,16 +193,14 @@ const CurioBlock = ({
     exit: { opacity: 0, y: 5 }
   };
 
-  // Ensure we have real content, not just placeholders
   const blockContent = block.content || {};
   const displayText = blockContent.text || blockContent.fact || 
     blockContent.description || blockContent.instruction || 
     blockContent.question || blockContent.front || 
     "Discover more amazing facts about this topic with our specialists!";
-    
+  
   const hasRabbitHoles = Array.isArray(blockContent.rabbitHoles) && blockContent.rabbitHoles.length > 0;
   
-  // If there are no rabbit holes, generate some based on the content
   const generatedRabbitHoles = hasRabbitHoles ? blockContent.rabbitHoles : [
     `Tell me more about ${block.type === 'fact' ? 'this fact' : 'this topic'}`,
     `Why is this ${block.type === 'fact' ? 'fact' : 'information'} important?`
@@ -409,8 +406,6 @@ const CurioContent: React.FC<CurioContentProps> = ({
           
           <QuickAnswer 
             question={currentCurio.title}
-            isExpanded={false}
-            onToggleExpand={() => {}}
             onStartJourney={() => {}}
             childId={profileId}
           />
