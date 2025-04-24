@@ -1,11 +1,10 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CircleCheck, MessageCircle, Bookmark, ThumbsUp, Sparkles, Star, VolumeIcon } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import InteractiveSearchBar from '@/components/dashboard/SearchBar';
 import QuickAnswer from '@/components/curio/QuickAnswer';
 import InteractiveImageBlock from '@/components/content-blocks/InteractiveImageBlock';
@@ -177,7 +176,24 @@ const CurioBlock = ({
   const specialist = getSpecialistInfo(block.specialist_id);
   const [replyText, setReplyText] = useState('');
   const [showReplyInput, setShowReplyInput] = useState(false);
-  
+
+  // Enhanced animation variants
+  const cardVariants = {
+    initial: { opacity: 0, y: 20 },
+    animate: { opacity: 1, y: 0 },
+    hover: { 
+      y: childAge <= 7 ? -8 : childAge <= 11 ? -4 : -2,
+      transition: { duration: 0.2 }
+    },
+    tap: { scale: 0.98 }
+  };
+
+  const contentVariants = {
+    initial: { opacity: 0, y: 5 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: 5 }
+  };
+
   // Ensure we have real content, not just placeholders
   const blockContent = block.content || {};
   const displayText = blockContent.text || blockContent.fact || 
@@ -195,14 +211,20 @@ const CurioBlock = ({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
+      variants={cardVariants}
+      initial="initial"
+      animate="animate"
+      whileHover="hover"
+      whileTap="tap"
+      transition={{ duration: 0.4 }}
       className="mb-6"
     >
       <Card className="bg-gradient-to-br from-wonderwhiz-deep-purple/40 to-wonderwhiz-light-purple/30 backdrop-blur-md border border-wonderwhiz-light-purple/30 overflow-hidden shadow-xl rounded-xl">
         <div className="p-6">
-          <div className="flex items-center mb-4">
+          <motion.div 
+            className="flex items-center mb-4"
+            variants={contentVariants}
+          >
             <Avatar className="h-12 w-12 border-2 border-white/20 ring-2 ring-wonderwhiz-bright-pink/20">
               <AvatarImage src={specialist.avatar} alt={specialist.name} />
               <AvatarFallback className={`${specialist.fallbackColor} font-nunito`}>
@@ -220,14 +242,20 @@ const CurioBlock = ({
               </div>
               <p className="text-sm text-white/70 font-inter">{specialist.title}</p>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="text-white mb-5 font-inter">
+          <motion.div 
+            className="text-white mb-5 font-inter"
+            variants={contentVariants}
+          >
             {displayText}
-          </div>
+          </motion.div>
 
           {generatedRabbitHoles.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-4">
+            <motion.div 
+              className="flex flex-wrap gap-2 mb-4"
+              variants={contentVariants}
+            >
               {generatedRabbitHoles.map((question, index) => (
                 <Badge 
                   key={index} 
@@ -239,10 +267,13 @@ const CurioBlock = ({
                   {question}
                 </Badge>
               ))}
-            </div>
+            </motion.div>
           )}
 
-          <div className="flex space-x-4 pt-3 border-t border-wonderwhiz-light-purple/20">
+          <motion.div 
+            className="flex space-x-4 pt-3 border-t border-wonderwhiz-light-purple/20"
+            variants={contentVariants}
+          >
             <Button 
               variant="ghost" 
               size="sm" 
@@ -288,10 +319,15 @@ const CurioBlock = ({
                 {childAge && childAge < 8 ? "Read to me" : "Read aloud"}
               </Button>
             )}
-          </div>
+          </motion.div>
 
           {showReplyInput && (
-            <div className="mt-3">
+            <motion.div 
+              className="mt-3"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+            >
               <div className="relative">
                 <input
                   type="text"
@@ -314,7 +350,7 @@ const CurioBlock = ({
                   Send
                 </Button>
               </div>
-            </div>
+            </motion.div>
           )}
         </div>
       </Card>
