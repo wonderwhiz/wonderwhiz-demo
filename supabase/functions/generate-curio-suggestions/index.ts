@@ -28,7 +28,7 @@ serve(async (req) => {
       throw new Error(`Invalid JSON in request body: ${parseError.message}`);
     }
     
-    const { topic, childAge = 10, count = 5 } = requestBody;
+    const { topic, childAge = 10, count = 5, buildingBlockType = null } = requestBody;
     
     if (!topic) {
       throw new Error('Topic is required');
@@ -40,7 +40,31 @@ serve(async (req) => {
       throw new Error('API configuration error');
     }
 
-    console.log(`Generating curio suggestions for topic: "${topic}", childAge: ${childAge}, count: ${count}`);
+    console.log(`Generating curio suggestions for topic: "${topic}", childAge: ${childAge}, count: ${count}, buildingBlockType: ${buildingBlockType}`);
+
+    // Create a specific prompt based on the building block type if provided
+    let specificPrompt = '';
+    if (buildingBlockType) {
+      switch(buildingBlockType) {
+        case 'foundational':
+          specificPrompt = `Focus on basic, foundational knowledge about ${topic} that a ${childAge} year old should know. These should be clear, simple facts that form the basis of understanding the topic.`;
+          break;
+        case 'expansion':
+          specificPrompt = `Build upon basic knowledge of ${topic} with more detailed information. Focus on "how" and "why" questions that expand understanding for a ${childAge} year old.`;
+          break;
+        case 'connection':
+          specificPrompt = `Create questions that help a ${childAge} year old connect ${topic} to other related topics or to their daily life. Focus on relationships between concepts.`;
+          break;
+        case 'application':
+          specificPrompt = `Generate questions that encourage a ${childAge} year old to apply what they've learned about ${topic} in practical ways or through creative thinking.`;
+          break;
+        case 'deeper_dive':
+          specificPrompt = `Create more complex, thought-provoking questions about ${topic} that challenge a ${childAge} year old to think more deeply about the subject.`;
+          break;
+        default:
+          specificPrompt = '';
+      }
+    }
 
     try {
       // Call Gemini API to generate suggestions
@@ -59,13 +83,16 @@ serve(async (req) => {
                   text: `You are an AI designed to generate interesting, educational, and age-appropriate questions for children aged ${childAge} that build upon a topic they're currently learning about.
 
 Based on the topic "${topic}", generate ${count} engaging follow-up questions that would spark a child's curiosity and motivate them to learn more. 
+${specificPrompt}
 
-Format these as a JSON array of objects, each with a "question" field. Do not include any other text in your response, just the JSON.
+Format these as a JSON array of objects, each with a "question" field and a "learningStage" field that can be one of: "foundational", "expansion", "connection", "application", or "deeper_dive".
+
+Do not include any other text in your response, just the JSON.
 
 Example output format:
 [
-  {"question": "How do plants make their own food through photosynthesis?"},
-  {"question": "Why are some plants carnivorous and how do they catch insects?"}
+  {"question": "How do plants make their own food through photosynthesis?", "learningStage": "foundational"},
+  {"question": "Why are some plants carnivorous and how do they catch insects?", "learningStage": "deeper_dive"}
 ]
 
 Make sure questions are:
@@ -75,7 +102,8 @@ Make sure questions are:
 - Directly related to the original topic
 - Clear and concise (under 100 characters if possible)
 - Free of any harmful, inappropriate, or overly complex content
-- Varied in focus to cover different aspects of the topic`
+- Varied in focus to cover different aspects of the topic
+- Distributed across different learning stages to build progressive understanding`
                 }
               ]
             }
@@ -132,7 +160,10 @@ Make sure questions are:
             if (questionMatches) {
               suggestions = questionMatches.map(match => {
                 const question = match.match(/"question":\s*"([^"]+)"/)[1];
-                return { question };
+                return { 
+                  question,
+                  learningStage: "foundational" // Default stage if parsing fails
+                };
               });
             }
           }
@@ -143,18 +174,21 @@ Make sure questions are:
       if (!Array.isArray(suggestions) || suggestions.length === 0) {
         console.warn('Failed to parse suggestions, using fallbacks');
         suggestions = [
-          { question: `What else can we learn about ${topic}?` },
-          { question: `Why is ${topic} important?` },
-          { question: `How does ${topic} affect our everyday lives?` },
-          { question: `What are the most interesting facts about ${topic}?` },
-          { question: `How has ${topic} changed over time?` }
+          { question: `What else can we learn about ${topic}?`, learningStage: "foundational" },
+          { question: `Why is ${topic} important?`, learningStage: "expansion" },
+          { question: `How does ${topic} affect our everyday lives?`, learningStage: "connection" },
+          { question: `What are the most interesting facts about ${topic}?`, learningStage: "foundational" },
+          { question: `How has ${topic} changed over time?`, learningStage: "deeper_dive" }
         ];
       }
       
       // Ensure suggestions are valid objects with question field
       const validSuggestions = suggestions
         .filter(s => s && typeof s === 'object' && typeof s.question === 'string')
-        .map(s => ({ question: s.question }))
+        .map(s => ({ 
+          question: s.question,
+          learningStage: s.learningStage || "foundational" 
+        }))
         .slice(0, count);
         
       console.log(`Generated ${validSuggestions.length} valid suggestions`);
@@ -173,11 +207,11 @@ Make sure questions are:
       
       // Provide fallback suggestions
       const fallbackSuggestions = [
-        { question: `What else can we learn about ${topic}?` },
-        { question: `Why is ${topic} important?` },
-        { question: `How does ${topic} affect our everyday lives?` },
-        { question: `What are the most interesting facts about ${topic}?` },
-        { question: `How has ${topic} changed over time?` }
+        { question: `What else can we learn about ${topic}?`, learningStage: "foundational" },
+        { question: `Why is ${topic} important?`, learningStage: "expansion" },
+        { question: `How does ${topic} affect our everyday lives?`, learningStage: "connection" },
+        { question: `What are the most interesting facts about ${topic}?`, learningStage: "foundational" },
+        { question: `How has ${topic} changed over time?`, learningStage: "deeper_dive" }
       ];
       
       return new Response(
@@ -200,9 +234,9 @@ Make sure questions are:
         success: false, 
         error: error.message, 
         suggestions: [
-          { question: "What other topics are you interested in?" },
-          { question: "Would you like to learn about space instead?" },
-          { question: "Are you curious about animals?" }
+          { question: "What other topics are you interested in?", learningStage: "connection" },
+          { question: "Would you like to learn about space instead?", learningStage: "connection" },
+          { question: "Are you curious about animals?", learningStage: "connection" }
         ]
       }),
       { 
