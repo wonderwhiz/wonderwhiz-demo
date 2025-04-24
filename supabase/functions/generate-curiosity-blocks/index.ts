@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
@@ -26,16 +25,14 @@ serve(async (req) => {
       );
     }
 
-    // Create a system prompt for generating curio blocks
+    // Enhanced system prompt for better content quality
     const systemPrompt = `You are an educational assistant creating engaging learning content blocks for children.
-    Each block should be educational, age-appropriate, and engaging.
-    Create a variety of content types to maintain interest.
-    Focus on accuracy, engagement, and inspiration.
-    IMPORTANT: Make sure ALL the block content is complete and thorough - never leave any content field empty.
-    Each content block MUST have complete information appropriate for its type.
-    Every rabbitHole question should be directly related to the topic of the block, or be a logical follow-up question that extends learning.
-    NEVER use generic placeholder text in ANY field.
-    NEVER use the phrase "most yummy food in the world" or similar generics as placeholder text in rabbitHoles.`;
+    Each block must be unique, educational, and directly relevant to the query "${query}".
+    Focus on accuracy and engagement while avoiding repetition.
+    Each block MUST provide new information or perspective not covered in other blocks.
+    Make answers clear, direct, and age-appropriate for a ${childProfile.age} year old.
+    NEVER use generic placeholder content or repeat information.
+    IMPORTANT: Each rabbitHole question must extend learning in a new direction.`;
 
     // Create a user prompt with the query and child profile
     const userPrompt = `Generate ${blockCount} diverse educational content blocks about "${query}" for a child age ${childProfile.age || 10}.
@@ -150,8 +147,21 @@ serve(async (req) => {
       }
     }
 
-    // Validate blocks to ensure none have empty content fields
+    // Validate and enhance generated blocks
     const validatedBlocks = contentBlocks.map((block: any) => {
+      // Ensure unique content per specialist
+      if (block.type === 'fact' || block.type === 'funFact') {
+        block.content.title = generateUniqueTitle(block, query);
+      }
+      
+      // Enhance rabbitHole questions
+      if (block.content.rabbitHoles) {
+        block.content.rabbitHoles = generateUniqueRabbitHoles(block, query);
+      }
+      
+      // Add engagement hooks for each block type
+      block.content = addEngagementHooks(block.content, block.type, childProfile.age);
+      
       // Check for quiz blocks with incomplete data
       if (block.type === 'quiz') {
         // Ensure each quiz has question, options, and correctIndex
@@ -366,8 +376,11 @@ serve(async (req) => {
       validatedBlocks.push(newBlock);
     });
 
+    // Filter out any duplicate content
+    const uniqueBlocks = removeDuplicateContent(validatedBlocks);
+
     // Generate IDs for each block
-    const blocksWithIds = validatedBlocks.map((block: any, index: number) => ({
+    const blocksWithIds = uniqueBlocks.map((block: any, index: number) => ({
       ...block,
       id: `generated-${Date.now()}-${index}`,
       created_at: new Date().toISOString(),
@@ -388,3 +401,59 @@ serve(async (req) => {
     );
   }
 });
+
+function generateUniqueTitle(block: any, query: string): string {
+  const baseTitle = block.content.title || '';
+  if (!baseTitle.toLowerCase().includes(query.toLowerCase())) {
+    return `${baseTitle} - Understanding ${query}`;
+  }
+  return baseTitle;
+}
+
+function generateUniqueRabbitHoles(block: any, query: string): string[] {
+  const baseQuestions = block.content.rabbitHoles || [];
+  const enhancedQuestions = baseQuestions.map((question: string) => {
+    if (question.includes("most yummy food") || question.includes("What else can we learn")) {
+      return `How does ${query} relate to ${block.type === 'fact' ? 'everyday life' : 'other scientific concepts'}?`;
+    }
+    return question;
+  });
+  
+  return enhancedQuestions;
+}
+
+function addEngagementHooks(content: any, blockType: string, childAge: number): any {
+  // Add age-appropriate engagement hooks based on block type
+  const newContent = { ...content };
+  
+  if (blockType === 'fact' && childAge <= 8) {
+    // For young children, add a "Did you know" prefix if not already present
+    if (newContent.fact && !newContent.fact.startsWith("Did you know")) {
+      newContent.fact = `Did you know? ${newContent.fact}`;
+    }
+  }
+  
+  if (blockType === 'quiz' && childAge <= 10) {
+    // Make quiz questions more engaging for younger children
+    if (newContent.question && !newContent.question.includes("?")) {
+      newContent.question = `${newContent.question}?`;
+    }
+  }
+  
+  return newContent;
+}
+
+function removeDuplicateContent(blocks: any[]): any[] {
+  const uniqueBlocks: any[] = [];
+  const seenContent = new Set();
+  
+  blocks.forEach(block => {
+    const contentKey = `${block.type}-${JSON.stringify(block.content)}`;
+    if (!seenContent.has(contentKey)) {
+      seenContent.add(contentKey);
+      uniqueBlocks.push(block);
+    }
+  });
+  
+  return uniqueBlocks;
+}
