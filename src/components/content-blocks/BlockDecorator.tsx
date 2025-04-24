@@ -52,10 +52,10 @@ const BlockDecorator: React.FC<BlockDecoratorProps> = ({
 
   const getHoverAnimation = () => {
     if (childAge <= 7) {
-      return 'hover:scale-102 hover:-translate-y-1 hover:shadow-2xl transition-transform duration-300';
+      return 'hover:scale-102 hover:-translate-y-1 hover:shadow-2xl transition-all duration-300';
     }
     if (childAge <= 11) {
-      return 'hover:-translate-y-0.5 hover:shadow-xl transition-transform duration-200';
+      return 'hover:-translate-y-0.5 hover:shadow-xl transition-all duration-200';
     }
     return 'hover:shadow-lg transition-shadow duration-150';
   };
@@ -71,6 +71,7 @@ const BlockDecorator: React.FC<BlockDecoratorProps> = ({
         getHoverAnimation(),
         className
       )}
+      whileTap={{ scale: 0.98 }}
       role="article"
       aria-label={`${type} content block`}
     >
@@ -100,4 +101,3 @@ const BlockDecorator: React.FC<BlockDecoratorProps> = ({
 };
 
 export default BlockDecorator;
-

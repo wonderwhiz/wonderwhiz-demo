@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { ContentBlockType } from '@/types/curio';
 import { Brain, Star, Sparkles, BookOpen, Lightbulb, Newspaper, Puzzle, Mountain, CheckSquare } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface BlockAccentProps {
   type: ContentBlockType;
@@ -52,26 +52,43 @@ const BlockAccent: React.FC<BlockAccentProps> = ({
     return 'p-2 -top-3 -right-3';
   };
 
+  const getAccentColor = () => {
+    return 'bg-wonderwhiz-blue text-white';
+  };
+
+  const iconVariants = {
+    initial: { scale: 0.8, opacity: 0 },
+    animate: { 
+      scale: 1, 
+      opacity: 1,
+      transition: { type: "spring", stiffness: 200, damping: 10 }
+    },
+    hover: { 
+      scale: 1.1,
+      rotate: [0, -10, 10, -10, 0],
+      transition: { type: "spring", stiffness: 300, damping: 10 }
+    }
+  };
+
   return (
-    <div 
+    <motion.div 
       className={cn(
         'absolute rounded-full shadow-lg',
         getSizeClass(),
         getAccentColor(),
-        'transition-transform duration-300 hover:scale-110',
         className
       )}
+      initial="initial"
+      animate="animate"
+      whileHover="hover"
       role="img"
       aria-label={`${type} icon`}
     >
-      {getIcon()}
-    </div>
+      <motion.div variants={iconVariants}>
+        {getIcon()}
+      </motion.div>
+    </motion.div>
   );
 };
 
-const getAccentColor = () => {
-  return 'bg-wonderwhiz-blue text-white';
-};
-
 export default BlockAccent;
-

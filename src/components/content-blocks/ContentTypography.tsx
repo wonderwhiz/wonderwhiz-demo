@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
@@ -32,35 +31,48 @@ const ContentTypography: React.FC<ContentTypographyProps> = ({
     return 'text-sm md:text-base leading-relaxed';
   };
 
+  const textVariants = {
+    initial: { opacity: 0, y: 5 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: 5 }
+  };
+
   return (
     <motion.div 
       className={cn('space-y-4', className)}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      transition={{ staggerChildren: 0.1 }}
     >
       {title && (
-        <h3 className={cn(
-          getTitleSize(),
-          'text-white/90 animate-in fade-in duration-300',
-          titleClassName
-        )}>
+        <motion.h3 
+          variants={textVariants}
+          className={cn(
+            getTitleSize(),
+            'text-white/90',
+            titleClassName
+          )}
+        >
           {title}
-        </h3>
+        </motion.h3>
       )}
-      <div className={cn(
-        getContentSize(),
-        'text-white/80 animate-in fade-in duration-300',
-        'prose prose-invert prose-sm md:prose-base max-w-none',
-        'prose-p:leading-relaxed prose-strong:text-white/90',
-        'prose-a:text-wonderwhiz-cyan prose-a:no-underline hover:prose-a:underline',
-        contentClassName
-      )}>
+      <motion.div 
+        variants={textVariants}
+        className={cn(
+          getContentSize(),
+          'text-white/80',
+          'prose prose-invert prose-sm md:prose-base max-w-none',
+          'prose-p:leading-relaxed prose-strong:text-white/90',
+          'prose-a:text-wonderwhiz-cyan prose-a:no-underline hover:prose-a:underline',
+          'transition-colors duration-200',
+          contentClassName
+        )}
+      >
         {content}
-      </div>
+      </motion.div>
     </motion.div>
   );
 };
 
 export default ContentTypography;
-
