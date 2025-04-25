@@ -1,8 +1,10 @@
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Mic, Image, X, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+
 interface EnhancedSearchBarProps {
   onSearch: (query: string) => void;
   onImageCapture?: (file: File) => void;
@@ -15,6 +17,7 @@ interface EnhancedSearchBarProps {
   isProcessing?: boolean;
   childAge?: number;
 }
+
 const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   onSearch,
   onImageCapture,
@@ -31,27 +34,32 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   const [isRecording, setIsRecording] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim() && !isProcessing) {
       onSearch(query.trim());
     }
   };
+
   const handleClear = () => {
     setQuery('');
     if (onClear) onClear();
   };
+
   const handleImageClick = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0] && onImageCapture) {
       onImageCapture(e.target.files[0]);
       toast.success(childAge < 10 ? "I got your picture!" : "Image uploaded successfully");
     }
   };
+
   const handleVoiceCapture = () => {
     // Simulate voice recording in this example
     if (!isListening) {
@@ -79,43 +87,86 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       toast.info("Voice capture canceled");
     }
   };
-  return <div className="relative w-full max-w-3xl mx-auto">
+
+  return (
+    <div className="relative w-full max-w-3xl mx-auto">
       <form onSubmit={handleSubmit} className="relative">
         <div className="relative flex items-center">
           <div className="absolute left-3 text-white/60">
-            
+            <Search className="h-4 w-4" />
           </div>
           
-          
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={placeholder}
+            className="w-full bg-white/10 border border-white/20 rounded-full py-2 pl-10 pr-24 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-wonderwhiz-bright-pink/50"
+          />
           
           <div className="absolute right-2 flex items-center space-x-1">
-            {query && <Button type="button" size="icon" variant="ghost" onClick={handleClear} className="h-8 w-8 rounded-full text-white/60 hover:text-white hover:bg-white/10">
+            {query && (
+              <Button 
+                type="button" 
+                size="icon" 
+                variant="ghost" 
+                onClick={handleClear} 
+                className="h-8 w-8 rounded-full text-white/60 hover:text-white hover:bg-white/10"
+              >
                 <X className="h-4 w-4" />
-              </Button>}
+              </Button>
+            )}
             
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              onClick={handleVoiceCapture}
+              className={`h-8 w-8 rounded-full ${isRecording ? 'text-wonderwhiz-bright-pink' : 'text-white/60 hover:text-white hover:bg-white/10'}`}
+            >
+              <Mic className={`h-4 w-4 ${isRecording ? 'animate-pulse' : ''}`} />
+            </Button>
             
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              onClick={handleImageClick}
+              className="h-8 w-8 rounded-full text-white/60 hover:text-white hover:bg-white/10"
+            >
+              <Image className="h-4 w-4" />
+            </Button>
             
-            
-            
-            {showExploreButton && onExplore && <Button type="button" variant="default" size="sm" onClick={onExplore} disabled={isProcessing} className="h-8 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white ml-1 flex items-center">
+            {showExploreButton && onExplore && (
+              <Button 
+                type="button" 
+                variant="default" 
+                size="sm" 
+                onClick={onExplore} 
+                disabled={isRecording}
+                className="h-8 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white ml-1 flex items-center"
+              >
                 <Sparkles className="h-3.5 w-3.5 mr-1" />
                 <span className="text-xs">Explore</span>
-              </Button>}
+              </Button>
+            )}
           </div>
         </div>
       </form>
       
       <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
       
-      {isRecording && <motion.div initial={{
-      opacity: 0,
-      y: 5
-    }} animate={{
-      opacity: 1,
-      y: 0
-    }} className="absolute -bottom-6 left-0 right-0 text-center text-xs text-wonderwhiz-bright-pink">
+      {isRecording && (
+        <motion.div
+          initial={{ opacity: 0, y: 5 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="absolute -bottom-6 left-0 right-0 text-center text-xs text-wonderwhiz-bright-pink"
+        >
           {childAge < 10 ? "I'm listening to your question!" : "Recording... Speak clearly"}
-        </motion.div>}
-    </div>;
+        </motion.div>
+      )}
+    </div>
+  );
 };
+
 export default EnhancedSearchBar;

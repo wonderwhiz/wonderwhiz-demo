@@ -96,7 +96,7 @@ const CurioSearch: React.FC<CurioSearchProps> = ({
           <Button 
             type="submit" 
             className="bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/90 text-white w-full sm:w-auto shadow-glow-brand-pink active:scale-95 transition-transform"
-            disabled={!searchQuery.trim() || isSearching}
+            disabled={!searchQuery.trim()}
           >
             <Search className="h-5 w-5 mr-0 sm:mr-2" />
             <span className="hidden sm:inline">Search</span>

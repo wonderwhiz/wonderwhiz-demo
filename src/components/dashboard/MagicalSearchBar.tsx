@@ -148,7 +148,7 @@ const MagicalSearchBar: React.FC<MagicalSearchBarProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (query.trim() && !isGenerating) {
+    if (query.trim()) {
       handleSubmitQuery();
       setShowSuggestions(false);
     }
@@ -218,7 +218,7 @@ const MagicalSearchBar: React.FC<MagicalSearchBarProps> = ({
                 : placeholder
             }
             className="h-14 w-full pl-12 pr-[132px] bg-transparent text-white placeholder:text-white/50 focus:outline-none text-base sm:text-lg"
-            disabled={isGenerating || isRecording}
+            disabled={isRecording}
           />
 
           <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center space-x-1">
