@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -7,6 +8,8 @@ interface DynamicContentOptions {
   childAge?: number;
   blockCount?: number;
   specialistTypes?: string[];
+  interests?: string[];
+  learningStyle?: 'visual' | 'auditory' | 'kinesthetic' | 'mixed';
 }
 
 export function useDynamicContentGeneration() {
@@ -15,7 +18,14 @@ export function useDynamicContentGeneration() {
   const [generatedBlocks, setGeneratedBlocks] = useState<any[]>([]);
 
   const generateContent = useCallback(async (options: DynamicContentOptions): Promise<any[]> => {
-    const { query, childAge = 10, blockCount = 5, specialistTypes = ['nova', 'spark', 'prism'] } = options;
+    const { 
+      query, 
+      childAge = 10, 
+      blockCount = 5, 
+      specialistTypes = ['nova', 'spark', 'prism'],
+      interests = [],
+      learningStyle = 'mixed'
+    } = options;
     
     if (!query) {
       setError('A query is required to generate content');
@@ -28,41 +38,57 @@ export function useDynamicContentGeneration() {
     try {
       console.log(`Generating ${blockCount} blocks for query: ${query}, age: ${childAge}`);
       
-      // Call Supabase function with enhanced parameters for variety
       const { data, error } = await supabase.functions.invoke('generate-curiosity-blocks', {
         body: {
           query,
           childProfile: {
             age: childAge,
-            interests: ['science', 'technology', 'creativity', 'nature'],
+            interests: [...interests, 'science', 'technology', 'creativity', 'nature'],
+            learningStyle,
             language: 'English'
           },
-          blockCount: blockCount,
-          specialistTypes: specialistTypes,
-          quickGeneration: false, // Set to false for more varied content
+          blockCount,
+          specialistTypes,
           contentPreferences: {
             enforceVariety: true,
-            maxSimilarBlocks: 2, // Maximum number of blocks of the same type
-            minDifferentTypes: 3, // Minimum number of different block types
-            distributeSpecialists: true, // Ensure specialists are well distributed
-            preventRepetition: true, // Avoid repeating similar content
-            balanceInteractivity: true // Mix interactive and informative content
+            maxSimilarBlocks: 2,
+            minDifferentTypes: 3,
+            distributeSpecialists: true,
+            preventRepetition: true,
+            balanceInteractivity: true,
+            curiosityTriggers: {
+              useQuestions: true,
+              addSurprisingFacts: true,
+              includeRealWorldConnections: true,
+              addMysteryElements: true,
+              useStoryElements: true
+            },
+            contentEnhancements: {
+              addVisualDescriptions: true,
+              includeSoundEffects: true,
+              useEmotiveLanguage: true,
+              addInteractiveElements: true,
+              includePersonalRelevance: true
+            },
+            blockTypeDistribution: {
+              facts: 0.2,
+              quizzes: 0.2,
+              activities: 0.2,
+              stories: 0.2,
+              mysteries: 0.2
+            }
           }
         }
       });
       
-      if (error) {
-        throw new Error(error.message || 'Error generating content blocks');
-      }
+      if (error) throw error;
       
       if (!data || !Array.isArray(data)) {
-        // If no data returned, use fallback content
         const fallbackContent = generateFallbackContent(query, blockCount, specialistTypes);
         setGeneratedBlocks(fallbackContent);
         return fallbackContent;
       }
       
-      // Validate and enhance content variety
       const enhancedBlocks = ensureContentVariety(data);
       setGeneratedBlocks(enhancedBlocks);
       return enhancedBlocks;
@@ -70,7 +96,6 @@ export function useDynamicContentGeneration() {
       console.error('Error generating content:', err);
       setError('Failed to generate content');
       
-      // Generate fallback content
       const fallbackContent = generateFallbackContent(query, blockCount, specialistTypes);
       setGeneratedBlocks(fallbackContent);
       return fallbackContent;
