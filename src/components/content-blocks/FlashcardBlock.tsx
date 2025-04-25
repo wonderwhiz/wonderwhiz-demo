@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FlipHorizontal, Sparkles } from 'lucide-react';
@@ -83,169 +82,91 @@ const FlashcardBlock: React.FC<FlashcardBlockProps> = ({
   return (
     <div className="my-6">
       <div className="relative perspective-1000">
-        <div className="relative mx-auto w-full max-w-lg min-h-[200px]">
-          {/* Floating sparkles */}
-          {sparkles.map((sparkle, index) => (
-            <motion.div
-              key={`sparkle-${index}`}
-              className="absolute w-1 h-1 rounded-full bg-yellow-300 z-20 pointer-events-none"
-              style={{
-                left: `${sparkle.x}%`,
-                top: `${sparkle.y}%`,
-                width: `${sparkle.size}px`,
-                height: `${sparkle.size}px`,
-                boxShadow: '0 0 8px 2px rgba(255, 221, 87, 0.6)',
-              }}
-              animate={{
-                y: [0, -15, 0],
-                opacity: [1, 0.7, 1],
-                scale: [1, 1.1, 1]
-              }}
-              transition={{
-                duration: 3 + sparkle.delay,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: sparkle.delay
-              }}
-            />
-          ))}
-          
-          <motion.div
-            className="relative preserve-3d w-full h-full"
-            initial={isInitialAnimation ? { rotateY: -5 } : false}
-            animate={{ 
-              rotateY: isFlipped ? 180 : 0,
-              z: isFlipped ? 20 : 0
-            }}
-            transition={{ 
-              type: "spring", 
-              stiffness: 260, 
-              damping: 20
-            }}
+        <motion.div
+          className="relative mx-auto w-full max-w-lg min-h-[200px]"
+          initial={false}
+          animate={{ 
+            rotateY: isFlipped ? 180 : 0,
+            transition: {
+              type: "spring",
+              stiffness: 80,
+              damping: 12
+            }
+          }}
+        >
+          {/* Front of card */}
+          <div className={`absolute w-full h-full backface-hidden ${
+            isFlipped ? 'invisible' : 'visible'
+          } bg-gradient-to-br ${getFrontGradient()} rounded-xl border-2 border-white/20 shadow-lg`}>
+            <div className="p-6">
+              <motion.p 
+                className={`text-white font-medium ${childAge && childAge <= 8 ? 'text-xl' : 'text-lg'} text-center`}
+                initial={false}
+                animate={{ 
+                  scale: isFlipped ? 0.8 : 1,
+                  opacity: isFlipped ? 0 : 1
+                }}
+                transition={{ duration: 0.2 }}
+              >
+                {content.front}
+              </motion.p>
+            </div>
+          </div>
+
+          {/* Back of card */}
+          <div 
+            className={`absolute w-full h-full backface-hidden ${
+              !isFlipped ? 'invisible' : 'visible'
+            } bg-gradient-to-br ${getFrontGradient()} rounded-xl border-2 border-white/20 shadow-lg`}
+            style={{ transform: 'rotateY(180deg)' }}
           >
-            {/* Front of card */}
-            <TiltCard
-              className={`absolute w-full h-full backface-hidden ${
-                isFlipped ? 'hidden' : 'block'
-              } bg-gradient-to-br ${getFrontGradient()} rounded-xl border-2 border-white/20 shadow-lg shadow-indigo-500/10`}
-              glareEnabled={true}
-              glarePosition={glarePosition}
-              maxTilt={6}
-            >
-              <div className="p-6 flex flex-col justify-between h-full">
-                <div className="flex items-start justify-between mb-4">
-                  <motion.div 
-                    className="h-6 w-6 rounded-full bg-white/20 flex items-center justify-center"
-                    whileHover={{ scale: 1.1, rotate: 5 }}
-                  >
-                    <Sparkles className="h-3.5 w-3.5 text-white/80" />
-                  </motion.div>
-                  <div className="text-xs text-white/60 bg-white/10 px-2 py-1 rounded-full backdrop-blur-sm">
-                    Flashcard
-                  </div>
-                </div>
-                
-                <motion.div 
-                  className="flex-grow flex items-center justify-center py-4"
-                  animate={{ scale: isFlipped ? 0.9 : 1 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <p className={`text-white font-medium ${childAge && childAge <= 8 ? 'text-xl' : 'text-lg'} text-center drop-shadow-lg`}>
-                    {content.front}
-                  </p>
-                </motion.div>
-                
-                <div className="pt-4 mt-auto border-t border-white/10">
-                  <p className="text-xs text-white/60 mb-2 text-center">
-                    Tap to reveal
-                  </p>
-                </div>
-              </div>
-            </TiltCard>
-            
-            {/* Back of card */}
-            <TiltCard
-              className={`absolute w-full h-full backface-hidden ${
-                isFlipped ? 'block' : 'hidden'
-              } bg-gradient-to-br ${getBackGradient()} rounded-xl border-2 border-white/20 shadow-lg shadow-purple-500/10`}
-              glareEnabled={true}
-              glarePosition={glarePosition}
-              maxTilt={6}
-            >
-              <div className="p-6 flex flex-col justify-between h-full" style={{ transform: 'rotateY(180deg)' }}>
-                <div className="flex items-start justify-between mb-4">
-                  <motion.div 
-                    className="h-6 w-6 rounded-full bg-white/20 flex items-center justify-center"
-                    whileHover={{ scale: 1.1, rotate: -5 }}
-                  >
-                    <Sparkles className="h-3.5 w-3.5 text-white/80" />
-                  </motion.div>
-                  <div className="text-xs text-white/60 bg-white/10 px-2 py-1 rounded-full backdrop-blur-sm">
-                    Answer
-                  </div>
-                </div>
-                
-                <motion.div 
-                  className="flex-grow flex items-center justify-center py-4"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: isFlipped ? 1 : 0, scale: isFlipped ? 1 : 0.9 }}
-                  transition={{ duration: 0.3, delay: 0.1 }}
-                >
-                  <p className={`text-white font-medium ${childAge && childAge <= 8 ? 'text-xl' : 'text-lg'} text-center drop-shadow-lg`}>
-                    {content.back}
-                  </p>
-                </motion.div>
-                
-                <div className="pt-4 mt-auto border-t border-white/10">
-                  <p className="text-xs text-white/60 mb-2 text-center">
-                    Tap to flip back
-                  </p>
-                </div>
-              </div>
-            </TiltCard>
-          </motion.div>
-        </div>
-      </div>
-      
-      <div className="mt-4 flex justify-center">
-        <Button 
-          onClick={handleFlip}
-          className="bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm shadow-lg"
-        >
-          <FlipHorizontal className="h-4 w-4 mr-2" />
-          {childAge && childAge < 8 ? "Flip Card!" : "Flip Card"}
-        </Button>
-      </div>
-      
-      {content.hint && (
-        <motion.div 
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="mt-4 p-4 bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 shadow-inner"
-        >
-          <p className="text-white/80 text-sm">
-            <span className="font-medium">Hint:</span> {content.hint}
-          </p>
+            <div className="p-6">
+              <motion.p 
+                className={`text-white font-medium ${childAge && childAge <= 8 ? 'text-xl' : 'text-lg'} text-center`}
+                initial={{ opacity: 0 }}
+                animate={{ 
+                  opacity: isFlipped ? 1 : 0,
+                  transition: { delay: 0.2 }
+                }}
+              >
+                {content.back}
+              </motion.p>
+            </div>
+          </div>
         </motion.div>
-      )}
-      
-      {/* Add CSS classes as regular CSS */}
-      <style>
-        {`
-        .preserve-3d {
-          transform-style: preserve-3d;
-        }
-        
-        .backface-hidden {
-          backface-visibility: hidden;
-        }
-        
+      </div>
+
+      <Button 
+        onClick={handleFlip}
+        className="mt-4 mx-auto block bg-white/10 hover:bg-white/20 text-white border border-white/20"
+      >
+        {isFlipped ? (
+          <motion.span 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex items-center"
+          >
+            Show Question
+          </motion.span>
+        ) : (
+          <motion.span
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex items-center"
+          >
+            Reveal Answer
+          </motion.span>
+        )}
+      </Button>
+
+      <style>{`
         .perspective-1000 {
           perspective: 1000px;
         }
-        `}
-      </style>
+        .backface-hidden {
+          backface-visibility: hidden;
+        }
+      `}</style>
     </div>
   );
 };

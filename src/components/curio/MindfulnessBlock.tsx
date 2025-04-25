@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -32,7 +31,6 @@ const MindfulnessBlock: React.FC<MindfulnessBlockProps> = ({
   const intervalRef = useRef<number | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
-  // Generate random particles for the background effect
   useEffect(() => {
     const newParticles = Array(20).fill(null).map(() => ({
       x: Math.random() * 100,
@@ -45,7 +43,6 @@ const MindfulnessBlock: React.FC<MindfulnessBlockProps> = ({
   }, []);
   
   useEffect(() => {
-    // Reset the timer when the duration prop changes
     setTimeRemaining(duration);
     setProgress(0);
   }, [duration]);
@@ -55,7 +52,6 @@ const MindfulnessBlock: React.FC<MindfulnessBlockProps> = ({
       intervalRef.current = window.setInterval(() => {
         setTimeRemaining((prevTime) => {
           const newTime = prevTime - 1;
-          // Calculate progress percentage (inverted since we're counting down)
           setProgress(((duration - newTime) / duration) * 100);
           return newTime;
         });
@@ -83,7 +79,6 @@ const MindfulnessBlock: React.FC<MindfulnessBlockProps> = ({
     };
   }, [isActive, isPaused, timeRemaining, completed, onComplete, childAge, duration]);
   
-  // Animate particles
   useEffect(() => {
     if (canvasRef.current && (isActive || completed)) {
       const animateParticles = () => {
@@ -93,10 +88,8 @@ const MindfulnessBlock: React.FC<MindfulnessBlockProps> = ({
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
         
-        // Clear canvas
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // Update particles
         setParticles(prevParticles => 
           prevParticles.map(p => ({
             ...p,
@@ -105,7 +98,6 @@ const MindfulnessBlock: React.FC<MindfulnessBlockProps> = ({
           }))
         );
         
-        // Draw particles
         particles.forEach(p => {
           const color = completed ? 
             `rgba(100, 255, 100, ${p.opacity})` : 
@@ -171,7 +163,6 @@ const MindfulnessBlock: React.FC<MindfulnessBlockProps> = ({
       transition={{ duration: 0.4 }}
       className="rounded-xl p-6 my-6 border border-indigo-500/30 bg-gradient-to-br from-indigo-600/20 to-purple-600/20 shadow-lg overflow-hidden relative"
     >
-      {/* Particle canvas background */}
       <canvas 
         ref={canvasRef} 
         className="absolute inset-0 w-full h-full pointer-events-none"
@@ -206,7 +197,6 @@ const MindfulnessBlock: React.FC<MindfulnessBlockProps> = ({
                 }}
               />
               
-              {/* Glowing edge for progress */}
               <div 
                 className="absolute top-0 bottom-0 w-2 bg-white/40 blur-md"
                 style={{ 
