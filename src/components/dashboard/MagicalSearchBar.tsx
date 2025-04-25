@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Search, Sparkles, Mic, Image } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -268,7 +269,7 @@ const MagicalSearchBar: React.FC<MagicalSearchBarProps> = ({
                   ? "bg-indigo-600/50"
                   : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500"}
               `}
-              disabled={isGenerating || !query.trim() || isRecording}
+              disabled={!query.trim() || isRecording}
             >
               {isGenerating ? (
                 <>
