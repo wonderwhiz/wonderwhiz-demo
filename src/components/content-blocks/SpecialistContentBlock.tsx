@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,7 @@ import BlockActions from './BlockActions';
 import BlockReplies from './BlockReplies';
 import { toast } from 'sonner';
 import EnhancedBlockReplies from './EnhancedBlockReplies';
+import { Star } from 'lucide-react';
 
 interface SpecialistContentBlockProps {
   specialistId: string;
@@ -94,6 +96,18 @@ const SpecialistContentBlock: React.FC<SpecialistContentBlockProps> = ({
           badgeText: 'text-wonderwhiz-light-purple'
         };
     }
+  };
+  
+  const getDifficultyStars = () => {
+    if (!difficultyLevel) return null;
+    
+    const stars = [];
+    for (let i = 0; i < difficultyLevel; i++) {
+      stars.push(
+        <Star key={i} className="h-4 w-4 fill-current" />
+      );
+    }
+    return stars;
   };
   
   const { gradient, borderColor, badgeBg, badgeText } = getSpecialistStyles();

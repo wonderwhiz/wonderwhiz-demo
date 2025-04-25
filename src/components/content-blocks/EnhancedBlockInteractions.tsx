@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,8 +19,10 @@ import { ContentBlockType } from '@/types/curio';
 
 export interface EnhancedBlockInteractionsProps {
   id: string;
+  liked?: boolean;
   bookmarked?: boolean;
   type: ContentBlockType;
+  onToggleLike?: () => void;
   onToggleBookmark?: () => void;
   onReply?: (message: string) => void;
   onShare?: () => void;
@@ -32,8 +35,10 @@ export interface EnhancedBlockInteractionsProps {
 
 const EnhancedBlockInteractions: React.FC<EnhancedBlockInteractionsProps> = ({
   id,
+  liked = false,
   bookmarked = false,
   type,
+  onToggleLike,
   onToggleBookmark,
   onReply,
   onShare,
