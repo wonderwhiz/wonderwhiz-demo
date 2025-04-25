@@ -1,29 +1,30 @@
+
 import { cva } from 'class-variance-authority';
 import { ContentBlockType } from '@/types/curio';
 
 export const blockContainer = cva(
-  "p-6 rounded-xl shadow-lg backdrop-blur-sm border transition-all duration-300 hover:scale-[1.01] hover:shadow-xl",
+  "p-6 rounded-2xl shadow-2xl backdrop-blur-lg border-2 transition-all duration-500 hover:scale-[1.02] hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)]",
   {
     variants: {
       type: {
-        fact: "bg-gradient-to-br from-wonderwhiz-cyan/20 via-wonderwhiz-blue/20 to-transparent border-wonderwhiz-cyan/30 hover:from-wonderwhiz-cyan/30 hover:to-wonderwhiz-blue/30 transform-gpu",
-        quiz: "bg-gradient-to-br from-wonderwhiz-bright-pink/20 via-wonderwhiz-purple/20 to-transparent border-wonderwhiz-bright-pink/30 hover:from-wonderwhiz-bright-pink/30 hover:to-wonderwhiz-purple/30 transform-gpu",
-        flashcard: "bg-gradient-to-br from-wonderwhiz-vibrant-yellow/20 via-wonderwhiz-orange/20 to-transparent border-wonderwhiz-vibrant-yellow/30 hover:from-wonderwhiz-vibrant-yellow/30 hover:to-wonderwhiz-orange/30 transform-gpu",
-        creative: "bg-gradient-to-br from-wonderwhiz-green/20 via-wonderwhiz-cyan/20 to-transparent border-wonderwhiz-green/30 hover:from-wonderwhiz-green/30 hover:to-wonderwhiz-cyan/30 transform-gpu",
-        task: "bg-gradient-to-br from-wonderwhiz-orange/20 via-wonderwhiz-vibrant-yellow/20 to-transparent border-wonderwhiz-orange/30 hover:from-wonderwhiz-orange/30 hover:to-wonderwhiz-vibrant-yellow/30 transform-gpu",
-        news: "bg-gradient-to-br from-wonderwhiz-blue-accent/20 via-wonderwhiz-cyan/20 to-transparent border-wonderwhiz-blue-accent/30 hover:from-wonderwhiz-blue-accent/30 hover:to-wonderwhiz-cyan/30 transform-gpu",
-        riddle: "bg-gradient-to-br from-wonderwhiz-purple/20 via-wonderwhiz-bright-pink/20 to-transparent border-wonderwhiz-purple/30 hover:from-wonderwhiz-purple/30 hover:to-wonderwhiz-bright-pink/30 transform-gpu",
-        funFact: "bg-gradient-to-br from-wonderwhiz-vibrant-yellow/20 via-wonderwhiz-orange/20 to-transparent border-wonderwhiz-vibrant-yellow/30 hover:from-wonderwhiz-vibrant-yellow/30 hover:to-wonderwhiz-orange/30 transform-gpu animate-pulse-slow",
-        activity: "bg-gradient-to-br from-wonderwhiz-green/20 via-wonderwhiz-cyan/20 to-transparent border-wonderwhiz-green/30 hover:from-wonderwhiz-green/30 hover:to-wonderwhiz-cyan/30 transform-gpu",
-        mindfulness: "bg-gradient-to-br from-wonderwhiz-purple/20 via-wonderwhiz-blue/20 to-transparent border-wonderwhiz-purple/30 hover:from-wonderwhiz-purple/30 hover:to-wonderwhiz-blue/30 transform-gpu"
+        fact: "bg-gradient-to-br from-wonderwhiz-cyan/30 via-wonderwhiz-blue/20 to-transparent border-wonderwhiz-cyan/40 hover:from-wonderwhiz-cyan/40 hover:to-wonderwhiz-blue/40 hover:border-wonderwhiz-cyan/60 transform-gpu",
+        quiz: "bg-gradient-to-br from-wonderwhiz-bright-pink/30 via-wonderwhiz-purple/20 to-transparent border-wonderwhiz-bright-pink/40 hover:from-wonderwhiz-bright-pink/40 hover:to-wonderwhiz-purple/40 hover:border-wonderwhiz-bright-pink/60 transform-gpu",
+        flashcard: "bg-gradient-to-br from-wonderwhiz-vibrant-yellow/30 via-wonderwhiz-orange/20 to-transparent border-wonderwhiz-vibrant-yellow/40 hover:from-wonderwhiz-vibrant-yellow/40 hover:to-wonderwhiz-orange/40 hover:border-wonderwhiz-vibrant-yellow/60 transform-gpu",
+        creative: "bg-gradient-to-br from-wonderwhiz-green/30 via-wonderwhiz-cyan/20 to-transparent border-wonderwhiz-green/40 hover:from-wonderwhiz-green/40 hover:to-wonderwhiz-cyan/40 hover:border-wonderwhiz-green/60 transform-gpu",
+        task: "bg-gradient-to-br from-wonderwhiz-orange/30 via-wonderwhiz-vibrant-yellow/20 to-transparent border-wonderwhiz-orange/40 hover:from-wonderwhiz-orange/40 hover:to-wonderwhiz-vibrant-yellow/40 hover:border-wonderwhiz-orange/60 transform-gpu",
+        news: "bg-gradient-to-br from-wonderwhiz-blue-accent/30 via-wonderwhiz-cyan/20 to-transparent border-wonderwhiz-blue-accent/40 hover:from-wonderwhiz-blue-accent/40 hover:to-wonderwhiz-cyan/40 hover:border-wonderwhiz-blue-accent/60 transform-gpu",
+        riddle: "bg-gradient-to-br from-wonderwhiz-purple/30 via-wonderwhiz-bright-pink/20 to-transparent border-wonderwhiz-purple/40 hover:from-wonderwhiz-purple/40 hover:to-wonderwhiz-bright-pink/40 hover:border-wonderwhiz-purple/60 transform-gpu",
+        funFact: "bg-gradient-to-br from-wonderwhiz-vibrant-yellow/30 via-wonderwhiz-orange/20 to-transparent border-wonderwhiz-vibrant-yellow/40 hover:from-wonderwhiz-vibrant-yellow/40 hover:to-wonderwhiz-orange/40 hover:border-wonderwhiz-vibrant-yellow/60 transform-gpu animate-pulse-slow",
+        activity: "bg-gradient-to-br from-wonderwhiz-green/30 via-wonderwhiz-cyan/20 to-transparent border-wonderwhiz-green/40 hover:from-wonderwhiz-green/40 hover:to-wonderwhiz-cyan/40 hover:border-wonderwhiz-green/60 transform-gpu",
+        mindfulness: "bg-gradient-to-br from-wonderwhiz-purple/30 via-wonderwhiz-blue/20 to-transparent border-wonderwhiz-purple/40 hover:from-wonderwhiz-purple/40 hover:to-wonderwhiz-blue/40 hover:border-wonderwhiz-purple/60 transform-gpu"
       },
       childAge: {
-        young: "text-lg leading-relaxed space-y-4 p-6 [&_button]:text-lg [&_button]:p-4",
-        middle: "text-base leading-relaxed space-y-3 p-5 [&_button]:text-base [&_button]:p-3",
-        older: "text-sm leading-relaxed space-y-2 p-4 [&_button]:text-sm [&_button]:p-2"
+        young: "text-xl leading-relaxed space-y-6 p-8 [&_button]:text-lg [&_button]:p-4 [&_img]:rounded-2xl",
+        middle: "text-lg leading-relaxed space-y-4 p-6 [&_button]:text-base [&_button]:p-3 [&_img]:rounded-xl",
+        older: "text-base leading-relaxed space-y-3 p-5 [&_button]:text-sm [&_button]:p-2 [&_img]:rounded-lg"
       },
       interactive: {
-        true: "cursor-pointer transform-gpu transition-transform duration-200 hover:scale-102 active:scale-98",
+        true: "cursor-pointer transform-gpu transition-transform duration-300 hover:scale-103 active:scale-98",
         false: ""
       }
     },
@@ -58,26 +59,27 @@ export const getSpecialistIconClass = (specialistId: string) => {
 export const getInteractionStyles = (childAge: number = 10) => {
   if (childAge <= 7) {
     return {
-      button: "px-4 py-3 text-lg rounded-xl font-medium active:scale-95 transition-all duration-200",
-      icon: "h-5 w-5 mr-2 animate-bounce-subtle",
-      panel: "p-4 rounded-xl mt-4 bg-gradient-to-br from-white/5 to-transparent backdrop-blur-sm",
-      animation: "hover:scale-105 active:scale-95"
+      button: "px-6 py-4 text-xl rounded-2xl font-medium active:scale-95 transition-all duration-300 shadow-lg hover:shadow-xl",
+      icon: "h-6 w-6 mr-3 animate-bounce-subtle",
+      panel: "p-6 rounded-2xl mt-6 bg-gradient-to-br from-white/10 to-transparent backdrop-blur-lg border-2 border-white/20",
+      animation: "hover:scale-106 active:scale-95"
     };
   }
   
   if (childAge <= 11) {
     return {
-      button: "px-3 py-2 text-base rounded-lg",
-      icon: "h-4 w-4 mr-1.5",
-      panel: "p-3 rounded-lg mt-3",
-      animation: "hover:scale-102"
+      button: "px-4 py-3 text-lg rounded-xl shadow-md hover:shadow-lg",
+      icon: "h-5 w-5 mr-2",
+      panel: "p-4 rounded-xl mt-4 border border-white/10",
+      animation: "hover:scale-103"
     };
   }
   
   return {
-    button: "px-2 py-1.5 text-sm rounded-md",
-    icon: "h-3.5 w-3.5 mr-1",
-    panel: "p-2 rounded-md mt-2",
-    animation: ""
+    button: "px-3 py-2 text-base rounded-lg",
+    icon: "h-4 w-4 mr-1.5",
+    panel: "p-3 rounded-lg mt-3",
+    animation: "hover:scale-101"
   };
 };
+
