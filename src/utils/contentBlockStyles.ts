@@ -3,19 +3,19 @@ import { ContentBlockType } from '@/types/curio';
 
 export const getContentGradient = (type: ContentBlockType, specialistId: string) => {
   const gradients = {
-    fact: 'from-wonderwhiz-cyan/20 to-wonderwhiz-blue/20',
-    quiz: 'from-wonderwhiz-bright-pink/20 to-wonderwhiz-purple/20',
-    flashcard: 'from-wonderwhiz-vibrant-yellow/20 to-wonderwhiz-orange/20',
-    creative: 'from-wonderwhiz-green/20 to-wonderwhiz-cyan/20',
-    task: 'from-wonderwhiz-orange/20 to-wonderwhiz-vibrant-yellow/20',
-    news: 'from-wonderwhiz-blue-accent/20 to-wonderwhiz-cyan/20',
-    riddle: 'from-wonderwhiz-purple/20 to-wonderwhiz-bright-pink/20',
-    funFact: 'from-wonderwhiz-vibrant-yellow/20 to-wonderwhiz-orange/20',
-    activity: 'from-wonderwhiz-green/20 to-wonderwhiz-cyan/20',
-    mindfulness: 'from-wonderwhiz-purple/20 to-wonderwhiz-blue/20'
+    fact: 'from-wonderwhiz-cyan/20 via-wonderwhiz-blue/20 to-transparent',
+    quiz: 'from-wonderwhiz-bright-pink/20 via-wonderwhiz-purple/20 to-transparent',
+    flashcard: 'from-wonderwhiz-vibrant-yellow/20 via-wonderwhiz-orange/20 to-transparent',
+    creative: 'from-wonderwhiz-green/20 via-wonderwhiz-cyan/20 to-transparent',
+    task: 'from-wonderwhiz-orange/20 via-wonderwhiz-vibrant-yellow/20 to-transparent',
+    news: 'from-wonderwhiz-blue-accent/20 via-wonderwhiz-cyan/20 to-transparent',
+    riddle: 'from-wonderwhiz-purple/20 via-wonderwhiz-bright-pink/20 to-transparent',
+    funFact: 'from-wonderwhiz-vibrant-yellow/20 via-wonderwhiz-orange/20 to-transparent',
+    activity: 'from-wonderwhiz-green/20 via-wonderwhiz-cyan/20 to-transparent',
+    mindfulness: 'from-wonderwhiz-purple/20 via-wonderwhiz-blue/20 to-transparent'
   };
 
-  return gradients[type] || 'from-wonderwhiz-purple/20 to-wonderwhiz-blue/20';
+  return gradients[type] || 'from-wonderwhiz-purple/20 via-wonderwhiz-blue/20 to-transparent';
 };
 
 export const getSpecialistAccent = (specialistId: string) => {
