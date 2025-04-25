@@ -1,11 +1,9 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   BookmarkCheck,
   Bookmark,
-  ThumbsUp,
   MessageCircle,
   Share2,
   Sparkles,
@@ -20,10 +18,8 @@ import { ContentBlockType } from '@/types/curio';
 
 export interface EnhancedBlockInteractionsProps {
   id: string;
-  liked?: boolean;
   bookmarked?: boolean;
   type: ContentBlockType;
-  onToggleLike?: () => void;
   onToggleBookmark?: () => void;
   onReply?: (message: string) => void;
   onShare?: () => void;
@@ -36,10 +32,8 @@ export interface EnhancedBlockInteractionsProps {
 
 const EnhancedBlockInteractions: React.FC<EnhancedBlockInteractionsProps> = ({
   id,
-  liked = false,
   bookmarked = false,
   type,
-  onToggleLike,
   onToggleBookmark,
   onReply,
   onShare,
@@ -96,25 +90,6 @@ const EnhancedBlockInteractions: React.FC<EnhancedBlockInteractionsProps> = ({
         }`}
       >
         <div className="flex flex-wrap items-center gap-1">
-          {onToggleLike && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onToggleLike}
-              className={`${buttonSize} rounded-full ${
-                liked ? 'text-wonderwhiz-bright-pink' : 'text-white/60 hover:text-wonderwhiz-bright-pink'
-              }`}
-              aria-label={liked ? "Unlike" : "Like"}
-            >
-              <ThumbsUp className={`${interactionSize === 'xs' ? 'h-3 w-3' : 'h-4 w-4'} ${showLabels ? 'mr-1.5' : ''}`} />
-              {showLabels && (
-                <span>
-                  {childAge <= 8 ? (liked ? "Liked!" : "Like!") : (liked ? "Liked" : "Like")}
-                </span>
-              )}
-            </Button>
-          )}
-
           {onToggleBookmark && (
             <Button
               variant="ghost"

@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Star, MessageCircle, Bookmark, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { getSpecialistInfo } from '@/utils/specialists';
-import BlockReplies from '@/components/content-blocks/BlockReplies';
+import BlockActions from './BlockActions';
+import BlockReplies from './BlockReplies';
 import { toast } from 'sonner';
 import EnhancedBlockReplies from './EnhancedBlockReplies';
 
@@ -43,7 +42,6 @@ const SpecialistContentBlock: React.FC<SpecialistContentBlockProps> = ({
   
   const specialist = getSpecialistInfo(specialistId);
   
-  // Specialist-specific styling
   const getSpecialistStyles = () => {
     switch (specialistId) {
       case 'nova':
@@ -100,17 +98,9 @@ const SpecialistContentBlock: React.FC<SpecialistContentBlockProps> = ({
   
   const { gradient, borderColor, badgeBg, badgeText } = getSpecialistStyles();
   
-  // Show difficulty based on level
-  const getDifficultyStars = () => {
-    return Array(difficultyLevel).fill(0).map((_, i) => (
-      <Star key={i} className="h-3 w-3 fill-current" />
-    ));
-  };
-
   const handleSendReply = (message: string) => {
     if (onReply) {
       onReply(message);
-      // Add optimistic update for the reply
       const newReply = {
         id: Date.now().toString(),
         content: message,
@@ -127,13 +117,12 @@ const SpecialistContentBlock: React.FC<SpecialistContentBlockProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className={`mb-8 rounded-xl overflow-hidden backdrop-blur-sm bg-gradient-to-b ${gradient} border ${borderColor}`}
+      className={`mb-8 rounded-xl overflow-hidden backdrop-blur-sm bg-gradient-to-b ${gradient} border ${borderColor} shadow-xl`}
       whileHover={{ scale: 1.01 }}
       whileTap={{ scale: 0.99 }}
       transition={{ type: "spring", stiffness: 400, damping: 30 }}
     >
       <div className="p-5">
-        {/* Specialist header */}
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center gap-3">
             <img 
@@ -166,19 +155,16 @@ const SpecialistContentBlock: React.FC<SpecialistContentBlockProps> = ({
           </div>
         </div>
         
-        {/* Content title */}
         {title && (
           <h4 className={`text-white font-medium mb-3 ${childAge <= 8 ? 'text-lg' : 'text-base'}`}>
             {title}
           </h4>
         )}
         
-        {/* Main content */}
         <div className={`text-white/90 ${childAge <= 8 ? 'text-base' : 'text-sm'}`}>
           {content}
         </div>
         
-        {/* Related questions */}
         {relatedQuestions && relatedQuestions.length > 0 && (
           <div className="mt-4 space-y-2">
             {relatedQuestions.map((question, index) => (
@@ -195,59 +181,16 @@ const SpecialistContentBlock: React.FC<SpecialistContentBlockProps> = ({
           </div>
         )}
         
-        {/* Block interactions */}
         <div className="mt-4 pt-3 border-t border-white/10">
-          <div className="flex items-center gap-2 justify-end">
-            {onReply && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowReplyForm(!showReplyForm)}
-                className="text-white/70 hover:text-blue-400 hover:bg-white/5"
-              >
-                <MessageCircle className="h-4 w-4 mr-1.5" />
-                <span className="text-xs">Reply</span>
-              </Button>
-            )}
-            
-            {onBookmark && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onBookmark}
-                className="text-white/70 hover:text-yellow-400 hover:bg-white/5"
-              >
-                <Bookmark className="h-4 w-4 mr-1.5" />
-                <span className="text-xs">Save</span>
-              </Button>
-            )}
-            
-            {onShare && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onShare}
-                className="text-white/70 hover:text-green-400 hover:bg-white/5"
-              >
-                <Share2 className="h-4 w-4 mr-1.5" />
-                <span className="text-xs">Share</span>
-              </Button>
-            )}
-            
-            {onReadAloud && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onReadAloud}
-                className="text-white/70 hover:text-purple-400 hover:bg-white/5"
-              >
-                <span className="text-xs">Read Aloud</span>
-              </Button>
-            )}
-          </div>
+          <BlockActions
+            onBookmark={onBookmark}
+            onReply={() => setShowReplyForm(!showReplyForm)}
+            onShare={onShare}
+            onReadAloud={onReadAloud}
+            childAge={childAge}
+          />
         </div>
         
-        {/* Reply form - Using enhanced version */}
         {showReplyForm && (
           <EnhancedBlockReplies
             replies={replies}
