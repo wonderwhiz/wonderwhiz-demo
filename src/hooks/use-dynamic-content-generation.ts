@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -29,7 +28,7 @@ export function useDynamicContentGeneration() {
     try {
       console.log(`Generating ${blockCount} blocks for query: ${query}, age: ${childAge}`);
       
-      // Call Supabase function to generate content blocks
+      // Call Supabase function with enhanced parameters for variety
       const { data, error } = await supabase.functions.invoke('generate-curiosity-blocks', {
         body: {
           query,
@@ -40,7 +39,15 @@ export function useDynamicContentGeneration() {
           },
           blockCount: blockCount,
           specialistTypes: specialistTypes,
-          quickGeneration: true
+          quickGeneration: false, // Set to false for more varied content
+          contentPreferences: {
+            enforceVariety: true,
+            maxSimilarBlocks: 2, // Maximum number of blocks of the same type
+            minDifferentTypes: 3, // Minimum number of different block types
+            distributeSpecialists: true, // Ensure specialists are well distributed
+            preventRepetition: true, // Avoid repeating similar content
+            balanceInteractivity: true // Mix interactive and informative content
+          }
         }
       });
       
@@ -55,8 +62,10 @@ export function useDynamicContentGeneration() {
         return fallbackContent;
       }
       
-      setGeneratedBlocks(data);
-      return data;
+      // Validate and enhance content variety
+      const enhancedBlocks = ensureContentVariety(data);
+      setGeneratedBlocks(enhancedBlocks);
+      return enhancedBlocks;
     } catch (err) {
       console.error('Error generating content:', err);
       setError('Failed to generate content');
@@ -160,6 +169,62 @@ export function useDynamicContentGeneration() {
     }
     
     return blocks;
+  };
+
+  // Ensure content variety by filtering similar blocks
+  const ensureContentVariety = (blocks: any[]): any[] => {
+    const processedBlocks = [...blocks];
+    const typeCount: Record<string, number> = {};
+    const seenContent = new Set<string>();
+    
+    return processedBlocks.filter((block, index) => {
+      // Count block types
+      typeCount[block.type] = (typeCount[block.type] || 0) + 1;
+      
+      // Get main content for similarity check
+      const mainContent = getBlockMainContent(block);
+      
+      // Check for similar content
+      const isSimilar = Array.from(seenContent).some(content => 
+        calculateSimilarity(content, mainContent) > 0.7
+      );
+      
+      // Add to seen content
+      seenContent.add(mainContent);
+      
+      // Keep block if:
+      // 1. It's one of first 2 blocks (to ensure we have some content)
+      // 2. We don't have too many of this type
+      // 3. Content isn't too similar to existing blocks
+      return index < 2 || 
+        (typeCount[block.type] <= 2 && !isSimilar);
+    });
+  };
+
+  // Extract main content from a block for similarity comparison
+  const getBlockMainContent = (block: any): string => {
+    switch (block.type) {
+      case 'fact':
+      case 'funFact':
+        return block.content.fact || block.content.text || '';
+      case 'quiz':
+        return block.content.question + (block.content.options || []).join(' ');
+      case 'creative':
+        return block.content.prompt || '';
+      case 'mindfulness':
+        return block.content.instruction || '';
+      default:
+        return JSON.stringify(block.content);
+    }
+  };
+
+  // Calculate text similarity using Jaccard similarity coefficient
+  const calculateSimilarity = (text1: string, text2: string): number => {
+    const words1 = new Set(text1.toLowerCase().split(/\s+/));
+    const words2 = new Set(text2.toLowerCase().split(/\s+/));
+    const intersection = new Set([...words1].filter(x => words2.has(x)));
+    const union = new Set([...words1, ...words2]);
+    return intersection.size / union.size;
   };
 
   // Generate related questions for a topic
