@@ -1,109 +1,165 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Eye, Ear, HandMetal, Brain, Users, MessageSquare } from 'lucide-react';
-import { useAgeAdaptation } from '@/hooks/useAgeAdaptation';
+import { Eye, Ear, Hand, Brain, Users, BookOpen } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+
+export type LearningStyle = 'visual' | 'auditory' | 'kinesthetic' | 'logical' | 'social' | 'reading';
 
 interface LearningStyleBlockProps {
-  learningStyle: 'visual' | 'auditory' | 'kinesthetic' | 'reading' | 'social' | 'verbal';
-  content: React.ReactNode;
+  style: LearningStyle;
+  title: string;
+  description: string;
+  onSelect: () => void;
   childAge?: number;
+  selected?: boolean;
+  className?: string;
 }
 
 const LearningStyleBlock: React.FC<LearningStyleBlockProps> = ({
-  learningStyle,
-  content,
-  childAge = 10
+  style,
+  title,
+  description,
+  onSelect,
+  childAge = 10,
+  selected = false,
+  className
 }) => {
-  const { textSize } = useAgeAdaptation(childAge);
-  
-  // Get style-specific information
-  const getLearningStyleInfo = () => {
-    switch (learningStyle) {
+  // Style-specific styling
+  const getStyleInfo = () => {
+    switch (style) {
       case 'visual':
         return {
-          title: childAge <= 8 ? 'See It!' : 'Visual Learning',
-          description: 'Learn through images, diagrams, and watching.',
-          icon: <Eye className="h-5 w-5" />,
-          color: 'bg-blue-600/20',
-          textColor: 'text-blue-300',
-          borderColor: 'border-blue-600/30'
+          icon: <Eye />,
+          gradient: 'from-blue-600/30 to-blue-700/10',
+          hoverGradient: 'hover:from-blue-500/40 hover:to-blue-600/20',
+          selectedGradient: 'from-blue-500/50 to-blue-600/30',
+          borderColor: selected ? 'border-blue-400' : 'border-white/10',
+          iconColor: 'text-blue-400',
+          title: childAge <= 8 ? 'Looking' : 'Visual'
         };
       case 'auditory':
         return {
-          title: childAge <= 8 ? 'Hear It!' : 'Auditory Learning',
-          description: 'Learn through listening, sounds, and music.',
-          icon: <Ear className="h-5 w-5" />,
-          color: 'bg-purple-600/20',
-          textColor: 'text-purple-300',
-          borderColor: 'border-purple-600/30'
+          icon: <Ear />,
+          gradient: 'from-purple-600/30 to-purple-700/10',
+          hoverGradient: 'hover:from-purple-500/40 hover:to-purple-600/20',
+          selectedGradient: 'from-purple-500/50 to-purple-600/30',
+          borderColor: selected ? 'border-purple-400' : 'border-white/10',
+          iconColor: 'text-purple-400',
+          title: childAge <= 8 ? 'Listening' : 'Auditory'
         };
       case 'kinesthetic':
         return {
-          title: childAge <= 8 ? 'Do It!' : 'Hands-on Learning',
-          description: 'Learn through movement, touch, and doing.',
-          icon: <HandMetal className="h-5 w-5" />,
-          color: 'bg-emerald-600/20',
-          textColor: 'text-emerald-300',
-          borderColor: 'border-emerald-600/30'
+          icon: <Hand />,
+          gradient: 'from-emerald-600/30 to-emerald-700/10',
+          hoverGradient: 'hover:from-emerald-500/40 hover:to-emerald-600/20',
+          selectedGradient: 'from-emerald-500/50 to-emerald-600/30',
+          borderColor: selected ? 'border-emerald-400' : 'border-white/10',
+          iconColor: 'text-emerald-400',
+          title: childAge <= 8 ? 'Doing' : 'Hands-On'
         };
-      case 'reading':
+      case 'logical':
         return {
-          title: childAge <= 8 ? 'Read It!' : 'Reading/Writing',
-          description: 'Learn through reading and writing text.',
-          icon: <Brain className="h-5 w-5" />,
-          color: 'bg-amber-600/20',
-          textColor: 'text-amber-300',
-          borderColor: 'border-amber-600/30'
+          icon: <Brain />,
+          gradient: 'from-amber-600/30 to-amber-700/10',
+          hoverGradient: 'hover:from-amber-500/40 hover:to-amber-600/20',
+          selectedGradient: 'from-amber-500/50 to-amber-600/30',
+          borderColor: selected ? 'border-amber-400' : 'border-white/10',
+          iconColor: 'text-amber-400',
+          title: childAge <= 8 ? 'Thinking' : 'Logical'
         };
       case 'social':
         return {
-          title: childAge <= 8 ? 'Share It!' : 'Social Learning',
-          description: 'Learn through interaction with others.',
-          icon: <Users className="h-5 w-5" />,
-          color: 'bg-pink-600/20',
-          textColor: 'text-pink-300',
-          borderColor: 'border-pink-600/30'
+          icon: <Users />,
+          gradient: 'from-pink-600/30 to-pink-700/10',
+          hoverGradient: 'hover:from-pink-500/40 hover:to-pink-600/20',
+          selectedGradient: 'from-pink-500/50 to-pink-600/30',
+          borderColor: selected ? 'border-pink-400' : 'border-white/10',
+          iconColor: 'text-pink-400',
+          title: childAge <= 8 ? 'Sharing' : 'Social'
         };
-      case 'verbal':
+      case 'reading':
         return {
-          title: childAge <= 8 ? 'Talk About It!' : 'Verbal Learning',
-          description: 'Learn through speech and discussion.',
-          icon: <MessageSquare className="h-5 w-5" />,
-          color: 'bg-cyan-600/20',
-          textColor: 'text-cyan-300',
-          borderColor: 'border-cyan-600/30'
+          icon: <BookOpen />,
+          gradient: 'from-cyan-600/30 to-cyan-700/10',
+          hoverGradient: 'hover:from-cyan-500/40 hover:to-cyan-600/20',
+          selectedGradient: 'from-cyan-500/50 to-cyan-600/30',
+          borderColor: selected ? 'border-cyan-400' : 'border-white/10',
+          iconColor: 'text-cyan-400',
+          title: childAge <= 8 ? 'Reading' : 'Reading/Writing'
+        };
+      default:
+        return {
+          icon: <Eye />,
+          gradient: 'from-gray-600/30 to-gray-700/10',
+          hoverGradient: 'hover:from-gray-500/40 hover:to-gray-600/20',
+          selectedGradient: 'from-gray-500/50 to-gray-600/30',
+          borderColor: selected ? 'border-gray-400' : 'border-white/10',
+          iconColor: 'text-gray-400',
+          title: 'Learning'
         };
     }
   };
 
-  const { title, description, icon, color, textColor, borderColor } = getLearningStyleInfo();
+  const styleInfo = getStyleInfo();
+  const displayTitle = title || styleInfo.title;
+  
+  // Calculate appropriate sizes based on child age
+  const getTextSizes = () => {
+    if (childAge <= 8) {
+      return {
+        title: "text-lg",
+        description: "text-sm"
+      };
+    }
+    return {
+      title: "text-base",
+      description: "text-xs"
+    };
+  };
+  
+  const textSizes = getTextSizes();
+  
+  const gradientClass = selected 
+    ? styleInfo.selectedGradient 
+    : `${styleInfo.gradient} ${styleInfo.hoverGradient}`;
   
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className={`rounded-xl overflow-hidden backdrop-blur-sm border ${borderColor} p-0.5`}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      className={cn(
+        `p-4 rounded-xl bg-gradient-to-br ${gradientClass} cursor-pointer border ${styleInfo.borderColor} transition-all duration-300`,
+        className
+      )}
+      onClick={onSelect}
     >
-      <div className="bg-black/30 rounded-[calc(0.75rem-2px)] p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <div className={`p-2 rounded-lg ${color}`}>
-            {icon}
-          </div>
-          <div>
-            <h3 className={`${textColor} font-medium ${childAge <= 8 ? 'text-lg' : 'text-base'}`}>
-              {title}
-            </h3>
-            <p className="text-white/70 text-xs">
-              {description}
-            </p>
-          </div>
+      <div className="flex items-center gap-3">
+        <div className={`p-2 bg-white/10 rounded-lg ${styleInfo.iconColor}`}>
+          {styleInfo.icon}
         </div>
-        
-        <div className={`${textSize} text-white/90`}>
-          {content}
+        <div>
+          <h3 className={`font-medium text-white ${textSizes.title}`}>
+            {displayTitle}
+          </h3>
+          <p className={`text-white/80 ${textSizes.description}`}>
+            {description}
+          </p>
         </div>
+      </div>
+      
+      <div className="mt-3 flex justify-end">
+        <Button 
+          variant={selected ? "default" : "ghost"} 
+          size="sm" 
+          className={cn(
+            "text-white/80 hover:text-white",
+            selected && "bg-white/20 hover:bg-white/30"
+          )}
+        >
+          {selected ? 'Selected' : 'Select'}
+        </Button>
       </div>
     </motion.div>
   );

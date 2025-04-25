@@ -74,6 +74,13 @@ const ProgressiveLearningBlock: React.FC<ProgressiveLearningBlockProps> = ({
   const { title, description, icon, color, borderColor, specialist } = getStageInfo();
   const specialistInfo = getSpecialistInfo(specialist);
   
+  // Button animations
+  const buttonVariants = {
+    initial: { opacity: 0.8, x: 0 },
+    hover: { opacity: 1, x: 5, transition: { duration: 0.2 } },
+    tap: { scale: 0.98, transition: { duration: 0.1 } }
+  };
+  
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -102,8 +109,10 @@ const ProgressiveLearningBlock: React.FC<ProgressiveLearningBlockProps> = ({
           questions.map((question, index) => (
             <motion.button
               key={index}
-              whileHover={{ scale: 1.02, x: 5 }}
-              whileTap={{ scale: 0.98 }}
+              initial="initial"
+              whileHover="hover"
+              whileTap="tap"
+              variants={buttonVariants}
               onClick={() => onQuestionClick?.(question)}
               className="w-full flex items-center justify-between p-3 rounded-lg bg-white/10 hover:bg-white/15 text-white text-left transition-all"
             >

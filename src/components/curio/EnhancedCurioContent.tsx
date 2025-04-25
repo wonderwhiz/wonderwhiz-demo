@@ -1,29 +1,24 @@
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowLeft, Search, Mic, Camera, Star, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Heart, MessageCircle, Bookmark, Share2, VolumeIcon } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import FireflyQuizBlock from './FireflyQuizBlock';
-import MindfulnessBlock from './MindfulnessBlock';
-import CreativeBlock from './CreativeBlock';
-import ActivityBlock from '@/components/content-blocks/ActivityBlock';
-import TaskBlock from '@/components/content-blocks/TaskBlock';
-import RiddleBlock from '@/components/content-blocks/RiddleBlock';
-import FlashcardBlock from '@/components/content-blocks/FlashcardBlock';
-import EnhancedSearchBar from './EnhancedSearchBar';
-import QuickAnswer from './QuickAnswer';
-import InteractiveImageBlock from '@/components/content-blocks/InteractiveImageBlock';
-import { BlockError } from '@/components/content-blocks/BlockError';
+
+import SpecialistContentBlock from '@/components/content-blocks/SpecialistContentBlock';
+import LearningProgressIndicator from './LearningProgressIndicator';
+import LearningStyleBlock from '@/components/content-blocks/LearningStyleBlock';
+import EnhancedBlockReplies from '@/components/content-blocks/EnhancedBlockReplies';
+import CelebrationSystem from './CelebrationSystem';
+import FloatingNavigation from './FloatingNavigation';
 
 interface EnhancedCurioContentProps {
-  title: string;
+  title: string | null;
   blocks: any[];
   onSearch: (query: string) => void;
   onVoiceCapture?: (transcript: string) => void;
   onImageCapture?: (file: File) => void;
-  onLike?: (blockId: string) => void;
   onBookmark?: (blockId: string) => void;
   onReply?: (blockId: string, message: string) => void;
   onReadAloud?: (text: string, specialistId: string) => void;
@@ -32,243 +27,12 @@ interface EnhancedCurioContentProps {
   childAge?: number;
 }
 
-const getSpecialistInfo = (specialistId: string) => {
-  const specialists = {
-    nova: {
-      name: 'Nova',
-      title: 'Space Expert',
-      avatar: '/specialists/nova-avatar.png',
-      fallbackColor: 'bg-blue-600',
-      fallbackInitial: 'N',
-    },
-    spark: {
-      name: 'Spark',
-      title: 'Creative Genius',
-      avatar: '/specialists/spark-avatar.png',
-      fallbackColor: 'bg-yellow-500',
-      fallbackInitial: 'S',
-    },
-    prism: {
-      name: 'Prism',
-      title: 'Science Wizard',
-      avatar: '/specialists/prism-avatar.png',
-      fallbackColor: 'bg-green-600',
-      fallbackInitial: 'P',
-    },
-    whizzy: {
-      name: 'Whizzy',
-      title: 'Assistant',
-      avatar: '/specialists/whizzy-avatar.png',
-      fallbackColor: 'bg-purple-600',
-      fallbackInitial: 'W',
-    },
-    lotus: {
-      name: 'Lotus',
-      title: 'Nature Guide',
-      avatar: '/specialists/lotus-avatar.png',
-      fallbackColor: 'bg-green-700',
-      fallbackInitial: 'L',
-    },
-    atlas: {
-      name: 'Atlas',
-      title: 'History Explorer',
-      avatar: '/specialists/atlas-avatar.png',
-      fallbackColor: 'bg-orange-600',
-      fallbackInitial: 'A',
-    },
-    pixel: {
-      name: 'Pixel',
-      title: 'Tech Wizard',
-      avatar: '/specialists/pixel-avatar.png',
-      fallbackColor: 'bg-indigo-600',
-      fallbackInitial: 'P',
-    },
-  };
-
-  return specialists[specialistId as keyof typeof specialists] || {
-    name: specialistId.charAt(0).toUpperCase() + specialistId.slice(1),
-    title: 'Knowledge Specialist',
-    avatar: '',
-    fallbackColor: 'bg-purple-600',
-    fallbackInitial: specialistId.charAt(0).toUpperCase(),
-  };
-};
-
-const SpecialistBlock: React.FC<{
-  specialistId: string;
-  content: string;
-  followupQuestions?: string[];
-  blockId: string;
-  onRabbitHoleClick?: (question: string) => void;
-  onLike?: (blockId: string) => void;
-  onBookmark?: (blockId: string) => void;
-  onReply?: (blockId: string, message: string) => void;
-  onReadAloud?: (text: string, specialistId: string) => void;
-  childAge?: number;
-}> = ({ 
-  specialistId, 
-  content, 
-  followupQuestions = [],
-  blockId,
-  onRabbitHoleClick,
-  onLike,
-  onBookmark,
-  onReply,
-  onReadAloud,
-  childAge = 10
-}) => {
-  const specialist = getSpecialistInfo(specialistId);
-  const [showReplyInput, setShowReplyInput] = useState(false);
-  const [replyText, setReplyText] = useState('');
-  
-  const handleReply = () => {
-    if (replyText.trim() && onReply) {
-      onReply(blockId, replyText);
-      setReplyText('');
-      setShowReplyInput(false);
-      toast.success("Reply sent!");
-    }
-  };
-  
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="mb-6 bg-wonderwhiz-purple rounded-xl overflow-hidden"
-    >
-      <div className="p-5">
-        <div className="flex items-start gap-3 mb-4">
-          <Avatar className="h-10 w-10 border-2 border-white/20">
-            <AvatarImage src={specialist.avatar} alt={specialist.name} />
-            <AvatarFallback className={specialist.fallbackColor}>{specialist.fallbackInitial}</AvatarFallback>
-          </Avatar>
-          
-          <div>
-            <div className="flex items-center">
-              <h3 className="text-lg font-semibold text-white">{specialist.name}</h3>
-              {specialistId === 'nova' && (
-                <div className="ml-2 h-2 w-2 rounded-full bg-blue-400"></div>
-              )}
-              {specialistId === 'spark' && (
-                <div className="ml-2 h-2 w-2 rounded-full bg-yellow-400"></div>
-              )}
-              {specialistId === 'prism' && (
-                <div className="ml-2 h-2 w-2 rounded-full bg-green-400"></div>
-              )}
-            </div>
-            <p className="text-sm text-white/60">{specialist.title}</p>
-          </div>
-        </div>
-        
-        <div className="text-white mb-5 whitespace-pre-line">
-          {content}
-          
-          {followupQuestions.length > 0 && (
-            <div className="mt-5 pt-4 border-t border-white/10">
-              <p className="text-white/60 text-sm mb-2">I wonder...</p>
-              <div className="space-y-2">
-                {followupQuestions.map((question, idx) => (
-                  <div 
-                    key={idx}
-                    className="bg-white/10 hover:bg-white/15 rounded-lg px-4 py-3 cursor-pointer text-white/90"
-                    onClick={() => onRabbitHoleClick && onRabbitHoleClick(question)}
-                  >
-                    {question}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-        
-        <div className="flex space-x-3 pt-2 border-t border-white/10">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => onLike && onLike(blockId)}
-            className="text-white/70 hover:text-white hover:bg-white/10"
-          >
-            <Heart className="h-4 w-4 mr-1" />
-            Like
-          </Button>
-          
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => onBookmark && onBookmark(blockId)}
-            className="text-white/70 hover:text-white hover:bg-white/10"
-          >
-            <Bookmark className="h-4 w-4 mr-1" />
-            Save
-          </Button>
-          
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => setShowReplyInput(!showReplyInput)}
-            className="text-white/70 hover:text-white hover:bg-white/10"
-          >
-            <MessageCircle className="h-4 w-4 mr-1" />
-            Reply
-          </Button>
-          
-          {onReadAloud && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => onReadAloud(content, specialistId)}
-              className="text-white/70 hover:text-white hover:bg-white/10"
-            >
-              <VolumeIcon className="h-4 w-4 mr-1" />
-              {childAge && childAge < 8 ? "Read to me" : "Read aloud"}
-            </Button>
-          )}
-        </div>
-        
-        {showReplyInput && (
-          <div className="mt-3 bg-white/5 p-3 rounded-lg">
-            <textarea
-              value={replyText}
-              onChange={(e) => setReplyText(e.target.value)}
-              placeholder="Write your reply..."
-              className="w-full bg-white/10 border border-white/20 rounded-lg p-2 text-white placeholder-white/50 text-sm"
-              rows={2}
-            />
-            
-            <div className="flex justify-end mt-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="mr-2 border-white/20 text-white"
-                onClick={() => setShowReplyInput(false)}
-              >
-                Cancel
-              </Button>
-              
-              <Button 
-                size="sm" 
-                className="bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/90"
-                onClick={handleReply}
-                disabled={!replyText.trim()}
-              >
-                Send
-              </Button>
-            </div>
-          </div>
-        )}
-      </div>
-    </motion.div>
-  );
-};
-
 const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
   title,
   blocks,
   onSearch,
   onVoiceCapture,
   onImageCapture,
-  onLike,
   onBookmark,
   onReply,
   onReadAloud,
@@ -276,148 +40,435 @@ const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
   onRabbitHoleClick,
   childAge = 10
 }) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isRecording, setIsRecording] = useState(false);
+  const [showSearchPanel, setShowSearchPanel] = useState(false);
+  const [selectedLearningStyle, setSelectedLearningStyle] = useState<'visual' | 'auditory' | 'kinesthetic' | 'logical' | 'social' | 'reading'>('visual');
+  const [currentBlockIndex, setCurrentBlockIndex] = useState(0);
+  const [viewedBlocks, setViewedBlocks] = useState<string[]>([]);
+  const [hasEarnedAchievement, setHasEarnedAchievement] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+
+  // First-load celebration effect
+  useEffect(() => {
+    if (blocks.length > 0) {
+      const timer = setTimeout(() => {
+        setShowCelebration(true);
+        setTimeout(() => setShowCelebration(false), 3000);
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [blocks.length]);
+  
+  // Track block views
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const blockId = entry.target.getAttribute('data-block-id');
+            if (blockId) {
+              setViewedBlocks(prev => {
+                if (!prev.includes(blockId)) {
+                  return [...prev, blockId]; 
+                }
+                return prev;
+              });
+            }
+          }
+        });
+      },
+      { threshold: 0.6 }
+    );
+    
+    document.querySelectorAll('[data-block-id]').forEach(element => {
+      observer.observe(element);
+    });
+    
+    return () => observer.disconnect();
+  }, [blocks]);
+  
+  // Achievement when all blocks are viewed
+  useEffect(() => {
+    if (blocks.length > 0 && viewedBlocks.length === blocks.length && !hasEarnedAchievement) {
+      const timer = setTimeout(() => {
+        setHasEarnedAchievement(true);
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [viewedBlocks.length, blocks.length, hasEarnedAchievement]);
+  
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      onSearch(searchQuery.trim());
+    }
+  };
+  
+  const handleStartVoiceCapture = () => {
+    if (!onVoiceCapture) return;
+    
+    setIsRecording(true);
+    
+    if ('webkitSpeechRecognition' in window) {
+      // @ts-ignore
+      const recognition = new webkitSpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+      
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setSearchQuery(transcript);
+        onVoiceCapture(transcript);
+        setIsRecording(false);
+      };
+      
+      recognition.onerror = () => {
+        toast.error("We couldn't hear you. Please try again.");
+        setIsRecording(false);
+      };
+      
+      recognition.onend = () => {
+        setIsRecording(false);
+      };
+      
+      recognition.start();
+      
+      // Auto-stop after 5 seconds if no result
+      setTimeout(() => {
+        if (isRecording) {
+          recognition.stop();
+        }
+      }, 5000);
+    } else {
+      toast.error("Voice recognition is not supported in your browser");
+      setIsRecording(false);
+    }
+  };
+  
+  const handleImageCapture = () => {
+    if (!onImageCapture) return;
+    
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e: any) => {
+      const file = e.target.files[0];
+      if (file) {
+        onImageCapture(file);
+      }
+    };
+    input.click();
+  };
+  
+  const handleBlockNavigation = (index: number) => {
+    setCurrentBlockIndex(index);
+    const blockElement = document.getElementById(`block-${index}`);
+    if (blockElement) {
+      blockElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+  
+  const getProgressStage = () => {
+    const progress = viewedBlocks.length / Math.max(blocks.length, 1);
+    
+    if (progress < 0.2) return 'foundational';
+    if (progress < 0.4) return 'expansion';
+    if (progress < 0.6) return 'connection';
+    if (progress < 0.8) return 'application';
+    return 'deeper_dive';
+  };
+  
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-indigo-950 to-purple-950">
-      <div className="sticky top-0 z-40 bg-gradient-to-b from-indigo-950/95 to-indigo-950/90 backdrop-blur-sm py-4 px-4 border-b border-white/10">
-        <div className="max-w-3xl mx-auto">
-          <h1 className="text-2xl font-bold text-white mb-4 text-center">{title}</h1>
-          <EnhancedSearchBar 
-            onSearch={onSearch}
-            onVoiceCapture={onVoiceCapture}
-            onImageCapture={onImageCapture}
-            onExplore={onExplore}
+    <div className="relative min-h-screen">
+      {/* Search panel */}
+      <AnimatePresence>
+        {showSearchPanel && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.95 }}
+              className="bg-wonderwhiz-deep-purple/90 backdrop-blur-md border border-wonderwhiz-purple/30 rounded-lg p-5 w-full max-w-lg"
+            >
+              <h2 className="text-xl font-bold text-white mb-4">Search or Ask</h2>
+              
+              <div className="relative mb-4">
+                <Input
+                  type="text"
+                  placeholder={childAge <= 8 ? "What do you want to know?" : "Search or ask a question..."}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pr-20 bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleSearch();
+                      setShowSearchPanel(false);
+                    }
+                  }}
+                />
+                <div className="absolute right-1 top-1 flex items-center gap-1">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 rounded-full text-white/70 hover:bg-white/10"
+                    onClick={handleStartVoiceCapture}
+                    disabled={isRecording}
+                  >
+                    <Mic className={`h-4 w-4 ${isRecording ? 'text-red-400 animate-pulse' : ''}`} />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 rounded-full text-white/70 hover:bg-white/10"
+                    onClick={handleImageCapture}
+                  >
+                    <Camera className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="mb-4">
+                <h3 className="text-sm font-medium text-white/80 mb-2">How do you prefer to learn?</h3>
+                <div className="grid grid-cols-2 gap-2">
+                  <LearningStyleBlock
+                    style="visual"
+                    title=""
+                    description="Learn through images, videos, and seeing"
+                    onSelect={() => setSelectedLearningStyle('visual')}
+                    selected={selectedLearningStyle === 'visual'}
+                    childAge={childAge}
+                    className="h-full"
+                  />
+                  <LearningStyleBlock
+                    style="auditory"
+                    title=""
+                    description="Learn through listening and speaking"
+                    onSelect={() => setSelectedLearningStyle('auditory')}
+                    selected={selectedLearningStyle === 'auditory'}
+                    childAge={childAge}
+                    className="h-full"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  <LearningStyleBlock
+                    style="kinesthetic"
+                    title=""
+                    description="Learn by doing hands-on activities"
+                    onSelect={() => setSelectedLearningStyle('kinesthetic')}
+                    selected={selectedLearningStyle === 'kinesthetic'}
+                    childAge={childAge}
+                    className="h-full"
+                  />
+                  <LearningStyleBlock
+                    style="logical"
+                    title=""
+                    description="Learn through reasoning and thinking"
+                    onSelect={() => setSelectedLearningStyle('logical')}
+                    selected={selectedLearningStyle === 'logical'}
+                    childAge={childAge}
+                    className="h-full"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex justify-between">
+                <Button
+                  variant="ghost"
+                  className="text-white/70 hover:text-white/100 hover:bg-white/10"
+                  onClick={() => setShowSearchPanel(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="default"
+                  className="bg-wonderwhiz-bright-pink hover:bg-pink-500 text-white"
+                  onClick={() => {
+                    handleSearch();
+                    setShowSearchPanel(false);
+                  }}
+                >
+                  {childAge <= 8 ? "Let's Go!" : "Search"}
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      {/* Main Content */}
+      <div className="max-w-4xl mx-auto p-4">
+        {/* Header */}
+        <div className="mb-6 flex items-center justify-between">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-white/70 hover:text-white"
+            onClick={() => window.history.back()}
+          >
+            <ArrowLeft className="h-4 w-4 mr-1.5" />
+            Back
+          </Button>
+          
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="bg-white/10 hover:bg-white/20 text-white"
+              onClick={() => setShowSearchPanel(true)}
+            >
+              <Search className="h-4 w-4 mr-1.5" />
+              <span>{childAge <= 8 ? "Ask" : "Search"}</span>
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              className="bg-white/10 hover:bg-white/20 text-white"
+              onClick={handleStartVoiceCapture}
+              disabled={isRecording}
+            >
+              <Mic className={`h-4 w-4 ${isRecording ? 'text-red-400 animate-pulse' : ''}`} />
+            </Button>
+          </div>
+        </div>
+        
+        {/* Title */}
+        {title && (
+          <motion.h1
+            className="text-2xl sm:text-3xl font-bold text-white leading-tight mb-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            {title}
+          </motion.h1>
+        )}
+        
+        {/* Learning Progress */}
+        {blocks.length > 0 && (
+          <LearningProgressIndicator
+            currentStage={getProgressStage() as any}
+            viewedBlocks={viewedBlocks.length}
+            totalBlocks={blocks.length}
             childAge={childAge}
+            onClick={(stage) => {
+              toast.info(`${stage} level content`);
+            }}
           />
+        )}
+        
+        {/* Content Blocks */}
+        <div className="space-y-6">
+          {blocks.map((block, index) => (
+            <div 
+              key={block.id || index} 
+              id={`block-${index}`} 
+              data-block-id={block.id || `block-${index}`}
+            >
+              <SpecialistContentBlock
+                specialistId={block.specialist_id}
+                title={
+                  block.content?.title || 
+                  block.content?.question || 
+                  block.content?.headline || 
+                  block.content?.prompt || 
+                  ""
+                }
+                content={
+                  <div>
+                    {block.content?.fact && <p>{block.content.fact}</p>}
+                    {block.content?.text && <p>{block.content.text}</p>}
+                    {block.content?.body && <p>{block.content.body}</p>}
+                    {block.content?.description && <p>{block.content.description}</p>}
+                    
+                    {block.content?.options && (
+                      <div className="mt-3 space-y-2">
+                        {block.content.options.map((option: string, i: number) => (
+                          <motion.button
+                            key={i}
+                            whileHover={{ scale: 1.01 }}
+                            whileTap={{ scale: 0.98 }}
+                            className="w-full text-left p-3 bg-white/5 hover:bg-white/10 rounded-lg transition-colors"
+                          >
+                            {option}
+                          </motion.button>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {block.content?.steps && (
+                      <ol className="mt-2 list-decimal pl-5 space-y-1">
+                        {block.content.steps.map((step: string, i: number) => (
+                          <li key={i}>{step}</li>
+                        ))}
+                      </ol>
+                    )}
+                  </div>
+                }
+                contentType={block.type}
+                difficultyLevel={(block.content?.difficulty === "hard" ? 3 : block.content?.difficulty === "medium" ? 2 : 1) as 1 | 2 | 3}
+                onBookmark={() => onBookmark && onBookmark(block.id)}
+                onReply={(message) => onReply && onReply(block.id, message)}
+                onReadAloud={() => {
+                  const text = block.content?.fact || 
+                    block.content?.text || 
+                    block.content?.question || 
+                    block.content?.headline || 
+                    block.content?.body || 
+                    block.content?.description || 
+                    "";
+                  
+                  onReadAloud && onReadAloud(text, block.specialist_id);
+                }}
+                childAge={childAge}
+                relatedQuestions={block.content?.rabbitHoles || []}
+                onRabbitHoleClick={onRabbitHoleClick}
+              />
+            </div>
+          ))}
         </div>
       </div>
       
-      <main className="flex-grow py-6">
-        <div className="max-w-3xl mx-auto px-4">
-          {blocks.length > 0 ? (
-            blocks.map((block) => {
-              // Safety check to ensure block has an id
-              const blockId = block.id || `temp-${Math.random().toString(36).substring(2, 9)}`;
-              
-              switch (block.type) {
-                case 'quiz':
-                  return (
-                    <FireflyQuizBlock
-                      key={blockId}
-                      question={block.content?.question || "Question not available"}
-                      options={block.content?.options || []}
-                      correctIndex={block.content?.correctIndex || 0}
-                      explanation={block.content?.explanation || ""}
-                      specialistId={block.specialist_id || "whizzy"}
-                      onQuizCorrect={() => onLike && onLike(blockId)}
-                      childAge={childAge}
-                    />
-                  );
-                  
-                case 'mindfulness':
-                  return (
-                    <MindfulnessBlock
-                      key={blockId}
-                      title={block.content?.title || "Mindfulness Exercise"}
-                      instructions={block.content?.instruction || block.content?.exercise || "Take a deep breath..."}
-                      duration={block.content?.duration || 180}
-                      benefit={block.content?.benefit || ""}
-                      onComplete={() => onLike && onLike(blockId)}
-                      childAge={childAge}
-                    />
-                  );
-                  
-                case 'creative':
-                  return (
-                    <CreativeBlock
-                      key={blockId}
-                      content={block.content || {}}
-                      specialistId={block.specialist_id || "spark"}
-                      onCreativeUpload={() => onLike && onLike(blockId)}
-                      childAge={childAge}
-                    />
-                  );
-                  
-                case 'activity':
-                  return (
-                    <ActivityBlock
-                      key={blockId}
-                      content={block.content || {}}
-                      specialistId={block.specialist_id || "nova"}
-                      onActivityComplete={() => onLike && onLike(blockId)}
-                      updateHeight={() => {}}
-                      childAge={childAge}
-                    />
-                  );
-                  
-                case 'task':
-                  return (
-                    <TaskBlock
-                      key={blockId}
-                      content={block.content || {}}
-                      specialistId={block.specialist_id || "lotus"}
-                      onTaskComplete={() => onLike && onLike(blockId)}
-                      updateHeight={() => {}}
-                      childAge={childAge}
-                    />
-                  );
-                  
-                case 'riddle':
-                  return (
-                    <RiddleBlock
-                      key={blockId}
-                      content={block.content || {}}
-                      specialistId={block.specialist_id || "atlas"}
-                      updateHeight={() => {}}
-                      childAge={childAge}
-                    />
-                  );
-                  
-                case 'flashcard':
-                  return (
-                    <FlashcardBlock
-                      key={blockId}
-                      content={block.content || {}}
-                      specialistId={block.specialist_id || "prism"}
-                      updateHeight={() => {}}
-                      childAge={childAge}
-                    />
-                  );
-                
-                case 'error':
-                  return (
-                    <BlockError
-                      key={blockId}
-                      message={block.content?.message || "Something went wrong with this content block."}
-                      onRetry={() => console.log("Retry requested for error block")}
-                      childAge={childAge}
-                    />
-                  );
-                  
-                default:
-                  return (
-                    <SpecialistBlock
-                      key={blockId}
-                      blockId={blockId}
-                      specialistId={block.specialist_id || "whizzy"}
-                      content={block.content?.fact || block.content?.text || block.content?.body || ''}
-                      followupQuestions={block.content?.rabbitHoles || []}
-                      onRabbitHoleClick={onRabbitHoleClick}
-                      onLike={() => onLike && onLike(blockId)}
-                      onBookmark={() => onBookmark && onBookmark(blockId)}
-                      onReply={(blockId, message) => onReply && onReply(blockId, message)}
-                      onReadAloud={onReadAloud}
-                      childAge={childAge}
-                    />
-                  );
-              }
-            })
-          ) : (
-            <div className="text-center py-16">
-              <p className="text-white/60">No content blocks available for this curio.</p>
-            </div>
-          )}
-        </div>
-      </main>
+      {/* Floating Navigation */}
+      {blocks.length > 3 && (
+        <FloatingNavigation
+          blocks={blocks}
+          currentBlockIndex={currentBlockIndex}
+          onNavigate={handleBlockNavigation}
+          childAge={childAge}
+        />
+      )}
+      
+      {/* Celebrations */}
+      {showCelebration && (
+        <CelebrationSystem
+          milestone="first_block"
+          sparksEarned={0}
+          childAge={childAge}
+        />
+      )}
+      
+      {hasEarnedAchievement && (
+        <CelebrationSystem
+          achievement={{
+            id: "topic_master",
+            title: "Topic Master!",
+            description: "You've explored this entire topic and learned so much!",
+            icon: "trophy",
+            color: "#FFB800"
+          }}
+          childAge={childAge}
+          position="center"
+          onClose={() => setHasEarnedAchievement(false)}
+        />
+      )}
     </div>
   );
 };

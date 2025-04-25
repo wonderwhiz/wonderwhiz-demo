@@ -1,5 +1,4 @@
-
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import ContentBlock from './ContentBlock';
 import CurioErrorState from './curio/CurioErrorState';
@@ -9,6 +8,9 @@ import RelatedCurioPaths from './curio/RelatedCurioPaths';
 import { BlockError } from './content-blocks/BlockError';
 import { useProgressiveLearning } from '@/hooks/use-progressive-learning';
 import ProgressiveLearningBlock from './content-blocks/ProgressiveLearningBlock';
+import LearningProgressIndicator from './curio/LearningProgressIndicator';
+import FloatingNavigation from './curio/FloatingNavigation';
+import CelebrationSystem from './curio/CelebrationSystem';
 
 interface CurioBlockListProps {
   blocks: any[];
@@ -72,6 +74,10 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
   const [sparksEarned, setSparksEarned] = useState(0);
   const [blockRenderErrors, setBlockRenderErrors] = useState<Record<string, Error>>({});
   const [lastInsertedStageIndex, setLastInsertedStageIndex] = useState<number>(-1);
+  const [currentBlockIndex, setCurrentBlockIndex] = useState(0);
+  const [showFloatingNav, setShowFloatingNav] = useState(false);
+  const [recentMilestone, setRecentMilestone] = useState<'first_block' | 'half_complete' | 'all_complete' | null>(null);
+  const [recentSparks, setRecentSparks] = useState(0);
   
   const { 
     currentLearningStage,
@@ -89,14 +95,13 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
     topic: curioTitle
   });
   
-  // Track which blocks have been viewed using Intersection Observer
   useEffect(() => {
     if (blocks.length === 0) return;
     
     const observers: IntersectionObserver[] = [];
     const blockElements = document.querySelectorAll('[data-block-id]');
     
-    blockElements.forEach(element => {
+    blockElements.forEach((element, elementIndex) => {
       const blockId = element.getAttribute('data-block-id');
       if (!blockId || viewedBlocks.has(blockId)) return;
       
@@ -107,12 +112,26 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
               setViewedBlocks(prev => new Set([...prev, blockId]));
               observer.disconnect();
               
-              // Track progressive learning
               incrementViewedBlocks();
               
-              // Award a spark for the first 5 blocks viewed
+              setCurrentBlockIndex(elementIndex);
+              
               if (viewedBlocks.size < 5) {
-                setSparksEarned(prev => prev + 1);
+                const newSparks = 1;
+                setSparksEarned(prev => prev + newSparks);
+                setRecentSparks(newSparks);
+                setTimeout(() => setRecentSparks(0), 3000);
+              }
+              
+              if (viewedBlocks.size === 0) {
+                setRecentMilestone('first_block');
+                setTimeout(() => setRecentMilestone(null), 4000);
+              } else if (viewedBlocks.size === Math.floor(blocks.length / 2) - 1) {
+                setRecentMilestone('half_complete');
+                setTimeout(() => setRecentMilestone(null), 4000);
+              } else if (viewedBlocks.size === blocks.length - 1) {
+                setRecentMilestone('all_complete');
+                setTimeout(() => setRecentMilestone(null), 4000);
               }
             }
           });
@@ -129,19 +148,49 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
     };
   }, [blocks, viewedBlocks, incrementViewedBlocks]);
   
-  // Track interactions
+  useEffect(() => {
+    if (viewedBlocks.size >= 2) {
+      setShowFloatingNav(true);
+    }
+  }, [viewedBlocks.size]);
+  
+  useEffect(() => {
+    if (isFirstLoad && blocks.length > 0 && childAge < 8 && onReadAloud) {
+      const firstBlockContent = blocks[0]?.content?.fact || 
+                              blocks[0]?.content?.text || 
+                              blocks[0]?.content?.description || '';
+      
+      if (firstBlockContent) {
+        const timeoutId = setTimeout(() => {
+          onReadAloud(firstBlockContent);
+        }, 1000);
+        
+        return () => clearTimeout(timeoutId);
+      }
+    }
+  }, [isFirstLoad, blocks, childAge, onReadAloud]);
+  
   const trackInteraction = (blockId: string) => {
     if (!interactedBlocks.has(blockId)) {
       setInteractedBlocks(prev => new Set([...prev, blockId]));
       
-      // Award sparks for interactions
       if (interactedBlocks.size < 3) {
-        setSparksEarned(prev => prev + 2);
+        const newSparks = 2;
+        setSparksEarned(prev => prev + newSparks);
+        setRecentSparks(newSparks);
+        setTimeout(() => setRecentSparks(0), 3000);
       }
     }
   };
   
-  // Enrich the block handlers to track interactions
+  const handleNavigateToBlock = (index: number) => {
+    setCurrentBlockIndex(index);
+    const blockElement = document.getElementById(`block-${index}`);
+    if (blockElement) {
+      blockElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+  
   const enrichedHandlers = {
     handleToggleLike: (blockId: string) => {
       trackInteraction(blockId);
@@ -156,12 +205,14 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
       handleReply(blockId, message);
     },
     handleQuizCorrect: () => {
-      setSparksEarned(prev => prev + 3);
+      const newSparks = 3;
+      setSparksEarned(prev => prev + newSparks);
+      setRecentSparks(newSparks);
+      setTimeout(() => setRecentSparks(0), 3000);
       handleQuizCorrect();
     }
   };
   
-  // Error boundary for block rendering
   const handleBlockError = (blockId: string, error: Error) => {
     console.error(`Error rendering block ${blockId}:`, error);
     setBlockRenderErrors(prev => ({
@@ -170,7 +221,6 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
     }));
   };
   
-  // Animation variants
   const blockEntryAnimations = {
     hidden: { opacity: 0, y: 20 },
     visible: (i: number) => ({
@@ -184,29 +234,9 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
     })
   };
 
-  // Auto-read first block for young children on first load
-  useEffect(() => {
-    if (isFirstLoad && blocks.length > 0 && childAge < 8 && onReadAloud) {
-      // For very young children, automatically read the first content block
-      const firstBlockContent = blocks[0]?.content?.fact || 
-                              blocks[0]?.content?.text || 
-                              blocks[0]?.content?.description || '';
-      
-      if (firstBlockContent) {
-        const timeoutId = setTimeout(() => {
-          onReadAloud(firstBlockContent);
-        }, 1000); // Small delay to let UI settle
-        
-        return () => clearTimeout(timeoutId);
-      }
-    }
-  }, [isFirstLoad, blocks, childAge, onReadAloud]);
-
-  // Determine where to insert a progressive learning block
   const shouldInsertProgressiveBlock = (index: number) => {
     if (searchQuery) return false;
     
-    // Insert at positions 2, 5, 8 - but only if not already inserted
     const insertPositions = [2, 5, 8];
     if (insertPositions.includes(index) && lastInsertedStageIndex < insertPositions.indexOf(index)) {
       setLastInsertedStageIndex(insertPositions.indexOf(index));
@@ -216,7 +246,6 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
     return false;
   };
 
-  // Get the learning stage for a specific block position
   const getStageForPosition = (position: number) => {
     if (position === 2) return 'foundational';
     if (position === 5) return 'expansion';
@@ -231,7 +260,6 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
         <button 
           className="mt-2 text-indigo-400 hover:text-indigo-300"
           onClick={() => {
-            // This would typically clear the search
           }}
         >
           Clear search
@@ -251,7 +279,6 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Exploration Breadcrumb Navigation */}
       {explorationPath.length > 0 && profileId && (
         <ExplorationBreadcrumb 
           paths={explorationPath} 
@@ -260,21 +287,18 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
         />
       )}
       
-      {/* Progress Tracker */}
       {blocks.length > 0 && !searchQuery && (
-        <ExplorationProgress
-          totalBlocks={blocks.length}
+        <LearningProgressIndicator
+          currentStage={currentLearningStage}
           viewedBlocks={viewedBlocks.size}
-          interactedBlocks={interactedBlocks.size}
-          sparksEarned={sparksEarned}
+          totalBlocks={blocks.length}
+          childAge={childAge}
         />
       )}
       
-      {/* Content Blocks with Progressive Learning */}
       {blocks.map((block, index) => {
         const blockId = block.id || `block-${index}`;
         
-        // Progressive learning blocks
         const progressiveElements = [];
         
         if (shouldInsertProgressiveBlock(index)) {
@@ -298,7 +322,6 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
           );
         }
         
-        // If this block has a rendering error, show error component instead
         if (blockRenderErrors[blockId]) {
           return (
             <React.Fragment key={`fragment-${blockId}`}>
@@ -310,6 +333,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
                 animate="visible"
                 variants={blockEntryAnimations}
                 data-block-id={blockId}
+                id={`block-${index}`}
               >
                 <BlockError 
                   error={blockRenderErrors[blockId]}
@@ -336,6 +360,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
               animate="visible"
               variants={blockEntryAnimations}
               data-block-id={blockId}
+              id={`block-${index}`}
             >
               <ContentBlock 
                 block={block}
@@ -358,7 +383,6 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
         );
       })}
       
-      {/* Final progressive learning block for application stage */}
       {blocks.length >= 4 && !searchQuery && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -374,7 +398,6 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
         </motion.div>
       )}
       
-      {/* Related exploration paths */}
       {blocks.length > 0 && !searchQuery && curioTitle && (
         <RelatedCurioPaths
           currentTopic={curioTitle}
@@ -383,7 +406,6 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
         />
       )}
       
-      {/* Loading indicator */}
       {loadingMoreBlocks && (
         <div className="flex justify-center py-4">
           <div className="animate-pulse text-white/50 text-sm">
@@ -392,10 +414,24 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
         </div>
       )}
       
-      {/* Infinite scroll trigger */}
       {hasMoreBlocks && !loadingMoreBlocks && loadTriggerRef && (
         <div ref={loadTriggerRef} className="h-10" />
       )}
+      
+      {showFloatingNav && blocks.length > 3 && !searchQuery && (
+        <FloatingNavigation
+          blocks={blocks}
+          currentBlockIndex={currentBlockIndex}
+          onNavigate={handleNavigateToBlock}
+          childAge={childAge}
+        />
+      )}
+      
+      <CelebrationSystem
+        milestone={recentMilestone}
+        sparksEarned={recentSparks}
+        childAge={childAge}
+      />
     </div>
   );
 };

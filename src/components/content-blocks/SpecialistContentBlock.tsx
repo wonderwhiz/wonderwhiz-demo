@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { getSpecialistInfo } from '@/utils/specialists';
 import BlockReplies from '@/components/content-blocks/BlockReplies';
 import { toast } from 'sonner';
+import EnhancedBlockReplies from './EnhancedBlockReplies';
 
 interface SpecialistContentBlockProps {
   specialistId: string;
@@ -246,12 +247,13 @@ const SpecialistContentBlock: React.FC<SpecialistContentBlockProps> = ({
           </div>
         </div>
         
-        {/* Reply form */}
+        {/* Reply form - Using enhanced version */}
         {showReplyForm && (
-          <BlockReplies
+          <EnhancedBlockReplies
             replies={replies}
             specialistId={specialistId}
             onSendReply={handleSendReply}
+            childAge={childAge}
           />
         )}
       </div>
