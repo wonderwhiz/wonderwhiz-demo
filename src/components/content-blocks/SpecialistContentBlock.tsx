@@ -136,7 +136,7 @@ const SpecialistContentBlock: React.FC<SpecialistContentBlockProps> = ({
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center gap-3">
             <img 
-              src={specialist.avatarUrl} 
+              src={specialist.avatar} 
               alt={specialist.name} 
               className="w-10 h-10 rounded-full border border-white/20"
             />
@@ -145,7 +145,7 @@ const SpecialistContentBlock: React.FC<SpecialistContentBlockProps> = ({
                 {specialist.name}
               </h3>
               <p className="text-white/60 text-xs">
-                {specialist.role}
+                {specialist.title}
               </p>
             </div>
           </div>

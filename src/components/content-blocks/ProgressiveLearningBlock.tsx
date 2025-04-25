@@ -121,7 +121,7 @@ const ProgressiveLearningBlock: React.FC<ProgressiveLearningBlockProps> = ({
       <div className="mt-4 flex items-center justify-end">
         <div className="flex items-center gap-2 text-xs text-white/60">
           <img 
-            src={specialistInfo.avatarUrl} 
+            src={specialistInfo.avatar} 
             alt={specialistInfo.name} 
             className="w-5 h-5 rounded-full"
           />
