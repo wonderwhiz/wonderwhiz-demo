@@ -1,3 +1,4 @@
+
 /** @type {import('tailwindcss').Config} */
 const colors = require('tailwindcss/colors')
 
@@ -31,6 +32,7 @@ module.exports = {
           blue: '#009dff',
           'blue-accent': '#007bff',
           green: '#00ff95',
+          dark: '#20053D', // Added the dark color here
         },
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
