@@ -3,7 +3,7 @@ import { cva } from 'class-variance-authority';
 import { ContentBlockType } from '@/types/curio';
 
 export const blockContainer = cva(
-  "p-6 rounded-2xl shadow-2xl backdrop-blur-lg border-2 transition-all duration-500 hover:scale-[1.02] hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)]",
+  "p-6 rounded-2xl shadow-2xl backdrop-blur-lg border-2 transition-all duration-500 group relative overflow-hidden",
   {
     variants: {
       type: {
@@ -19,9 +19,9 @@ export const blockContainer = cva(
         mindfulness: "bg-gradient-to-br from-wonderwhiz-purple/30 via-wonderwhiz-blue/20 to-transparent border-wonderwhiz-purple/40 hover:from-wonderwhiz-purple/40 hover:to-wonderwhiz-blue/40 hover:border-wonderwhiz-purple/60 transform-gpu"
       },
       childAge: {
-        young: "text-xl leading-relaxed space-y-6 p-8 [&_button]:text-lg [&_button]:p-4 [&_img]:rounded-2xl",
-        middle: "text-lg leading-relaxed space-y-4 p-6 [&_button]:text-base [&_button]:p-3 [&_img]:rounded-xl",
-        older: "text-base leading-relaxed space-y-3 p-5 [&_button]:text-sm [&_button]:p-2 [&_img]:rounded-lg"
+        young: "text-xl leading-relaxed space-y-6 p-8 [&_button]:text-lg [&_button]:p-4 [&_img]:rounded-2xl before:absolute before:inset-0 before:bg-gradient-to-r before:from-white/5 before:to-transparent before:opacity-0 before:transition-opacity before:duration-500 hover:before:opacity-100",
+        middle: "text-lg leading-relaxed space-y-4 p-6 [&_button]:text-base [&_button]:p-3 [&_img]:rounded-xl before:absolute before:inset-0 before:bg-gradient-to-r before:from-white/5 before:to-transparent before:opacity-0 before:transition-opacity before:duration-300 hover:before:opacity-100",
+        older: "text-base leading-relaxed space-y-3 p-5 [&_button]:text-sm [&_button]:p-2 [&_img]:rounded-lg before:absolute before:inset-0 before:bg-gradient-to-r before:from-white/5 before:to-transparent before:opacity-0 before:transition-opacity before:duration-200 hover:before:opacity-100"
       },
       interactive: {
         true: "cursor-pointer transform-gpu transition-transform duration-300 hover:scale-103 active:scale-98",

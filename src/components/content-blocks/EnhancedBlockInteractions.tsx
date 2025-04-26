@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -89,95 +88,129 @@ const EnhancedBlockInteractions: React.FC<EnhancedBlockInteractionsProps> = ({
   
   return (
     <div className="mt-2">
-      <div 
-        className={`flex flex-wrap items-center gap-1 border-t border-white/10 pt-2 ${
-          childAge <= 8 ? 'justify-center' : 'justify-between'
-        }`}
-      >
-        <div className="flex flex-wrap items-center gap-1">
+      <div className={`flex flex-wrap items-center gap-1 border-t border-white/10 pt-2 ${
+        childAge <= 8 ? 'justify-center' : 'justify-between'
+      }`}>
+        <motion.div 
+          className="flex flex-wrap items-center gap-1"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
           {onToggleBookmark && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onToggleBookmark}
-              className={`${buttonSize} rounded-full ${
-                bookmarked ? 'text-wonderwhiz-vibrant-yellow' : 'text-white/60 hover:text-wonderwhiz-vibrant-yellow'
-              }`}
-              aria-label={bookmarked ? "Remove bookmark" : "Bookmark"}
+            <motion.div
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
             >
-              {bookmarked ? (
-                <BookmarkCheck className={`${interactionSize === 'xs' ? 'h-3 w-3' : 'h-4 w-4'} ${showLabels ? 'mr-1.5' : ''}`} />
-              ) : (
-                <Bookmark className={`${interactionSize === 'xs' ? 'h-3 w-3' : 'h-4 w-4'} ${showLabels ? 'mr-1.5' : ''}`} />
-              )}
-              {showLabels && (
-                <span>
-                  {childAge <= 8 ? (bookmarked ? "Saved!" : "Save!") : (bookmarked ? "Saved" : "Save")}
-                </span>
-              )}
-            </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onToggleBookmark}
+                className={`${buttonSize} rounded-full transition-colors duration-300 ${
+                  bookmarked ? 'text-wonderwhiz-vibrant-yellow bg-wonderwhiz-vibrant-yellow/10' : 'text-white/60 hover:text-wonderwhiz-vibrant-yellow hover:bg-wonderwhiz-vibrant-yellow/10'
+                }`}
+                aria-label={bookmarked ? "Remove bookmark" : "Bookmark"}
+              >
+                {bookmarked ? (
+                  <BookmarkCheck className={`${interactionSize === 'xs' ? 'h-3 w-3' : 'h-4 w-4'} ${showLabels ? 'mr-1.5' : ''}`} />
+                ) : (
+                  <Bookmark className={`${interactionSize === 'xs' ? 'h-3 w-3' : 'h-4 w-4'} ${showLabels ? 'mr-1.5' : ''}`} />
+                )}
+                {showLabels && (
+                  <span className="font-medium">
+                    {childAge <= 8 ? (bookmarked ? "Saved!" : "Save!") : (bookmarked ? "Saved" : "Save")}
+                  </span>
+                )}
+              </Button>
+            </motion.div>
           )}
           
           {onReply && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowReplyForm(!showReplyForm)}
-              className={`${buttonSize} rounded-full text-white/60 hover:text-wonderwhiz-cyan`}
-              aria-label="Reply"
+            <motion.div
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
             >
-              <MessageCircle className={`${interactionSize === 'xs' ? 'h-3 w-3' : 'h-4 w-4'} ${showLabels ? 'mr-1.5' : ''}`} />
-              {showLabels && (
-                <span>
-                  {childAge <= 8 ? "Reply!" : "Reply"}
-                </span>
-              )}
-            </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowReplyForm(!showReplyForm)}
+                className={`${buttonSize} rounded-full text-white/60 hover:text-wonderwhiz-cyan`}
+                aria-label="Reply"
+              >
+                <MessageCircle className={`${interactionSize === 'xs' ? 'h-3 w-3' : 'h-4 w-4'} ${showLabels ? 'mr-1.5' : ''}`} />
+                {showLabels && (
+                  <span>
+                    {childAge <= 8 ? "Reply!" : "Reply"}
+                  </span>
+                )}
+              </Button>
+            </motion.div>
           )}
           
           {onReadAloud && readableContent && (
+            <motion.div
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onReadAloud(readableContent)}
+                className={`${buttonSize} rounded-full ${
+                  childAge <= 8 ? 'bg-wonderwhiz-bright-pink/10 text-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/20' : 'text-white/60 hover:text-wonderwhiz-bright-pink'
+                }`}
+                aria-label="Read aloud"
+              >
+                <VolumeIcon className={`${interactionSize === 'xs' ? 'h-3 w-3' : 'h-4 w-4'} ${showLabels ? 'mr-1.5' : ''}`} />
+                {showLabels && (
+                  <span>
+                    {childAge <= 8 ? "Read to me!" : "Read aloud"}
+                  </span>
+                )}
+              </Button>
+            </motion.div>
+          )}
+          
+          {emoji && (
+            <motion.span 
+              className="text-lg ml-1"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            >
+              {emoji}
+            </motion.span>
+          )}
+        </motion.div>
+        
+        {relatedQuestions.length > 0 && (
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onReadAloud(readableContent)}
-              className={`${buttonSize} rounded-full ${
-                childAge <= 8 ? 'bg-wonderwhiz-bright-pink/10 text-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/20' : 'text-white/60 hover:text-wonderwhiz-bright-pink'
+              onClick={() => setShowRelatedQuestions(!showRelatedQuestions)}
+              className={`${buttonSize} rounded-full transition-colors duration-300 ${
+                childAge <= 8 
+                  ? 'bg-wonderwhiz-bright-pink/10 text-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/20' 
+                  : 'text-white/60 hover:text-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/10'
               }`}
-              aria-label="Read aloud"
+              aria-label={showRelatedQuestions ? "Hide related questions" : "Show related questions"}
             >
-              <VolumeIcon className={`${interactionSize === 'xs' ? 'h-3 w-3' : 'h-4 w-4'} ${showLabels ? 'mr-1.5' : ''}`} />
+              <Sparkles className={`${interactionSize === 'xs' ? 'h-3 w-3' : 'h-4 w-4'} ${showLabels ? 'mr-1.5' : ''}`} />
               {showLabels && (
-                <span>
-                  {childAge <= 8 ? "Read to me!" : "Read aloud"}
+                <span className="font-medium">
+                  {childAge <= 8 ? "I wonder..." : "Related"}
                 </span>
               )}
+              {showRelatedQuestions ? 
+                <ChevronUp className="ml-1 h-3 w-3" /> : 
+                <ChevronDown className="ml-1 h-3 w-3" />
+              }
             </Button>
-          )}
-          
-          {emoji && <span className="text-lg ml-1">{emoji}</span>}
-        </div>
-        
-        {relatedQuestions.length > 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowRelatedQuestions(!showRelatedQuestions)}
-            className={`${buttonSize} rounded-full text-white/60 hover:text-wonderwhiz-vibrant-yellow ml-auto ${
-              childAge <= 8 ? 'bg-indigo-500/10 hover:bg-indigo-500/20' : ''
-            }`}
-            aria-label={showRelatedQuestions ? "Hide related questions" : "Show related questions"}
-          >
-            <Sparkles className={`${interactionSize === 'xs' ? 'h-3 w-3' : 'h-4 w-4'} ${showLabels ? 'mr-1.5' : ''}`} />
-            {showLabels && (
-              <span>
-                {childAge <= 8 ? "I wonder..." : "I wonder..."}
-              </span>
-            )}
-            {showRelatedQuestions ? 
-              <ChevronUp className="ml-1 h-3 w-3" /> : 
-              <ChevronDown className="ml-1 h-3 w-3" />
-            }
-          </Button>
+          </motion.div>
         )}
       </div>
 
