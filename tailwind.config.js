@@ -1,4 +1,3 @@
-
 /** @type {import('tailwindcss').Config} */
 const colors = require('tailwindcss/colors')
 
@@ -121,7 +120,12 @@ module.exports = {
         '103': '1.03',
       },
       backgroundImage: {
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+        'wonderwhiz-gradient': 'linear-gradient(to bottom, #20053D, #3D0E64)',
         'button-gradient': 'linear-gradient(90deg, #FF5EBA 0%, #FF8FD9 100%)',
+        'cosmic-gradient': 'linear-gradient(to bottom, #2A1B5D, #3D2A7D)',
+        'accent-gradient': 'linear-gradient(90deg, #FF5BA3 0%, #4A6FFF 100%)',
+        'accent-gradient-2': 'linear-gradient(90deg, #00E2FF 0%, #00D68F 100%)',
       },
     },
   },
