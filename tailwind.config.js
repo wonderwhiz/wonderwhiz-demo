@@ -68,6 +68,12 @@ module.exports = {
           foreground: 'hsl(var(--card-foreground))',
         },
       },
+      fontFamily: {
+        'baloo': ['"Baloo 2"', 'sans-serif'],
+        'lexend': ['Lexend Deca', 'sans-serif'],
+        'nunito': ['Nunito', 'sans-serif'],
+        'inter': ['Inter', 'sans-serif']
+      },
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
