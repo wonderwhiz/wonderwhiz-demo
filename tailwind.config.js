@@ -32,7 +32,9 @@ module.exports = {
           blue: '#009dff',
           'blue-accent': '#007bff',
           green: '#00ff95',
-          dark: '#20053D', // Added the dark color here
+          dark: '#20053D',
+          pink: '#FF5EBA',
+          gold: '#FFC72C',
         },
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
@@ -117,6 +119,9 @@ module.exports = {
         '101': '1.01',
         '102': '1.02',
         '103': '1.03',
+      },
+      backgroundImage: {
+        'button-gradient': 'linear-gradient(90deg, #FF5EBA 0%, #FF8FD9 100%)',
       },
     },
   },
