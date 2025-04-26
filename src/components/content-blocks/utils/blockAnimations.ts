@@ -1,5 +1,7 @@
 
 import { type Variants } from 'framer-motion';
+import { ContentBlockType } from '@/types/curio';
+import { blockContainer } from './blockStyles';
 
 export const blockVariants: Variants = {
   initial: { 
@@ -55,3 +57,20 @@ export const contentVariants: Variants = {
   exit: { opacity: 0, y: -10 }
 };
 
+// Add the missing getBlockStyle function
+export const getBlockStyle = (type: ContentBlockType, specialistId: string, childAge?: number) => {
+  // Determine age variant
+  const ageVariant = childAge 
+    ? childAge <= 7 
+      ? 'young' 
+      : childAge >= 12 
+        ? 'older' 
+        : 'middle'
+    : 'middle';
+  
+  return blockContainer({ 
+    type, 
+    childAge: ageVariant, 
+    interactive: true 
+  });
+};
