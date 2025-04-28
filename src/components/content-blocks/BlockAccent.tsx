@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -59,6 +60,23 @@ const BlockAccent: React.FC<BlockAccentProps> = ({
       case 'creative': return 'bg-gradient-to-br from-wonderwhiz-green via-wonderwhiz-green/90 to-wonderwhiz-green/80 text-white shadow-[0_0_20px_rgba(0,255,0,0.3)]';
       case 'funFact': return 'bg-gradient-to-br from-wonderwhiz-vibrant-yellow via-wonderwhiz-vibrant-yellow/90 to-wonderwhiz-vibrant-yellow/80 text-white shadow-[0_0_20px_rgba(255,255,0,0.3)]';
       default: return 'bg-gradient-to-br from-wonderwhiz-blue via-wonderwhiz-blue/90 to-wonderwhiz-blue/80 text-white shadow-[0_0_20px_rgba(0,0,255,0.3)]';
+    }
+  };
+
+  // Here's the missing getIcon function
+  const getIcon = () => {
+    const iconSize = getIconSize();
+    switch (type) {
+      case 'fact':
+        return <Brain className={iconSize} />;
+      case 'quiz':
+        return <Star className={iconSize} />;
+      case 'creative':
+        return <Sparkles className={iconSize} />;
+      case 'funFact':
+        return <Lightbulb className={iconSize} />;
+      default:
+        return <BookOpen className={iconSize} />;
     }
   };
 
