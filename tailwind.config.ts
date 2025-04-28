@@ -149,15 +149,18 @@ export default {
         'float-gentle': 'float-gentle 5s ease-in-out infinite',
         'bounce-gentle': 'bounce-gentle 2s ease-in-out infinite',
         'pop': 'pop 0.5s ease-in-out',
-        'wiggle': 'wiggle 1s ease-in-out infinite'
+        'wiggle': 'wiggle 1s ease-in-out infinite',
+        'float-slow': 'float 6s ease-in-out infinite',
+        'pulse-soft': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'shimmer-slow': 'shimmer 3s linear infinite',
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'wonderwhiz-gradient': 'linear-gradient(to bottom, #20053D, #3D0E64)',
         'button-gradient': 'linear-gradient(90deg, #FF5EBA 0%, #FF8FD9 100%)',
         'cosmic-gradient': 'linear-gradient(to bottom, #2A1B5D, #3D2A7D)',
-        'accent-gradient': 'linear-gradient(90deg, #FF5BA3 0%, #4A6FFF 100%)',
-        'accent-gradient-2': 'linear-gradient(90deg, #00E2FF 0%, #00D68F 100%)',
+        'wonder-card': 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
+        'wonder-hover': 'linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 100%)',
       },
       boxShadow: {
         'glow': '0 0 15px rgba(126, 48, 225, 0.5)',
