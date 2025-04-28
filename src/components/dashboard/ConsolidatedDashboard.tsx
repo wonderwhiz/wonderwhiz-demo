@@ -11,7 +11,6 @@ import { cn } from '@/lib/utils';
 import DynamicWonderSuggestions from './DynamicWonderSuggestions';
 import ParentTasksSection from './ParentTasksSection';
 
-// Helper function to determine card type from suggestion
 const getCardTypeForSuggestion = (suggestion: string): 'space' | 'animals' | 'science' | 'history' | 'technology' | 'general' => {
   suggestion = suggestion.toLowerCase();
   if (suggestion.includes('space')) return 'space';
@@ -22,7 +21,6 @@ const getCardTypeForSuggestion = (suggestion: string): 'space' | 'animals' | 'sc
   return 'general';
 };
 
-// De-duplicate suggestions to ensure uniqueness
 const dedupeSuggestions = (suggestions: string[]): string[] => {
   const seen = new Set<string>();
   return suggestions.filter(suggestion => {
@@ -32,6 +30,7 @@ const dedupeSuggestions = (suggestions: string[]): string[] => {
     return true;
   });
 };
+
 interface ConsolidatedDashboardProps {
   childId: string;
   childProfile: any;
@@ -43,6 +42,7 @@ interface ConsolidatedDashboardProps {
   sparksBalance: number;
   streakDays: number;
 }
+
 const ConsolidatedDashboard: React.FC<ConsolidatedDashboardProps> = ({
   childId,
   childProfile,
@@ -60,10 +60,8 @@ const ConsolidatedDashboard: React.FC<ConsolidatedDashboardProps> = ({
     strongestTopics
   } = useChildLearningHistory(childId);
 
-  // Ensure suggestions are unique
   const uniqueSuggestions = dedupeSuggestions(curioSuggestions);
 
-  // Main container animations
   const containerVariants = {
     hidden: {
       opacity: 0
@@ -88,8 +86,8 @@ const ConsolidatedDashboard: React.FC<ConsolidatedDashboardProps> = ({
       }
     }
   };
+
   return <motion.div className="max-w-5xl mx-auto px-4 py-6 space-y-8" variants={containerVariants} initial="hidden" animate="visible">
-      {/* Dashboard Tabs */}
       <div className="flex space-x-2 overflow-x-auto pb-2">
         <Button variant={activeTab === 'wonders' ? 'default' : 'ghost'} size="sm" onClick={() => setActiveTab('wonders')} className={cn("rounded-full", activeTab === 'wonders' ? "bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/90" : "text-white/70 hover:text-white hover:bg-white/10")}>
           <Compass className="w-4 h-4 mr-2" />
@@ -102,29 +100,26 @@ const ConsolidatedDashboard: React.FC<ConsolidatedDashboardProps> = ({
       </div>
       
       {activeTab === 'wonders' && <>
-          {/* Dynamic Discover New Wonders */}
           <motion.div variants={itemVariants} className="mb-8">
-            <DynamicWonderSuggestions childId={childId} childInterests={childProfile?.interests || []} isLoading={isLoadingSuggestions} onSuggestionClick={onCurioSuggestionClick} />
+            <DynamicWonderSuggestions
+              childId={childId}
+              suggestions={curioSuggestions}
+              childInterests={childProfile?.interests || []}
+              isLoading={isLoadingSuggestions}
+              onSuggestionClick={onCurioSuggestionClick}
+              childAge={childProfile?.age}
+            />
           </motion.div>
 
-          {/* Parent-set Tasks */}
           <motion.div variants={itemVariants}>
             <ParentTasksSection childId={childId} />
           </motion.div>
-
-          {/* Recent Explorations - show via recentlyViewedTopics (not sidebar duplicating pastCurios) */}
-          
-
-          {/* More Suggestions - Different from the top ones */}
-          
         </>}
 
       {activeTab === 'journey' && <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Progress Overview */}
           <motion.div variants={itemVariants}>
             <SparksOverview childId={childId} sparksBalance={sparksBalance} />
           </motion.div>
-          {/* Learning Strengths */}
           <motion.div variants={itemVariants}>
             <Card className="bg-white/5 backdrop-blur-sm border-white/10 shadow-glow-sm">
               <CardContent className="p-4 space-y-4">
@@ -158,4 +153,5 @@ const ConsolidatedDashboard: React.FC<ConsolidatedDashboardProps> = ({
         </div>}
     </motion.div>;
 };
+
 export default ConsolidatedDashboard;

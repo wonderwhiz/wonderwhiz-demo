@@ -78,6 +78,7 @@ const SmartDashboard: React.FC<SmartDashboardProps> = ({
       <motion.div variants={itemVariants} className="mb-8">
         <DynamicWonderSuggestions
           childId={childId}
+          suggestions={curioSuggestions}
           childInterests={childProfile?.interests || ["science", "space", "animals"]}
           childAge={childProfile?.age || 10}
           isLoading={isLoadingSuggestions}

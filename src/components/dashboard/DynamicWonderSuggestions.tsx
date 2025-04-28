@@ -4,17 +4,21 @@ import { motion } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
 
 interface DynamicWonderSuggestionsProps {
-  suggestions: string[];
+  suggestions?: string[];
   onSuggestionClick: (suggestion: string) => void;
   isLoading?: boolean;
   childAge?: number;
+  childId?: string;
+  childInterests?: string[];
 }
 
 const DynamicWonderSuggestions: React.FC<DynamicWonderSuggestionsProps> = ({
-  suggestions,
+  suggestions = [],
   onSuggestionClick,
   isLoading,
-  childAge = 10
+  childAge = 10,
+  childId,
+  childInterests
 }) => {
   const containerVariants = {
     hidden: { opacity: 0 },
