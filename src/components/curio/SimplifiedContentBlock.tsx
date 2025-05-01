@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, Bookmark, Share2 } from 'lucide-react';
+import { MessageCircle, Bookmark, Share2, ThumbsUp, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import AgeAdaptiveBlock from './AgeAdaptiveBlock';
 import { toast } from 'sonner';
@@ -13,6 +13,10 @@ interface SimplifiedContentBlockProps {
   onBookmark?: () => void;
   onReply?: (message: string) => void;
   onShare?: () => void;
+  onLike?: () => void;
+  onReadAloud?: () => void;
+  liked?: boolean;
+  bookmarked?: boolean;
 }
 
 const getSpecialistGradient = (specialistId: string) => {
@@ -175,7 +179,11 @@ const SimplifiedContentBlock: React.FC<SimplifiedContentBlockProps> = ({
   ageGroup,
   onBookmark,
   onReply,
-  onShare
+  onShare,
+  onLike,
+  onReadAloud,
+  liked = false,
+  bookmarked = false
 }) => {
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replies, setReplies] = useState<any[]>([]);
@@ -205,7 +213,7 @@ const SimplifiedContentBlock: React.FC<SimplifiedContentBlockProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className={`mb-8 rounded-xl overflow-hidden backdrop-blur-sm bg-gradient-to-b ${getSpecialistGradient(specialistId)} border ${getSpecialistAccent(specialistId)}`}
+      className={`mb-8 rounded-xl overflow-hidden backdrop-blur-lg bg-gradient-to-b ${getSpecialistGradient(specialistId)} border ${getSpecialistAccent(specialistId)}`}
       whileHover={{ scale: 1.01 }}
       whileTap={{ scale: 0.99 }}
       transition={{ type: "spring", stiffness: 400, damping: 30 }}
@@ -225,16 +233,16 @@ const SimplifiedContentBlock: React.FC<SimplifiedContentBlockProps> = ({
             exit={{ opacity: 0, height: 0 }}
             className="mt-3 pt-3 border-t border-white/10"
           >
-            <div className="flex items-center gap-2 justify-end">
-              {onReply && (
+            <div className="flex items-center gap-3">
+              {onLike && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setShowReplyForm(!showReplyForm)}
-                  className="text-white/70 hover:text-blue-400 hover:bg-white/5"
+                  onClick={onLike}
+                  className={`px-4 py-2 rounded-lg ${liked ? 'bg-white/15 text-white' : 'text-white/70 hover:text-white/90 hover:bg-white/10'}`}
                 >
-                  <MessageCircle className="h-4 w-4 mr-1.5" />
-                  <span className="text-xs">Reply</span>
+                  <ThumbsUp className="h-4 w-4 mr-2" />
+                  <span>Like</span>
                 </Button>
               )}
               
@@ -243,10 +251,22 @@ const SimplifiedContentBlock: React.FC<SimplifiedContentBlockProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={onBookmark}
-                  className="text-white/70 hover:text-yellow-400 hover:bg-white/5"
+                  className={`px-4 py-2 rounded-lg ${bookmarked ? 'bg-white/15 text-white' : 'text-white/70 hover:text-white/90 hover:bg-white/10'}`}
                 >
-                  <Bookmark className="h-4 w-4 mr-1.5" />
-                  <span className="text-xs">Save</span>
+                  <Bookmark className="h-4 w-4 mr-2" />
+                  <span>Save</span>
+                </Button>
+              )}
+              
+              {onReply && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowReplyForm(!showReplyForm)}
+                  className="px-4 py-2 rounded-lg text-white/70 hover:text-white/90 hover:bg-white/10"
+                >
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  <span>Reply</span>
                 </Button>
               )}
               
@@ -255,10 +275,22 @@ const SimplifiedContentBlock: React.FC<SimplifiedContentBlockProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={onShare}
-                  className="text-white/70 hover:text-green-400 hover:bg-white/5"
+                  className="px-4 py-2 rounded-lg text-white/70 hover:text-white/90 hover:bg-white/10"
                 >
-                  <Share2 className="h-4 w-4 mr-1.5" />
-                  <span className="text-xs">Share</span>
+                  <Share2 className="h-4 w-4 mr-2" />
+                  <span>Share</span>
+                </Button>
+              )}
+              
+              {onReadAloud && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onReadAloud}
+                  className="px-4 py-2 rounded-lg text-white/70 hover:text-white/90 hover:bg-white/10 ml-auto"
+                >
+                  <Volume2 className="h-4 w-4 mr-2" />
+                  <span>Read aloud</span>
                 </Button>
               )}
             </div>

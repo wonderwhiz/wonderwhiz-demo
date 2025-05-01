@@ -42,30 +42,30 @@ const BlockAccent: React.FC<BlockAccentProps> = ({
   };
 
   const getIconSize = () => {
-    if (childAge <= 7) return "h-9 w-9";
-    if (childAge <= 11) return "h-8 w-8";
-    return "h-7 w-7";
+    if (childAge <= 7) return "h-8 w-8";
+    if (childAge <= 11) return "h-7 w-7";
+    return "h-6 w-6";
   };
 
   const getSizeClass = () => {
-    if (childAge <= 7) return 'p-5 -top-7 -right-7';
-    if (childAge <= 11) return 'p-4 -top-6 -right-6';
+    if (childAge <= 7) return 'p-4 -top-7 -right-7';
+    if (childAge <= 11) return 'p-3 -top-6 -right-6';
     return 'p-3 -top-5 -right-5';
   };
 
   const getAccentColor = () => {
     switch (type) {
-      case 'fact': return 'bg-gradient-to-br from-wonderwhiz-cyan via-wonderwhiz-cyan/90 to-wonderwhiz-cyan/80 text-white shadow-[0_0_25px_rgba(0,226,255,0.4)]';
-      case 'quiz': return 'bg-gradient-to-br from-wonderwhiz-bright-pink via-wonderwhiz-bright-pink/90 to-wonderwhiz-bright-pink/80 text-white shadow-[0_0_25px_rgba(255,91,163,0.4)]';
-      case 'creative': return 'bg-gradient-to-br from-wonderwhiz-green via-wonderwhiz-green/90 to-wonderwhiz-green/80 text-white shadow-[0_0_25px_rgba(0,214,143,0.4)]';
-      case 'funFact': return 'bg-gradient-to-br from-wonderwhiz-vibrant-yellow via-wonderwhiz-vibrant-yellow/90 to-wonderwhiz-vibrant-yellow/80 text-white shadow-[0_0_25px_rgba(255,213,79,0.4)]';
-      case 'mindfulness': return 'bg-gradient-to-br from-wonderwhiz-purple via-wonderwhiz-purple/90 to-wonderwhiz-purple/80 text-white shadow-[0_0_25px_rgba(126,48,225,0.4)]';
-      case 'flashcard': return 'bg-gradient-to-br from-wonderwhiz-blue-accent via-wonderwhiz-blue-accent/90 to-wonderwhiz-blue-accent/80 text-white shadow-[0_0_25px_rgba(79,174,255,0.4)]';
-      case 'task': return 'bg-gradient-to-br from-wonderwhiz-orange via-wonderwhiz-orange/90 to-wonderwhiz-orange/80 text-white shadow-[0_0_25px_rgba(255,150,79,0.4)]';
-      case 'news': return 'bg-gradient-to-br from-wonderwhiz-light-blue via-wonderwhiz-light-blue/90 to-wonderwhiz-light-blue/80 text-white shadow-[0_0_25px_rgba(79,217,255,0.4)]';
-      case 'riddle': return 'bg-gradient-to-br from-wonderwhiz-teal via-wonderwhiz-teal/90 to-wonderwhiz-teal/80 text-white shadow-[0_0_25px_rgba(79,255,195,0.4)]';
-      case 'activity': return 'bg-gradient-to-br from-wonderwhiz-gold via-wonderwhiz-gold/90 to-wonderwhiz-gold/80 text-white shadow-[0_0_25px_rgba(255,213,79,0.4)]';
-      default: return 'bg-gradient-to-br from-wonderwhiz-blue via-wonderwhiz-blue/90 to-wonderwhiz-blue/80 text-white shadow-[0_0_25px_rgba(0,157,255,0.4)]';
+      case 'fact': return 'bg-gradient-to-br from-wonderwhiz-cyan via-wonderwhiz-cyan/80 to-wonderwhiz-cyan/70 text-white shadow-[0_0_15px_rgba(0,226,255,0.3)]';
+      case 'quiz': return 'bg-gradient-to-br from-wonderwhiz-bright-pink via-wonderwhiz-bright-pink/80 to-wonderwhiz-bright-pink/70 text-white shadow-[0_0_15px_rgba(255,91,163,0.3)]';
+      case 'creative': return 'bg-gradient-to-br from-wonderwhiz-green via-wonderwhiz-green/80 to-wonderwhiz-green/70 text-white shadow-[0_0_15px_rgba(0,214,143,0.3)]';
+      case 'funFact': return 'bg-gradient-to-br from-wonderwhiz-vibrant-yellow via-wonderwhiz-vibrant-yellow/80 to-wonderwhiz-vibrant-yellow/70 text-white shadow-[0_0_15px_rgba(255,213,79,0.3)]';
+      case 'mindfulness': return 'bg-gradient-to-br from-wonderwhiz-purple via-wonderwhiz-purple/80 to-wonderwhiz-purple/70 text-white shadow-[0_0_15px_rgba(126,48,225,0.3)]';
+      case 'flashcard': return 'bg-gradient-to-br from-wonderwhiz-blue-accent via-wonderwhiz-blue-accent/80 to-wonderwhiz-blue-accent/70 text-white shadow-[0_0_15px_rgba(79,174,255,0.3)]';
+      case 'task': return 'bg-gradient-to-br from-wonderwhiz-orange via-wonderwhiz-orange/80 to-wonderwhiz-orange/70 text-white shadow-[0_0_15px_rgba(255,150,79,0.3)]';
+      case 'news': return 'bg-gradient-to-br from-wonderwhiz-light-blue via-wonderwhiz-light-blue/80 to-wonderwhiz-light-blue/70 text-white shadow-[0_0_15px_rgba(79,217,255,0.3)]';
+      case 'riddle': return 'bg-gradient-to-br from-wonderwhiz-teal via-wonderwhiz-teal/80 to-wonderwhiz-teal/70 text-white shadow-[0_0_15px_rgba(79,255,195,0.3)]';
+      case 'activity': return 'bg-gradient-to-br from-wonderwhiz-gold via-wonderwhiz-gold/80 to-wonderwhiz-gold/70 text-white shadow-[0_0_15px_rgba(255,213,79,0.3)]';
+      default: return 'bg-gradient-to-br from-wonderwhiz-blue via-wonderwhiz-blue/80 to-wonderwhiz-blue/70 text-white shadow-[0_0_15px_rgba(0,157,255,0.3)]';
     }
   };
 
@@ -101,7 +101,7 @@ const BlockAccent: React.FC<BlockAccentProps> = ({
   return (
     <motion.div 
       className={cn(
-        'absolute rounded-2xl shadow-xl backdrop-blur-xl border-2 border-white/30',
+        'absolute rounded-xl shadow-xl backdrop-blur-md border-2 border-white/30',
         getSizeClass(),
         getAccentColor(),
         className
@@ -114,7 +114,7 @@ const BlockAccent: React.FC<BlockAccentProps> = ({
     >
       <motion.div variants={iconVariants} className="relative">
         {getIcon()}
-        <div className="absolute inset-0 blur-xl opacity-60 -z-10" style={{
+        <div className="absolute inset-0 blur-lg opacity-60 -z-10" style={{
           background: getAccentColor().includes('wonderwhiz-cyan') ? '#00E2FF' :
                      getAccentColor().includes('wonderwhiz-bright-pink') ? '#FF5BA3' :
                      getAccentColor().includes('wonderwhiz-green') ? '#00D68F' :

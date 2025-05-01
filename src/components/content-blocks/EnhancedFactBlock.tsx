@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Info, ArrowRight, ExternalLink, ImageIcon, Lightbulb } from 'lucide-react';
+import { Info, ArrowRight, ExternalLink, ImageIcon, Lightbulb, ThumbsUp, Bookmark, MessageCircle, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAgeAdaptation } from '@/hooks/useAgeAdaptation';
 import AccessibleBlockWrapper from './AccessibleBlockWrapper';
@@ -75,16 +75,16 @@ const EnhancedFactBlock: React.FC<EnhancedFactBlockProps> = ({
   
   const getBlockGradient = () => {
     if (funFact) {
-      return 'bg-gradient-to-br from-wonderwhiz-vibrant-yellow/20 via-wonderwhiz-deep-purple/90 to-wonderwhiz-deep-purple/60';
+      return 'bg-gradient-to-br from-wonderwhiz-deep-purple/60 via-wonderwhiz-deep-purple/80 to-wonderwhiz-deep-purple/90';
     }
-    return 'bg-gradient-to-br from-wonderwhiz-cyan/20 via-wonderwhiz-deep-purple/90 to-wonderwhiz-deep-purple/60';
+    return 'bg-gradient-to-br from-wonderwhiz-deep-purple/60 via-wonderwhiz-deep-purple/80 to-wonderwhiz-deep-purple/90';
   };
   
   const getBlockGlow = () => {
     if (funFact) {
-      return '0 8px 32px -4px rgba(0,0,0,0.2), 0 0 20px rgba(255,213,79,0.15)';
+      return '0 4px 20px -2px rgba(0,0,0,0.2), 0 0 15px -3px rgba(255,213,79,0.15)';
     }
-    return '0 8px 32px -4px rgba(0,0,0,0.2), 0 0 20px rgba(0,226,255,0.15)';
+    return '0 4px 20px -2px rgba(0,0,0,0.2), 0 0 15px -3px rgba(0,226,255,0.15)';
   };
 
   // Add a subtle animation for the fact content
@@ -103,7 +103,7 @@ const EnhancedFactBlock: React.FC<EnhancedFactBlockProps> = ({
       accessibilityLabel={`${funFact ? 'Fun fact' : 'Fact'}: ${displayTitle}`}
     >
       <div 
-        className={`p-6 relative ${getBlockGradient()} border border-white/20 hover:border-white/30 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300`}
+        className={`p-5 relative ${getBlockGradient()} border border-white/10 hover:border-white/20 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300`}
         style={{ boxShadow: getBlockGlow() }}
       >
         {/* Header with Title */}
@@ -113,7 +113,7 @@ const EnhancedFactBlock: React.FC<EnhancedFactBlockProps> = ({
             animate={{ opacity: 1, x: 0 }}
             className={`text-white font-medium ${headingSize} flex items-center font-nunito`}
           >
-            {funFact && childAge <= 8 ? <span className="mr-2 text-2xl">✨</span> : 
+            {funFact && childAge <= 8 ? <span className="mr-2 text-xl">✨</span> : 
              funFact ? <Lightbulb className="mr-2 h-5 w-5 text-wonderwhiz-vibrant-yellow" /> :
              <Info className="mr-2 h-5 w-5 text-wonderwhiz-cyan" />}
             <span className="bg-gradient-to-r from-white via-white/95 to-white/80 bg-clip-text text-transparent">
@@ -201,30 +201,73 @@ const EnhancedFactBlock: React.FC<EnhancedFactBlockProps> = ({
           </motion.div>
         )}
         
-        {/* Decorative elements for younger children */}
-        {childAge <= 8 && funFact && (
-          <div className="absolute -right-2 -bottom-2 opacity-20 pointer-events-none">
-            <div className="text-4xl transform rotate-12">
-              {funFact ? "🌟" : "✨"}
-            </div>
+        {/* Related Questions */}
+        {relatedQuestions && relatedQuestions.length > 0 && (
+          <div className="mt-4 space-y-2">
+            {relatedQuestions.map((question, index) => (
+              <motion.button
+                key={index}
+                whileHover={{ scale: 1.02, x: 5 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full text-left px-4 py-3 rounded-lg bg-wonderwhiz-deep-purple/30 hover:bg-wonderwhiz-deep-purple/40 flex items-center border border-yellow-300/20 transition-all"
+                onClick={() => onRabbitHoleClick?.(question)}
+              >
+                <span className="mr-2 text-yellow-300">✨</span>
+                <span className={`${childAge && childAge <= 7 ? 'text-base' : 'text-sm'} text-white/90`}>
+                  {question}
+                </span>
+              </motion.button>
+            ))}
           </div>
         )}
         
-        {/* Block Interactions */}
-        <EnhancedBlockInteractions
-          id={id}
-          liked={liked}
-          bookmarked={bookmarked}
-          type={funFact ? "funFact" : "fact"}
-          onToggleLike={onLike}
-          onToggleBookmark={onBookmark}
-          onReply={onReply}
-          onRabbitHoleClick={onRabbitHoleClick}
-          onReadAloud={onReadAloud ? () => onReadAloud(readableText) : undefined}
-          readableContent={readableText}
-          relatedQuestions={relatedQuestions}
-          childAge={childAge}
-        />
+        {/* Interactive buttons at the bottom */}
+        <div className="flex justify-between pt-3 mt-3 border-t border-white/10">
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onLike}
+              className={`px-4 py-2 rounded-lg ${liked ? 'bg-white/15 text-white' : 'text-white/70 hover:text-white/90 hover:bg-white/10'}`}
+            >
+              <ThumbsUp className="h-4 w-4 mr-2" />
+              <span>Like</span>
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onBookmark}
+              className={`px-4 py-2 rounded-lg ${bookmarked ? 'bg-white/15 text-white' : 'text-white/70 hover:text-white/90 hover:bg-white/10'}`}
+            >
+              <Bookmark className="h-4 w-4 mr-2" />
+              <span>Save</span>
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onReply?.("")}
+              className="px-4 py-2 rounded-lg text-white/70 hover:text-white/90 hover:bg-white/10"
+            >
+              <MessageCircle className="h-4 w-4 mr-2" />
+              <span>Reply</span>
+            </Button>
+          </div>
+          
+          {/* Read aloud button */}
+          {onReadAloud && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onReadAloud?.(readableText)}
+              className="px-4 py-2 rounded-lg text-white/70 hover:text-white/90 hover:bg-white/10"
+            >
+              <Volume2 className="h-4 w-4 mr-2" />
+              <span>Read aloud</span>
+            </Button>
+          )}
+        </div>
       </div>
     </AccessibleBlockWrapper>
   );

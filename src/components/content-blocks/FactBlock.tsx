@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { MessageSquare, Volume2, VolumeX } from 'lucide-react';
+import { MessageSquare, Volume2, VolumeX, ThumbsUp, Bookmark, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { blockContainer } from './utils/blockStyles';
 import { getSpecialistInfo } from '@/utils/specialists';
@@ -16,6 +16,11 @@ interface FactBlockProps {
   onReadAloud?: (text: string) => void;
   isFunFact?: boolean;
   childAge?: number;
+  onLike?: () => void;
+  onBookmark?: () => void;
+  onReply?: () => void;
+  liked?: boolean;
+  bookmarked?: boolean;
 }
 
 const FactBlock: React.FC<FactBlockProps> = ({
@@ -26,7 +31,12 @@ const FactBlock: React.FC<FactBlockProps> = ({
   onRabbitHoleClick,
   onReadAloud,
   isFunFact = false,
-  childAge = 10
+  childAge = 10,
+  onLike,
+  onBookmark,
+  onReply,
+  liked = false,
+  bookmarked = false
 }) => {
   const [isReading, setIsReading] = useState(false);
   const specialist = getSpecialistInfo?.(specialistId) || { 
@@ -100,56 +110,83 @@ const FactBlock: React.FC<FactBlockProps> = ({
           {fact}
         </p>
         
-        {/* Text to speech control for younger children */}
-        {showReadAloud && (
-          <div className="mt-2">
+        {/* Rabbit hole questions styled as yellow buttons with emoji */}
+        {rabbitHoles && rabbitHoles.length > 0 && onRabbitHoleClick && (
+          <div className="mt-4 space-y-2">
+            {rabbitHoles.map((question, index) => (
+              <motion.button
+                key={index}
+                whileHover={{ scale: 1.02, x: 5 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full text-left px-4 py-3 rounded-lg bg-wonderwhiz-deep-purple/30 hover:bg-wonderwhiz-deep-purple/40 flex items-center border border-yellow-300/20 transition-all"
+                onClick={() => onRabbitHoleClick(question)}
+              >
+                <span className="mr-2 text-yellow-300">✨</span>
+                <span className={`${childAge && childAge <= 7 ? 'text-base' : 'text-sm'} text-white/90`}>
+                  {question}
+                </span>
+              </motion.button>
+            ))}
+          </div>
+        )}
+        
+        {/* Bottom interaction buttons */}
+        <div className="flex justify-between pt-3 mt-3 border-t border-white/10">
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onLike}
+              className={`px-4 py-2 rounded-lg ${liked ? 'bg-white/15 text-white' : 'text-white/70 hover:text-white/90 hover:bg-white/10'}`}
+            >
+              <ThumbsUp className="h-4 w-4 mr-2" />
+              <span>Like</span>
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onBookmark}
+              className={`px-4 py-2 rounded-lg ${bookmarked ? 'bg-white/15 text-white' : 'text-white/70 hover:text-white/90 hover:bg-white/10'}`}
+            >
+              <Bookmark className="h-4 w-4 mr-2" />
+              <span>Save</span>
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onReply}
+              className="px-4 py-2 rounded-lg text-white/70 hover:text-white/90 hover:bg-white/10"
+            >
+              <MessageCircle className="h-4 w-4 mr-2" />
+              <span>Reply</span>
+            </Button>
+          </div>
+          
+          {/* Read aloud button */}
+          {showReadAloud && (
             <Button
               variant="ghost"
               size="sm"
               onClick={handleReadAloud}
               disabled={isReading}
-              className="bg-white/5 hover:bg-white/10 text-white"
+              className="px-4 py-2 rounded-lg text-white/70 hover:text-white/90 hover:bg-white/10"
             >
               {isReading ? (
                 <>
                   <VolumeX className="h-4 w-4 mr-2" />
-                  <span>Reading...</span>
+                  <span>Stop</span>
                 </>
               ) : (
                 <>
                   <Volume2 className="h-4 w-4 mr-2" />
-                  <span>Read Aloud</span>
+                  <span>Read aloud</span>
                 </>
               )}
             </Button>
-          </div>
-        )}
-        
-        {/* Rabbit hole questions for further exploration */}
-        {rabbitHoles && rabbitHoles.length > 0 && onRabbitHoleClick && (
-          <div className="mt-4 space-y-2">
-            <h4 className={`${childAge && childAge <= 7 ? 'text-base' : 'text-sm'} font-medium text-white/70`}>
-              Want to learn more?
-            </h4>
-            
-            <div className="space-y-2">
-              {rabbitHoles.map((question, index) => (
-                <motion.button
-                  key={index}
-                  whileHover={{ scale: 1.02, backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
-                  whileTap={{ scale: 0.98 }}
-                  className="w-full text-left px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 flex items-center"
-                  onClick={() => onRabbitHoleClick(question)}
-                >
-                  <MessageSquare className="h-4 w-4 text-wonderwhiz-cyan mr-2 flex-shrink-0" />
-                  <span className={`${childAge && childAge <= 7 ? 'text-base' : 'text-sm'} text-white/80`}>
-                    {question}
-                  </span>
-                </motion.button>
-              ))}
-            </div>
-          </div>
-        )}
+          )}
+        </div>
         
         {/* Attribution to specialist */}
         <div className="mt-2 text-right">

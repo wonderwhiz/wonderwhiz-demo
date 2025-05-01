@@ -141,12 +141,14 @@ const DynamicWonderSuggestions: React.FC<DynamicWonderSuggestionsProps> = ({
       </div>
       
       {/* Fixed the style element to work correctly with React's JSX */}
-      <style>{`
-        @keyframes shimmer {
-          0% { background-position: 200% 0; }
-          100% { background-position: -200% 0; }
-        }
-      `}</style>
+      <style>
+        {`
+          @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+          }
+        `}
+      </style>
     </motion.div>
   );
 };
