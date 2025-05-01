@@ -140,8 +140,8 @@ const DynamicWonderSuggestions: React.FC<DynamicWonderSuggestionsProps> = ({
         ))}
       </div>
       
-      {/* Add a global style for the shimmer animation */}
-      <style jsx global>{`
+      {/* Fixed the style element to work correctly with React's JSX */}
+      <style>{`
         @keyframes shimmer {
           0% { background-position: 200% 0; }
           100% { background-position: -200% 0; }

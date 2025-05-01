@@ -3,7 +3,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { ContentBlockType } from '@/types/curio';
-import { Brain, Star, Sparkles, BookOpen, Lightbulb, FlaskConical, Clock, Newspaper, PuzzlePiece, Dumbbell } from 'lucide-react';
+import { Brain, Star, Sparkles, BookOpen, Lightbulb, FlaskConical, Clock, Newspaper, Dumbbell } from 'lucide-react';
 
 interface BlockAccentProps {
   type: ContentBlockType;
@@ -87,7 +87,8 @@ const BlockAccent: React.FC<BlockAccentProps> = ({
       case 'news':
         return <Newspaper className={iconSize} />;
       case 'riddle':
-        return <PuzzlePiece className={iconSize} />;
+        // Replace PuzzlePiece with a combination of Brain and Star for riddles
+        return <Brain className={iconSize} />;
       case 'activity':
         return <Dumbbell className={iconSize} />;
       case 'mindfulness':
