@@ -140,7 +140,6 @@ const DynamicWonderSuggestions: React.FC<DynamicWonderSuggestionsProps> = ({
         ))}
       </div>
       
-      {/* Fixed the style element to work correctly with React's JSX */}
       <style>
         {`
           @keyframes shimmer {

@@ -2,6 +2,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { MessageCircle, Bookmark, ThumbsUp, Share2, Star, Lightbulb, PenTool, BookOpen } from 'lucide-react';
+import BlockAccent from './BlockAccent';
 
 interface EnhancedContentBlockProps {
   content: string;
@@ -48,28 +49,28 @@ const EnhancedContentBlock: React.FC<EnhancedContentBlockProps> = ({
   
   const getGradient = () => {
     switch(type) {
-      case 'fact': return 'from-wonderwhiz-cyan/30 via-wonderwhiz-deep-purple/90 to-wonderwhiz-deep-purple/70';
-      case 'quiz': return 'from-wonderwhiz-bright-pink/30 via-wonderwhiz-deep-purple/90 to-wonderwhiz-deep-purple/70';
-      case 'activity': return 'from-wonderwhiz-vibrant-yellow/30 via-wonderwhiz-deep-purple/90 to-wonderwhiz-deep-purple/70';
-      default: return 'from-wonderwhiz-purple/30 via-wonderwhiz-deep-purple/90 to-wonderwhiz-deep-purple/70';
+      case 'fact': return 'from-wonderwhiz-cyan/30 via-wonderwhiz-deep-purple/95 to-wonderwhiz-deep-purple/80';
+      case 'quiz': return 'from-wonderwhiz-bright-pink/30 via-wonderwhiz-deep-purple/95 to-wonderwhiz-deep-purple/80';
+      case 'activity': return 'from-wonderwhiz-vibrant-yellow/30 via-wonderwhiz-deep-purple/95 to-wonderwhiz-deep-purple/80';
+      default: return 'from-wonderwhiz-purple/30 via-wonderwhiz-deep-purple/95 to-wonderwhiz-deep-purple/80';
     }
   };
   
   const getGlow = () => {
     switch(type) {
-      case 'fact': return '0 0 25px rgba(0,226,255,0.2)';
-      case 'quiz': return '0 0 25px rgba(255,91,163,0.2)';
-      case 'activity': return '0 0 25px rgba(255,213,79,0.2)';
-      default: return '0 0 25px rgba(126,48,225,0.2)';
+      case 'fact': return '0 0 30px rgba(0,226,255,0.25)';
+      case 'quiz': return '0 0 30px rgba(255,91,163,0.25)';
+      case 'activity': return '0 0 30px rgba(255,213,79,0.25)';
+      default: return '0 0 30px rgba(126,48,225,0.25)';
     }
   };
   
   const getBorderColor = () => {
     switch(type) {
-      case 'fact': return 'border-wonderwhiz-cyan/30';
-      case 'quiz': return 'border-wonderwhiz-bright-pink/30';
-      case 'activity': return 'border-wonderwhiz-vibrant-yellow/30';
-      default: return 'border-wonderwhiz-purple/30';
+      case 'fact': return 'border-wonderwhiz-cyan/40';
+      case 'quiz': return 'border-wonderwhiz-bright-pink/40';
+      case 'activity': return 'border-wonderwhiz-vibrant-yellow/40';
+      default: return 'border-wonderwhiz-purple/40';
     }
   };
   
@@ -87,12 +88,17 @@ const EnhancedContentBlock: React.FC<EnhancedContentBlockProps> = ({
     >
       <div className={`rounded-2xl bg-gradient-to-br ${getGradient()}
                       border ${getBorderColor()} hover:border-white/30
-                      backdrop-blur-lg shadow-lg hover:shadow-xl transition-all duration-300`}
-           style={{ boxShadow: `0 8px 24px -6px rgba(0,0,0,0.25), ${getGlow()}` }}>
+                      backdrop-blur-lg shadow-xl hover:shadow-2xl transition-all duration-300`}
+           style={{ boxShadow: `0 10px 30px -6px rgba(0,0,0,0.3), ${getGlow()}` }}>
+        {/* Add Block Accent */}
+        <div className="absolute top-0 right-0">
+          <BlockAccent type={type} childAge={childAge} />
+        </div>
+        
         <div className="p-6 relative z-10">
           <div className="flex items-start justify-between gap-4 mb-4">
             <div className="flex items-center gap-3">
-              <div className={`p-3 rounded-xl bg-gradient-to-br from-white/15 to-transparent border border-white/20 ${childAge <= 8 ? 'animate-pulse' : ''}`}>
+              <div className={`p-3 rounded-xl bg-gradient-to-br from-white/20 to-transparent border border-white/30 shadow-lg ${childAge <= 8 ? 'animate-pulse' : ''}`}>
                 {childAge <= 8 ? (
                   <span className="text-2xl">{getTypeEmoji()}</span>
                 ) : (
@@ -124,7 +130,7 @@ const EnhancedContentBlock: React.FC<EnhancedContentBlockProps> = ({
             transition={{ delay: 0.1 }}
             className="relative"
           >
-            <div className={`text-white/90 ${getFontSize()} font-nunito my-4`}>
+            <div className={`text-white/95 ${getFontSize()} font-nunito my-4`}>
               {content}
             </div>
             
@@ -151,7 +157,7 @@ const EnhancedContentBlock: React.FC<EnhancedContentBlockProps> = ({
           </motion.div>
         </div>
         
-        <div className="border-t border-white/10">
+        <div className="border-t border-white/15">
           <div className="px-6 py-3 flex justify-between items-center">
             <div className="flex gap-4">
               <motion.button 
@@ -196,14 +202,14 @@ const EnhancedContentBlock: React.FC<EnhancedContentBlockProps> = ({
       </div>
       
       {/* Add interactive hover effect */}
-      <div className={`absolute inset-0 bg-gradient-to-r from-${type === 'fact' ? 'wonderwhiz-cyan' : type === 'quiz' ? 'wonderwhiz-bright-pink' : 'wonderwhiz-vibrant-yellow'}/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl`} />
+      <div className={`absolute inset-0 bg-gradient-to-r from-${type === 'fact' ? 'wonderwhiz-cyan' : type === 'quiz' ? 'wonderwhiz-bright-pink' : 'wonderwhiz-vibrant-yellow'}/15 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl`} />
       
       {/* Add a subtle pulsing animation for focus (more prominent for younger children) */}
       <motion.div
         animate={{ 
           boxShadow: [
             `0 0 0 0px rgba(255,255,255,0)`,
-            `0 0 0 3px rgba(255,255,255,${childAge <= 8 ? 0.15 : 0.08})`,
+            `0 0 0 4px rgba(255,255,255,${childAge <= 8 ? 0.2 : 0.1})`,
             `0 0 0 0px rgba(255,255,255,0)`
           ]
         }}

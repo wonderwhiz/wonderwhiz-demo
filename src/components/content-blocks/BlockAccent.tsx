@@ -55,17 +55,17 @@ const BlockAccent: React.FC<BlockAccentProps> = ({
 
   const getAccentColor = () => {
     switch (type) {
-      case 'fact': return 'bg-gradient-to-br from-wonderwhiz-cyan via-wonderwhiz-cyan/80 to-wonderwhiz-cyan/70 text-white shadow-[0_0_15px_rgba(0,226,255,0.3)]';
-      case 'quiz': return 'bg-gradient-to-br from-wonderwhiz-bright-pink via-wonderwhiz-bright-pink/80 to-wonderwhiz-bright-pink/70 text-white shadow-[0_0_15px_rgba(255,91,163,0.3)]';
-      case 'creative': return 'bg-gradient-to-br from-wonderwhiz-green via-wonderwhiz-green/80 to-wonderwhiz-green/70 text-white shadow-[0_0_15px_rgba(0,214,143,0.3)]';
-      case 'funFact': return 'bg-gradient-to-br from-wonderwhiz-vibrant-yellow via-wonderwhiz-vibrant-yellow/80 to-wonderwhiz-vibrant-yellow/70 text-white shadow-[0_0_15px_rgba(255,213,79,0.3)]';
-      case 'mindfulness': return 'bg-gradient-to-br from-wonderwhiz-purple via-wonderwhiz-purple/80 to-wonderwhiz-purple/70 text-white shadow-[0_0_15px_rgba(126,48,225,0.3)]';
-      case 'flashcard': return 'bg-gradient-to-br from-wonderwhiz-blue-accent via-wonderwhiz-blue-accent/80 to-wonderwhiz-blue-accent/70 text-white shadow-[0_0_15px_rgba(79,174,255,0.3)]';
-      case 'task': return 'bg-gradient-to-br from-wonderwhiz-orange via-wonderwhiz-orange/80 to-wonderwhiz-orange/70 text-white shadow-[0_0_15px_rgba(255,150,79,0.3)]';
-      case 'news': return 'bg-gradient-to-br from-wonderwhiz-light-blue via-wonderwhiz-light-blue/80 to-wonderwhiz-light-blue/70 text-white shadow-[0_0_15px_rgba(79,217,255,0.3)]';
-      case 'riddle': return 'bg-gradient-to-br from-wonderwhiz-teal via-wonderwhiz-teal/80 to-wonderwhiz-teal/70 text-white shadow-[0_0_15px_rgba(79,255,195,0.3)]';
-      case 'activity': return 'bg-gradient-to-br from-wonderwhiz-gold via-wonderwhiz-gold/80 to-wonderwhiz-gold/70 text-white shadow-[0_0_15px_rgba(255,213,79,0.3)]';
-      default: return 'bg-gradient-to-br from-wonderwhiz-blue via-wonderwhiz-blue/80 to-wonderwhiz-blue/70 text-white shadow-[0_0_15px_rgba(0,157,255,0.3)]';
+      case 'fact': return 'bg-gradient-to-br from-wonderwhiz-cyan via-wonderwhiz-cyan/80 to-wonderwhiz-cyan/70 text-white shadow-[0_0_25px_rgba(0,226,255,0.35)]';
+      case 'quiz': return 'bg-gradient-to-br from-wonderwhiz-bright-pink via-wonderwhiz-bright-pink/80 to-wonderwhiz-bright-pink/70 text-white shadow-[0_0_25px_rgba(255,91,163,0.35)]';
+      case 'creative': return 'bg-gradient-to-br from-wonderwhiz-green via-wonderwhiz-green/80 to-wonderwhiz-green/70 text-white shadow-[0_0_25px_rgba(0,214,143,0.35)]';
+      case 'funFact': return 'bg-gradient-to-br from-wonderwhiz-vibrant-yellow via-wonderwhiz-vibrant-yellow/80 to-wonderwhiz-vibrant-yellow/70 text-white shadow-[0_0_25px_rgba(255,213,79,0.35)]';
+      case 'mindfulness': return 'bg-gradient-to-br from-wonderwhiz-purple via-wonderwhiz-purple/80 to-wonderwhiz-purple/70 text-white shadow-[0_0_25px_rgba(126,48,225,0.35)]';
+      case 'flashcard': return 'bg-gradient-to-br from-wonderwhiz-blue-accent via-wonderwhiz-blue-accent/80 to-wonderwhiz-blue-accent/70 text-white shadow-[0_0_25px_rgba(79,174,255,0.35)]';
+      case 'task': return 'bg-gradient-to-br from-wonderwhiz-orange via-wonderwhiz-orange/80 to-wonderwhiz-orange/70 text-white shadow-[0_0_25px_rgba(255,150,79,0.35)]';
+      case 'news': return 'bg-gradient-to-br from-wonderwhiz-light-blue via-wonderwhiz-light-blue/80 to-wonderwhiz-light-blue/70 text-white shadow-[0_0_25px_rgba(79,217,255,0.35)]';
+      case 'riddle': return 'bg-gradient-to-br from-wonderwhiz-teal via-wonderwhiz-teal/80 to-wonderwhiz-teal/70 text-white shadow-[0_0_25px_rgba(79,255,195,0.35)]';
+      case 'activity': return 'bg-gradient-to-br from-wonderwhiz-gold via-wonderwhiz-gold/80 to-wonderwhiz-gold/70 text-white shadow-[0_0_25px_rgba(255,213,79,0.35)]';
+      default: return 'bg-gradient-to-br from-wonderwhiz-blue via-wonderwhiz-blue/80 to-wonderwhiz-blue/70 text-white shadow-[0_0_25px_rgba(0,157,255,0.35)]';
     }
   };
 
@@ -87,7 +87,7 @@ const BlockAccent: React.FC<BlockAccentProps> = ({
       case 'news':
         return <Newspaper className={iconSize} />;
       case 'riddle':
-        // Replace PuzzlePiece with a combination of Brain and Star for riddles
+        // Using Brain icon for riddles
         return <Brain className={iconSize} />;
       case 'activity':
         return <Dumbbell className={iconSize} />;
@@ -114,7 +114,7 @@ const BlockAccent: React.FC<BlockAccentProps> = ({
     >
       <motion.div variants={iconVariants} className="relative">
         {getIcon()}
-        <div className="absolute inset-0 blur-lg opacity-60 -z-10" style={{
+        <div className="absolute inset-0 blur-lg opacity-70 -z-10" style={{
           background: getAccentColor().includes('wonderwhiz-cyan') ? '#00E2FF' :
                      getAccentColor().includes('wonderwhiz-bright-pink') ? '#FF5BA3' :
                      getAccentColor().includes('wonderwhiz-green') ? '#00D68F' :

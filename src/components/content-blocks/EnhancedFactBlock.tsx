@@ -7,6 +7,7 @@ import { useAgeAdaptation } from '@/hooks/useAgeAdaptation';
 import AccessibleBlockWrapper from './AccessibleBlockWrapper';
 import EnhancedBlockInteractions from './EnhancedBlockInteractions';
 import { getSpecialistInfo } from '@/utils/specialists';
+import BlockAccent from './BlockAccent';
 
 interface EnhancedFactBlockProps {
   id: string;
@@ -75,16 +76,16 @@ const EnhancedFactBlock: React.FC<EnhancedFactBlockProps> = ({
   
   const getBlockGradient = () => {
     if (funFact) {
-      return 'bg-gradient-to-br from-wonderwhiz-deep-purple/60 via-wonderwhiz-deep-purple/80 to-wonderwhiz-deep-purple/90';
+      return 'bg-gradient-to-br from-wonderwhiz-deep-purple/60 via-wonderwhiz-deep-purple/80 to-wonderwhiz-deep-purple/95';
     }
-    return 'bg-gradient-to-br from-wonderwhiz-deep-purple/60 via-wonderwhiz-deep-purple/80 to-wonderwhiz-deep-purple/90';
+    return 'bg-gradient-to-br from-wonderwhiz-deep-purple/60 via-wonderwhiz-deep-purple/80 to-wonderwhiz-deep-purple/95';
   };
   
   const getBlockGlow = () => {
     if (funFact) {
-      return '0 4px 20px -2px rgba(0,0,0,0.2), 0 0 15px -3px rgba(255,213,79,0.15)';
+      return '0 5px 25px -2px rgba(0,0,0,0.25), 0 0 20px -3px rgba(255,213,79,0.25)';
     }
-    return '0 4px 20px -2px rgba(0,0,0,0.2), 0 0 15px -3px rgba(0,226,255,0.15)';
+    return '0 5px 25px -2px rgba(0,0,0,0.25), 0 0 20px -3px rgba(0,226,255,0.25)';
   };
 
   // Add a subtle animation for the fact content
@@ -103,9 +104,14 @@ const EnhancedFactBlock: React.FC<EnhancedFactBlockProps> = ({
       accessibilityLabel={`${funFact ? 'Fun fact' : 'Fact'}: ${displayTitle}`}
     >
       <div 
-        className={`p-5 relative ${getBlockGradient()} border border-white/10 hover:border-white/20 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300`}
+        className={`p-5 relative ${getBlockGradient()} border border-white/15 hover:border-white/25 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300`}
         style={{ boxShadow: getBlockGlow() }}
       >
+        {/* Add Block Accent */}
+        <div className="absolute top-0 right-0">
+          <BlockAccent type={funFact ? "funFact" : "fact"} childAge={childAge} />
+        </div>
+        
         {/* Header with Title */}
         <div className="flex justify-between items-center mb-4">
           <motion.h3 
@@ -124,7 +130,7 @@ const EnhancedFactBlock: React.FC<EnhancedFactBlockProps> = ({
           {/* Add a specialist indicator for older children */}
           {childAge > 8 && specialist && (
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full overflow-hidden border border-white/30">
+              <div className="w-6 h-6 rounded-full overflow-hidden border border-white/30 bg-white/10">
                 {specialist.avatar && (
                   <img 
                     src={specialist.avatar} 
@@ -149,7 +155,7 @@ const EnhancedFactBlock: React.FC<EnhancedFactBlockProps> = ({
             <div 
               className={`relative rounded-lg overflow-hidden cursor-pointer ${
                 expandedImage ? 'h-auto max-h-96' : 'h-48'
-              }`}
+              } border border-white/15 shadow-lg`}
               onClick={() => setExpandedImage(!expandedImage)}
             >
               <img 
@@ -159,14 +165,14 @@ const EnhancedFactBlock: React.FC<EnhancedFactBlockProps> = ({
                   expandedImage ? 'object-contain' : 'object-cover'
                 }`}
               />
-              <div className="absolute bottom-0 right-0 bg-black/50 p-1.5 rounded-tl-lg">
+              <div className="absolute bottom-0 right-0 bg-black/60 p-1.5 rounded-tl-lg">
                 <ImageIcon className="h-4 w-4 text-white" />
               </div>
               
               {/* Add a "click to expand" hint for younger children */}
               {childAge <= 8 && !expandedImage && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 hover:opacity-100 transition-opacity">
-                  <p className="text-white bg-black/50 px-3 py-1 rounded-full text-sm">
+                  <p className="text-white bg-black/60 px-3 py-1 rounded-full text-sm shadow-lg">
                     Click to see more!
                   </p>
                 </div>
@@ -209,11 +215,11 @@ const EnhancedFactBlock: React.FC<EnhancedFactBlockProps> = ({
                 key={index}
                 whileHover={{ scale: 1.02, x: 5 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-full text-left px-4 py-3 rounded-lg bg-wonderwhiz-deep-purple/30 hover:bg-wonderwhiz-deep-purple/40 flex items-center border border-yellow-300/20 transition-all"
+                className="w-full text-left px-4 py-3 rounded-lg bg-wonderwhiz-deep-purple/40 hover:bg-wonderwhiz-deep-purple/50 flex items-center border border-yellow-300/30 transition-all shadow-lg"
                 onClick={() => onRabbitHoleClick?.(question)}
               >
                 <span className="mr-2 text-yellow-300">✨</span>
-                <span className={`${childAge && childAge <= 7 ? 'text-base' : 'text-sm'} text-white/90`}>
+                <span className={`${childAge && childAge <= 7 ? 'text-base' : 'text-sm'} text-white/95`}>
                   {question}
                 </span>
               </motion.button>
@@ -222,13 +228,13 @@ const EnhancedFactBlock: React.FC<EnhancedFactBlockProps> = ({
         )}
         
         {/* Interactive buttons at the bottom */}
-        <div className="flex justify-between pt-3 mt-3 border-t border-white/10">
+        <div className="flex justify-between pt-3 mt-3 border-t border-white/15">
           <div className="flex items-center space-x-2">
             <Button
               variant="ghost"
               size="sm"
               onClick={onLike}
-              className={`px-4 py-2 rounded-lg ${liked ? 'bg-white/15 text-white' : 'text-white/70 hover:text-white/90 hover:bg-white/10'}`}
+              className={`px-4 py-2 rounded-lg ${liked ? 'bg-white/20 text-white' : 'text-white/70 hover:text-white/95 hover:bg-white/15'}`}
             >
               <ThumbsUp className="h-4 w-4 mr-2" />
               <span>Like</span>
@@ -238,7 +244,7 @@ const EnhancedFactBlock: React.FC<EnhancedFactBlockProps> = ({
               variant="ghost"
               size="sm"
               onClick={onBookmark}
-              className={`px-4 py-2 rounded-lg ${bookmarked ? 'bg-white/15 text-white' : 'text-white/70 hover:text-white/90 hover:bg-white/10'}`}
+              className={`px-4 py-2 rounded-lg ${bookmarked ? 'bg-white/20 text-white' : 'text-white/70 hover:text-white/95 hover:bg-white/15'}`}
             >
               <Bookmark className="h-4 w-4 mr-2" />
               <span>Save</span>
@@ -248,7 +254,7 @@ const EnhancedFactBlock: React.FC<EnhancedFactBlockProps> = ({
               variant="ghost"
               size="sm"
               onClick={() => onReply?.("")}
-              className="px-4 py-2 rounded-lg text-white/70 hover:text-white/90 hover:bg-white/10"
+              className="px-4 py-2 rounded-lg text-white/70 hover:text-white/95 hover:bg-white/15"
             >
               <MessageCircle className="h-4 w-4 mr-2" />
               <span>Reply</span>
@@ -261,7 +267,7 @@ const EnhancedFactBlock: React.FC<EnhancedFactBlockProps> = ({
               variant="ghost"
               size="sm"
               onClick={() => onReadAloud?.(readableText)}
-              className="px-4 py-2 rounded-lg text-white/70 hover:text-white/90 hover:bg-white/10"
+              className="px-4 py-2 rounded-lg text-white/70 hover:text-white/95 hover:bg-white/15"
             >
               <Volume2 className="h-4 w-4 mr-2" />
               <span>Read aloud</span>

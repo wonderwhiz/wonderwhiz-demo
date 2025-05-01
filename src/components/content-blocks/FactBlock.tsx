@@ -118,11 +118,11 @@ const FactBlock: React.FC<FactBlockProps> = ({
                 key={index}
                 whileHover={{ scale: 1.02, x: 5 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-full text-left px-4 py-3 rounded-lg bg-wonderwhiz-deep-purple/30 hover:bg-wonderwhiz-deep-purple/40 flex items-center border border-yellow-300/20 transition-all"
+                className="w-full text-left px-4 py-3 rounded-lg bg-wonderwhiz-deep-purple/40 hover:bg-wonderwhiz-deep-purple/50 flex items-center border border-yellow-300/30 transition-all shadow-lg"
                 onClick={() => onRabbitHoleClick(question)}
               >
                 <span className="mr-2 text-yellow-300">✨</span>
-                <span className={`${childAge && childAge <= 7 ? 'text-base' : 'text-sm'} text-white/90`}>
+                <span className={`${childAge && childAge <= 7 ? 'text-base' : 'text-sm'} text-white/95`}>
                   {question}
                 </span>
               </motion.button>
@@ -131,13 +131,13 @@ const FactBlock: React.FC<FactBlockProps> = ({
         )}
         
         {/* Bottom interaction buttons */}
-        <div className="flex justify-between pt-3 mt-3 border-t border-white/10">
+        <div className="flex justify-between pt-3 mt-3 border-t border-white/15">
           <div className="flex items-center space-x-2">
             <Button
               variant="ghost"
               size="sm"
               onClick={onLike}
-              className={`px-4 py-2 rounded-lg ${liked ? 'bg-white/15 text-white' : 'text-white/70 hover:text-white/90 hover:bg-white/10'}`}
+              className={`px-4 py-2 rounded-lg ${liked ? 'bg-white/20 text-white' : 'text-white/70 hover:text-white/95 hover:bg-white/15'}`}
             >
               <ThumbsUp className="h-4 w-4 mr-2" />
               <span>Like</span>
@@ -147,7 +147,7 @@ const FactBlock: React.FC<FactBlockProps> = ({
               variant="ghost"
               size="sm"
               onClick={onBookmark}
-              className={`px-4 py-2 rounded-lg ${bookmarked ? 'bg-white/15 text-white' : 'text-white/70 hover:text-white/90 hover:bg-white/10'}`}
+              className={`px-4 py-2 rounded-lg ${bookmarked ? 'bg-white/20 text-white' : 'text-white/70 hover:text-white/95 hover:bg-white/15'}`}
             >
               <Bookmark className="h-4 w-4 mr-2" />
               <span>Save</span>
@@ -157,7 +157,7 @@ const FactBlock: React.FC<FactBlockProps> = ({
               variant="ghost"
               size="sm"
               onClick={onReply}
-              className="px-4 py-2 rounded-lg text-white/70 hover:text-white/90 hover:bg-white/10"
+              className="px-4 py-2 rounded-lg text-white/70 hover:text-white/95 hover:bg-white/15"
             >
               <MessageCircle className="h-4 w-4 mr-2" />
               <span>Reply</span>
@@ -171,7 +171,7 @@ const FactBlock: React.FC<FactBlockProps> = ({
               size="sm"
               onClick={handleReadAloud}
               disabled={isReading}
-              className="px-4 py-2 rounded-lg text-white/70 hover:text-white/90 hover:bg-white/10"
+              className="px-4 py-2 rounded-lg text-white/70 hover:text-white/95 hover:bg-white/15"
             >
               {isReading ? (
                 <>

@@ -5,6 +5,7 @@ import { Lightbulb } from 'lucide-react';
 import BlockHeader from './BlockHeader';
 import BlockInteractions from './BlockInteractions';
 import { useAgeAdaptation } from '@/hooks/useAgeAdaptation';
+import BlockAccent from './BlockAccent';
 
 interface FunFactBlockProps {
   fact: string;
@@ -45,16 +46,21 @@ const FunFactBlock: React.FC<FunFactBlockProps> = ({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="overflow-hidden bg-gradient-to-br from-pink-500/20 to-yellow-500/20 rounded-lg border border-white/10 shadow-md"
+      className="relative overflow-hidden bg-gradient-to-br from-pink-500/30 to-yellow-500/30 rounded-lg border border-white/15 shadow-xl"
     >
+      {/* Add the accent icon */}
+      <div className="absolute top-0 right-0">
+        <BlockAccent type="funFact" childAge={childAge} />
+      </div>
+      
       <BlockHeader type={getHeader()} specialistId={specialistId} />
       
-      <div className="p-4">
+      <div className="p-5">
         <div className="flex gap-3 items-start">
-          <div className="bg-yellow-500/20 p-2 rounded-full flex-shrink-0 mt-1">
+          <div className="bg-yellow-500/25 p-2 rounded-full flex-shrink-0 mt-1 shadow-lg shadow-yellow-500/20">
             <Lightbulb className="h-4 w-4 text-yellow-400" />
           </div>
-          <p className={`text-white/90 ${textSize}`}>{fact}</p>
+          <p className={`text-white/95 ${textSize} font-nunito`}>{fact}</p>
         </div>
       </div>
       
@@ -62,12 +68,13 @@ const FunFactBlock: React.FC<FunFactBlockProps> = ({
         id={`funfact-${Date.now()}`}
         liked={false}
         bookmarked={false}
-        type="funfact"
+        type="funFact"
         onToggleLike={onLike || (() => {})}
         onToggleBookmark={onBookmark || (() => {})}
         setShowReplyForm={setShowReplyForm}
         onRabbitHoleClick={onRabbitHoleClick}
         relatedQuestions={[]}
+        childAge={childAge}
       />
     </motion.div>
   );
