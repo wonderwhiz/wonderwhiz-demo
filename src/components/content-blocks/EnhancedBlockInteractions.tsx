@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -70,12 +71,33 @@ const EnhancedBlockInteractions: React.FC<EnhancedBlockInteractionsProps> = ({
     }
   };
   
+  const getTypeColor = () => {
+    switch (type) {
+      case 'fact': return 'text-wonderwhiz-cyan';
+      case 'quiz': return 'text-wonderwhiz-bright-pink';
+      case 'creative': return 'text-wonderwhiz-green';
+      case 'funFact': return 'text-wonderwhiz-vibrant-yellow';
+      case 'mindfulness': return 'text-wonderwhiz-purple';
+      case 'flashcard': return 'text-wonderwhiz-blue-accent';
+      case 'task': return 'text-wonderwhiz-orange';
+      case 'news': return 'text-wonderwhiz-light-blue';
+      case 'riddle': return 'text-wonderwhiz-teal';
+      case 'activity': return 'text-wonderwhiz-gold';
+      default: return 'text-wonderwhiz-blue';
+    }
+  };
+  
   const getEmoji = () => {
     if (childAge <= 8) {
       if (type === 'quiz') return '🎯';
-      if (type === 'fact' || type === 'funFact') return '✨';
+      if (type === 'fact') return '✨';
+      if (type === 'funFact') return '🌟';
       if (type === 'creative') return '🎨';
       if (type === 'mindfulness') return '🧘';
+      if (type === 'flashcard') return '🔍';
+      if (type === 'task') return '📝';
+      if (type === 'news') return '📰';
+      if (type === 'riddle') return '🧩';
       if (type === 'activity') return '🏃';
       return '🌟';
     }
@@ -85,14 +107,15 @@ const EnhancedBlockInteractions: React.FC<EnhancedBlockInteractionsProps> = ({
   const emoji = getEmoji();
   const buttonSize = getButtonSizeClass();
   const showLabels = interactionSize !== 'xs';
+  const typeColor = getTypeColor();
   
   return (
-    <div className="mt-2">
-      <div className={`flex flex-wrap items-center gap-1 border-t border-white/10 pt-2 ${
+    <div className="mt-3">
+      <div className={`flex flex-wrap items-center gap-2 border-t border-white/10 pt-3 ${
         childAge <= 8 ? 'justify-center' : 'justify-between'
       }`}>
         <motion.div 
-          className="flex flex-wrap items-center gap-1"
+          className="flex flex-wrap items-center gap-2"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
@@ -134,7 +157,7 @@ const EnhancedBlockInteractions: React.FC<EnhancedBlockInteractionsProps> = ({
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowReplyForm(!showReplyForm)}
-                className={`${buttonSize} rounded-full text-white/60 hover:text-wonderwhiz-cyan`}
+                className={`${buttonSize} rounded-full text-white/60 hover:${typeColor}`}
                 aria-label="Reply"
               >
                 <MessageCircle className={`${interactionSize === 'xs' ? 'h-3 w-3' : 'h-4 w-4'} ${showLabels ? 'mr-1.5' : ''}`} />
@@ -157,7 +180,7 @@ const EnhancedBlockInteractions: React.FC<EnhancedBlockInteractionsProps> = ({
                 size="sm"
                 onClick={() => onReadAloud(readableContent)}
                 className={`${buttonSize} rounded-full ${
-                  childAge <= 8 ? 'bg-wonderwhiz-bright-pink/10 text-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/20' : 'text-white/60 hover:text-wonderwhiz-bright-pink'
+                  childAge <= 8 ? `bg-${typeColor.replace('text-', '')}/10 ${typeColor} hover:bg-${typeColor.replace('text-', '')}/20` : 'text-white/60 hover:text-wonderwhiz-bright-pink'
                 }`}
                 aria-label="Read aloud"
               >
@@ -194,7 +217,7 @@ const EnhancedBlockInteractions: React.FC<EnhancedBlockInteractionsProps> = ({
               onClick={() => setShowRelatedQuestions(!showRelatedQuestions)}
               className={`${buttonSize} rounded-full transition-colors duration-300 ${
                 childAge <= 8 
-                  ? 'bg-wonderwhiz-bright-pink/10 text-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/20' 
+                  ? `bg-wonderwhiz-bright-pink/10 text-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/20` 
                   : 'text-white/60 hover:text-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/10'
               }`}
               aria-label={showRelatedQuestions ? "Hide related questions" : "Show related questions"}
@@ -243,7 +266,7 @@ const EnhancedBlockInteractions: React.FC<EnhancedBlockInteractionsProps> = ({
                   size="sm"
                   onClick={handleReplySubmit}
                   disabled={!replyText.trim()}
-                  className="bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/90"
+                  className={`bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/90 ${childAge <= 8 ? 'animate-pulse' : ''}`}
                 >
                   {childAge <= 8 ? "Send it!" : "Send"}
                 </Button>

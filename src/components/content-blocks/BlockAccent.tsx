@@ -3,7 +3,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { ContentBlockType } from '@/types/curio';
-import { Brain, Star, Sparkles, BookOpen, Lightbulb } from 'lucide-react';
+import { Brain, Star, Sparkles, BookOpen, Lightbulb, FlaskConical, Clock, Newspaper, PuzzlePiece, Dumbbell } from 'lucide-react';
 
 interface BlockAccentProps {
   type: ContentBlockType;
@@ -60,6 +60,11 @@ const BlockAccent: React.FC<BlockAccentProps> = ({
       case 'creative': return 'bg-gradient-to-br from-wonderwhiz-green via-wonderwhiz-green/90 to-wonderwhiz-green/80 text-white shadow-[0_0_25px_rgba(0,214,143,0.4)]';
       case 'funFact': return 'bg-gradient-to-br from-wonderwhiz-vibrant-yellow via-wonderwhiz-vibrant-yellow/90 to-wonderwhiz-vibrant-yellow/80 text-white shadow-[0_0_25px_rgba(255,213,79,0.4)]';
       case 'mindfulness': return 'bg-gradient-to-br from-wonderwhiz-purple via-wonderwhiz-purple/90 to-wonderwhiz-purple/80 text-white shadow-[0_0_25px_rgba(126,48,225,0.4)]';
+      case 'flashcard': return 'bg-gradient-to-br from-wonderwhiz-blue-accent via-wonderwhiz-blue-accent/90 to-wonderwhiz-blue-accent/80 text-white shadow-[0_0_25px_rgba(79,174,255,0.4)]';
+      case 'task': return 'bg-gradient-to-br from-wonderwhiz-orange via-wonderwhiz-orange/90 to-wonderwhiz-orange/80 text-white shadow-[0_0_25px_rgba(255,150,79,0.4)]';
+      case 'news': return 'bg-gradient-to-br from-wonderwhiz-light-blue via-wonderwhiz-light-blue/90 to-wonderwhiz-light-blue/80 text-white shadow-[0_0_25px_rgba(79,217,255,0.4)]';
+      case 'riddle': return 'bg-gradient-to-br from-wonderwhiz-teal via-wonderwhiz-teal/90 to-wonderwhiz-teal/80 text-white shadow-[0_0_25px_rgba(79,255,195,0.4)]';
+      case 'activity': return 'bg-gradient-to-br from-wonderwhiz-gold via-wonderwhiz-gold/90 to-wonderwhiz-gold/80 text-white shadow-[0_0_25px_rgba(255,213,79,0.4)]';
       default: return 'bg-gradient-to-br from-wonderwhiz-blue via-wonderwhiz-blue/90 to-wonderwhiz-blue/80 text-white shadow-[0_0_25px_rgba(0,157,255,0.4)]';
     }
   };
@@ -75,6 +80,18 @@ const BlockAccent: React.FC<BlockAccentProps> = ({
         return <Sparkles className={iconSize} />;
       case 'funFact':
         return <Lightbulb className={iconSize} />;
+      case 'flashcard':
+        return <BookOpen className={iconSize} />;
+      case 'task':
+        return <Clock className={iconSize} />;
+      case 'news':
+        return <Newspaper className={iconSize} />;
+      case 'riddle':
+        return <PuzzlePiece className={iconSize} />;
+      case 'activity':
+        return <Dumbbell className={iconSize} />;
+      case 'mindfulness':
+        return <FlaskConical className={iconSize} />;
       default:
         return <BookOpen className={iconSize} />;
     }
@@ -100,7 +117,13 @@ const BlockAccent: React.FC<BlockAccentProps> = ({
           background: getAccentColor().includes('wonderwhiz-cyan') ? '#00E2FF' :
                      getAccentColor().includes('wonderwhiz-bright-pink') ? '#FF5BA3' :
                      getAccentColor().includes('wonderwhiz-green') ? '#00D68F' :
-                     getAccentColor().includes('wonderwhiz-vibrant-yellow') ? '#FFD54F' : '#4A6FFF'
+                     getAccentColor().includes('wonderwhiz-vibrant-yellow') ? '#FFD54F' :
+                     getAccentColor().includes('wonderwhiz-blue-accent') ? '#4FAEEF' :
+                     getAccentColor().includes('wonderwhiz-orange') ? '#FF964F' :
+                     getAccentColor().includes('wonderwhiz-light-blue') ? '#4FD9FF' :
+                     getAccentColor().includes('wonderwhiz-teal') ? '#4FFFC3' :
+                     getAccentColor().includes('wonderwhiz-gold') ? '#FFD54F' :
+                     getAccentColor().includes('wonderwhiz-purple') ? '#7E30E1' : '#4A6FFF'
         }} />
       </motion.div>
     </motion.div>
