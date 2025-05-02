@@ -159,7 +159,10 @@ module.exports = {
         'nunito': ['Nunito', 'sans-serif'],
         'inter': ['Inter', 'sans-serif'],
         'baloo': ['"Baloo 2"', 'sans-serif'],
-        'lexend': ['Lexend Deca', 'sans-serif'], // Adding the missing lexend font definition
+        'lexend': ['Lexend Deca', 'sans-serif'],
+      },
+      backgroundImage: {
+        'button-gradient': 'linear-gradient(90deg, #FF5EBA 0%, #FF8FD9 100%)',
       }
     },
   },
