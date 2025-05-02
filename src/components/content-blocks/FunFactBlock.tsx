@@ -6,6 +6,7 @@ import BlockHeader from './BlockHeader';
 import BlockInteractions from './BlockInteractions';
 import { useAgeAdaptation } from '@/hooks/useAgeAdaptation';
 import BlockAccent from './BlockAccent';
+import { blockAnimations, floatingEffect, pulseAnimation } from './utils/blockStyles';
 
 interface FunFactBlockProps {
   fact: string;
@@ -43,29 +44,53 @@ const FunFactBlock: React.FC<FunFactBlockProps> = ({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      className="relative overflow-hidden rounded-lg border border-white/15"
+      initial="hidden"
+      animate="visible"
+      whileHover="hover"
+      variants={blockAnimations.entrance}
+      className="relative overflow-hidden rounded-2xl border-2 border-white/15"
       style={{ 
-        background: 'linear-gradient(to bottom right, rgba(128, 128, 128, 0.2), rgba(60, 60, 60, 0.2))',
-        backdropFilter: 'blur(10px)',
-        boxShadow: '0 6px 20px -2px rgba(0,0,0,0.25), 0 0 15px -3px rgba(255,213,79,0.35)'
+        background: 'linear-gradient(to bottom right, rgba(255, 213, 79, 0.25), rgba(60, 60, 60, 0.2))',
+        backdropFilter: 'blur(16px)',
+        boxShadow: '0 8px 32px -2px rgba(0,0,0,0.3), 0 0 20px -4px rgba(255,213,79,0.45)'
       }}
     >
-      <div className="absolute top-0 right-0">
+      <motion.div 
+        className="absolute top-0 right-0"
+        variants={floatingEffect}
+        initial="initial"
+        animate="animate"
+      >
         <BlockAccent type="funFact" childAge={childAge} />
-      </div>
+      </motion.div>
       
-      <BlockHeader type={getHeader()} specialistId={specialistId} />
+      <BlockHeader type={getHeader()} specialistId={specialistId} childAge={childAge} />
       
       <div className="p-5">
-        <div className="flex gap-3 items-start">
-          <div className="bg-yellow-500/25 p-2 rounded-full flex-shrink-0 mt-1 shadow-lg shadow-yellow-500/20">
-            <Lightbulb className="h-4 w-4 text-yellow-400" />
+        <motion.div 
+          className="flex gap-3 items-start"
+          variants={pulseAnimation}
+        >
+          <div className="bg-wonderwhiz-vibrant-yellow/30 p-2.5 rounded-full flex-shrink-0 mt-1 shadow-lg shadow-wonderwhiz-vibrant-yellow/30 border border-wonderwhiz-vibrant-yellow/40">
+            <Lightbulb className="h-5 w-5 text-wonderwhiz-vibrant-yellow" />
           </div>
-          <p className={`text-white/95 ${textSize} font-nunito`}>{fact}</p>
-        </div>
+          <div>
+            <p className={`text-white/95 ${textSize} font-nunito leading-relaxed`}>
+              {fact}
+            </p>
+            
+            {childAge <= 8 && (
+              <motion.div 
+                className="mt-4 bg-white/10 border border-white/20 rounded-xl p-3 text-white/90 text-sm"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+              >
+                <span className="font-semibold">Why is this cool?</span> Fun facts like this help us learn amazing things about our world!
+              </motion.div>
+            )}
+          </div>
+        </motion.div>
       </div>
       
       <BlockInteractions 
@@ -80,6 +105,41 @@ const FunFactBlock: React.FC<FunFactBlockProps> = ({
         relatedQuestions={[]}
         childAge={childAge}
       />
+      
+      {/* Add subtle particle animation for younger children */}
+      {childAge <= 10 && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-2 h-2 rounded-full bg-wonderwhiz-vibrant-yellow/30"
+              initial={{ 
+                x: Math.random() * 100 + '%', 
+                y: Math.random() * 100 + '%', 
+                opacity: 0 
+              }}
+              animate={{ 
+                x: [
+                  Math.random() * 100 + '%',
+                  Math.random() * 100 + '%',
+                  Math.random() * 100 + '%'
+                ],
+                y: [
+                  Math.random() * 100 + '%',
+                  Math.random() * 100 + '%',
+                  Math.random() * 100 + '%'
+                ],
+                opacity: [0, 0.7, 0]
+              }}
+              transition={{
+                duration: 8 + Math.random() * 10,
+                repeat: Infinity,
+                delay: i * 0.8
+              }}
+            />
+          ))}
+        </div>
+      )}
     </motion.div>
   );
 };

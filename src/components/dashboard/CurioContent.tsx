@@ -390,6 +390,108 @@ const CurioContent: React.FC<CurioContentProps> = ({
     }
   };
 
+  const renderBlock = (block: ContentBlock) => {
+    switch (block.type) {
+      case 'quiz':
+        return (
+          <FireflyQuizBlock
+            key={block.id}
+            question={block.content?.question || "Question not available"}
+            options={block.content?.options || []}
+            correctIndex={block.content?.correctIndex || 0}
+            explanation={block.content?.explanation || ""}
+            specialistId={block.specialist_id || "whizzy"}
+            onQuizCorrect={() => onQuizCorrect(block.id)}
+            childAge={childAge}
+          />
+        );
+        
+      case 'mindfulness':
+        return (
+          <MindfulnessBlock
+            key={block.id}
+            title={block.content?.title || "Mindfulness Exercise"}
+            instructions={block.content?.instruction || block.content?.exercise || "Take a deep breath..."}
+            duration={block.content?.duration || 180}
+            benefit={block.content?.benefit || ""}
+            onComplete={() => onToggleLike(block.id)}
+            childAge={childAge}
+          />
+        );
+        
+      case 'creative':
+        return (
+          <CreativeBlock
+            key={block.id}
+            content={block.content || {}}
+            specialistId={block.specialist_id || "spark"}
+            onCreativeUpload={() => onCreativeUpload(block.id)}
+            childAge={childAge}
+          />
+        );
+        
+      case 'activity':
+        return (
+          <ActivityBlock
+            key={block.id}
+            content={block.content || {}}
+            specialistId={block.specialist_id || "nova"}
+            onActivityComplete={() => onToggleLike(block.id)}
+            updateHeight={() => {}}
+            childAge={childAge}
+          />
+        );
+        
+      case 'task':
+        return (
+          <TaskBlock
+            key={block.id}
+            content={block.content || {}}
+            specialistId={block.specialist_id || "lotus"}
+            onTaskComplete={() => onToggleLike(block.id)}
+            updateHeight={() => {}}
+            childAge={childAge}
+          />
+        );
+        
+      case 'riddle':
+        return (
+          <RiddleBlock
+            key={block.id}
+            content={block.content || {}}
+            specialistId={block.specialist_id || "atlas"}
+            updateHeight={() => {}}
+            childAge={childAge}
+          />
+        );
+        
+      case 'flashcard':
+        return (
+          <FlashcardBlock
+            key={block.id}
+            content={block.content || {}}
+            specialistId={block.specialist_id || "prism"}
+            updateHeight={() => {}}
+            childAge={childAge}
+          />
+        );
+        
+      default:
+        return (
+          <CurioBlock 
+            key={block.id}
+            block={block}
+            onToggleLike={onToggleLike}
+            onToggleBookmark={onToggleBookmark}
+            onReply={onReply}
+            onReadAloud={playText}
+            childAge={childAge}
+            onRabbitHoleFollow={onRabbitHoleFollow}
+          />
+        );
+    }
+  };
+
   return (
     <div className="space-y-6 px-4 py-4">
       {currentCurio && (
@@ -456,109 +558,34 @@ const CurioContent: React.FC<CurioContentProps> = ({
         </div>
       )}
       
-      <div className="space-y-6">
-        {contentBlocks.map((block) => {
-          switch (block.type) {
-            case 'quiz':
-              return (
-                <FireflyQuizBlock
-                  key={block.id}
-                  question={block.content?.question || "Question not available"}
-                  options={block.content?.options || []}
-                  correctIndex={block.content?.correctIndex || 0}
-                  explanation={block.content?.explanation || ""}
-                  specialistId={block.specialist_id || "whizzy"}
-                  onQuizCorrect={() => onQuizCorrect(block.id)}
-                  childAge={childAge}
-                />
-              );
-              
-            case 'mindfulness':
-              return (
-                <MindfulnessBlock
-                  key={block.id}
-                  title={block.content?.title || "Mindfulness Exercise"}
-                  instructions={block.content?.instruction || block.content?.exercise || "Take a deep breath..."}
-                  duration={block.content?.duration || 180}
-                  benefit={block.content?.benefit || ""}
-                  onComplete={() => onToggleLike(block.id)}
-                  childAge={childAge}
-                />
-              );
-              
-            case 'creative':
-              return (
-                <CreativeBlock
-                  key={block.id}
-                  content={block.content || {}}
-                  specialistId={block.specialist_id || "spark"}
-                  onCreativeUpload={() => onCreativeUpload(block.id)}
-                  childAge={childAge}
-                />
-              );
-              
-            case 'activity':
-              return (
-                <ActivityBlock
-                  key={block.id}
-                  content={block.content || {}}
-                  specialistId={block.specialist_id || "nova"}
-                  onActivityComplete={() => onToggleLike(block.id)}
-                  updateHeight={() => {}}
-                  childAge={childAge}
-                />
-              );
-              
-            case 'task':
-              return (
-                <TaskBlock
-                  key={block.id}
-                  content={block.content || {}}
-                  specialistId={block.specialist_id || "lotus"}
-                  onTaskComplete={() => onToggleLike(block.id)}
-                  updateHeight={() => {}}
-                  childAge={childAge}
-                />
-              );
-              
-            case 'riddle':
-              return (
-                <RiddleBlock
-                  key={block.id}
-                  content={block.content || {}}
-                  specialistId={block.specialist_id || "atlas"}
-                  updateHeight={() => {}}
-                  childAge={childAge}
-                />
-              );
-              
-            case 'flashcard':
-              return (
-                <FlashcardBlock
-                  key={block.id}
-                  content={block.content || {}}
-                  specialistId={block.specialist_id || "prism"}
-                  updateHeight={() => {}}
-                  childAge={childAge}
-                />
-              );
-              
-            default:
-              return (
-                <CurioBlock 
-                  key={block.id}
-                  block={block}
-                  onToggleLike={onToggleLike}
-                  onToggleBookmark={onToggleBookmark}
-                  onReply={onReply}
-                  onReadAloud={playText}
-                  childAge={childAge}
-                  onRabbitHoleFollow={onRabbitHoleFollow}
-                />
-              );
-          }
-        })}
-      </div>
+      <motion.div 
+        className="space-y-8 px-6 py-6"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+        style={{
+          background: 'linear-gradient(to bottom, rgba(30, 30, 40, 0.3), rgba(15, 15, 25, 0.5))',
+          backdropFilter: 'blur(10px)',
+          borderRadius: '16px',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)'
+        }}
+      >
+        {blocks.map((block, idx) => (
+          <motion.div
+            key={block.id || idx}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ 
+              delay: idx * 0.1,
+              type: "spring", 
+              stiffness: 260, 
+              damping: 20 
+            }}
+          >
+            {renderBlock(block)}
+          </motion.div>
+        ))}
+      </motion.div>
       
       {hasMoreBlocks && (
         <div className="flex justify-center pt-4">
