@@ -1,3 +1,4 @@
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: ["class"],
@@ -37,7 +38,7 @@ module.exports = {
           teal: 'hsl(var(--wonderwhiz-teal))',
           'light-blue': 'hsl(var(--wonderwhiz-light-blue))',
           gold: 'hsl(var(--wonderwhiz-gold))',
-          dark: '#20053D', // Added the missing color definition here
+          dark: '#20053D',
         },
         primary: {
           DEFAULT: "hsl(var(--primary))",
@@ -157,6 +158,8 @@ module.exports = {
       fontFamily: {
         'nunito': ['Nunito', 'sans-serif'],
         'inter': ['Inter', 'sans-serif'],
+        'baloo': ['"Baloo 2"', 'sans-serif'],
+        'lexend': ['Lexend Deca', 'sans-serif'], // Adding the missing lexend font definition
       }
     },
   },

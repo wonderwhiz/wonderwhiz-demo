@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -66,7 +67,9 @@ export default {
           cyan: '#00E2FF',
           'blue-accent': '#4A6FFF',
           green: '#00D68F',
-          orange: '#FF8A3D'
+          orange: '#FF8A3D',
+          teal: '#00CED1',
+          'light-blue': '#87CEFA'
         },
         sidebar: {
           DEFAULT: 'hsl(var(--sidebar-background))',
