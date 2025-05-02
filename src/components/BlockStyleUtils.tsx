@@ -1,40 +1,39 @@
-
 export const getBackgroundColor = (colorVariant: number): string => {
   switch (colorVariant) {
     case 0:
-      return 'bg-gradient-to-br from-wonderwhiz-deep-purple/40 to-wonderwhiz-light-purple/50 hover:from-wonderwhiz-deep-purple/50 hover:to-wonderwhiz-light-purple/60 transition-all duration-300';  // Primary purples
+      return 'bg-gradient-to-br from-wonderwhiz-deep-purple/50 to-wonderwhiz-light-purple/60 hover:from-wonderwhiz-deep-purple/60 hover:to-wonderwhiz-light-purple/70 transition-all duration-300';  // Primary purples
     case 1:
-      return 'bg-gradient-to-br from-wonderwhiz-bright-pink/30 to-wonderwhiz-blue-accent/20 hover:from-wonderwhiz-bright-pink/40 hover:to-wonderwhiz-blue-accent/30 transition-all duration-300';   // Pink to blue
+      return 'bg-gradient-to-br from-wonderwhiz-bright-pink/40 to-wonderwhiz-blue-accent/30 hover:from-wonderwhiz-bright-pink/50 hover:to-wonderwhiz-blue-accent/40 transition-all duration-300';   // Pink to blue
     case 2:
-      return 'bg-gradient-to-br from-wonderwhiz-cyan/30 to-wonderwhiz-green/20 hover:from-wonderwhiz-cyan/40 hover:to-wonderwhiz-green/30 transition-all duration-300';   // Cyan to green
+      return 'bg-gradient-to-br from-wonderwhiz-cyan/40 to-wonderwhiz-green/30 hover:from-wonderwhiz-cyan/50 hover:to-wonderwhiz-green/40 transition-all duration-300';   // Cyan to green
     case 3:
-      return 'bg-gradient-to-br from-wonderwhiz-blue-accent/30 to-wonderwhiz-deep-purple/40 hover:from-wonderwhiz-blue-accent/40 hover:to-wonderwhiz-deep-purple/50 transition-all duration-300';  // Blue to purple
+      return 'bg-gradient-to-br from-wonderwhiz-blue-accent/40 to-wonderwhiz-deep-purple/50 hover:from-wonderwhiz-blue-accent/50 hover:to-wonderwhiz-deep-purple/60 transition-all duration-300';  // Blue to purple
     case 4:
-      return 'bg-gradient-to-br from-wonderwhiz-vibrant-yellow/30 to-wonderwhiz-orange/20 hover:from-wonderwhiz-vibrant-yellow/40 hover:to-wonderwhiz-orange/30 transition-all duration-300';  // Yellow to orange
+      return 'bg-gradient-to-br from-wonderwhiz-vibrant-yellow/40 to-wonderwhiz-orange/30 hover:from-wonderwhiz-vibrant-yellow/50 hover:to-wonderwhiz-orange/40 transition-all duration-300';  // Yellow to orange
     default:
-      return 'bg-gradient-to-br from-wonderwhiz-deep-purple/40 to-wonderwhiz-light-purple/50 hover:from-wonderwhiz-deep-purple/50 hover:to-wonderwhiz-light-purple/60 transition-all duration-300';
+      return 'bg-gradient-to-br from-wonderwhiz-deep-purple/50 to-wonderwhiz-light-purple/60 hover:from-wonderwhiz-deep-purple/60 hover:to-wonderwhiz-light-purple/70 transition-all duration-300';
   }
 };
 
 export const getBorderColor = (colorVariant: number): string => {
   switch (colorVariant) {
     case 0:
-      return 'border-wonderwhiz-light-purple/50';
+      return 'border-wonderwhiz-light-purple/60';
     case 1:
-      return 'border-wonderwhiz-bright-pink/40';
+      return 'border-wonderwhiz-bright-pink/50';
     case 2:
-      return 'border-wonderwhiz-cyan/40';
+      return 'border-wonderwhiz-cyan/50';
     case 3:
-      return 'border-wonderwhiz-blue-accent/40';
+      return 'border-wonderwhiz-blue-accent/50';
     case 4:
-      return 'border-wonderwhiz-vibrant-yellow/40';
+      return 'border-wonderwhiz-vibrant-yellow/50';
     default:
-      return 'border-wonderwhiz-light-purple/50';
+      return 'border-wonderwhiz-light-purple/60';
   }
 };
 
 export const getTextColor = (): string => {
-  return 'text-white/95';  // Bright text for better readability
+  return 'text-white';  // Ensure maximum contrast with darker backgrounds
 };
 
 // Added new utility to get color for block content based on type

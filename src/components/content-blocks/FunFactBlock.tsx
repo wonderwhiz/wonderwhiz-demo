@@ -48,11 +48,11 @@ const FunFactBlock: React.FC<FunFactBlockProps> = ({
       animate="visible"
       whileHover="hover"
       variants={blockAnimations.entrance}
-      className="relative overflow-hidden rounded-2xl border-2 border-white/15"
+      className="relative overflow-hidden rounded-2xl border-2 border-white/20"
       style={{ 
-        background: 'linear-gradient(to bottom right, rgba(255, 213, 79, 0.25), rgba(60, 60, 60, 0.2))',
+        background: 'linear-gradient(to bottom right, rgba(255, 213, 79, 0.45), rgba(60, 60, 60, 0.5))',
         backdropFilter: 'blur(16px)',
-        boxShadow: '0 8px 32px -2px rgba(0,0,0,0.3), 0 0 20px -4px rgba(255,213,79,0.45)'
+        boxShadow: '0 8px 32px -2px rgba(0,0,0,0.4), 0 0 20px -4px rgba(255,213,79,0.6)'
       }}
     >
       <motion.div 
@@ -64,24 +64,28 @@ const FunFactBlock: React.FC<FunFactBlockProps> = ({
         <BlockAccent type="funFact" childAge={childAge} />
       </motion.div>
       
-      <BlockHeader type={getHeader()} specialistId={specialistId} childAge={childAge} />
+      <BlockHeader 
+        type={getHeader()} 
+        specialistId={specialistId} 
+        childAge={childAge} 
+      />
       
       <div className="p-5">
         <motion.div 
           className="flex gap-3 items-start"
           variants={pulseAnimation}
         >
-          <div className="bg-wonderwhiz-vibrant-yellow/30 p-2.5 rounded-full flex-shrink-0 mt-1 shadow-lg shadow-wonderwhiz-vibrant-yellow/30 border border-wonderwhiz-vibrant-yellow/40">
+          <div className="bg-wonderwhiz-vibrant-yellow/40 p-2.5 rounded-full flex-shrink-0 mt-1 shadow-lg shadow-wonderwhiz-vibrant-yellow/40 border border-wonderwhiz-vibrant-yellow/50">
             <Lightbulb className="h-5 w-5 text-wonderwhiz-vibrant-yellow" />
           </div>
           <div>
-            <p className={`text-white/95 ${textSize} font-nunito leading-relaxed`}>
+            <p className={`text-white ${textSize} font-nunito leading-relaxed`}>
               {fact}
             </p>
             
             {childAge <= 8 && (
               <motion.div 
-                className="mt-4 bg-white/10 border border-white/20 rounded-xl p-3 text-white/90 text-sm"
+                className="mt-4 bg-white/15 border border-white/25 rounded-xl p-3 text-white text-sm"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
@@ -112,7 +116,7 @@ const FunFactBlock: React.FC<FunFactBlockProps> = ({
           {Array.from({ length: 5 }).map((_, i) => (
             <motion.div
               key={i}
-              className="absolute w-2 h-2 rounded-full bg-wonderwhiz-vibrant-yellow/30"
+              className="absolute w-2 h-2 rounded-full bg-wonderwhiz-vibrant-yellow/40"
               initial={{ 
                 x: Math.random() * 100 + '%', 
                 y: Math.random() * 100 + '%', 

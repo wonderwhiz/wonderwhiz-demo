@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageCircle, Bookmark, Share2, ThumbsUp, Volume2 } from 'lucide-react';
@@ -211,17 +210,17 @@ const SimplifiedContentBlock: React.FC<SimplifiedContentBlockProps> = ({
   // Get the appropriate glow effect based on block type
   const getBlockGlow = () => {
     switch (block.type) {
-      case 'fact': return '0 8px 28px -2px rgba(0,0,0,0.3), 0 0 20px -3px rgba(0,226,255,0.35)';
-      case 'funFact': return '0 8px 28px -2px rgba(0,0,0,0.3), 0 0 20px -3px rgba(255,213,79,0.35)';
-      case 'quiz': return '0 8px 28px -2px rgba(0,0,0,0.3), 0 0 20px -3px rgba(255,91,163,0.35)';
-      case 'creative': return '0 8px 28px -2px rgba(0,0,0,0.3), 0 0 20px -3px rgba(0,214,143,0.35)';
-      case 'mindfulness': return '0 8px 28px -2px rgba(0,0,0,0.3), 0 0 20px -3px rgba(126,48,225,0.35)';
-      case 'flashcard': return '0 8px 28px -2px rgba(0,0,0,0.3), 0 0 20px -3px rgba(79,174,255,0.35)';
-      case 'task': return '0 8px 28px -2px rgba(0,0,0,0.3), 0 0 20px -3px rgba(255,150,79,0.35)';
-      case 'news': return '0 8px 28px -2px rgba(0,0,0,0.3), 0 0 20px -3px rgba(79,217,255,0.35)';
-      case 'riddle': return '0 8px 28px -2px rgba(0,0,0,0.3), 0 0 20px -3px rgba(79,255,195,0.35)';
-      case 'activity': return '0 8px 28px -2px rgba(0,0,0,0.3), 0 0 20px -3px rgba(255,213,79,0.35)';
-      default: return '0 8px 28px -2px rgba(0,0,0,0.3), 0 0 15px -3px rgba(74,111,255,0.35)';
+      case 'fact': return '0 8px 28px -2px rgba(0,0,0,0.4), 0 0 20px -3px rgba(0,226,255,0.5)';
+      case 'funFact': return '0 8px 28px -2px rgba(0,0,0,0.4), 0 0 20px -3px rgba(255,213,79,0.5)';
+      case 'quiz': return '0 8px 28px -2px rgba(0,0,0,0.4), 0 0 20px -3px rgba(255,91,163,0.5)';
+      case 'creative': return '0 8px 28px -2px rgba(0,0,0,0.4), 0 0 20px -3px rgba(0,214,143,0.5)';
+      case 'mindfulness': return '0 8px 28px -2px rgba(0,0,0,0.4), 0 0 20px -3px rgba(126,48,225,0.5)';
+      case 'flashcard': return '0 8px 28px -2px rgba(0,0,0,0.4), 0 0 20px -3px rgba(79,174,255,0.5)';
+      case 'task': return '0 8px 28px -2px rgba(0,0,0,0.4), 0 0 20px -3px rgba(255,150,79,0.5)';
+      case 'news': return '0 8px 28px -2px rgba(0,0,0,0.4), 0 0 20px -3px rgba(79,217,255,0.5)';
+      case 'riddle': return '0 8px 28px -2px rgba(0,0,0,0.4), 0 0 20px -3px rgba(79,255,195,0.5)';
+      case 'activity': return '0 8px 28px -2px rgba(0,0,0,0.4), 0 0 20px -3px rgba(255,213,79,0.5)';
+      default: return '0 8px 28px -2px rgba(0,0,0,0.4), 0 0 15px -3px rgba(74,111,255,0.5)';
     }
   };
   
@@ -233,7 +232,7 @@ const SimplifiedContentBlock: React.FC<SimplifiedContentBlockProps> = ({
       className={`mb-8 rounded-xl overflow-hidden backdrop-blur-lg bg-gradient-to-b ${getSpecialistGradient(specialistId)} border ${getSpecialistAccent(specialistId)}`}
       style={{ 
         boxShadow: getBlockGlow(),
-        background: 'linear-gradient(to bottom right, rgba(128, 128, 128, 0.2), rgba(60, 60, 60, 0.2))',
+        background: 'linear-gradient(to bottom right, rgba(128, 128, 128, 0.4), rgba(40, 40, 40, 0.5))',
         backdropFilter: 'blur(10px)'
       }}
       whileHover={{ scale: 1.01 }}

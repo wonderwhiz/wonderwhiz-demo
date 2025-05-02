@@ -1,22 +1,21 @@
-
 import { cva } from 'class-variance-authority';
 import { ContentBlockType } from '@/types/curio';
 
 export const blockContainer = cva(
-  "p-6 rounded-2xl shadow-2xl backdrop-blur-xl border border-white/15 transition-all duration-500 group relative overflow-hidden",
+  "p-6 rounded-2xl shadow-2xl backdrop-blur-xl border border-white/20 transition-all duration-500 group relative overflow-hidden",
   {
     variants: {
       type: {
-        fact: "bg-gradient-to-br from-wonderwhiz-cyan/30 via-wonderwhiz-blue/20 to-transparent border-wonderwhiz-cyan/30 hover:border-wonderwhiz-cyan/40 hover:shadow-[0_8px_30px_rgba(0,0,0,0.25),0_0_20px_rgba(0,226,255,0.25)] transform-gpu hover:translate-y-[-2px]",
-        quiz: "bg-gradient-to-br from-wonderwhiz-bright-pink/30 via-wonderwhiz-purple/20 to-transparent border-wonderwhiz-bright-pink/30 hover:border-wonderwhiz-bright-pink/40 hover:shadow-[0_8px_30px_rgba(0,0,0,0.25),0_0_20px_rgba(255,91,163,0.25)] transform-gpu hover:translate-y-[-2px]",
-        flashcard: "bg-gradient-to-br from-wonderwhiz-vibrant-yellow/30 via-wonderwhiz-orange/20 to-transparent border-wonderwhiz-vibrant-yellow/30 hover:border-wonderwhiz-vibrant-yellow/40 hover:shadow-[0_8px_30px_rgba(0,0,0,0.25),0_0_20px_rgba(255,213,79,0.25)] transform-gpu hover:translate-y-[-2px]",
-        creative: "bg-gradient-to-br from-wonderwhiz-green/30 via-wonderwhiz-cyan/20 to-transparent border-wonderwhiz-green/30 hover:border-wonderwhiz-green/40 hover:shadow-[0_8px_30px_rgba(0,0,0,0.25),0_0_20px_rgba(0,214,143,0.25)] transform-gpu hover:translate-y-[-2px]",
-        task: "bg-gradient-to-br from-wonderwhiz-orange/30 via-wonderwhiz-vibrant-yellow/20 to-transparent border-wonderwhiz-orange/30 hover:border-wonderwhiz-orange/40 hover:shadow-[0_8px_30px_rgba(0,0,0,0.25),0_0_20px_rgba(255,150,79,0.25)] transform-gpu hover:translate-y-[-2px]",
-        news: "bg-gradient-to-br from-wonderwhiz-blue-accent/30 via-wonderwhiz-cyan/20 to-transparent border-wonderwhiz-blue-accent/30 hover:border-wonderwhiz-blue-accent/40 hover:shadow-[0_8px_30px_rgba(0,0,0,0.25),0_0_20px_rgba(79,217,255,0.25)] transform-gpu hover:translate-y-[-2px]",
-        riddle: "bg-gradient-to-br from-wonderwhiz-purple/30 via-wonderwhiz-bright-pink/20 to-transparent border-wonderwhiz-purple/30 hover:border-wonderwhiz-purple/40 hover:shadow-[0_8px_30px_rgba(0,0,0,0.25),0_0_20px_rgba(79,255,195,0.25)] transform-gpu hover:translate-y-[-2px]",
-        funFact: "bg-gradient-to-br from-wonderwhiz-vibrant-yellow/30 via-wonderwhiz-orange/20 to-transparent border-wonderwhiz-vibrant-yellow/30 hover:border-wonderwhiz-vibrant-yellow/40 hover:shadow-[0_8px_30px_rgba(0,0,0,0.25),0_0_20px_rgba(255,213,79,0.25)] transform-gpu hover:translate-y-[-2px] animate-pulse-soft",
-        activity: "bg-gradient-to-br from-wonderwhiz-green/30 via-wonderwhiz-cyan/20 to-transparent border-wonderwhiz-green/30 hover:border-wonderwhiz-green/40 hover:shadow-[0_8px_30px_rgba(0,0,0,0.25),0_0_20px_rgba(0,214,143,0.25)] transform-gpu hover:translate-y-[-2px]",
-        mindfulness: "bg-gradient-to-br from-wonderwhiz-purple/30 via-wonderwhiz-blue/20 to-transparent border-wonderwhiz-purple/30 hover:border-wonderwhiz-purple/40 hover:shadow-[0_8px_30px_rgba(0,0,0,0.25),0_0_20px_rgba(126,48,225,0.25)] transform-gpu hover:translate-y-[-2px]"
+        fact: "bg-gradient-to-br from-wonderwhiz-cyan/45 via-wonderwhiz-blue/35 to-transparent border-wonderwhiz-cyan/40 hover:border-wonderwhiz-cyan/50 hover:shadow-[0_8px_30px_rgba(0,0,0,0.3),0_0_20px_rgba(0,226,255,0.35)] transform-gpu hover:translate-y-[-2px]",
+        quiz: "bg-gradient-to-br from-wonderwhiz-bright-pink/45 via-wonderwhiz-purple/35 to-transparent border-wonderwhiz-bright-pink/40 hover:border-wonderwhiz-bright-pink/50 hover:shadow-[0_8px_30px_rgba(0,0,0,0.3),0_0_20px_rgba(255,91,163,0.35)] transform-gpu hover:translate-y-[-2px]",
+        flashcard: "bg-gradient-to-br from-wonderwhiz-vibrant-yellow/45 via-wonderwhiz-orange/35 to-transparent border-wonderwhiz-vibrant-yellow/40 hover:border-wonderwhiz-vibrant-yellow/50 hover:shadow-[0_8px_30px_rgba(0,0,0,0.3),0_0_20px_rgba(255,213,79,0.35)] transform-gpu hover:translate-y-[-2px]",
+        creative: "bg-gradient-to-br from-wonderwhiz-green/45 via-wonderwhiz-cyan/35 to-transparent border-wonderwhiz-green/40 hover:border-wonderwhiz-green/50 hover:shadow-[0_8px_30px_rgba(0,0,0,0.3),0_0_20px_rgba(0,214,143,0.35)] transform-gpu hover:translate-y-[-2px]",
+        task: "bg-gradient-to-br from-wonderwhiz-orange/45 via-wonderwhiz-vibrant-yellow/35 to-transparent border-wonderwhiz-orange/40 hover:border-wonderwhiz-orange/50 hover:shadow-[0_8px_30px_rgba(0,0,0,0.3),0_0_20px_rgba(255,150,79,0.35)] transform-gpu hover:translate-y-[-2px]",
+        news: "bg-gradient-to-br from-wonderwhiz-blue-accent/45 via-wonderwhiz-cyan/35 to-transparent border-wonderwhiz-blue-accent/40 hover:border-wonderwhiz-blue-accent/50 hover:shadow-[0_8px_30px_rgba(0,0,0,0.3),0_0_20px_rgba(79,217,255,0.35)] transform-gpu hover:translate-y-[-2px]",
+        riddle: "bg-gradient-to-br from-wonderwhiz-purple/45 via-wonderwhiz-bright-pink/35 to-transparent border-wonderwhiz-purple/40 hover:border-wonderwhiz-purple/50 hover:shadow-[0_8px_30px_rgba(0,0,0,0.3),0_0_20px_rgba(79,255,195,0.35)] transform-gpu hover:translate-y-[-2px]",
+        funFact: "bg-gradient-to-br from-wonderwhiz-vibrant-yellow/45 via-wonderwhiz-orange/35 to-transparent border-wonderwhiz-vibrant-yellow/40 hover:border-wonderwhiz-vibrant-yellow/50 hover:shadow-[0_8px_30px_rgba(0,0,0,0.3),0_0_20px_rgba(255,213,79,0.35)] transform-gpu hover:translate-y-[-2px] animate-pulse-soft",
+        activity: "bg-gradient-to-br from-wonderwhiz-green/45 via-wonderwhiz-cyan/35 to-transparent border-wonderwhiz-green/40 hover:border-wonderwhiz-green/50 hover:shadow-[0_8px_30px_rgba(0,0,0,0.3),0_0_20px_rgba(0,214,143,0.35)] transform-gpu hover:translate-y-[-2px]",
+        mindfulness: "bg-gradient-to-br from-wonderwhiz-purple/45 via-wonderwhiz-blue/35 to-transparent border-wonderwhiz-purple/40 hover:border-wonderwhiz-purple/50 hover:shadow-[0_8px_30px_rgba(0,0,0,0.3),0_0_20px_rgba(126,48,225,0.35)] transform-gpu hover:translate-y-[-2px]"
       },
       childAge: {
         young: "text-xl leading-relaxed space-y-6 p-8 [&_button]:text-lg [&_button]:p-4 [&_img]:rounded-2xl before:absolute before:inset-0 before:bg-gradient-to-r before:from-white/5 before:to-transparent before:opacity-0 before:transition-opacity before:duration-500 hover:before:opacity-100",
@@ -130,21 +129,21 @@ export const pulseAnimation = {
 
 // The shift to a more dynamic and sophisticated interaction pattern for blocks
 export const getModernBlockStyle = (type: ContentBlockType, childAge: number = 10) => {
-  const baseClasses = "rounded-2xl overflow-hidden backdrop-filter backdrop-blur-xl border transition-all duration-300 flex flex-col";
+  const baseClasses = "rounded-2xl overflow-hidden backdrop-filter backdrop-blur-xl border-2 transition-all duration-300 flex flex-col";
   
   const intensityByAge = childAge <= 7 ? 3 : childAge <= 11 ? 2 : 1;
   
   const typeStyles = {
-    fact: `${baseClasses} bg-gradient-to-br from-wonderwhiz-cyan/30 via-wonderwhiz-blue/20 to-transparent border-wonderwhiz-cyan/50 hover:shadow-[0_12px_36px_rgba(0,226,255,0.35)] hover:border-wonderwhiz-cyan/70`,
-    quiz: `${baseClasses} bg-gradient-to-br from-wonderwhiz-bright-pink/30 via-wonderwhiz-purple/20 to-transparent border-wonderwhiz-bright-pink/50 hover:shadow-[0_12px_36px_rgba(255,91,163,0.35)] hover:border-wonderwhiz-bright-pink/70`,
-    flashcard: `${baseClasses} bg-gradient-to-br from-wonderwhiz-vibrant-yellow/30 via-wonderwhiz-orange/20 to-transparent border-wonderwhiz-vibrant-yellow/50 hover:shadow-[0_12px_36px_rgba(255,213,79,0.35)] hover:border-wonderwhiz-vibrant-yellow/70`,
-    creative: `${baseClasses} bg-gradient-to-br from-wonderwhiz-green/30 via-wonderwhiz-cyan/20 to-transparent border-wonderwhiz-green/50 hover:shadow-[0_12px_36px_rgba(0,214,143,0.35)] hover:border-wonderwhiz-green/70`,
-    task: `${baseClasses} bg-gradient-to-br from-wonderwhiz-orange/30 via-wonderwhiz-vibrant-yellow/20 to-transparent border-wonderwhiz-orange/50 hover:shadow-[0_12px_36px_rgba(255,150,79,0.35)] hover:border-wonderwhiz-orange/70`,
-    news: `${baseClasses} bg-gradient-to-br from-wonderwhiz-blue-accent/30 via-wonderwhiz-cyan/20 to-transparent border-wonderwhiz-blue-accent/50 hover:shadow-[0_12px_36px_rgba(79,217,255,0.35)] hover:border-wonderwhiz-blue-accent/70`,
-    riddle: `${baseClasses} bg-gradient-to-br from-wonderwhiz-purple/30 via-wonderwhiz-bright-pink/20 to-transparent border-wonderwhiz-purple/50 hover:shadow-[0_12px_36px_rgba(126,48,225,0.35)] hover:border-wonderwhiz-purple/70`,
-    funFact: `${baseClasses} bg-gradient-to-br from-wonderwhiz-vibrant-yellow/30 via-wonderwhiz-orange/20 to-transparent border-wonderwhiz-vibrant-yellow/50 hover:shadow-[0_12px_36px_rgba(255,213,79,0.35)] hover:border-wonderwhiz-vibrant-yellow/70`,
-    activity: `${baseClasses} bg-gradient-to-br from-wonderwhiz-green/30 via-wonderwhiz-cyan/20 to-transparent border-wonderwhiz-green/50 hover:shadow-[0_12px_36px_rgba(0,214,143,0.35)] hover:border-wonderwhiz-green/70`,
-    mindfulness: `${baseClasses} bg-gradient-to-br from-wonderwhiz-purple/30 via-wonderwhiz-blue/20 to-transparent border-wonderwhiz-purple/50 hover:shadow-[0_12px_36px_rgba(126,48,225,0.35)] hover:border-wonderwhiz-purple/70`
+    fact: `${baseClasses} bg-gradient-to-br from-wonderwhiz-cyan/45 via-wonderwhiz-blue/35 to-transparent border-wonderwhiz-cyan/60 hover:shadow-[0_12px_36px_rgba(0,0,0,0.35)] hover:border-wonderwhiz-cyan/80`,
+    quiz: `${baseClasses} bg-gradient-to-br from-wonderwhiz-bright-pink/45 via-wonderwhiz-purple/35 to-transparent border-wonderwhiz-bright-pink/60 hover:shadow-[0_12px_36px_rgba(0,0,0,0.35)] hover:border-wonderwhiz-bright-pink/80`,
+    flashcard: `${baseClasses} bg-gradient-to-br from-wonderwhiz-vibrant-yellow/45 via-wonderwhiz-orange/35 to-transparent border-wonderwhiz-vibrant-yellow/60 hover:shadow-[0_12px_36px_rgba(0,0,0,0.35)] hover:border-wonderwhiz-vibrant-yellow/80`,
+    creative: `${baseClasses} bg-gradient-to-br from-wonderwhiz-green/45 via-wonderwhiz-cyan/35 to-transparent border-wonderwhiz-green/60 hover:shadow-[0_12px_36px_rgba(0,0,0,0.35)] hover:border-wonderwhiz-green/80`,
+    task: `${baseClasses} bg-gradient-to-br from-wonderwhiz-orange/45 via-wonderwhiz-vibrant-yellow/35 to-transparent border-wonderwhiz-orange/60 hover:shadow-[0_12px_36px_rgba(0,0,0,0.35)] hover:border-wonderwhiz-orange/80`,
+    news: `${baseClasses} bg-gradient-to-br from-wonderwhiz-blue-accent/45 via-wonderwhiz-cyan/35 to-transparent border-wonderwhiz-blue-accent/60 hover:shadow-[0_12px_36px_rgba(0,0,0,0.35)] hover:border-wonderwhiz-blue-accent/80`,
+    riddle: `${baseClasses} bg-gradient-to-br from-wonderwhiz-purple/45 via-wonderwhiz-bright-pink/35 to-transparent border-wonderwhiz-purple/60 hover:shadow-[0_12px_36px_rgba(0,0,0,0.35)] hover:border-wonderwhiz-purple/80`,
+    funFact: `${baseClasses} bg-gradient-to-br from-wonderwhiz-vibrant-yellow/45 via-wonderwhiz-orange/35 to-transparent border-wonderwhiz-vibrant-yellow/60 hover:shadow-[0_12px_36px_rgba(0,0,0,0.35)] hover:border-wonderwhiz-vibrant-yellow/80`,
+    activity: `${baseClasses} bg-gradient-to-br from-wonderwhiz-green/45 via-wonderwhiz-cyan/35 to-transparent border-wonderwhiz-green/60 hover:shadow-[0_12px_36px_rgba(0,0,0,0.35)] hover:border-wonderwhiz-green/80`,
+    mindfulness: `${baseClasses} bg-gradient-to-br from-wonderwhiz-purple/45 via-wonderwhiz-blue/35 to-transparent border-wonderwhiz-purple/60 hover:shadow-[0_12px_36px_rgba(0,0,0,0.35)] hover:border-wonderwhiz-purple/80`
   };
 
   return typeStyles[type] || typeStyles.fact;
