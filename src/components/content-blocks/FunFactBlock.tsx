@@ -46,7 +46,8 @@ const FunFactBlock: React.FC<FunFactBlockProps> = ({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="relative overflow-hidden bg-gradient-to-br from-pink-500/30 to-yellow-500/30 rounded-lg border border-white/15 shadow-xl"
+      className="relative overflow-hidden bg-gradient-to-br from-purple-500/30 to-blue-500/20 rounded-lg border border-white/15 shadow-xl"
+      style={{ boxShadow: '0 6px 20px -2px rgba(0,0,0,0.25), 0 0 15px -3px rgba(255,213,79,0.35)' }}
     >
       {/* Add the accent icon */}
       <div className="absolute top-0 right-0">

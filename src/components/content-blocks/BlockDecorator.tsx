@@ -51,33 +51,33 @@ const BlockDecorator: React.FC<BlockDecoratorProps> = ({
 
   const getInnerGlow = () => {
     switch (type) {
-      case 'fact': return 'inset 0 0 20px 0px rgba(0,226,255,0.08)';
-      case 'quiz': return 'inset 0 0 20px 0px rgba(255,91,163,0.08)';
-      case 'creative': return 'inset 0 0 20px 0px rgba(0,214,143,0.08)';
-      case 'funFact': return 'inset 0 0 20px 0px rgba(255,213,79,0.08)';
-      case 'mindfulness': return 'inset 0 0 20px 0px rgba(126,48,225,0.08)';
-      case 'flashcard': return 'inset 0 0 20px 0px rgba(79,174,255,0.08)';
-      case 'task': return 'inset 0 0 20px 0px rgba(255,150,79,0.08)';
-      case 'news': return 'inset 0 0 20px 0px rgba(79,217,255,0.08)';
-      case 'riddle': return 'inset 0 0 20px 0px rgba(79,255,195,0.08)';
-      case 'activity': return 'inset 0 0 20px 0px rgba(255,213,79,0.08)';
-      default: return 'inset 0 0 20px 0px rgba(0,157,255,0.08)';
+      case 'fact': return 'inset 0 0 20px 0px rgba(0,226,255,0.15)';
+      case 'quiz': return 'inset 0 0 20px 0px rgba(255,91,163,0.15)';
+      case 'creative': return 'inset 0 0 20px 0px rgba(0,214,143,0.15)';
+      case 'funFact': return 'inset 0 0 20px 0px rgba(255,213,79,0.15)';
+      case 'mindfulness': return 'inset 0 0 20px 0px rgba(126,48,225,0.15)';
+      case 'flashcard': return 'inset 0 0 20px 0px rgba(79,174,255,0.15)';
+      case 'task': return 'inset 0 0 20px 0px rgba(255,150,79,0.15)';
+      case 'news': return 'inset 0 0 20px 0px rgba(79,217,255,0.15)';
+      case 'riddle': return 'inset 0 0 20px 0px rgba(79,255,195,0.15)';
+      case 'activity': return 'inset 0 0 20px 0px rgba(255,213,79,0.15)';
+      default: return 'inset 0 0 20px 0px rgba(0,157,255,0.15)';
     }
   };
   
   const getOuterShadow = () => {
     switch (type) {
-      case 'fact': return '0 4px 20px -2px rgba(0,0,0,0.2), 0 0 15px -3px rgba(0,226,255,0.1)';
-      case 'quiz': return '0 4px 20px -2px rgba(0,0,0,0.2), 0 0 15px -3px rgba(255,91,163,0.1)';
-      case 'creative': return '0 4px 20px -2px rgba(0,0,0,0.2), 0 0 15px -3px rgba(0,214,143,0.1)';
-      case 'funFact': return '0 4px 20px -2px rgba(0,0,0,0.2), 0 0 15px -3px rgba(255,213,79,0.1)';
-      case 'mindfulness': return '0 4px 20px -2px rgba(0,0,0,0.2), 0 0 15px -3px rgba(126,48,225,0.1)';
-      case 'flashcard': return '0 4px 20px -2px rgba(0,0,0,0.2), 0 0 15px -3px rgba(79,174,255,0.1)';
-      case 'task': return '0 4px 20px -2px rgba(0,0,0,0.2), 0 0 15px -3px rgba(255,150,79,0.1)';
-      case 'news': return '0 4px 20px -2px rgba(0,0,0,0.2), 0 0 15px -3px rgba(79,217,255,0.1)';
-      case 'riddle': return '0 4px 20px -2px rgba(0,0,0,0.2), 0 0 15px -3px rgba(79,255,195,0.1)';
-      case 'activity': return '0 4px 20px -2px rgba(0,0,0,0.2), 0 0 15px -3px rgba(255,213,79,0.1)';
-      default: return '0 4px 20px -2px rgba(0,0,0,0.2), 0 0 15px -3px rgba(0,157,255,0.1)';
+      case 'fact': return '0 8px 30px -2px rgba(0,0,0,0.25), 0 0 15px -3px rgba(0,226,255,0.25)';
+      case 'quiz': return '0 8px 30px -2px rgba(0,0,0,0.25), 0 0 15px -3px rgba(255,91,163,0.25)';
+      case 'creative': return '0 8px 30px -2px rgba(0,0,0,0.25), 0 0 15px -3px rgba(0,214,143,0.25)';
+      case 'funFact': return '0 8px 30px -2px rgba(0,0,0,0.25), 0 0 15px -3px rgba(255,213,79,0.25)';
+      case 'mindfulness': return '0 8px 30px -2px rgba(0,0,0,0.25), 0 0 15px -3px rgba(126,48,225,0.25)';
+      case 'flashcard': return '0 8px 30px -2px rgba(0,0,0,0.25), 0 0 15px -3px rgba(79,174,255,0.25)';
+      case 'task': return '0 8px 30px -2px rgba(0,0,0,0.25), 0 0 15px -3px rgba(255,150,79,0.25)';
+      case 'news': return '0 8px 30px -2px rgba(0,0,0,0.25), 0 0 15px -3px rgba(79,217,255,0.25)';
+      case 'riddle': return '0 8px 30px -2px rgba(0,0,0,0.25), 0 0 15px -3px rgba(79,255,195,0.25)';
+      case 'activity': return '0 8px 30px -2px rgba(0,0,0,0.25), 0 0 15px -3px rgba(255,213,79,0.25)';
+      default: return '0 8px 30px -2px rgba(0,0,0,0.25), 0 0 15px -3px rgba(0,157,255,0.25)';
     }
   };
 
@@ -85,9 +85,9 @@ const BlockDecorator: React.FC<BlockDecoratorProps> = ({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
+      transition={{ duration: 0.5 }}
       className={cn(
-        'rounded-xl backdrop-blur-md border p-5 relative overflow-hidden',
+        'rounded-xl backdrop-blur-md border-2 p-5 relative overflow-hidden',
         `bg-gradient-to-br ${getAccentColor()}`,
         'shadow-lg hover:shadow-xl transition-all duration-300',
         className
@@ -96,6 +96,7 @@ const BlockDecorator: React.FC<BlockDecoratorProps> = ({
         boxShadow: `${getOuterShadow()}, ${getInnerGlow()}`,
         backdropFilter: 'blur(10px)'
       }}
+      whileHover={{ scale: 1.01 }}
       whileTap={{ scale: 0.995 }}
       role="article"
       aria-label={`${type} content block`}
@@ -129,14 +130,18 @@ const BlockDecorator: React.FC<BlockDecoratorProps> = ({
           {children}
         </div>
         
-        {/* Subtle background pattern for visual interest */}
+        {/* Enhanced background pattern for visual interest */}
         <div 
-          className="absolute inset-0 z-0 opacity-3 pointer-events-none"
+          className="absolute inset-0 z-0 opacity-5 pointer-events-none"
           style={{
-            backgroundImage: 'radial-gradient(circle at 25px 25px, rgba(255, 255, 255, 0.1) 2px, transparent 0)',
+            backgroundImage: 'radial-gradient(circle at 25px 25px, rgba(255, 255, 255, 0.2) 2px, transparent 0)',
             backgroundSize: '50px 50px'
           }}
         />
+        
+        {/* Add subtle ambient light effect */}
+        <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full bg-white/5 blur-3xl pointer-events-none"></div>
+        <div className="absolute -bottom-20 -left-20 w-40 h-40 rounded-full bg-white/5 blur-3xl pointer-events-none"></div>
       </div>
     </motion.div>
   );

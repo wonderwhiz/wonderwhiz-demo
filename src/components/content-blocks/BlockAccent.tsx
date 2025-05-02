@@ -87,7 +87,6 @@ const BlockAccent: React.FC<BlockAccentProps> = ({
       case 'news':
         return <Newspaper className={iconSize} />;
       case 'riddle':
-        // Using Brain icon for riddles
         return <Brain className={iconSize} />;
       case 'activity':
         return <Dumbbell className={iconSize} />;

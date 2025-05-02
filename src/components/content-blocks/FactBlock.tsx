@@ -71,6 +71,21 @@ const FactBlock: React.FC<FactBlockProps> = ({
     }
   };
   
+  // Get block-specific styling
+  const getBlockGradient = () => {
+    if (isFunFact) {
+      return 'bg-gradient-to-br from-yellow-500/30 via-amber-500/20 to-transparent';
+    }
+    return 'bg-gradient-to-br from-cyan-500/30 via-blue-500/20 to-transparent';
+  };
+  
+  const getBlockGlow = () => {
+    if (isFunFact) {
+      return '0 6px 25px -2px rgba(0,0,0,0.25), 0 0 20px -3px rgba(255,213,79,0.3)';
+    }
+    return '0 6px 25px -2px rgba(0,0,0,0.25), 0 0 20px -3px rgba(0,226,255,0.3)';
+  };
+  
   // Determine if we should show reading controls
   const showReadAloud = !!onReadAloud && (childAge <= 9 || childAge === undefined);
 
@@ -90,11 +105,14 @@ const FactBlock: React.FC<FactBlockProps> = ({
 
   return (
     <motion.div
-      className={blockContainer({ type: blockType, childAge: getAgeVariant() })}
+      className={`rounded-xl border border-white/15 hover:border-white/25 ${getBlockGradient()} p-5 shadow-xl relative overflow-hidden`}
+      style={{ boxShadow: getBlockGlow() }}
       variants={blockVariants}
       initial="initial"
       animate="animate"
       exit="exit"
+      whileHover={{ scale: 1.01 }}
+      transition={{ duration: 0.3 }}
     >
       <motion.div 
         variants={contentVariants}

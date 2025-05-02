@@ -22,31 +22,31 @@ interface SimplifiedContentBlockProps {
 const getSpecialistGradient = (specialistId: string) => {
   switch (specialistId) {
     case 'nova':
-      return 'from-blue-600/20 via-indigo-600/10 to-transparent';
+      return 'from-blue-600/40 via-indigo-600/20 to-transparent';
     case 'spark':
-      return 'from-amber-500/20 via-orange-500/10 to-transparent';
+      return 'from-amber-500/40 via-orange-500/20 to-transparent';
     case 'prism':
-      return 'from-indigo-600/20 via-purple-600/10 to-transparent';
+      return 'from-indigo-600/40 via-purple-600/20 to-transparent';
     case 'pixel':
-      return 'from-cyan-500/20 via-blue-500/10 to-transparent';
+      return 'from-cyan-500/40 via-blue-500/20 to-transparent';
     case 'atlas':
-      return 'from-amber-700/20 via-yellow-600/10 to-transparent';
+      return 'from-amber-700/40 via-yellow-600/20 to-transparent';
     case 'lotus':
-      return 'from-emerald-500/20 via-green-500/10 to-transparent';
+      return 'from-emerald-500/40 via-green-500/20 to-transparent';
     default:
-      return 'from-wonderwhiz-deep-purple/20 via-wonderwhiz-light-purple/10 to-transparent';
+      return 'from-wonderwhiz-deep-purple/40 via-wonderwhiz-light-purple/20 to-transparent';
   }
 };
 
 const getSpecialistAccent = (specialistId: string) => {
   switch (specialistId) {
-    case 'nova': return 'border-blue-600/20';
-    case 'spark': return 'border-orange-500/20';
-    case 'prism': return 'border-purple-600/20';
-    case 'pixel': return 'border-cyan-500/20';
-    case 'atlas': return 'border-amber-700/20';
-    case 'lotus': return 'border-emerald-500/20';
-    default: return 'border-wonderwhiz-deep-purple/20';
+    case 'nova': return 'border-blue-600/30';
+    case 'spark': return 'border-orange-500/30';
+    case 'prism': return 'border-purple-600/30';
+    case 'pixel': return 'border-cyan-500/30';
+    case 'atlas': return 'border-amber-700/30';
+    case 'lotus': return 'border-emerald-500/30';
+    default: return 'border-wonderwhiz-deep-purple/30';
   }
 };
 
@@ -208,12 +208,30 @@ const SimplifiedContentBlock: React.FC<SimplifiedContentBlockProps> = ({
     }
   };
   
+  // Get the appropriate glow effect based on block type
+  const getBlockGlow = () => {
+    switch (block.type) {
+      case 'fact': return '0 5px 25px -2px rgba(0,0,0,0.25), 0 0 20px -3px rgba(0,226,255,0.25)';
+      case 'funFact': return '0 5px 25px -2px rgba(0,0,0,0.25), 0 0 20px -3px rgba(255,213,79,0.25)';
+      case 'quiz': return '0 5px 25px -2px rgba(0,0,0,0.25), 0 0 20px -3px rgba(255,91,163,0.25)';
+      case 'creative': return '0 5px 25px -2px rgba(0,0,0,0.25), 0 0 20px -3px rgba(0,214,143,0.25)';
+      case 'mindfulness': return '0 5px 25px -2px rgba(0,0,0,0.25), 0 0 20px -3px rgba(126,48,225,0.25)';
+      case 'flashcard': return '0 5px 25px -2px rgba(0,0,0,0.25), 0 0 20px -3px rgba(79,174,255,0.25)';
+      case 'task': return '0 5px 25px -2px rgba(0,0,0,0.25), 0 0 20px -3px rgba(255,150,79,0.25)';
+      case 'news': return '0 5px 25px -2px rgba(0,0,0,0.25), 0 0 20px -3px rgba(79,217,255,0.25)';
+      case 'riddle': return '0 5px 25px -2px rgba(0,0,0,0.25), 0 0 20px -3px rgba(79,255,195,0.25)';
+      case 'activity': return '0 5px 25px -2px rgba(0,0,0,0.25), 0 0 20px -3px rgba(255,213,79,0.25)';
+      default: return '0 5px 25px -2px rgba(0,0,0,0.25), 0 0 15px -3px rgba(74,111,255,0.25)';
+    }
+  };
+  
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       className={`mb-8 rounded-xl overflow-hidden backdrop-blur-lg bg-gradient-to-b ${getSpecialistGradient(specialistId)} border ${getSpecialistAccent(specialistId)}`}
+      style={{ boxShadow: getBlockGlow() }}
       whileHover={{ scale: 1.01 }}
       whileTap={{ scale: 0.99 }}
       transition={{ type: "spring", stiffness: 400, damping: 30 }}
