@@ -37,6 +37,7 @@ module.exports = {
           teal: 'hsl(var(--wonderwhiz-teal))',
           'light-blue': 'hsl(var(--wonderwhiz-light-blue))',
           gold: 'hsl(var(--wonderwhiz-gold))',
+          dark: '#20053D', // Added the missing color definition here
         },
         primary: {
           DEFAULT: "hsl(var(--primary))",

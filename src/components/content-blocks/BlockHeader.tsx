@@ -9,6 +9,7 @@ export interface BlockHeaderProps {
   blockType?: string;
   narrativePosition?: 'beginning' | 'middle' | 'end';
   type: string;
+  childAge?: number; // Added childAge prop
 }
 
 const BlockHeader: React.FC<BlockHeaderProps> = ({
@@ -16,7 +17,8 @@ const BlockHeader: React.FC<BlockHeaderProps> = ({
   blockTitle,
   blockType,
   narrativePosition,
-  type
+  type,
+  childAge // Added childAge parameter
 }) => {
   const specialistName = getSpecialistName(specialistId);
   const specialistRole = getSpecialistRole(specialistId, type);

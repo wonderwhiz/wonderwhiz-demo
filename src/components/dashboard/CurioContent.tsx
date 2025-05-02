@@ -570,7 +570,7 @@ const CurioContent: React.FC<CurioContentProps> = ({
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)'
         }}
       >
-        {blocks.map((block, idx) => (
+        {contentBlocks.map((block, idx) => (
           <motion.div
             key={block.id || idx}
             initial={{ opacity: 0, y: 20 }}
