@@ -14,7 +14,8 @@ const BlockInteractions: React.FC<BlockInteractionsProps> = ({
   onToggleBookmark,
   setShowReplyForm,
   onRabbitHoleClick,
-  relatedQuestions = []
+  relatedQuestions = [],
+  childAge = 10
 }) => {
   // Handle reply differently in this wrapper to maintain backward compatibility
   const handleReply = setShowReplyForm ? (message: string) => {
@@ -36,6 +37,7 @@ const BlockInteractions: React.FC<BlockInteractionsProps> = ({
       onReply={handleReply}
       onRabbitHoleClick={onRabbitHoleClick}
       relatedQuestions={relatedQuestions}
+      childAge={childAge}
     />
   );
 };

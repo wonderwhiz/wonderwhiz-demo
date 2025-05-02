@@ -8,6 +8,7 @@ export interface BlockInteractionsProps {
   setShowReplyForm?: (show: boolean) => void;
   onRabbitHoleClick?: (question: string) => void;
   relatedQuestions?: string[];
+  childAge?: number;
 }
 
 export interface QuizBlockProps {
