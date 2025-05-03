@@ -1,66 +1,66 @@
 export const getBackgroundColor = (colorVariant: number): string => {
   switch (colorVariant) {
     case 0:
-      return 'bg-gradient-to-br from-wonderwhiz-deep-purple/50 to-wonderwhiz-light-purple/60 hover:from-wonderwhiz-deep-purple/60 hover:to-wonderwhiz-light-purple/70 transition-all duration-300';  // Primary purples
+      return 'bg-gradient-to-br from-[#3D2A7D]/50 to-[#2A1B5D]/60 hover:from-[#3D2A7D]/60 hover:to-[#2A1B5D]/70 transition-all duration-300';
     case 1:
-      return 'bg-gradient-to-br from-wonderwhiz-bright-pink/40 to-wonderwhiz-blue-accent/30 hover:from-wonderwhiz-bright-pink/50 hover:to-wonderwhiz-blue-accent/40 transition-all duration-300';   // Pink to blue
+      return 'bg-gradient-to-br from-[#FF5BA3]/40 to-[#4A6FFF]/30 hover:from-[#FF5BA3]/50 hover:to-[#4A6FFF]/40 transition-all duration-300';
     case 2:
-      return 'bg-gradient-to-br from-wonderwhiz-cyan/40 to-wonderwhiz-green/30 hover:from-wonderwhiz-cyan/50 hover:to-wonderwhiz-green/40 transition-all duration-300';   // Cyan to green
+      return 'bg-gradient-to-br from-[#00E2FF]/40 to-[#00D68F]/30 hover:from-[#00E2FF]/50 hover:to-[#00D68F]/40 transition-all duration-300';
     case 3:
-      return 'bg-gradient-to-br from-wonderwhiz-blue-accent/40 to-wonderwhiz-deep-purple/50 hover:from-wonderwhiz-blue-accent/50 hover:to-wonderwhiz-deep-purple/60 transition-all duration-300';  // Blue to purple
+      return 'bg-gradient-to-br from-[#4A6FFF]/40 to-[#3D2A7D]/50 hover:from-[#4A6FFF]/50 hover:to-[#3D2A7D]/60 transition-all duration-300';
     case 4:
-      return 'bg-gradient-to-br from-wonderwhiz-vibrant-yellow/40 to-wonderwhiz-orange/30 hover:from-wonderwhiz-vibrant-yellow/50 hover:to-wonderwhiz-orange/40 transition-all duration-300';  // Yellow to orange
+      return 'bg-gradient-to-br from-[#FFD54F]/40 to-[#FF8A3D]/30 hover:from-[#FFD54F]/50 hover:to-[#FF8A3D]/40 transition-all duration-300';
     default:
-      return 'bg-gradient-to-br from-wonderwhiz-deep-purple/50 to-wonderwhiz-light-purple/60 hover:from-wonderwhiz-deep-purple/60 hover:to-wonderwhiz-light-purple/70 transition-all duration-300';
+      return 'bg-gradient-to-br from-[#3D2A7D]/50 to-[#2A1B5D]/60 hover:from-[#3D2A7D]/60 hover:to-[#2A1B5D]/70 transition-all duration-300';
   }
 };
 
 export const getBorderColor = (colorVariant: number): string => {
   switch (colorVariant) {
     case 0:
-      return 'border-wonderwhiz-light-purple/60';
+      return 'border-[#3D2A7D]/60';
     case 1:
-      return 'border-wonderwhiz-bright-pink/50';
+      return 'border-[#FF5BA3]/50';
     case 2:
-      return 'border-wonderwhiz-cyan/50';
+      return 'border-[#00E2FF]/50';
     case 3:
-      return 'border-wonderwhiz-blue-accent/50';
+      return 'border-[#4A6FFF]/50';
     case 4:
-      return 'border-wonderwhiz-vibrant-yellow/50';
+      return 'border-[#FFD54F]/50';
     default:
-      return 'border-wonderwhiz-light-purple/60';
+      return 'border-[#3D2A7D]/60';
   }
 };
 
 export const getTextColor = (): string => {
-  return 'text-white';  // Ensure maximum contrast with darker backgrounds
+  return 'text-white';
 };
 
 // Added new utility to get color for block content based on type
 export const getBlockTypeColor = (blockType: string): string => {
   switch (blockType) {
     case 'fact':
-      return 'bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border-l-2 border-indigo-500/70';
+      return 'bg-gradient-to-r from-[#00E2FF]/10 to-[#4A6FFF]/10 border-l-2 border-[#00E2FF]/70';
     case 'quiz':
-      return 'bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border-l-2 border-emerald-500/70';
+      return 'bg-gradient-to-r from-[#00D68F]/10 to-[#00E2FF]/10 border-l-2 border-[#00D68F]/70';
     case 'flashcard':
-      return 'bg-gradient-to-r from-blue-500/10 to-sky-500/10 border-l-2 border-blue-500/70';
+      return 'bg-gradient-to-r from-[#4A6FFF]/10 to-[#00E2FF]/10 border-l-2 border-[#4A6FFF]/70';
     case 'creative':
-      return 'bg-gradient-to-r from-rose-500/10 to-pink-500/10 border-l-2 border-rose-500/70';
+      return 'bg-gradient-to-r from-[#FF5BA3]/10 to-[#FF5BA3]/10 border-l-2 border-[#FF5BA3]/70';
     case 'task':
-      return 'bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border-l-2 border-amber-500/70';
+      return 'bg-gradient-to-r from-[#FFD54F]/10 to-[#FF8A3D]/10 border-l-2 border-[#FFD54F]/70';
     case 'riddle':
-      return 'bg-gradient-to-r from-violet-500/10 to-purple-500/10 border-l-2 border-violet-500/70';
+      return 'bg-gradient-to-r from-[#3D2A7D]/10 to-[#FF5BA3]/10 border-l-2 border-[#3D2A7D]/70';
     case 'news':
-      return 'bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border-l-2 border-blue-500/70';
+      return 'bg-gradient-to-r from-[#4A6FFF]/10 to-[#00E2FF]/10 border-l-2 border-[#4A6FFF]/70';
     case 'activity':
-      return 'bg-gradient-to-r from-orange-500/10 to-amber-500/10 border-l-2 border-orange-500/70';
+      return 'bg-gradient-to-r from-[#FF8A3D]/10 to-[#FFD54F]/10 border-l-2 border-[#FF8A3D]/70';
     case 'mindfulness':
-      return 'bg-gradient-to-r from-teal-500/10 to-cyan-500/10 border-l-2 border-teal-500/70';
+      return 'bg-gradient-to-r from-[#00E2FF]/10 to-[#00D68F]/10 border-l-2 border-[#00E2FF]/70';
     case 'funFact':
-      return 'bg-gradient-to-r from-fuchsia-500/10 to-pink-500/10 border-l-2 border-fuchsia-500/70';
+      return 'bg-gradient-to-r from-[#FFD54F]/10 to-[#FF8A3D]/10 border-l-2 border-[#FFD54F]/70';
     default:
-      return 'bg-gradient-to-r from-gray-500/10 to-slate-500/10 border-l-2 border-gray-500/70';
+      return 'bg-gradient-to-r from-[#3D2A7D]/10 to-[#2A1B5D]/10 border-l-2 border-[#3D2A7D]/70';
   }
 };
 
@@ -87,19 +87,19 @@ export const getContextualImageStyle = (): string => {
 export const getSpecialistColor = (specialistId: string): string => {
   switch (specialistId) {
     case 'nova':
-      return 'from-wonderwhiz-blue-accent/30 to-wonderwhiz-deep-purple/40';
+      return 'from-[#4A6FFF]/30 to-[#3D2A7D]/40';
     case 'spark':
-      return 'from-wonderwhiz-bright-pink/30 to-wonderwhiz-orange/20';
+      return 'from-[#FF5BA3]/30 to-[#FF8A3D]/20';
     case 'prism':
-      return 'from-wonderwhiz-vibrant-yellow/30 to-wonderwhiz-bright-pink/20';
+      return 'from-[#FFD54F]/30 to-[#FF5BA3]/20';
     case 'pixel':
-      return 'from-wonderwhiz-cyan/30 to-wonderwhiz-blue-accent/20';
+      return 'from-[#00E2FF]/30 to-[#4A6FFF]/20';
     case 'atlas':
-      return 'from-wonderwhiz-green/30 to-wonderwhiz-cyan/20';
+      return 'from-[#00D68F]/30 to-[#00E2FF]/20';
     case 'lotus':
-      return 'from-wonderwhiz-light-purple/30 to-wonderwhiz-blue-accent/20';
+      return 'from-[#3D2A7D]/30 to-[#4A6FFF]/20';
     default:
-      return 'from-wonderwhiz-deep-purple/40 to-wonderwhiz-light-purple/50';
+      return 'from-[#2A1B5D]/40 to-[#3D2A7D]/50';
   }
 };
 

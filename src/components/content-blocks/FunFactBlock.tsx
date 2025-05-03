@@ -48,9 +48,9 @@ const FunFactBlock: React.FC<FunFactBlockProps> = ({
       animate="visible"
       whileHover="hover"
       variants={blockAnimations.entrance}
-      className="relative overflow-hidden rounded-2xl border-2 border-white/20"
+      className="relative overflow-hidden rounded-2xl border-2 border-[#FFD54F]/20"
       style={{ 
-        background: 'linear-gradient(to bottom right, rgba(255, 213, 79, 0.45), rgba(60, 60, 60, 0.5))',
+        background: 'linear-gradient(to bottom right, rgba(255, 213, 79, 0.45), rgba(35, 35, 35, 0.5))',
         backdropFilter: 'blur(16px)',
         boxShadow: '0 8px 32px -2px rgba(0,0,0,0.4), 0 0 20px -4px rgba(255,213,79,0.6)'
       }}
@@ -75,8 +75,8 @@ const FunFactBlock: React.FC<FunFactBlockProps> = ({
           className="flex gap-3 items-start"
           variants={pulseAnimation}
         >
-          <div className="bg-wonderwhiz-vibrant-yellow/40 p-2.5 rounded-full flex-shrink-0 mt-1 shadow-lg shadow-wonderwhiz-vibrant-yellow/40 border border-wonderwhiz-vibrant-yellow/50">
-            <Lightbulb className="h-5 w-5 text-wonderwhiz-vibrant-yellow" />
+          <div className="bg-[#FFD54F]/40 p-2.5 rounded-full flex-shrink-0 mt-1 shadow-lg shadow-[#FFD54F]/40 border border-[#FFD54F]/50">
+            <Lightbulb className="h-5 w-5 text-[#FFD54F]" />
           </div>
           <div>
             <p className={`text-white ${textSize} font-nunito leading-relaxed`}>
@@ -116,7 +116,7 @@ const FunFactBlock: React.FC<FunFactBlockProps> = ({
           {Array.from({ length: 5 }).map((_, i) => (
             <motion.div
               key={i}
-              className="absolute w-2 h-2 rounded-full bg-wonderwhiz-vibrant-yellow/40"
+              className="absolute w-2 h-2 rounded-full bg-[#FFD54F]/40"
               initial={{ 
                 x: Math.random() * 100 + '%', 
                 y: Math.random() * 100 + '%', 

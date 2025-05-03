@@ -162,7 +162,7 @@ module.exports = {
         'lexend': ['Lexend Deca', 'sans-serif'],
       },
       backgroundImage: {
-        'button-gradient': 'linear-gradient(90deg, #FF5EBA 0%, #FF8FD9 100%)',
+        'button-gradient': 'linear-gradient(90deg, #FF5BA3 0%, #FF5BA3 100%)',
       }
     },
   },

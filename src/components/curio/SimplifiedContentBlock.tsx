@@ -21,31 +21,31 @@ interface SimplifiedContentBlockProps {
 const getSpecialistGradient = (specialistId: string) => {
   switch (specialistId) {
     case 'nova':
-      return 'from-blue-600/40 via-indigo-600/20 to-transparent';
+      return 'from-[#4A6FFF]/40 via-[#00E2FF]/20 to-[#2A1B5D]/80';
     case 'spark':
-      return 'from-amber-500/40 via-orange-500/20 to-transparent';
+      return 'from-[#FFD54F]/40 via-[#FF8A3D]/20 to-[#2A1B5D]/80';
     case 'prism':
-      return 'from-indigo-600/40 via-purple-600/20 to-transparent';
+      return 'from-[#FF5BA3]/40 via-[#3D2A7D]/30 to-[#2A1B5D]/80';
     case 'pixel':
-      return 'from-cyan-500/40 via-blue-500/20 to-transparent';
+      return 'from-[#00E2FF]/40 via-[#4A6FFF]/20 to-[#2A1B5D]/80';
     case 'atlas':
-      return 'from-amber-700/40 via-yellow-600/20 to-transparent';
+      return 'from-[#FF8A3D]/40 via-[#FFD54F]/20 to-[#2A1B5D]/80';
     case 'lotus':
-      return 'from-emerald-500/40 via-green-500/20 to-transparent';
+      return 'from-[#00D68F]/40 via-[#00E2FF]/20 to-[#2A1B5D]/80';
     default:
-      return 'from-wonderwhiz-deep-purple/40 via-wonderwhiz-light-purple/20 to-transparent';
+      return 'from-[#3D2A7D]/40 via-[#2A1B5D]/60 to-[#2A1B5D]/80';
   }
 };
 
 const getSpecialistAccent = (specialistId: string) => {
   switch (specialistId) {
-    case 'nova': return 'border-blue-600/30';
-    case 'spark': return 'border-orange-500/30';
-    case 'prism': return 'border-purple-600/30';
-    case 'pixel': return 'border-cyan-500/30';
-    case 'atlas': return 'border-amber-700/30';
-    case 'lotus': return 'border-emerald-500/30';
-    default: return 'border-wonderwhiz-deep-purple/30';
+    case 'nova': return 'border-[#4A6FFF]/30';
+    case 'spark': return 'border-[#FF8A3D]/30';
+    case 'prism': return 'border-[#FF5BA3]/30';
+    case 'pixel': return 'border-[#00E2FF]/30';
+    case 'atlas': return 'border-[#FF8A3D]/30';
+    case 'lotus': return 'border-[#00D68F]/30';
+    default: return 'border-[#3D2A7D]/30';
   }
 };
 
@@ -214,11 +214,11 @@ const SimplifiedContentBlock: React.FC<SimplifiedContentBlockProps> = ({
       case 'funFact': return '0 8px 28px -2px rgba(0,0,0,0.4), 0 0 20px -3px rgba(255,213,79,0.5)';
       case 'quiz': return '0 8px 28px -2px rgba(0,0,0,0.4), 0 0 20px -3px rgba(255,91,163,0.5)';
       case 'creative': return '0 8px 28px -2px rgba(0,0,0,0.4), 0 0 20px -3px rgba(0,214,143,0.5)';
-      case 'mindfulness': return '0 8px 28px -2px rgba(0,0,0,0.4), 0 0 20px -3px rgba(126,48,225,0.5)';
-      case 'flashcard': return '0 8px 28px -2px rgba(0,0,0,0.4), 0 0 20px -3px rgba(79,174,255,0.5)';
-      case 'task': return '0 8px 28px -2px rgba(0,0,0,0.4), 0 0 20px -3px rgba(255,150,79,0.5)';
-      case 'news': return '0 8px 28px -2px rgba(0,0,0,0.4), 0 0 20px -3px rgba(79,217,255,0.5)';
-      case 'riddle': return '0 8px 28px -2px rgba(0,0,0,0.4), 0 0 20px -3px rgba(79,255,195,0.5)';
+      case 'mindfulness': return '0 8px 28px -2px rgba(0,0,0,0.4), 0 0 20px -3px rgba(61,42,125,0.5)';
+      case 'flashcard': return '0 8px 28px -2px rgba(0,0,0,0.4), 0 0 20px -3px rgba(74,111,255,0.5)';
+      case 'task': return '0 8px 28px -2px rgba(0,0,0,0.4), 0 0 20px -3px rgba(255,138,61,0.5)';
+      case 'news': return '0 8px 28px -2px rgba(0,0,0,0.4), 0 0 20px -3px rgba(0,226,255,0.5)';
+      case 'riddle': return '0 8px 28px -2px rgba(0,0,0,0.4), 0 0 20px -3px rgba(0,214,143,0.5)';
       case 'activity': return '0 8px 28px -2px rgba(0,0,0,0.4), 0 0 20px -3px rgba(255,213,79,0.5)';
       default: return '0 8px 28px -2px rgba(0,0,0,0.4), 0 0 15px -3px rgba(74,111,255,0.5)';
     }
@@ -232,8 +232,6 @@ const SimplifiedContentBlock: React.FC<SimplifiedContentBlockProps> = ({
       className={`mb-8 rounded-xl overflow-hidden backdrop-blur-lg bg-gradient-to-b ${getSpecialistGradient(specialistId)} border ${getSpecialistAccent(specialistId)}`}
       style={{ 
         boxShadow: getBlockGlow(),
-        background: 'linear-gradient(to bottom right, rgba(128, 128, 128, 0.4), rgba(40, 40, 40, 0.5))',
-        backdropFilter: 'blur(10px)'
       }}
       whileHover={{ scale: 1.01 }}
       whileTap={{ scale: 0.99 }}
