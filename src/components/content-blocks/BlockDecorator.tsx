@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -81,7 +80,7 @@ const BlockDecorator: React.FC<BlockDecoratorProps> = ({
       default: return '0 12px 36px -2px rgba(0,0,0,0.4), 0 0 20px -3px rgba(74,111,255,0.5)';
     }
   };
-
+  
   // Added 3D transform effect for modern look
   const get3DEffect = childAge <= 12 ? "hover:rotate-1 hover:translate-y-[-4px] perspective-1000" : "hover:translate-y-[-2px]";
 

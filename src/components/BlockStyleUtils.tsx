@@ -1,7 +1,7 @@
 export const getBackgroundColor = (colorVariant: number): string => {
   switch (colorVariant) {
     case 0:
-      return 'bg-gradient-to-br from-[#3D2A7D]/50 to-[#2A1B5D]/60 hover:from-[#3D2A7D]/60 hover:to-[#2A1B5D]/70 transition-all duration-300';
+      return 'bg-gradient-to-br from-[#3D2A7D]/80 to-[#2A1B5D]/90 hover:from-[#3D2A7D]/90 hover:to-[#2A1B5D]/95 transition-all duration-300';
     case 1:
       return 'bg-gradient-to-br from-[#FF5BA3]/40 to-[#4A6FFF]/30 hover:from-[#FF5BA3]/50 hover:to-[#4A6FFF]/40 transition-all duration-300';
     case 2:
@@ -11,7 +11,7 @@ export const getBackgroundColor = (colorVariant: number): string => {
     case 4:
       return 'bg-gradient-to-br from-[#FFD54F]/40 to-[#FF8A3D]/30 hover:from-[#FFD54F]/50 hover:to-[#FF8A3D]/40 transition-all duration-300';
     default:
-      return 'bg-gradient-to-br from-[#3D2A7D]/50 to-[#2A1B5D]/60 hover:from-[#3D2A7D]/60 hover:to-[#2A1B5D]/70 transition-all duration-300';
+      return 'bg-gradient-to-br from-[#3D2A7D]/80 to-[#2A1B5D]/90 hover:from-[#3D2A7D]/90 hover:to-[#2A1B5D]/95 transition-all duration-300';
   }
 };
 
@@ -99,7 +99,7 @@ export const getSpecialistColor = (specialistId: string): string => {
     case 'lotus':
       return 'from-[#3D2A7D]/30 to-[#4A6FFF]/20';
     default:
-      return 'from-[#2A1B5D]/40 to-[#3D2A7D]/50';
+      return 'from-[#2A1B5D]/80 to-[#3D2A7D]/90';
   }
 };
 

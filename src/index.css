@@ -119,7 +119,7 @@
 
 @layer components {
   .jelly-button {
-    @apply rounded-full bg-button-gradient px-8 py-3 text-white font-bold shadow-lg transition-all hover:scale-105 active:scale-95;
+    @apply rounded-full bg-gradient-to-r from-[#FF5BA3] to-[#FF5BA3] px-8 py-3 text-white font-bold shadow-lg transition-all hover:scale-105 active:scale-95;
   }
   
   .star-sparkle {
