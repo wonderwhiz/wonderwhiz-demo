@@ -24,7 +24,7 @@ export function useEnhancedBlockInteractions(childId?: string) {
   const enhancedReplyHandler = async (blockId: string, message: string) => {
     if (!message.trim()) {
       toast.error('Please enter a message first');
-      return;
+      return false;
     }
     
     toast.loading('Sending your reply...', {

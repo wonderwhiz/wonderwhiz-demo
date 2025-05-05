@@ -6,6 +6,7 @@ import { BlockInteractionsProps } from './interfaces';
 import { ContentBlockType, isValidContentBlockType } from '@/types/curio';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 // Enhanced version of BlockInteractions with improved visuals for 2025 design standards
 const EnhancedBlockInteractions: React.FC<BlockInteractionsProps> = ({
@@ -82,21 +83,21 @@ const EnhancedBlockInteractions: React.FC<BlockInteractionsProps> = ({
         };
       case 'news': 
         return { 
-          primary: 'text-wonderwhiz-light-blue bg-wonderwhiz-light-blue/10 hover:bg-wonderwhiz-light-blue/20', 
-          hover: 'hover:text-wonderwhiz-light-blue hover:bg-wonderwhiz-light-blue/10',
-          border: 'border-wonderwhiz-light-blue/30 hover:border-wonderwhiz-light-blue/50'
+          primary: 'text-wonderwhiz-cyan bg-wonderwhiz-cyan/10 hover:bg-wonderwhiz-cyan/20', 
+          hover: 'hover:text-wonderwhiz-cyan hover:bg-wonderwhiz-cyan/10',
+          border: 'border-wonderwhiz-cyan/30 hover:border-wonderwhiz-cyan/50'
         };
       case 'riddle': 
         return { 
-          primary: 'text-wonderwhiz-teal bg-wonderwhiz-teal/10 hover:bg-wonderwhiz-teal/20', 
-          hover: 'hover:text-wonderwhiz-teal hover:bg-wonderwhiz-teal/10',
-          border: 'border-wonderwhiz-teal/30 hover:border-wonderwhiz-teal/50'
+          primary: 'text-wonderwhiz-green bg-wonderwhiz-green/10 hover:bg-wonderwhiz-green/20', 
+          hover: 'hover:text-wonderwhiz-green hover:bg-wonderwhiz-green/10',
+          border: 'border-wonderwhiz-green/30 hover:border-wonderwhiz-green/50'
         };
       case 'activity': 
         return { 
-          primary: 'text-wonderwhiz-gold bg-wonderwhiz-gold/10 hover:bg-wonderwhiz-gold/20', 
-          hover: 'hover:text-wonderwhiz-gold hover:bg-wonderwhiz-gold/10',
-          border: 'border-wonderwhiz-gold/30 hover:border-wonderwhiz-gold/50'
+          primary: 'text-wonderwhiz-vibrant-yellow bg-wonderwhiz-vibrant-yellow/10 hover:bg-wonderwhiz-vibrant-yellow/20', 
+          hover: 'hover:text-wonderwhiz-vibrant-yellow hover:bg-wonderwhiz-vibrant-yellow/10',
+          border: 'border-wonderwhiz-vibrant-yellow/30 hover:border-wonderwhiz-vibrant-yellow/50'
         };
       default: 
         return { 
@@ -108,6 +109,50 @@ const EnhancedBlockInteractions: React.FC<BlockInteractionsProps> = ({
   };
 
   const colorClasses = getTypeColorClasses();
+
+  const handleRabbitHoleClick = (question: string) => {
+    if (onRabbitHoleClick) {
+      onRabbitHoleClick(question);
+    } else {
+      toast.info(`Exploring "${question}"...`, {
+        duration: 2000
+      });
+    }
+  };
+
+  const handleReplyClick = () => {
+    if (setShowReplyForm) {
+      setShowReplyForm(true);
+    } else if (onReply) {
+      onReply("");
+    } else {
+      toast.info('Reply feature coming soon!', {
+        duration: 2000
+      });
+    }
+  };
+
+  const handleLikeClick = () => {
+    if (onToggleLike) {
+      onToggleLike();
+    } else {
+      toast.success(liked ? 'Content unliked' : 'Content liked!', {
+        icon: '👍',
+        duration: 2000
+      });
+    }
+  };
+
+  const handleBookmarkClick = () => {
+    if (onToggleBookmark) {
+      onToggleBookmark();
+    } else {
+      toast.success(bookmarked ? 'Removed from saved items' : 'Content saved!', {
+        icon: '🔖',
+        duration: 2000
+      });
+    }
+  };
 
   return (
     <motion.div 
@@ -127,7 +172,7 @@ const EnhancedBlockInteractions: React.FC<BlockInteractionsProps> = ({
             <Button
               variant="ghost"
               size="sm"
-              onClick={onToggleLike}
+              onClick={handleLikeClick}
               className={cn(
                 getButtonStyle(),
                 liked ? "text-wonderwhiz-bright-pink bg-wonderwhiz-bright-pink/10" : "text-white/70 hover:text-white hover:bg-white/10",
@@ -150,7 +195,7 @@ const EnhancedBlockInteractions: React.FC<BlockInteractionsProps> = ({
             <Button
               variant="ghost"
               size="sm"
-              onClick={onToggleBookmark}
+              onClick={handleBookmarkClick}
               className={cn(
                 getButtonStyle(),
                 bookmarked ? "text-wonderwhiz-vibrant-yellow bg-wonderwhiz-vibrant-yellow/10" : "text-white/70 hover:text-white hover:bg-white/10",
@@ -168,29 +213,27 @@ const EnhancedBlockInteractions: React.FC<BlockInteractionsProps> = ({
             </Button>
           </motion.div>
 
-          {setShowReplyForm && (
-            <motion.div
-              variants={buttonVariants}
-              initial="initial"
-              whileHover="hover"
-              whileTap="tap"
+          <motion.div
+            variants={buttonVariants}
+            initial="initial"
+            whileHover="hover"
+            whileTap="tap"
+          >
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleReplyClick}
+              className={cn(
+                getButtonStyle(),
+                "text-white/70 hover:text-white hover:bg-white/10 transition-all duration-300"
+              )}
             >
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowReplyForm(true)}
-                className={cn(
-                  getButtonStyle(),
-                  "text-white/70 hover:text-white hover:bg-white/10 transition-all duration-300"
-                )}
-              >
-                <MessageCircle className="h-4 w-4" />
-                <span className={childAge <= 12 ? "" : "sr-only md:not-sr-only"}>
-                  {childAge <= 8 ? "Reply!" : "Reply"}
-                </span>
-              </Button>
-            </motion.div>
-          )}
+              <MessageCircle className="h-4 w-4" />
+              <span className={childAge <= 12 ? "" : "sr-only md:not-sr-only"}>
+                {childAge <= 8 ? "Reply!" : "Reply"}
+              </span>
+            </Button>
+          </motion.div>
         </div>
 
         <motion.div
@@ -222,7 +265,7 @@ const EnhancedBlockInteractions: React.FC<BlockInteractionsProps> = ({
               key={index}
               whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => onRabbitHoleClick(question)}
+              onClick={() => handleRabbitHoleClick(question)}
               className={`flex items-center gap-1.5 px-3 py-2 bg-white/10 rounded-full text-xs text-white/80 
                 transition-all duration-300 shadow-lg hover:shadow-xl border border-white/10 
                 ${colorClasses.hover} ${colorClasses.border}`}
@@ -238,39 +281,14 @@ const EnhancedBlockInteractions: React.FC<BlockInteractionsProps> = ({
 };
 
 // This component wraps the EnhancedBlockInteractions component for backward compatibility
-const BlockInteractions: React.FC<BlockInteractionsProps> = ({
-  id,
-  liked = false,
-  bookmarked = false,
-  type,
-  onToggleLike,
-  onToggleBookmark,
-  setShowReplyForm,
-  onRabbitHoleClick,
-  relatedQuestions = [],
-  childAge = 10
-}) => {
-  // Handle reply differently in this wrapper to maintain backward compatibility
-  const handleReply = setShowReplyForm ? (message: string) => {
-    setShowReplyForm(true);
-  } : undefined;
-
+const BlockInteractions: React.FC<BlockInteractionsProps> = (props) => {
   // Ensure type is a valid ContentBlockType
-  const validType = isValidContentBlockType(type) ? type as ContentBlockType : "fact" as ContentBlockType;
+  const validType = isValidContentBlockType(props.type) ? props.type as ContentBlockType : "fact" as ContentBlockType;
 
   return (
     <EnhancedBlockInteractions
-      id={id}
-      liked={liked}
-      bookmarked={bookmarked}
+      {...props}
       type={validType}
-      onToggleLike={onToggleLike}
-      onToggleBookmark={onToggleBookmark}
-      onReply={handleReply}
-      onRabbitHoleClick={onRabbitHoleClick}
-      relatedQuestions={relatedQuestions}
-      childAge={childAge}
-      setShowReplyForm={setShowReplyForm}
     />
   );
 };
