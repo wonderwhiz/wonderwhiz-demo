@@ -1,34 +1,35 @@
+
 export const getBackgroundColor = (colorVariant: number): string => {
   switch (colorVariant) {
     case 0:
-      return 'bg-gradient-to-br from-[#3D2A7D]/80 to-[#2A1B5D]/90 hover:from-[#3D2A7D]/90 hover:to-[#2A1B5D]/95 transition-all duration-300';
+      return 'bg-gradient-to-br from-wonderwhiz-light-purple/80 to-wonderwhiz-deep-purple/90 hover:from-wonderwhiz-light-purple/90 hover:to-wonderwhiz-deep-purple/95 transition-all duration-300';
     case 1:
-      return 'bg-gradient-to-br from-[#FF5BA3]/40 to-[#4A6FFF]/30 hover:from-[#FF5BA3]/50 hover:to-[#4A6FFF]/40 transition-all duration-300';
+      return 'bg-gradient-to-br from-wonderwhiz-bright-pink/40 to-wonderwhiz-blue-accent/30 hover:from-wonderwhiz-bright-pink/50 hover:to-wonderwhiz-blue-accent/40 transition-all duration-300';
     case 2:
-      return 'bg-gradient-to-br from-[#00E2FF]/40 to-[#00D68F]/30 hover:from-[#00E2FF]/50 hover:to-[#00D68F]/40 transition-all duration-300';
+      return 'bg-gradient-to-br from-wonderwhiz-cyan/40 to-wonderwhiz-green/30 hover:from-wonderwhiz-cyan/50 hover:to-wonderwhiz-green/40 transition-all duration-300';
     case 3:
-      return 'bg-gradient-to-br from-[#4A6FFF]/40 to-[#3D2A7D]/50 hover:from-[#4A6FFF]/50 hover:to-[#3D2A7D]/60 transition-all duration-300';
+      return 'bg-gradient-to-br from-wonderwhiz-blue-accent/40 to-wonderwhiz-light-purple/50 hover:from-wonderwhiz-blue-accent/50 hover:to-wonderwhiz-light-purple/60 transition-all duration-300';
     case 4:
-      return 'bg-gradient-to-br from-[#FFD54F]/40 to-[#FF8A3D]/30 hover:from-[#FFD54F]/50 hover:to-[#FF8A3D]/40 transition-all duration-300';
+      return 'bg-gradient-to-br from-wonderwhiz-vibrant-yellow/40 to-wonderwhiz-orange/30 hover:from-wonderwhiz-vibrant-yellow/50 hover:to-wonderwhiz-orange/40 transition-all duration-300';
     default:
-      return 'bg-gradient-to-br from-[#3D2A7D]/80 to-[#2A1B5D]/90 hover:from-[#3D2A7D]/90 hover:to-[#2A1B5D]/95 transition-all duration-300';
+      return 'bg-gradient-to-br from-wonderwhiz-light-purple/80 to-wonderwhiz-deep-purple/90 hover:from-wonderwhiz-light-purple/90 hover:to-wonderwhiz-deep-purple/95 transition-all duration-300';
   }
 };
 
 export const getBorderColor = (colorVariant: number): string => {
   switch (colorVariant) {
     case 0:
-      return 'border-[#3D2A7D]/60';
+      return 'border-wonderwhiz-light-purple/60';
     case 1:
-      return 'border-[#FF5BA3]/50';
+      return 'border-wonderwhiz-bright-pink/50';
     case 2:
-      return 'border-[#00E2FF]/50';
+      return 'border-wonderwhiz-cyan/50';
     case 3:
-      return 'border-[#4A6FFF]/50';
+      return 'border-wonderwhiz-blue-accent/50';
     case 4:
-      return 'border-[#FFD54F]/50';
+      return 'border-wonderwhiz-vibrant-yellow/50';
     default:
-      return 'border-[#3D2A7D]/60';
+      return 'border-wonderwhiz-light-purple/60';
   }
 };
 
@@ -40,27 +41,27 @@ export const getTextColor = (): string => {
 export const getBlockTypeColor = (blockType: string): string => {
   switch (blockType) {
     case 'fact':
-      return 'bg-gradient-to-r from-[#00E2FF]/10 to-[#4A6FFF]/10 border-l-2 border-[#00E2FF]/70';
+      return 'bg-gradient-to-r from-wonderwhiz-cyan/10 to-wonderwhiz-blue-accent/10 border-l-2 border-wonderwhiz-cyan/70';
     case 'quiz':
-      return 'bg-gradient-to-r from-[#00D68F]/10 to-[#00E2FF]/10 border-l-2 border-[#00D68F]/70';
+      return 'bg-gradient-to-r from-wonderwhiz-green/10 to-wonderwhiz-cyan/10 border-l-2 border-wonderwhiz-green/70';
     case 'flashcard':
-      return 'bg-gradient-to-r from-[#4A6FFF]/10 to-[#00E2FF]/10 border-l-2 border-[#4A6FFF]/70';
+      return 'bg-gradient-to-r from-wonderwhiz-blue-accent/10 to-wonderwhiz-cyan/10 border-l-2 border-wonderwhiz-blue-accent/70';
     case 'creative':
-      return 'bg-gradient-to-r from-[#FF5BA3]/10 to-[#FF5BA3]/10 border-l-2 border-[#FF5BA3]/70';
+      return 'bg-gradient-to-r from-wonderwhiz-bright-pink/10 to-wonderwhiz-bright-pink/10 border-l-2 border-wonderwhiz-bright-pink/70';
     case 'task':
-      return 'bg-gradient-to-r from-[#FFD54F]/10 to-[#FF8A3D]/10 border-l-2 border-[#FFD54F]/70';
+      return 'bg-gradient-to-r from-wonderwhiz-vibrant-yellow/10 to-wonderwhiz-orange/10 border-l-2 border-wonderwhiz-vibrant-yellow/70';
     case 'riddle':
-      return 'bg-gradient-to-r from-[#3D2A7D]/10 to-[#FF5BA3]/10 border-l-2 border-[#3D2A7D]/70';
+      return 'bg-gradient-to-r from-wonderwhiz-light-purple/10 to-wonderwhiz-bright-pink/10 border-l-2 border-wonderwhiz-light-purple/70';
     case 'news':
-      return 'bg-gradient-to-r from-[#4A6FFF]/10 to-[#00E2FF]/10 border-l-2 border-[#4A6FFF]/70';
+      return 'bg-gradient-to-r from-wonderwhiz-blue-accent/10 to-wonderwhiz-cyan/10 border-l-2 border-wonderwhiz-blue-accent/70';
     case 'activity':
-      return 'bg-gradient-to-r from-[#FF8A3D]/10 to-[#FFD54F]/10 border-l-2 border-[#FF8A3D]/70';
+      return 'bg-gradient-to-r from-wonderwhiz-orange/10 to-wonderwhiz-vibrant-yellow/10 border-l-2 border-wonderwhiz-orange/70';
     case 'mindfulness':
-      return 'bg-gradient-to-r from-[#00E2FF]/10 to-[#00D68F]/10 border-l-2 border-[#00E2FF]/70';
+      return 'bg-gradient-to-r from-wonderwhiz-cyan/10 to-wonderwhiz-green/10 border-l-2 border-wonderwhiz-cyan/70';
     case 'funFact':
-      return 'bg-gradient-to-r from-[#FFD54F]/10 to-[#FF8A3D]/10 border-l-2 border-[#FFD54F]/70';
+      return 'bg-gradient-to-r from-wonderwhiz-vibrant-yellow/10 to-wonderwhiz-orange/10 border-l-2 border-wonderwhiz-vibrant-yellow/70';
     default:
-      return 'bg-gradient-to-r from-[#3D2A7D]/10 to-[#2A1B5D]/10 border-l-2 border-[#3D2A7D]/70';
+      return 'bg-gradient-to-r from-wonderwhiz-light-purple/10 to-wonderwhiz-deep-purple/10 border-l-2 border-wonderwhiz-light-purple/70';
   }
 };
 
@@ -87,19 +88,19 @@ export const getContextualImageStyle = (): string => {
 export const getSpecialistColor = (specialistId: string): string => {
   switch (specialistId) {
     case 'nova':
-      return 'from-[#4A6FFF]/30 to-[#3D2A7D]/40';
+      return 'from-wonderwhiz-blue-accent/30 to-wonderwhiz-light-purple/40';
     case 'spark':
-      return 'from-[#FF5BA3]/30 to-[#FF8A3D]/20';
+      return 'from-wonderwhiz-bright-pink/30 to-wonderwhiz-orange/20';
     case 'prism':
-      return 'from-[#FFD54F]/30 to-[#FF5BA3]/20';
+      return 'from-wonderwhiz-vibrant-yellow/30 to-wonderwhiz-bright-pink/20';
     case 'pixel':
-      return 'from-[#00E2FF]/30 to-[#4A6FFF]/20';
+      return 'from-wonderwhiz-cyan/30 to-wonderwhiz-blue-accent/20';
     case 'atlas':
-      return 'from-[#00D68F]/30 to-[#00E2FF]/20';
+      return 'from-wonderwhiz-green/30 to-wonderwhiz-cyan/20';
     case 'lotus':
-      return 'from-[#3D2A7D]/30 to-[#4A6FFF]/20';
+      return 'from-wonderwhiz-light-purple/30 to-wonderwhiz-blue-accent/20';
     default:
-      return 'from-[#2A1B5D]/80 to-[#3D2A7D]/90';
+      return 'from-wonderwhiz-deep-purple/80 to-wonderwhiz-light-purple/90';
   }
 };
 
@@ -115,18 +116,18 @@ export const getAnimatedGradient = (): string => {
 export const getHoverAnimation = (blockType: string): string => {
   switch (blockType) {
     case 'fact':
-      return 'hover:shadow-[0_0_15px_rgba(139,92,246,0.3)] hover:border-indigo-400/70 transition-all duration-300';
+      return 'hover:shadow-[0_0_15px_rgba(0,226,255,0.3)] hover:border-wonderwhiz-cyan/70 transition-all duration-300';
     case 'quiz':
-      return 'hover:shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:border-emerald-400/70 transition-all duration-300';
+      return 'hover:shadow-[0_0_15px_rgba(255,91,163,0.3)] hover:border-wonderwhiz-bright-pink/70 transition-all duration-300';
     case 'flashcard':
-      return 'hover:shadow-[0_0_15px_rgba(59,130,246,0.3)] hover:border-blue-400/70 transition-all duration-300';
+      return 'hover:shadow-[0_0_15px_rgba(74,111,255,0.3)] hover:border-wonderwhiz-blue-accent/70 transition-all duration-300';
     case 'creative':
-      return 'hover:shadow-[0_0_15px_rgba(244,63,94,0.3)] hover:border-rose-400/70 transition-all duration-300';
+      return 'hover:shadow-[0_0_15px_rgba(0,214,143,0.3)] hover:border-wonderwhiz-green/70 transition-all duration-300';
     case 'task':
-      return 'hover:shadow-[0_0_15px_rgba(245,158,11,0.3)] hover:border-amber-400/70 transition-all duration-300';
+      return 'hover:shadow-[0_0_15px_rgba(255,138,61,0.3)] hover:border-wonderwhiz-orange/70 transition-all duration-300';
     case 'news':
-      return 'hover:shadow-[0_0_15px_rgba(37,99,235,0.3)] hover:border-blue-400/70 transition-all duration-300';
+      return 'hover:shadow-[0_0_15px_rgba(0,226,255,0.3)] hover:border-wonderwhiz-cyan/70 transition-all duration-300';
     default:
-      return 'hover:shadow-[0_0_15px_rgba(139,92,246,0.3)] hover:border-violet-400/70 transition-all duration-300';
+      return 'hover:shadow-[0_0_15px_rgba(126,48,225,0.3)] hover:border-wonderwhiz-purple/70 transition-all duration-300';
   }
 };

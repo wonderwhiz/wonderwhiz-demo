@@ -35,25 +35,79 @@ const EnhancedBlockInteractions: React.FC<BlockInteractionsProps> = ({
     tap: { scale: 0.95 }
   };
 
-  // Get color theme based on content type
-  const getTypeColorScheme = () => {
+  // Get predefined color classes based on content type
+  const getTypeColorClasses = () => {
     switch (type) {
-      case 'fact': return { primary: 'wonderwhiz-cyan', hover: 'cyan-400' };
-      case 'quiz': return { primary: 'wonderwhiz-bright-pink', hover: 'pink-400' };
-      case 'creative': return { primary: 'wonderwhiz-green', hover: 'green-400' };
-      case 'funFact': return { primary: 'wonderwhiz-vibrant-yellow', hover: 'yellow-400' };
-      case 'mindfulness': return { primary: 'wonderwhiz-purple', hover: 'purple-400' };
-      case 'flashcard': return { primary: 'wonderwhiz-blue-accent', hover: 'blue-400' };
-      case 'task': return { primary: 'wonderwhiz-orange', hover: 'orange-400' };
-      case 'news': return { primary: 'wonderwhiz-light-blue', hover: 'sky-400' };
-      case 'riddle': return { primary: 'wonderwhiz-teal', hover: 'teal-400' };
-      case 'activity': return { primary: 'wonderwhiz-gold', hover: 'amber-400' };
-      default: return { primary: 'wonderwhiz-blue', hover: 'blue-400' };
+      case 'fact': 
+        return { 
+          primary: 'text-wonderwhiz-cyan bg-wonderwhiz-cyan/10 hover:bg-wonderwhiz-cyan/20',
+          hover: 'hover:text-wonderwhiz-cyan hover:bg-wonderwhiz-cyan/10',
+          border: 'border-wonderwhiz-cyan/30 hover:border-wonderwhiz-cyan/50'
+        };
+      case 'quiz': 
+        return { 
+          primary: 'text-wonderwhiz-bright-pink bg-wonderwhiz-bright-pink/10 hover:bg-wonderwhiz-bright-pink/20', 
+          hover: 'hover:text-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/10',
+          border: 'border-wonderwhiz-bright-pink/30 hover:border-wonderwhiz-bright-pink/50'
+        };
+      case 'creative': 
+        return { 
+          primary: 'text-wonderwhiz-green bg-wonderwhiz-green/10 hover:bg-wonderwhiz-green/20', 
+          hover: 'hover:text-wonderwhiz-green hover:bg-wonderwhiz-green/10',
+          border: 'border-wonderwhiz-green/30 hover:border-wonderwhiz-green/50'
+        };
+      case 'funFact': 
+        return { 
+          primary: 'text-wonderwhiz-vibrant-yellow bg-wonderwhiz-vibrant-yellow/10 hover:bg-wonderwhiz-vibrant-yellow/20', 
+          hover: 'hover:text-wonderwhiz-vibrant-yellow hover:bg-wonderwhiz-vibrant-yellow/10',
+          border: 'border-wonderwhiz-vibrant-yellow/30 hover:border-wonderwhiz-vibrant-yellow/50'
+        };
+      case 'mindfulness': 
+        return { 
+          primary: 'text-wonderwhiz-purple bg-wonderwhiz-purple/10 hover:bg-wonderwhiz-purple/20', 
+          hover: 'hover:text-wonderwhiz-purple hover:bg-wonderwhiz-purple/10',
+          border: 'border-wonderwhiz-purple/30 hover:border-wonderwhiz-purple/50'
+        };
+      case 'flashcard': 
+        return { 
+          primary: 'text-wonderwhiz-blue-accent bg-wonderwhiz-blue-accent/10 hover:bg-wonderwhiz-blue-accent/20', 
+          hover: 'hover:text-wonderwhiz-blue-accent hover:bg-wonderwhiz-blue-accent/10',
+          border: 'border-wonderwhiz-blue-accent/30 hover:border-wonderwhiz-blue-accent/50'
+        };
+      case 'task': 
+        return { 
+          primary: 'text-wonderwhiz-orange bg-wonderwhiz-orange/10 hover:bg-wonderwhiz-orange/20', 
+          hover: 'hover:text-wonderwhiz-orange hover:bg-wonderwhiz-orange/10',
+          border: 'border-wonderwhiz-orange/30 hover:border-wonderwhiz-orange/50'
+        };
+      case 'news': 
+        return { 
+          primary: 'text-wonderwhiz-light-blue bg-wonderwhiz-light-blue/10 hover:bg-wonderwhiz-light-blue/20', 
+          hover: 'hover:text-wonderwhiz-light-blue hover:bg-wonderwhiz-light-blue/10',
+          border: 'border-wonderwhiz-light-blue/30 hover:border-wonderwhiz-light-blue/50'
+        };
+      case 'riddle': 
+        return { 
+          primary: 'text-wonderwhiz-teal bg-wonderwhiz-teal/10 hover:bg-wonderwhiz-teal/20', 
+          hover: 'hover:text-wonderwhiz-teal hover:bg-wonderwhiz-teal/10',
+          border: 'border-wonderwhiz-teal/30 hover:border-wonderwhiz-teal/50'
+        };
+      case 'activity': 
+        return { 
+          primary: 'text-wonderwhiz-gold bg-wonderwhiz-gold/10 hover:bg-wonderwhiz-gold/20', 
+          hover: 'hover:text-wonderwhiz-gold hover:bg-wonderwhiz-gold/10',
+          border: 'border-wonderwhiz-gold/30 hover:border-wonderwhiz-gold/50'
+        };
+      default: 
+        return { 
+          primary: 'text-wonderwhiz-blue-accent bg-wonderwhiz-blue-accent/10 hover:bg-wonderwhiz-blue-accent/20', 
+          hover: 'hover:text-wonderwhiz-blue-accent hover:bg-wonderwhiz-blue-accent/10',
+          border: 'border-wonderwhiz-blue-accent/30 hover:border-wonderwhiz-blue-accent/50'
+        };
     }
   };
 
-  const colorScheme = getTypeColorScheme();
-  const interactionColors = `hover:bg-${colorScheme.hover}/10 hover:text-${colorScheme.hover}`;
+  const colorClasses = getTypeColorClasses();
 
   return (
     <motion.div 
@@ -76,8 +130,8 @@ const EnhancedBlockInteractions: React.FC<BlockInteractionsProps> = ({
               onClick={onToggleLike}
               className={cn(
                 getButtonStyle(),
-                "text-white/70 hover:text-white hover:bg-white/10 transition-all duration-300",
-                liked && "text-wonderwhiz-bright-pink hover:text-wonderwhiz-bright-pink bg-wonderwhiz-bright-pink/10"
+                liked ? "text-wonderwhiz-bright-pink bg-wonderwhiz-bright-pink/10" : "text-white/70 hover:text-white hover:bg-white/10",
+                "transition-all duration-300"
               )}
             >
               <ThumbsUp className="h-4 w-4" />
@@ -99,8 +153,8 @@ const EnhancedBlockInteractions: React.FC<BlockInteractionsProps> = ({
               onClick={onToggleBookmark}
               className={cn(
                 getButtonStyle(),
-                "text-white/70 hover:text-white hover:bg-white/10 transition-all duration-300",
-                bookmarked && "text-wonderwhiz-vibrant-yellow hover:text-wonderwhiz-vibrant-yellow bg-wonderwhiz-vibrant-yellow/10"
+                bookmarked ? "text-wonderwhiz-vibrant-yellow bg-wonderwhiz-vibrant-yellow/10" : "text-white/70 hover:text-white hover:bg-white/10",
+                "transition-all duration-300"
               )}
             >
               {bookmarked ? (
@@ -169,9 +223,11 @@ const EnhancedBlockInteractions: React.FC<BlockInteractionsProps> = ({
               whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => onRabbitHoleClick(question)}
-              className={`flex items-center gap-1.5 px-3 py-2 bg-white/10 hover:bg-${colorScheme.primary}/20 rounded-full text-xs text-white/80 transition-all duration-300 shadow-lg hover:shadow-xl border border-white/10 hover:border-${colorScheme.primary}/30`}
+              className={`flex items-center gap-1.5 px-3 py-2 bg-white/10 rounded-full text-xs text-white/80 
+                transition-all duration-300 shadow-lg hover:shadow-xl border border-white/10 
+                ${colorClasses.hover} ${colorClasses.border}`}
             >
-              <Sparkles className={`h-3 w-3 text-${colorScheme.primary}`} />
+              <Sparkles className="h-3 w-3 text-wonderwhiz-vibrant-yellow" />
               <span className="line-clamp-1">{question}</span>
             </motion.button>
           ))}

@@ -3,64 +3,64 @@ import { ContentBlockType } from '@/types/curio';
 
 export const getContentGradient = (type: ContentBlockType, specialistId: string) => {
   const gradients = {
-    fact: 'from-[#00E2FF]/40 via-[#4A6FFF]/30 to-transparent',
-    quiz: 'from-[#FF5BA3]/40 via-[#FF5BA3]/30 to-transparent',
-    flashcard: 'from-[#FFD54F]/40 via-[#FF8A3D]/30 to-transparent',
-    creative: 'from-[#00D68F]/40 via-[#00D68F]/30 to-transparent',
-    task: 'from-[#FF8A3D]/40 via-[#FFD54F]/30 to-transparent',
-    news: 'from-[#4A6FFF]/40 via-[#00E2FF]/30 to-transparent',
-    riddle: 'from-[#3D2A7D]/40 via-[#FF5BA3]/30 to-transparent',
-    funFact: 'from-[#FFD54F]/40 via-[#FF8A3D]/30 to-transparent',
-    activity: 'from-[#00D68F]/40 via-[#00E2FF]/30 to-transparent',
-    mindfulness: 'from-[#3D2A7D]/40 via-[#4A6FFF]/30 to-transparent'
+    fact: 'from-wonderwhiz-cyan/40 via-wonderwhiz-blue-accent/30 to-transparent',
+    quiz: 'from-wonderwhiz-bright-pink/40 via-wonderwhiz-bright-pink/30 to-transparent',
+    flashcard: 'from-wonderwhiz-vibrant-yellow/40 via-wonderwhiz-orange/30 to-transparent',
+    creative: 'from-wonderwhiz-green/40 via-wonderwhiz-green/30 to-transparent',
+    task: 'from-wonderwhiz-orange/40 via-wonderwhiz-vibrant-yellow/30 to-transparent',
+    news: 'from-wonderwhiz-blue-accent/40 via-wonderwhiz-cyan/30 to-transparent',
+    riddle: 'from-wonderwhiz-light-purple/40 via-wonderwhiz-bright-pink/30 to-transparent',
+    funFact: 'from-wonderwhiz-vibrant-yellow/40 via-wonderwhiz-orange/30 to-transparent',
+    activity: 'from-wonderwhiz-green/40 via-wonderwhiz-cyan/30 to-transparent',
+    mindfulness: 'from-wonderwhiz-light-purple/40 via-wonderwhiz-blue-accent/30 to-transparent'
   };
 
-  return gradients[type] || 'from-[#4A6FFF]/40 via-[#00E2FF]/30 to-transparent';
+  return gradients[type] || 'from-wonderwhiz-blue-accent/40 via-wonderwhiz-cyan/30 to-transparent';
 };
 
 export const getSpecialistAccent = (specialistId: string) => {
   switch (specialistId) {
     case 'nova':
       return {
-        gradient: 'from-[#4A6FFF]/40 via-[#00E2FF]/30 to-transparent',
-        border: 'border-[#4A6FFF]/40',
-        accent: 'text-[#00E2FF]'
+        gradient: 'from-wonderwhiz-blue-accent/40 via-wonderwhiz-cyan/30 to-transparent',
+        border: 'border-wonderwhiz-blue-accent/40',
+        accent: 'text-wonderwhiz-cyan'
       };
     case 'spark':
       return {
-        gradient: 'from-[#FFD54F]/40 via-[#FF8A3D]/30 to-transparent',
-        border: 'border-[#FFD54F]/40',
-        accent: 'text-[#FFD54F]'
+        gradient: 'from-wonderwhiz-vibrant-yellow/40 via-wonderwhiz-orange/30 to-transparent',
+        border: 'border-wonderwhiz-vibrant-yellow/40',
+        accent: 'text-wonderwhiz-vibrant-yellow'
       };
     case 'prism':
       return {
-        gradient: 'from-[#3D2A7D]/40 via-[#FF5BA3]/30 to-transparent',
-        border: 'border-[#3D2A7D]/40',
-        accent: 'text-[#FF5BA3]'
+        gradient: 'from-wonderwhiz-light-purple/40 via-wonderwhiz-bright-pink/30 to-transparent',
+        border: 'border-wonderwhiz-light-purple/40',
+        accent: 'text-wonderwhiz-bright-pink'
       };
     case 'pixel':
       return {
-        gradient: 'from-[#00E2FF]/40 via-[#4A6FFF]/30 to-transparent',
-        border: 'border-[#00E2FF]/40',
-        accent: 'text-[#00E2FF]'
+        gradient: 'from-wonderwhiz-cyan/40 via-wonderwhiz-blue-accent/30 to-transparent',
+        border: 'border-wonderwhiz-cyan/40',
+        accent: 'text-wonderwhiz-cyan'
       };
     case 'atlas':
       return {
-        gradient: 'from-[#00D68F]/40 via-[#00D68F]/30 to-transparent',
-        border: 'border-[#00D68F]/40',
-        accent: 'text-[#00D68F]'
+        gradient: 'from-wonderwhiz-green/40 via-wonderwhiz-green/30 to-transparent',
+        border: 'border-wonderwhiz-green/40',
+        accent: 'text-wonderwhiz-green'
       };
     case 'lotus':
       return {
-        gradient: 'from-[#FF5BA3]/40 via-[#3D2A7D]/30 to-transparent',
-        border: 'border-[#FF5BA3]/40',
-        accent: 'text-[#FF5BA3]'
+        gradient: 'from-wonderwhiz-bright-pink/40 via-wonderwhiz-light-purple/30 to-transparent',
+        border: 'border-wonderwhiz-bright-pink/40',
+        accent: 'text-wonderwhiz-bright-pink'
       };
     default:
       return {
-        gradient: 'from-[#3D2A7D]/40 via-[#2A1B5D]/30 to-transparent',
-        border: 'border-[#3D2A7D]/40',
-        accent: 'text-[#FF5BA3]'
+        gradient: 'from-wonderwhiz-light-purple/40 via-wonderwhiz-deep-purple/30 to-transparent',
+        border: 'border-wonderwhiz-light-purple/40',
+        accent: 'text-wonderwhiz-bright-pink'
       };
   };
 };

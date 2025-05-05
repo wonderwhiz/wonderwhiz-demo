@@ -3,6 +3,7 @@ import React from 'react';
 import WelcomeView from './WelcomeView';
 import DiscoverySection from './DiscoverySection';
 import SmartDashboard from './SmartDashboard';
+import { Toaster } from '@/components/ui/toaster';
 
 interface WelcomeSectionProps {
   curioSuggestions: string[];
@@ -32,7 +33,7 @@ const WelcomeSection: React.FC<WelcomeSectionProps> = ({
   isGenerating
 }) => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#2A1B5D] via-[#3D2A7D] to-[#3D2A7D] pb-16">
+    <div className="min-h-screen bg-gradient-to-br from-wonderwhiz-deep-purple via-wonderwhiz-light-purple to-wonderwhiz-light-purple pb-16">
       <div className="px-4 pb-8 max-w-7xl mx-auto">
         <WelcomeView
           childId={childId}
@@ -48,7 +49,7 @@ const WelcomeSection: React.FC<WelcomeSectionProps> = ({
           isLoadingSuggestions={isLoadingSuggestions}
         />
         
-        {/* New SmartDashboard component that implements the WonderWhiz concept */}
+        {/* SmartDashboard with proper WonderWhiz styling */}
         <SmartDashboard
           childId={childId}
           childProfile={childProfile}
@@ -68,6 +69,9 @@ const WelcomeSection: React.FC<WelcomeSectionProps> = ({
           }}
         />
       </div>
+      
+      {/* Add Toaster for notifications */}
+      <Toaster />
     </div>
   );
 };

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { blockContainer } from './utils/blockStyles';
 import { getSpecialistInfo } from '@/utils/specialists';
 import { blockVariants, contentVariants } from './utils/blockAnimations';
+import { toast } from 'sonner';
 
 interface FactBlockProps {
   fact: string;
@@ -39,9 +40,12 @@ const FactBlock: React.FC<FactBlockProps> = ({
   bookmarked = false
 }) => {
   const [isReading, setIsReading] = useState(false);
+  const [isLiked, setIsLiked] = useState(liked);
+  const [isBookmarked, setIsBookmarked] = useState(bookmarked);
+  
   const specialist = getSpecialistInfo?.(specialistId) || { 
     name: specialistId, 
-    fallbackColor: 'bg-purple-600',
+    fallbackColor: 'bg-wonderwhiz-purple',
     fallbackInitial: 'S',
     avatar: '',
     title: ''
@@ -63,6 +67,12 @@ const FactBlock: React.FC<FactBlockProps> = ({
       onReadAloud(textToRead);
       setIsReading(true);
       
+      // Show a toast notification
+      toast.success('Reading content aloud...', {
+        position: 'bottom-right',
+        duration: 3000,
+      });
+      
       // In a real implementation, we would listen for the end of the speech
       // For now, just simulate it with a timeout
       setTimeout(() => {
@@ -70,13 +80,48 @@ const FactBlock: React.FC<FactBlockProps> = ({
       }, fact.length * 80); // Rough estimate of reading time
     }
   };
+
+  // Handle like button click
+  const handleLikeClick = () => {
+    if (onLike) {
+      setIsLiked(!isLiked);
+      onLike();
+      
+      if (!isLiked) {
+        toast.success('Content liked!', {
+          position: 'bottom-right',
+          duration: 2000,
+        });
+      }
+    }
+  };
+  
+  // Handle bookmark button click
+  const handleBookmarkClick = () => {
+    if (onBookmark) {
+      setIsBookmarked(!isBookmarked);
+      onBookmark();
+      
+      if (!isBookmarked) {
+        toast.success('Content saved!', {
+          position: 'bottom-right',
+          duration: 2000,
+        });
+      } else {
+        toast.success('Removed from saved items', {
+          position: 'bottom-right',
+          duration: 2000,
+        });
+      }
+    }
+  };
   
   // Get block-specific styling
   const getBlockGradient = () => {
     if (isFunFact) {
-      return 'bg-gradient-to-br from-yellow-500/30 via-amber-500/20 to-transparent';
+      return 'bg-gradient-to-br from-wonderwhiz-vibrant-yellow/30 via-wonderwhiz-orange/20 to-transparent';
     }
-    return 'bg-gradient-to-br from-cyan-500/30 via-blue-500/20 to-transparent';
+    return 'bg-gradient-to-br from-wonderwhiz-cyan/30 via-wonderwhiz-blue-accent/20 to-transparent';
   };
   
   const getBlockGlow = () => {
@@ -92,15 +137,21 @@ const FactBlock: React.FC<FactBlockProps> = ({
   // Get specialist color for text
   const getSpecialistTextColor = () => {
     switch (specialistId) {
-      case 'nova': return 'text-blue-400';
-      case 'spark': return 'text-amber-400';
-      case 'prism': return 'text-purple-400'; 
-      case 'pixel': return 'text-cyan-400';
-      case 'atlas': return 'text-amber-600';
-      case 'lotus': return 'text-emerald-400';
-      case 'whizzy': return 'text-purple-400';
-      default: return 'text-purple-400';
+      case 'nova': return 'text-wonderwhiz-cyan';
+      case 'spark': return 'text-wonderwhiz-vibrant-yellow';
+      case 'prism': return 'text-wonderwhiz-bright-pink'; 
+      case 'pixel': return 'text-wonderwhiz-cyan';
+      case 'atlas': return 'text-wonderwhiz-orange';
+      case 'lotus': return 'text-wonderwhiz-green';
+      case 'whizzy': return 'text-wonderwhiz-purple';
+      default: return 'text-wonderwhiz-purple';
     }
+  };
+
+  const buttonAnimationVariants = {
+    initial: { scale: 1 },
+    hover: { scale: 1.05 },
+    tap: { scale: 0.95 }
   };
 
   return (
@@ -136,10 +187,10 @@ const FactBlock: React.FC<FactBlockProps> = ({
                 key={index}
                 whileHover={{ scale: 1.02, x: 5 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-full text-left px-4 py-3 rounded-lg bg-wonderwhiz-deep-purple/40 hover:bg-wonderwhiz-deep-purple/50 flex items-center border border-yellow-300/30 transition-all shadow-lg"
+                className="w-full text-left px-4 py-3 rounded-lg bg-wonderwhiz-deep-purple/40 hover:bg-wonderwhiz-deep-purple/50 flex items-center border border-wonderwhiz-vibrant-yellow/30 transition-all shadow-lg"
                 onClick={() => onRabbitHoleClick(question)}
               >
-                <span className="mr-2 text-yellow-300">✨</span>
+                <span className="mr-2 text-wonderwhiz-vibrant-yellow">✨</span>
                 <span className={`${childAge && childAge <= 7 ? 'text-base' : 'text-sm'} text-white/95`}>
                   {question}
                 </span>
@@ -151,58 +202,92 @@ const FactBlock: React.FC<FactBlockProps> = ({
         {/* Bottom interaction buttons */}
         <div className="flex justify-between pt-3 mt-3 border-t border-white/15">
           <div className="flex items-center space-x-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onLike}
-              className={`px-4 py-2 rounded-lg ${liked ? 'bg-white/20 text-white' : 'text-white/70 hover:text-white/95 hover:bg-white/15'}`}
+            <motion.div
+              variants={buttonAnimationVariants}
+              initial="initial"
+              whileHover="hover"
+              whileTap="tap"
             >
-              <ThumbsUp className="h-4 w-4 mr-2" />
-              <span>Like</span>
-            </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLikeClick}
+                className={`px-4 py-2 rounded-lg transition-all duration-300 ${
+                  isLiked ? 'bg-wonderwhiz-bright-pink/20 text-wonderwhiz-bright-pink' : 'text-white/70 hover:text-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/10'
+                }`}
+              >
+                <ThumbsUp className="h-4 w-4 mr-2" />
+                <span>Like</span>
+              </Button>
+            </motion.div>
             
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onBookmark}
-              className={`px-4 py-2 rounded-lg ${bookmarked ? 'bg-white/20 text-white' : 'text-white/70 hover:text-white/95 hover:bg-white/15'}`}
+            <motion.div
+              variants={buttonAnimationVariants}
+              initial="initial"
+              whileHover="hover"
+              whileTap="tap"
             >
-              <Bookmark className="h-4 w-4 mr-2" />
-              <span>Save</span>
-            </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleBookmarkClick}
+                className={`px-4 py-2 rounded-lg transition-all duration-300 ${
+                  isBookmarked ? 'bg-wonderwhiz-vibrant-yellow/20 text-wonderwhiz-vibrant-yellow' : 'text-white/70 hover:text-wonderwhiz-vibrant-yellow hover:bg-wonderwhiz-vibrant-yellow/10'
+                }`}
+              >
+                <Bookmark className="h-4 w-4 mr-2" />
+                <span>Save</span>
+              </Button>
+            </motion.div>
             
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onReply}
-              className="px-4 py-2 rounded-lg text-white/70 hover:text-white/95 hover:bg-white/15"
+            <motion.div
+              variants={buttonAnimationVariants}
+              initial="initial"
+              whileHover="hover"
+              whileTap="tap"
             >
-              <MessageCircle className="h-4 w-4 mr-2" />
-              <span>Reply</span>
-            </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onReply}
+                className="px-4 py-2 rounded-lg text-white/70 hover:text-wonderwhiz-cyan hover:bg-wonderwhiz-cyan/10 transition-all duration-300"
+              >
+                <MessageCircle className="h-4 w-4 mr-2" />
+                <span>Reply</span>
+              </Button>
+            </motion.div>
           </div>
           
           {/* Read aloud button */}
           {showReadAloud && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleReadAloud}
-              disabled={isReading}
-              className="px-4 py-2 rounded-lg text-white/70 hover:text-white/95 hover:bg-white/15"
+            <motion.div
+              variants={buttonAnimationVariants}
+              initial="initial"
+              whileHover="hover"
+              whileTap="tap"
             >
-              {isReading ? (
-                <>
-                  <VolumeX className="h-4 w-4 mr-2" />
-                  <span>Stop</span>
-                </>
-              ) : (
-                <>
-                  <Volume2 className="h-4 w-4 mr-2" />
-                  <span>Read aloud</span>
-                </>
-              )}
-            </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleReadAloud}
+                disabled={isReading}
+                className={`px-4 py-2 rounded-lg transition-all duration-300 ${
+                  isReading ? 'bg-wonderwhiz-purple/20 text-wonderwhiz-purple' : 'text-white/70 hover:text-wonderwhiz-purple hover:bg-wonderwhiz-purple/10'
+                }`}
+              >
+                {isReading ? (
+                  <>
+                    <VolumeX className="h-4 w-4 mr-2" />
+                    <span>Stop</span>
+                  </>
+                ) : (
+                  <>
+                    <Volume2 className="h-4 w-4 mr-2" />
+                    <span>Read aloud</span>
+                  </>
+                )}
+              </Button>
+            </motion.div>
           )}
         </div>
         

@@ -48,45 +48,45 @@ const SpecialistContentBlock: React.FC<SpecialistContentBlockProps> = ({
     switch (specialistId) {
       case 'nova':
         return {
-          gradient: 'from-blue-600/20 via-indigo-600/10 to-transparent',
-          borderColor: 'border-blue-600/20',
-          badgeBg: 'bg-blue-600/20',
-          badgeText: 'text-blue-300'
+          gradient: 'from-wonderwhiz-blue-accent/20 via-wonderwhiz-cyan/10 to-transparent',
+          borderColor: 'border-wonderwhiz-blue-accent/20',
+          badgeBg: 'bg-wonderwhiz-blue-accent/20',
+          badgeText: 'text-wonderwhiz-cyan'
         };
       case 'spark':
         return {
-          gradient: 'from-amber-500/20 via-orange-500/10 to-transparent',
-          borderColor: 'border-amber-500/20',
-          badgeBg: 'bg-amber-500/20',
-          badgeText: 'text-amber-300'
+          gradient: 'from-wonderwhiz-vibrant-yellow/20 via-wonderwhiz-orange/10 to-transparent',
+          borderColor: 'border-wonderwhiz-vibrant-yellow/20',
+          badgeBg: 'bg-wonderwhiz-vibrant-yellow/20',
+          badgeText: 'text-wonderwhiz-vibrant-yellow'
         };
       case 'prism':
         return {
-          gradient: 'from-purple-600/20 via-fuchsia-600/10 to-transparent',
-          borderColor: 'border-purple-600/20',
-          badgeBg: 'bg-purple-600/20',
-          badgeText: 'text-purple-300'
+          gradient: 'from-wonderwhiz-purple/20 via-wonderwhiz-bright-pink/10 to-transparent',
+          borderColor: 'border-wonderwhiz-purple/20',
+          badgeBg: 'bg-wonderwhiz-purple/20',
+          badgeText: 'text-wonderwhiz-bright-pink'
         };
       case 'pixel':
         return {
-          gradient: 'from-cyan-500/20 via-blue-500/10 to-transparent',
-          borderColor: 'border-cyan-500/20',
-          badgeBg: 'bg-cyan-500/20',
-          badgeText: 'text-cyan-300'
+          gradient: 'from-wonderwhiz-cyan/20 via-wonderwhiz-blue-accent/10 to-transparent',
+          borderColor: 'border-wonderwhiz-cyan/20',
+          badgeBg: 'bg-wonderwhiz-cyan/20',
+          badgeText: 'text-wonderwhiz-cyan'
         };
       case 'atlas':
         return {
-          gradient: 'from-amber-700/20 via-yellow-600/10 to-transparent',
-          borderColor: 'border-amber-700/20',
-          badgeBg: 'bg-amber-700/20',
-          badgeText: 'text-amber-300'
+          gradient: 'from-wonderwhiz-orange/20 via-wonderwhiz-vibrant-yellow/10 to-transparent',
+          borderColor: 'border-wonderwhiz-orange/20',
+          badgeBg: 'bg-wonderwhiz-orange/20',
+          badgeText: 'text-wonderwhiz-orange'
         };
       case 'lotus':
         return {
-          gradient: 'from-emerald-500/20 via-green-500/10 to-transparent',
-          borderColor: 'border-emerald-500/20',
-          badgeBg: 'bg-emerald-500/20',
-          badgeText: 'text-emerald-300'
+          gradient: 'from-wonderwhiz-green/20 via-wonderwhiz-cyan/10 to-transparent',
+          borderColor: 'border-wonderwhiz-green/20',
+          badgeBg: 'bg-wonderwhiz-green/20',
+          badgeText: 'text-wonderwhiz-green'
         };
       default:
         return {
@@ -104,7 +104,7 @@ const SpecialistContentBlock: React.FC<SpecialistContentBlockProps> = ({
     const stars = [];
     for (let i = 0; i < difficultyLevel; i++) {
       stars.push(
-        <Star key={i} className="h-4 w-4 fill-current" />
+        <Star key={i} className="h-4 w-4 fill-current text-wonderwhiz-vibrant-yellow" />
       );
     }
     return stars;
@@ -162,7 +162,7 @@ const SpecialistContentBlock: React.FC<SpecialistContentBlockProps> = ({
             )}
             
             {difficultyLevel > 0 && (
-              <div className="flex items-center text-amber-400">
+              <div className="flex items-center">
                 {getDifficultyStars()}
               </div>
             )}
@@ -202,6 +202,7 @@ const SpecialistContentBlock: React.FC<SpecialistContentBlockProps> = ({
             onShare={onShare}
             onReadAloud={onReadAloud}
             childAge={childAge}
+            bookmarked={false}
           />
         </div>
         
