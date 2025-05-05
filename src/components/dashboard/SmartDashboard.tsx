@@ -28,6 +28,13 @@ interface SmartDashboardProps {
   onCurioSuggestionClick: (suggestion: string) => void;
   handleRefreshSuggestions: () => void;
   pastCurios: any[];
+  // Add the missing props to fix the type error
+  onLike?: (blockId: string) => Promise<boolean>;
+  onBookmark?: (blockId: string) => Promise<boolean>;
+  onReply?: (blockId: string, message: string) => Promise<boolean>;
+  onReadAloud?: (text: string) => () => void;
+  likedBlocks?: Record<string, boolean>;
+  bookmarkedBlocks?: Record<string, boolean>;
 }
 
 const SmartDashboard: React.FC<SmartDashboardProps> = ({
@@ -37,7 +44,14 @@ const SmartDashboard: React.FC<SmartDashboardProps> = ({
   isLoadingSuggestions = false,
   onCurioSuggestionClick,
   handleRefreshSuggestions,
-  pastCurios = []
+  pastCurios = [],
+  // Include the new props in the function parameters with defaults
+  onLike,
+  onBookmark,
+  onReply,
+  onReadAloud,
+  likedBlocks = {},
+  bookmarkedBlocks = {}
 }) => {
   const handleTopicClick = (topicQuery: string) => {
     onCurioSuggestionClick(topicQuery);
