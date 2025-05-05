@@ -17,6 +17,7 @@ import DashboardControls from '@/components/dashboard/DashboardControls';
 import ConsolidatedDashboard from '@/components/dashboard/ConsolidatedDashboard';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useEnhancedBlockInteractions } from '@/hooks/useEnhancedBlockInteractions';
 
 interface Curio {
   id: string;
@@ -56,6 +57,23 @@ const DashboardContainer = () => {
     handleCurioSuggestionClick: curioCreationSuggestionClick
   } = useCurioCreation(profileId, childProfile, setPastCurios, setChildProfile, setCurrentCurio);
 
+  // Use enhanced block interactions for improved visual feedback and animations
+  const {
+    handleLike,
+    handleBookmark,
+    handleReply,
+    handleReadAloud,
+    likedBlocks,
+    bookmarkedBlocks,
+    handleQuizCorrect,
+    handleNewsRead,
+    handleCreativeUpload,
+    handleActivityComplete,
+    handleMindfulnessComplete,
+    handleTaskComplete,
+    loadingStates
+  } = useEnhancedBlockInteractions(profileId);
+
   const {
     blocks: contentBlocks,
     isLoading: isLoadingBlocks,
@@ -75,9 +93,9 @@ const DashboardContainer = () => {
   const {
     blockReplies,
     handleBlockReply,
-    handleQuizCorrect,
-    handleNewsRead,
-    handleCreativeUpload,
+    handleQuizCorrect: baseHandleQuizCorrect,
+    handleNewsRead: baseHandleNewsRead,
+    handleCreativeUpload: baseHandleCreativeUpload,
     handleSparkEarned
   } = useBlockInteractionHandlers(profileId, childProfile, setChildProfile, contentBlocks);
 
@@ -262,6 +280,12 @@ const DashboardContainer = () => {
               pastCurios={pastCurios}
               sparksBalance={childProfile?.sparks_balance || 0}
               streakDays={streakDays}
+              onLike={handleLike}
+              onBookmark={handleBookmark}
+              onReply={handleReply}
+              onReadAloud={handleReadAloud}
+              likedBlocks={likedBlocks}
+              bookmarkedBlocks={bookmarkedBlocks}
             />
           ) : (
             <div className="max-w-5xl mx-auto space-y-6 p-4">
@@ -281,9 +305,9 @@ const DashboardContainer = () => {
                   onReply={(blockId, message) => handleBlockReply(blockId, message)} 
                   onSetQuery={setQuery}
                   onRabbitHoleFollow={handleFollowRabbitHole}
-                  onQuizCorrect={handleQuizCorrect}
-                  onNewsRead={handleNewsRead}
-                  onCreativeUpload={handleCreativeUpload}
+                  onQuizCorrect={handleQuizCorrect || baseHandleQuizCorrect}
+                  onNewsRead={handleNewsRead || baseHandleNewsRead}
+                  onCreativeUpload={handleCreativeUpload || baseHandleCreativeUpload}
                   generationError={generationError}
                   playText={playText}
                   childAge={childAge}

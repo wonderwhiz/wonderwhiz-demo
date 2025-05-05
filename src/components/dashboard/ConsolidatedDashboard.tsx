@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
@@ -41,6 +42,12 @@ interface ConsolidatedDashboardProps {
   pastCurios: any[];
   sparksBalance: number;
   streakDays: number;
+  onLike?: (blockId: string) => Promise<boolean>;
+  onBookmark?: (blockId: string) => Promise<boolean>;
+  onReply?: (blockId: string, message: string) => Promise<boolean>;
+  onReadAloud?: (text: string) => () => void;
+  likedBlocks?: Record<string, boolean>;
+  bookmarkedBlocks?: Record<string, boolean>;
 }
 
 const ConsolidatedDashboard: React.FC<ConsolidatedDashboardProps> = ({
@@ -52,7 +59,13 @@ const ConsolidatedDashboard: React.FC<ConsolidatedDashboardProps> = ({
   handleRefreshSuggestions,
   pastCurios = [],
   sparksBalance,
-  streakDays
+  streakDays,
+  onLike,
+  onBookmark,
+  onReply,
+  onReadAloud,
+  likedBlocks = {},
+  bookmarkedBlocks = {}
 }) => {
   const [activeTab, setActiveTab] = useState<'wonders' | 'journey'>('wonders');
   const {
