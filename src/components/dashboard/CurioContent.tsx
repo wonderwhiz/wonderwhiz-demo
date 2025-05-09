@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
@@ -70,6 +71,7 @@ interface CurioContentProps {
   onRabbitHoleFollow: (question: string) => void;
   onQuizCorrect: (blockId: string) => void;
   onNewsRead: (blockId: string) => void;
+  // Updated this type to match our handler function's signature
   onCreativeUpload: (blockId: string) => void;
   onRefresh?: () => void;
   generationError?: string | null;

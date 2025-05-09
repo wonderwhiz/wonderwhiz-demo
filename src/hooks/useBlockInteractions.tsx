@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -128,7 +127,7 @@ export function useBlockInteractions(childId?: string) {
     }
   };
   
-  const handleCreativeUpload = async (blockId: string, content: any) => {
+  const handleCreativeUpload = async (blockId: string) => {
     if (!childId || !blockId) return;
     
     setLoading(blockId, true);
@@ -138,8 +137,7 @@ export function useBlockInteractions(childId?: string) {
         body: { 
           type: 'creative-upload',
           blockId,
-          childId,
-          content
+          childId
         }
       });
       

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useBlockInteractions } from './useBlockInteractions';
@@ -158,6 +157,35 @@ export function useEnhancedBlockInteractions(childId?: string) {
     }
   };
 
+  // Enhanced creative upload handler with consistent signature
+  const enhancedCreativeUploadHandler = async (blockId: string) => {
+    toast.loading('Saving your creative work...', {
+      id: `creative-${blockId}`,
+      duration: 1000
+    });
+    
+    try {
+      // Call the original handler with just the blockId
+      await handleCreativeUpload(blockId);
+      
+      toast.success('Your creative work was saved! You earned sparks! ✨', {
+        id: `creative-${blockId}`,
+        duration: 3000
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error handling creative upload:', error);
+      
+      toast.error('Could not save your creative work. Please try again.', {
+        id: `creative-${blockId}`,
+        duration: 3000
+      });
+      
+      return false;
+    }
+  };
+
   // Enhanced read aloud handler
   const handleReadAloud = (text: string) => {
     // This is where you'd integrate with a text-to-speech service
@@ -179,7 +207,6 @@ export function useEnhancedBlockInteractions(childId?: string) {
   return {
     // Original handlers
     handleNewsRead,
-    handleCreativeUpload,
     handleActivityComplete,
     handleMindfulnessComplete,
     handleTaskComplete,
@@ -190,6 +217,7 @@ export function useEnhancedBlockInteractions(childId?: string) {
     handleLike: enhancedLikeHandler,
     handleBookmark: enhancedBookmarkHandler,
     handleQuizCorrect: enhancedQuizCorrectHandler,
+    handleCreativeUpload: enhancedCreativeUploadHandler,
     handleReadAloud,
     
     // Reactive state

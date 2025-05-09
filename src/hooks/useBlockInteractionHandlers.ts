@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -167,6 +166,7 @@ export const useBlockInteractionHandlers = (
     }
   };
 
+  // Update to consistent signature - just accept blockId
   const handleCreativeUpload = async (blockId: string) => {
     try {
       await supabase.functions.invoke('increment-sparks-balance', {

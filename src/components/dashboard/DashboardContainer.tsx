@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useParams } from 'react-router-dom';
@@ -98,6 +97,14 @@ const DashboardContainer = () => {
     handleCreativeUpload: baseHandleCreativeUpload,
     handleSparkEarned
   } = useBlockInteractionHandlers(profileId, childProfile, setChildProfile, contentBlocks);
+
+  // Create wrapper functions that adapt the function signatures
+  const handleCreativeUploadWrapper = (blockId: string) => {
+    if (handleCreativeUpload) {
+      return handleCreativeUpload(blockId);
+    }
+    return baseHandleCreativeUpload(blockId);
+  };
 
   useEffect(() => {
     if (childProfile?.age) {
@@ -307,7 +314,7 @@ const DashboardContainer = () => {
                   onRabbitHoleFollow={handleFollowRabbitHole}
                   onQuizCorrect={handleQuizCorrect || baseHandleQuizCorrect}
                   onNewsRead={handleNewsRead || baseHandleNewsRead}
-                  onCreativeUpload={handleCreativeUpload || baseHandleCreativeUpload}
+                  onCreativeUpload={handleCreativeUploadWrapper}
                   generationError={generationError}
                   playText={playText}
                   childAge={childAge}
