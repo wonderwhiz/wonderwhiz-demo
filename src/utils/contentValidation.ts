@@ -1,137 +1,118 @@
 
 import { ContentBlock } from '@/types/curio';
-import { similarity } from './textSimilarity';
 
-// Increased from 0.8 to provide more sensitivity to catch subtle duplicates
-const SIMILARITY_THRESHOLD = 0.7;
+/**
+ * Checks if content is similar to previously generated content
+ */
+export function isContentDuplicate(block: ContentBlock, previousBlocks: ContentBlock[]): boolean {
+  if (!block?.content || !previousBlocks?.length) {
+    return false;
+  }
 
-// Specialized thresholds for specific content types
-const TYPE_SPECIFIC_THRESHOLDS = {
-  fact: 0.65,
-  funFact: 0.65,
-  quiz: 0.7,
-  flashcard: 0.75,
-  creative: 0.8,
-  mindfulness: 0.8
-};
+  const mainContent = getBlockMainContent(block);
+  if (!mainContent) return false;
 
-// Get more comprehensive content from a block for better comparisons
-export const getBlockMainContent = (block: ContentBlock): string => {
-  if (!block.content) return '';
-  
+  return previousBlocks.some(prevBlock => {
+    const prevContent = getBlockMainContent(prevBlock);
+    if (!prevContent) return false;
+    
+    // Check for exact matches first
+    if (mainContent === prevContent) return true;
+    
+    // Then check for high similarity (more than 80% match)
+    return calculateSimilarity(mainContent, prevContent) > 0.8;
+  });
+}
+
+/**
+ * Gets the main text content from a content block, regardless of block type
+ */
+export function getBlockMainContent(block: ContentBlock): string | null {
+  if (!block?.content) return null;
+
+  // Extract content based on block type
   switch (block.type) {
     case 'fact':
     case 'funFact':
-      return `${block.content.title || ''} ${block.content.fact || ''} ${block.content.text || ''}`.trim();
+      return block.content.fact || block.content.text || null;
     case 'quiz':
-      return `${block.content.question || ''} ${(block.content.options || []).join(' ')} ${block.content.explanation || ''}`.trim();
+      return block.content.question || null;
     case 'flashcard':
-      return `${block.content.front || ''} ${block.content.back || ''}`.trim();
+      return `${block.content.front} ${block.content.back}` || null;
     case 'creative':
-      return `${block.content.prompt || ''} ${block.content.description || ''}`.trim();
-    case 'mindfulness':
-      return `${block.content.title || ''} ${block.content.instruction || ''}`.trim();
-    case 'activity':
-      return `${block.content.title || ''} ${block.content.instruction || ''}`.trim();
+      return block.content.prompt || block.content.description || null;
+    case 'task':
+      return block.content.task || null;
     case 'riddle':
-      return `${block.content.question || ''} ${block.content.answer || ''}`.trim();
+      return block.content.riddle || null;
+    case 'activity':
+      return block.content.activity || block.content.instructions || null;
+    case 'mindfulness':
+      return block.content.exercise || block.content.instruction || null;
+    case 'news':
+      return block.content.headline || block.content.body || block.content.summary || null;
     default:
-      // Extract any text or textual properties from the content
-      const contentObj = block.content || {};
-      return Object.values(contentObj)
-        .filter(value => typeof value === 'string')
-        .join(' ');
+      // For other types, try to find any text content
+      const content = block.content;
+      return (
+        content.text ||
+        content.fact ||
+        content.description ||
+        content.question ||
+        content.body ||
+        content.headline ||
+        content.prompt ||
+        content.task ||
+        content.instruction ||
+        null
+      );
   }
-};
+}
 
-export const isContentDuplicate = (
-  newBlock: ContentBlock,
-  existingBlocks: ContentBlock[]
-): boolean => {
-  // Skip similarity check for interactive blocks if needed
-  if (['creative', 'mindfulness'].includes(newBlock.type) && Math.random() > 0.5) {
-    return false; // Allow more variety in these types
-  }
-
-  // Get the appropriate threshold for this content type
-  const threshold = TYPE_SPECIFIC_THRESHOLDS[newBlock.type as keyof typeof TYPE_SPECIFIC_THRESHOLDS] || SIMILARITY_THRESHOLD;
+/**
+ * Calculate string similarity using Levenshtein distance
+ * Returns a value between 0 (completely different) and 1 (identical)
+ */
+export function calculateSimilarity(str1: string, str2: string): number {
+  const longer = str1.length > str2.length ? str1 : str2;
+  const shorter = str1.length > str2.length ? str2 : str1;
   
-  for (const block of existingBlocks) {
-    // First quick check - if types are different, they're not duplicates
-    if (block.type !== newBlock.type) continue;
-    
-    // Avoid checking against self (if block has same ID)
-    if (block.id === newBlock.id) continue;
+  if (longer.length === 0) {
+    return 1.0;
+  }
+  
+  // Calculate Levenshtein distance
+  const editDistance = levenshteinDistance(longer.toLowerCase(), shorter.toLowerCase());
+  
+  // Convert to similarity percentage
+  return (longer.length - editDistance) / longer.length;
+}
 
-    // Extract main content from both blocks for comparison
-    const existingContent = getBlockMainContent(block);
-    const newContent = getBlockMainContent(newBlock);
-    
-    // Skip if either content is too short for meaningful comparison
-    if (existingContent.length < 10 || newContent.length < 10) continue;
-    
-    // Check similarity score against threshold
-    const similarityScore = similarity(existingContent, newContent);
-    if (similarityScore > threshold) {
-      console.log(`Duplicate content detected (${similarityScore.toFixed(2)}): ${newBlock.type}`);
-      return true;
+/**
+ * Calculate Levenshtein distance between two strings
+ */
+function levenshteinDistance(str1: string, str2: string): number {
+  const m = str1.length;
+  const n = str2.length;
+  
+  // Initialize matrix of size (m+1) x (n+1)
+  const dp: number[][] = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
+  
+  // Base cases: empty string to string transformations
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  
+  // Fill the matrix
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
+      dp[i][j] = Math.min(
+        dp[i - 1][j] + 1,      // deletion
+        dp[i][j - 1] + 1,      // insertion
+        dp[i - 1][j - 1] + cost // substitution
+      );
     }
   }
   
-  return false;
-};
-
-// Improved validation for rabbit hole questions to ensure they're relevant and unique
-export const validateRabbitHoles = (
-  question: string,
-  originalQuery: string,
-  existingQuestions: string[]
-): boolean => {
-  // Normalize strings for comparison
-  const normalizedQuestion = question.toLowerCase().trim();
-  const normalizedQuery = originalQuery.toLowerCase().trim();
-  
-  // Reject if question is too similar to original query
-  if (similarity(normalizedQuestion, normalizedQuery) > 0.85) {
-    return false;
-  }
-  
-  // Reject if question is too short
-  if (normalizedQuestion.split(' ').length < 4) {
-    return false;
-  }
-  
-  // Reject if it's a duplicate of existing questions
-  return !existingQuestions.some(
-    existing => similarity(normalizedQuestion, existing.toLowerCase().trim()) > 0.75
-  );
-};
-
-// New function to generate diverse follow-up questions based on a topic
-export const generateDiverseRabbitHoles = (
-  topic: string,
-  existingQuestions: string[] = []
-): string[] => {
-  const questionTemplates = [
-    `How does ${topic} impact our daily lives?`,
-    `What's the history behind ${topic}?`,
-    `Why is ${topic} important to understand?`,
-    `How do scientists study ${topic}?`,
-    `What are some surprising facts about ${topic}?`,
-    `How might ${topic} change in the future?`,
-    `How does ${topic} connect to other subjects?`,
-    `What would happen if ${topic} didn't exist?`
-  ];
-  
-  // Filter out questions that are too similar to existing ones
-  const diverseQuestions = questionTemplates.filter(question => 
-    !existingQuestions.some(existing => 
-      similarity(question.toLowerCase(), existing.toLowerCase()) > 0.75
-    )
-  );
-  
-  // Shuffle and return a subset
-  return diverseQuestions
-    .sort(() => Math.random() - 0.5)
-    .slice(0, 3);
-};
+  return dp[m][n];
+}

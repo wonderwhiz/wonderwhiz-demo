@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,8 @@ import {
   VolumeIcon,
   MessageCircle,
   ArrowRightCircle,
-  RefreshCw
+  RefreshCw,
+  AlertCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAgeAdaptation } from '@/hooks/useAgeAdaptation';
@@ -63,6 +65,7 @@ const CurioContent: React.FC<CurioContentProps> = ({
   onQuizCorrect,
   onNewsRead,
   onCreativeUpload,
+  onRefresh,
   generationError,
   playText,
   childAge
@@ -70,6 +73,16 @@ const CurioContent: React.FC<CurioContentProps> = ({
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replyText, setReplyText] = useState('');
   const { interactionSize, interactionStyle } = useAgeAdaptation(childAge);
+  const [loadingContent, setLoadingContent] = useState(true);
+  
+  useEffect(() => {
+    // After a short delay, set loading state to false to show content
+    const timer = setTimeout(() => {
+      setLoadingContent(false);
+    }, 1000);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleReplySubmit = (blockId: string) => {
     if (replyText.trim() && onReply) {
@@ -106,10 +119,26 @@ const CurioContent: React.FC<CurioContentProps> = ({
         <p className="text-sm text-white/70 mt-1 font-lato">{currentCurio?.query}</p>
       </motion.div>
 
-      {contentBlocks && contentBlocks.length > 0 ? (
+      {loadingContent || loadingBlocks || isGenerating ? (
+        <div className="space-y-4 py-6">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <motion.div
+              key={`skeleton-${i}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0, 0.5, 0.3] }}
+              transition={{ duration: 2, repeat: Infinity, repeatType: "reverse" }}
+              className="bg-white/5 rounded-lg p-6 h-32"
+            />
+          ))}
+          <div className="text-center text-white/60 pt-4">
+            <RefreshCw className="h-5 w-5 animate-spin mx-auto mb-2" />
+            <p>Generating amazing content for you...</p>
+          </div>
+        </div>
+      ) : contentBlocks && contentBlocks.length > 0 ? (
         contentBlocks.map((block, index) => (
           <motion.div
-            key={block.id}
+            key={block.id || `block-${index}`}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: index * 0.1 }}
@@ -121,17 +150,33 @@ const CurioContent: React.FC<CurioContentProps> = ({
             />
           </motion.div>
         ))
+      ) : generationError ? (
+        <div className="text-center text-white/70 py-8 space-y-4">
+          <AlertCircle className="h-12 w-12 text-red-400 mx-auto" />
+          <p className="text-lg">We encountered an issue generating content.</p>
+          <p className="text-sm text-white/60 max-w-md mx-auto">{generationError}</p>
+          {onRefresh && (
+            <Button 
+              variant="secondary" 
+              onClick={onRefresh}
+              className="mt-4"
+            >
+              <RefreshCw className="mr-2 h-4 w-4" /> Try Again
+            </Button>
+          )}
+        </div>
       ) : (
-        <div className="text-center text-white/60 py-6">
-          {isGenerating ? (
-            <div className="flex items-center justify-center space-x-2">
-              <RefreshCw className="h-4 w-4 animate-spin" />
-              <span>Generating content...</span>
-            </div>
-          ) : generationError ? (
-            <p>Error generating content. Please try again.</p>
-          ) : (
-            <p>No content available.</p>
+        <div className="text-center text-white/60 py-8">
+          <p className="text-lg">No content available yet.</p>
+          <p className="text-sm mt-2">Content may still be generating or there might be an issue.</p>
+          {onRefresh && (
+            <Button 
+              variant="secondary" 
+              onClick={onRefresh}
+              className="mt-4"
+            >
+              <RefreshCw className="mr-2 h-4 w-4" /> Refresh
+            </Button>
           )}
         </div>
       )}
