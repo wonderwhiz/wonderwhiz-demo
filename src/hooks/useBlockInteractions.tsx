@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -127,6 +128,7 @@ export function useBlockInteractions(childId?: string) {
     }
   };
   
+  // Update the function signature to be consistent
   const handleCreativeUpload = async (blockId: string) => {
     if (!childId || !blockId) return;
     

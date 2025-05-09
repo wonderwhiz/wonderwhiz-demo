@@ -165,7 +165,7 @@ export function useEnhancedBlockInteractions(childId?: string) {
     });
     
     try {
-      // Call the original handler with just the blockId
+      // Call the original handler
       await handleCreativeUpload(blockId);
       
       toast.success('Your creative work was saved! You earned sparks! ✨', {
