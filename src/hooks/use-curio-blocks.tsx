@@ -1,6 +1,8 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { ContentBlock } from '@/types/curio';
+import { useConsoleLogger } from '@/hooks/useConsoleLogger';
 
 interface UseCurioBlocksResult {
   blocks: ContentBlock[];
@@ -20,6 +22,10 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const [page, setPage] = useState(0);
   const [generationError, setGenerationError] = useState<string | null>(null);
+
+  // Debug logging
+  useConsoleLogger(curioId, 'Current Curio ID');
+  useConsoleLogger(generationError, 'Generation Error');
 
   const fetchBlocks = useCallback(async () => {
     if (!curioId) return;
@@ -49,39 +55,31 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
       if (count === 0) {
         const { data: curioData, error: curioError } = await supabase
           .from('curios')
-          .select('generation_error, status')
+          .select('generation_error')
           .eq('id', curioId)
           .single();
           
         if (curioError) {
           console.error("Error fetching curio status:", curioError);
-        } else if (curioData) {
-          if (curioData.generation_error) {
-            setGenerationError(curioData.generation_error);
-          }
+        } else if (curioData && curioData.generation_error) {
+          setGenerationError(curioData.generation_error);
           
-          // If status is 'pending', we should keep the loading state
-          if (curioData.status === 'pending') {
-            console.log("Curio content is still being generated");
-            // Create placeholder blocks while waiting
-            setBlocks([
-              {
-                id: `placeholder-${Date.now()}-1`,
-                curio_id: curioId,
-                specialist_id: 'nova',
-                type: 'fact',
-                content: { 
-                  fact: "I'm discovering fascinating information about this topic...",
-                  rabbitHoles: []
-                },
-                liked: false,
-                bookmarked: false,
-                created_at: new Date().toISOString()
-              } as ContentBlock
-            ]);
-            setIsLoading(false);
-            return;
-          }
+          // Create placeholder blocks while waiting
+          setBlocks([
+            {
+              id: `placeholder-${Date.now()}-1`,
+              curio_id: curioId,
+              specialist_id: 'nova',
+              type: 'fact',
+              content: { 
+                fact: "I'm discovering fascinating information about this topic...",
+                rabbitHoles: []
+              },
+              liked: false,
+              bookmarked: false,
+              created_at: new Date().toISOString()
+            } as ContentBlock
+          ]);
         }
       }
 
@@ -102,7 +100,7 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
         throw fetchError;
       }
 
-      if (data) {
+      if (data && data.length > 0) {
         console.log(`Fetched ${data.length} blocks`);
         // Make sure we're properly typing our ContentBlock before setting state
         const typedBlocks = data.map(block => ({
@@ -143,14 +141,14 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
 
   // Fetch generation error from curios table
   useEffect(() => {
-    // This is where you'd catch any errors coming from content generation
+    // This is where we fetch any errors coming from content generation
     const fetchGenerationStatus = async () => {
       if (!curioId) return;
       
       try {
         const { data, error } = await supabase
           .from('curios')
-          .select('generation_error, status')
+          .select('generation_error')
           .eq('id', curioId)
           .single();
           
@@ -159,25 +157,23 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
           return;
         }
         
-        // Handle the data safely to avoid type errors
+        // Handle the data safely
         if (data) {
-          // Check if generation_error exists in the returned data
-          if ('generation_error' in data && data.generation_error) {
+          if (data.generation_error) {
             console.log("Found generation error:", data.generation_error);
             setGenerationError(data.generation_error);
+          } else {
+            setGenerationError(null);
           }
           
-          // If status is pending but we have no blocks, we should keep checking
-          if (data.status === 'pending' && blocks.length === 0) {
-            console.log("Content generation is pending, will check again in 5 seconds");
+          // If we have no blocks, we might need to check again
+          if (blocks.length === 0) {
+            console.log("No blocks yet, will check again in 5 seconds");
             setTimeout(() => fetchGenerationStatus(), 5000);
           }
-        } else {
-          setGenerationError(null);
         }
       } catch (err) {
         console.error("Error fetching generation status:", err);
-        // Don't set generationError here as it might be a fetch error, not a generation error
       }
     };
     

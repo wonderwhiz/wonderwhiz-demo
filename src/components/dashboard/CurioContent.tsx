@@ -15,13 +15,15 @@ import {
   MessageCircle,
   ArrowRightCircle,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAgeAdaptation } from '@/hooks/useAgeAdaptation';
 import { ContentBlockType } from '@/types/curio';
 import BlockInteractions from '@/components/content-blocks/BlockInteractions';
 import EnhancedContentBlock from '@/components/content-blocks/EnhancedContentBlock';
+import ErrorBlock from '@/components/content-blocks/ErrorBlock';
 
 export interface CurioContentProps {
   currentCurio: any;
@@ -107,6 +109,59 @@ const CurioContent: React.FC<CurioContentProps> = ({
     }
   };
 
+  const renderLoadingState = () => (
+    <div className="space-y-4 py-6">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <motion.div
+          key={`skeleton-${i}`}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 0.5, 0.3] }}
+          transition={{ duration: 2, repeat: Infinity, repeatType: "reverse" }}
+          className="bg-white/5 rounded-lg p-6 h-32"
+        />
+      ))}
+      <div className="text-center text-white/60 pt-4">
+        <RefreshCw className="h-5 w-5 animate-spin mx-auto mb-2" />
+        <p>Generating amazing content for you...</p>
+      </div>
+    </div>
+  );
+
+  const renderGenerationErrorState = () => (
+    <div className="text-center text-white/70 py-8 space-y-4">
+      <AlertCircle className="h-12 w-12 text-red-400 mx-auto" />
+      <p className="text-lg">We encountered an issue generating content.</p>
+      <p className="text-sm text-white/60 max-w-md mx-auto">{generationError}</p>
+      {onRefresh && (
+        <Button 
+          variant="secondary" 
+          onClick={onRefresh}
+          className="mt-4"
+        >
+          <RefreshCw className="mr-2 h-4 w-4" /> Try Again
+        </Button>
+      )}
+    </div>
+  );
+
+  const renderNoContentState = () => (
+    <div className="text-center text-white/70 py-8 space-y-4">
+      <p className="text-lg">No content found for this topic yet.</p>
+      <p className="text-sm text-white/60 max-w-md mx-auto">
+        {isGenerating ? "Content is being generated..." : "Try refreshing or asking a different question."}
+      </p>
+      {onRefresh && (
+        <Button 
+          variant="secondary" 
+          onClick={onRefresh}
+          className="mt-4"
+        >
+          <RefreshCw className="mr-2 h-4 w-4" /> Refresh
+        </Button>
+      )}
+    </div>
+  );
+
   return (
     <div className="p-4 space-y-4">
       <motion.div
@@ -120,21 +175,9 @@ const CurioContent: React.FC<CurioContentProps> = ({
       </motion.div>
 
       {loadingContent || loadingBlocks || isGenerating ? (
-        <div className="space-y-4 py-6">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <motion.div
-              key={`skeleton-${i}`}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: [0, 0.5, 0.3] }}
-              transition={{ duration: 2, repeat: Infinity, repeatType: "reverse" }}
-              className="bg-white/5 rounded-lg p-6 h-32"
-            />
-          ))}
-          <div className="text-center text-white/60 pt-4">
-            <RefreshCw className="h-5 w-5 animate-spin mx-auto mb-2" />
-            <p>Generating amazing content for you...</p>
-          </div>
-        </div>
+        renderLoadingState()
+      ) : generationError ? (
+        renderGenerationErrorState()
       ) : contentBlocks && contentBlocks.length > 0 ? (
         contentBlocks.map((block, index) => (
           <motion.div
@@ -150,35 +193,8 @@ const CurioContent: React.FC<CurioContentProps> = ({
             />
           </motion.div>
         ))
-      ) : generationError ? (
-        <div className="text-center text-white/70 py-8 space-y-4">
-          <AlertCircle className="h-12 w-12 text-red-400 mx-auto" />
-          <p className="text-lg">We encountered an issue generating content.</p>
-          <p className="text-sm text-white/60 max-w-md mx-auto">{generationError}</p>
-          {onRefresh && (
-            <Button 
-              variant="secondary" 
-              onClick={onRefresh}
-              className="mt-4"
-            >
-              <RefreshCw className="mr-2 h-4 w-4" /> Try Again
-            </Button>
-          )}
-        </div>
       ) : (
-        <div className="text-center text-white/60 py-8">
-          <p className="text-lg">No content available yet.</p>
-          <p className="text-sm mt-2">Content may still be generating or there might be an issue.</p>
-          {onRefresh && (
-            <Button 
-              variant="secondary" 
-              onClick={onRefresh}
-              className="mt-4"
-            >
-              <RefreshCw className="mr-2 h-4 w-4" /> Refresh
-            </Button>
-          )}
-        </div>
+        renderNoContentState()
       )}
 
       {hasMoreBlocks && (
@@ -197,7 +213,7 @@ const CurioContent: React.FC<CurioContentProps> = ({
           >
             {loadingBlocks ? (
               <div className="flex items-center">
-                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Loading More...
               </div>
             ) : (

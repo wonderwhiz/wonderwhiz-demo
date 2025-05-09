@@ -89,6 +89,31 @@ export function calculateSimilarity(str1: string, str2: string): number {
 }
 
 /**
+ * Check if a content block has valid content
+ */
+export function hasValidContent(block: ContentBlock): boolean {
+  if (!block?.content) return false;
+  
+  const mainContent = getBlockMainContent(block);
+  return Boolean(mainContent && mainContent.trim().length > 0);
+}
+
+/**
+ * Check if content is likely a placeholder
+ */
+export function isPlaceholderContent(text: string): boolean {
+  const placeholderPatterns = [
+    /loading/i,
+    /generating/i,
+    /discovering/i,
+    /please wait/i,
+    /coming soon/i
+  ];
+  
+  return placeholderPatterns.some(pattern => pattern.test(text));
+}
+
+/**
  * Calculate Levenshtein distance between two strings
  */
 function levenshteinDistance(str1: string, str2: string): number {
