@@ -47,6 +47,7 @@ export interface CurioContentProps {
   generationError?: string | null;
   playText?: (text: string) => void; 
   childAge?: number;
+  triggerGeneration?: () => Promise<void>;
 }
 
 const CurioContent: React.FC<CurioContentProps> = ({
@@ -70,12 +71,15 @@ const CurioContent: React.FC<CurioContentProps> = ({
   onRefresh,
   generationError,
   playText,
-  childAge
+  childAge,
+  triggerGeneration
 }) => {
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replyText, setReplyText] = useState('');
   const { interactionSize, interactionStyle } = useAgeAdaptation(childAge);
   const [loadingContent, setLoadingContent] = useState(true);
+  const [isGeneratingContent, setIsGeneratingContent] = useState(false);
+  const [generationAttempts, setGenerationAttempts] = useState(0);
   
   useEffect(() => {
     // After a short delay, set loading state to false to show content
@@ -109,6 +113,26 @@ const CurioContent: React.FC<CurioContentProps> = ({
     }
   };
 
+  const handleTriggerGeneration = async () => {
+    if (!triggerGeneration) return;
+    
+    setIsGeneratingContent(true);
+    setGenerationAttempts(prev => prev + 1);
+    
+    try {
+      toast.loading("Generating new content...");
+      await triggerGeneration();
+      toast.dismiss();
+      toast.success("Content generation started!");
+    } catch (err) {
+      toast.dismiss();
+      toast.error("Failed to generate content. Please try again.");
+      console.error("Error triggering content generation:", err);
+    } finally {
+      setIsGeneratingContent(false);
+    }
+  };
+
   const renderLoadingState = () => (
     <div className="space-y-4 py-6">
       {Array.from({ length: 3 }).map((_, i) => (
@@ -132,35 +156,107 @@ const CurioContent: React.FC<CurioContentProps> = ({
       <AlertCircle className="h-12 w-12 text-red-400 mx-auto" />
       <p className="text-lg">We encountered an issue generating content.</p>
       <p className="text-sm text-white/60 max-w-md mx-auto">{generationError}</p>
-      {onRefresh && (
-        <Button 
-          variant="secondary" 
-          onClick={onRefresh}
-          className="mt-4"
-        >
-          <RefreshCw className="mr-2 h-4 w-4" /> Try Again
-        </Button>
+      <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2 justify-center mt-4">
+        {onRefresh && (
+          <Button 
+            variant="secondary" 
+            onClick={onRefresh}
+            disabled={isGeneratingContent}
+          >
+            <RefreshCw className="mr-2 h-4 w-4" /> Refresh
+          </Button>
+        )}
+        {triggerGeneration && (
+          <Button 
+            variant="default" 
+            onClick={handleTriggerGeneration}
+            disabled={isGeneratingContent || generationAttempts >= 3}
+            className="bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/80"
+          >
+            {isGeneratingContent ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating...
+              </>
+            ) : (
+              <>
+                <Sparkles className="mr-2 h-4 w-4" /> Generate Content
+              </>
+            )}
+          </Button>
+        )}
+      </div>
+      {generationAttempts >= 3 && (
+        <p className="text-sm text-amber-400 mt-2">
+          Multiple generation attempts failed. Please try refreshing the page.
+        </p>
       )}
     </div>
   );
 
-  const renderNoContentState = () => (
-    <div className="text-center text-white/70 py-8 space-y-4">
-      <p className="text-lg">No content found for this topic yet.</p>
-      <p className="text-sm text-white/60 max-w-md mx-auto">
-        {isGenerating ? "Content is being generated..." : "Try refreshing or asking a different question."}
-      </p>
-      {onRefresh && (
-        <Button 
-          variant="secondary" 
-          onClick={onRefresh}
-          className="mt-4"
-        >
-          <RefreshCw className="mr-2 h-4 w-4" /> Refresh
-        </Button>
-      )}
-    </div>
-  );
+  const renderNoContentState = () => {
+    // Check if blocks contain only placeholder content
+    const hasOnlyPlaceholders = contentBlocks.every(block => {
+      const id = block.id || '';
+      return id.startsWith('placeholder-');
+    });
+
+    return (
+      <div className="text-center text-white/70 py-8 space-y-4">
+        {hasOnlyPlaceholders ? (
+          <>
+            <div className="flex items-center justify-center">
+              <Loader2 className="h-8 w-8 text-wonderwhiz-bright-pink animate-spin" />
+            </div>
+            <p className="text-lg">Creating your personalized learning experience...</p>
+            <p className="text-sm text-white/60 max-w-md mx-auto">
+              Our AI specialists are crafting amazing content just for you.
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="text-lg">No content found for this topic yet.</p>
+            <p className="text-sm text-white/60 max-w-md mx-auto">
+              {isGenerating ? "Content is being generated..." : "Try refreshing or asking a different question."}
+            </p>
+            <div className="flex justify-center space-x-2 mt-4">
+              {onRefresh && (
+                <Button 
+                  variant="secondary" 
+                  onClick={onRefresh}
+                  className="mt-2"
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" /> Refresh
+                </Button>
+              )}
+              {triggerGeneration && (
+                <Button 
+                  variant="default" 
+                  onClick={handleTriggerGeneration}
+                  disabled={isGeneratingContent}
+                  className="bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/80 mt-2"
+                >
+                  {isGeneratingContent ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" /> Generate Content
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
+
+  const getBlockType = (block: any): ContentBlockType => {
+    if (!block || !block.type) return 'fact';
+    return block.type as ContentBlockType;
+  };
 
   return (
     <div className="p-4 space-y-4">
@@ -179,20 +275,48 @@ const CurioContent: React.FC<CurioContentProps> = ({
       ) : generationError ? (
         renderGenerationErrorState()
       ) : contentBlocks && contentBlocks.length > 0 ? (
-        contentBlocks.map((block, index) => (
-          <motion.div
-            key={block.id || `block-${index}`}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: index * 0.1 }}
-          >
-            <EnhancedContentBlock
-              content={block.content.fact || block.content.question || block.content.description || 'No content available'}
-              type={block.type}
-              childAge={childAge}
-            />
-          </motion.div>
-        ))
+        <>
+          {contentBlocks.map((block, index) => (
+            <motion.div
+              key={block.id || `block-${index}`}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: index * 0.1 }}
+              className={cn(
+                "relative",
+                block.id?.startsWith('placeholder-') ? "animate-pulse" : ""
+              )}
+            >
+              <EnhancedContentBlock
+                content={
+                  block.content?.fact || 
+                  block.content?.text || 
+                  block.content?.question || 
+                  block.content?.description || 
+                  'Content is being generated...'
+                }
+                type={getBlockType(block)}
+                childAge={childAge}
+              />
+              
+              {!block.id?.startsWith('placeholder-') && (
+                <BlockInteractions
+                  block={block}
+                  onLike={() => onToggleLike(block.id)}
+                  onBookmark={() => onToggleBookmark(block.id)}
+                  onReadAloud={() => handleReadAloud(
+                    block.content?.fact || 
+                    block.content?.text || 
+                    block.content?.question || 
+                    'No content available for reading'
+                  )}
+                  size={interactionSize}
+                  style={interactionStyle}
+                />
+              )}
+            </motion.div>
+          ))}
+        </>
       ) : (
         renderNoContentState()
       )}

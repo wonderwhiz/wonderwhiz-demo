@@ -86,7 +86,8 @@ const DashboardContainer = () => {
     handleSearch,
     clearSearch,
     isFirstLoad,
-    generationError
+    generationError,
+    triggerContentGeneration
   } = useCurioData(currentCurio?.id, profileId);
 
   const {
@@ -318,6 +319,7 @@ const DashboardContainer = () => {
                   generationError={generationError}
                   playText={playText}
                   childAge={childAge}
+                  triggerGeneration={triggerContentGeneration}
                 />
               </Card>
             </div>
