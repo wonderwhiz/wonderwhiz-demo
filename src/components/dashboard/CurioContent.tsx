@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
@@ -301,15 +300,21 @@ const CurioContent: React.FC<CurioContentProps> = ({
               
               {!block.id?.startsWith('placeholder-') && (
                 <BlockInteractions
-                  block={block}
-                  onLike={() => onToggleLike(block.id)}
-                  onBookmark={() => onToggleBookmark(block.id)}
+                  id={block.id}
+                  onToggleLike={() => onToggleLike(block.id)}
+                  onToggleBookmark={() => onToggleBookmark(block.id)}
                   onReadAloud={() => handleReadAloud(
                     block.content?.fact || 
                     block.content?.text || 
                     block.content?.question || 
                     'No content available for reading'
                   )}
+                  type={getBlockType(block)}
+                  liked={block.liked}
+                  bookmarked={block.bookmarked}
+                  relatedQuestions={block.content?.rabbitHoles || []}
+                  onRabbitHoleClick={handleRabbitHoleClick}
+                  childAge={childAge}
                   size={interactionSize}
                   style={interactionStyle}
                 />

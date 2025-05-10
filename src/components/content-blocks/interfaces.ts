@@ -1,19 +1,22 @@
-
 import { ContentBlockType } from '@/types/curio';
 import { Dispatch, SetStateAction } from 'react';
 
 export interface BlockInteractionsProps {
-  id: string;
-  liked: boolean;
-  bookmarked: boolean;
+  id?: string;
+  liked?: boolean;
+  bookmarked?: boolean;
   type: string | ContentBlockType;
   onToggleLike: () => void;
   onToggleBookmark: () => void;
   setShowReplyForm?: Dispatch<SetStateAction<boolean>>;
   onReply?: (message: string) => void;
   onRabbitHoleClick?: (question: string) => void;
-  relatedQuestions: string[];
+  relatedQuestions?: string[];
   childAge?: number;
+  block?: any; // Adding block prop to fix the type error
+  onReadAloud?: (text: string) => void;
+  size?: string;
+  style?: string;
 }
 
 export interface BlockHeaderProps {

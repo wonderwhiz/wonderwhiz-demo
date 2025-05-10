@@ -23,13 +23,17 @@ serve(async (req) => {
       );
     }
 
+    console.log(`Triggering content generation for curio ${curioId} and child ${childId}`);
+    
     // Create a Supabase client
-    const supabaseAdmin = Deno.env.get('SUPABASE_URL')
-      ? Deno.createClient(
-          Deno.env.get('SUPABASE_URL')!,
-          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-        )
-      : null;
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Missing Supabase environment variables');
+    }
+    
+    const supabaseAdmin = Deno.createClient(supabaseUrl, supabaseKey);
 
     if (!supabaseAdmin) {
       throw new Error('Supabase client could not be created');
@@ -45,6 +49,8 @@ serve(async (req) => {
     if (curioError || !curioData) {
       throw new Error('Could not fetch curio data: ' + (curioError?.message || 'No data found'));
     }
+    
+    console.log(`Found curio with title: ${curioData.title}`);
 
     // Get the child profile
     const { data: childProfile, error: childError } = await supabaseAdmin
@@ -56,23 +62,25 @@ serve(async (req) => {
     if (childError || !childProfile) {
       throw new Error('Could not fetch child profile: ' + (childError?.message || 'No profile found'));
     }
+    
+    console.log(`Found child profile with name: ${childProfile.name}`);
 
     // Call the generate-curiosity-blocks function
-    const generateResponse = await fetch(
-      `${Deno.env.get('SUPABASE_URL')}/functions/v1/generate-curiosity-blocks`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
-        },
-        body: JSON.stringify({
-          query: curioData.query,
-          childProfile: childProfile,
-          blockCount: 5
-        })
-      }
-    );
+    const functionUrl = `${supabaseUrl}/functions/v1/generate-curiosity-blocks`;
+    console.log(`Calling function at ${functionUrl}`);
+    
+    const generateResponse = await fetch(functionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseKey}`
+      },
+      body: JSON.stringify({
+        query: curioData.query,
+        childProfile: childProfile,
+        blockCount: 5
+      })
+    });
 
     if (!generateResponse.ok) {
       const errorData = await generateResponse.text();
@@ -80,6 +88,7 @@ serve(async (req) => {
     }
 
     const generatedBlocks = await generateResponse.json();
+    console.log(`Generated ${generatedBlocks.length} blocks`);
 
     // Insert the generated blocks into the database
     for (const block of generatedBlocks) {

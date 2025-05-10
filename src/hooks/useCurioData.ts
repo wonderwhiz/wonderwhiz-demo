@@ -1,7 +1,4 @@
 
-// Note: This file is assumed to exist based on the code we've seen
-// If it doesn't exist, we'll need to create it
-
 import { useState, useEffect, useCallback } from 'react';
 import { useCurioBlocks } from '@/hooks/use-curio-blocks';
 import { supabase } from '@/integrations/supabase/client';
@@ -73,6 +70,24 @@ export function useCurioData(curioId?: string, profileId?: string) {
     setSearchTerm('');
   }, []);
 
+  const handleTriggerGeneration = useCallback(async () => {
+    if (!curioId || !profileId || !triggerContentGeneration) {
+      return;
+    }
+    
+    setIsGeneratingContent(true);
+    
+    try {
+      await triggerContentGeneration();
+      toast.success("Content generation started!");
+    } catch (error) {
+      console.error("Error triggering content generation:", error);
+      toast.error("Failed to generate content. Please try again.");
+    } finally {
+      setIsGeneratingContent(false);
+    }
+  }, [curioId, profileId, triggerContentGeneration]);
+
   const loadingMoreBlocks = isLoading && blocks.length > 0;
 
   return {
@@ -90,6 +105,6 @@ export function useCurioData(curioId?: string, profileId?: string) {
     clearSearch,
     isFirstLoad,
     generationError,
-    triggerContentGeneration
+    triggerContentGeneration: handleTriggerGeneration
   };
 }
