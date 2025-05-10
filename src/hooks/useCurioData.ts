@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useCurioBlocks } from '@/hooks/use-curio-blocks';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export function useCurioData(curioId?: string, profileId?: string) {
   const [isGeneratingContent, setIsGeneratingContent] = useState(false);

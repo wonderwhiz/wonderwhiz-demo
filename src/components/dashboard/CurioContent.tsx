@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAgeAdaptation } from '@/hooks/useAgeAdaptation';
-import { ContentBlockType } from '@/types/curio';
+import { ContentBlockType, isValidContentBlockType } from '@/types/curio';
 import BlockInteractions from '@/components/content-blocks/BlockInteractions';
 import EnhancedContentBlock from '@/components/content-blocks/EnhancedContentBlock';
 import ErrorBlock from '@/components/content-blocks/ErrorBlock';
@@ -253,8 +253,9 @@ const CurioContent: React.FC<CurioContentProps> = ({
   };
 
   const getBlockType = (block: any): ContentBlockType => {
+    // Ensure we return a valid ContentBlockType by validating it first
     if (!block || !block.type) return 'fact';
-    return block.type as ContentBlockType;
+    return isValidContentBlockType(block.type) ? block.type as ContentBlockType : 'fact';
   };
 
   return (
@@ -315,8 +316,6 @@ const CurioContent: React.FC<CurioContentProps> = ({
                   relatedQuestions={block.content?.rabbitHoles || []}
                   onRabbitHoleClick={handleRabbitHoleClick}
                   childAge={childAge}
-                  size={interactionSize}
-                  style={interactionStyle}
                 />
               )}
             </motion.div>
