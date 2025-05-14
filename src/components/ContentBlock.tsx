@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import ContentBlockErrorBoundary from './content-blocks/ContentBlockErrorBoundary';
@@ -214,7 +215,7 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
       childAge
     };
     
-    switch (block.type) {
+    switch (blockType) {
       case 'quiz':
         return safeRenderBlock(() => (
           <div>
@@ -232,12 +233,12 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
               id={block.id}
               liked={block.liked}
               bookmarked={block.bookmarked}
-              type={block.type}
+              type={blockType}
               onToggleLike={handleToggleLike}
               onToggleBookmark={handleToggleBookmark}
-              setShowReplyForm={setShowReplyForm}
               onRabbitHoleClick={onRabbitHoleClick}
               relatedQuestions={getRelatedQuestions()}
+              childAge={childAge}
             />
           </div>
         ));
@@ -257,12 +258,12 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
               id={block.id}
               liked={block.liked}
               bookmarked={block.bookmarked}
-              type={block.type}
+              type={blockType}
               onToggleLike={handleToggleLike}
               onToggleBookmark={handleToggleBookmark}
-              setShowReplyForm={setShowReplyForm}
               onRabbitHoleClick={onRabbitHoleClick}
               relatedQuestions={getRelatedQuestions()}
+              childAge={childAge}
             />
           </div>
         ));
@@ -279,12 +280,12 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
               id={block.id}
               liked={block.liked}
               bookmarked={block.bookmarked}
-              type={block.type}
+              type={blockType}
               onToggleLike={handleToggleLike}
               onToggleBookmark={handleToggleBookmark}
-              setShowReplyForm={setShowReplyForm}
               onRabbitHoleClick={onRabbitHoleClick}
               relatedQuestions={getRelatedQuestions()}
+              childAge={childAge}
             />
           </div>
         ));
@@ -302,12 +303,12 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
               id={block.id}
               liked={block.liked}
               bookmarked={block.bookmarked}
-              type={block.type}
+              type={blockType}
               onToggleLike={handleToggleLike}
               onToggleBookmark={handleToggleBookmark}
-              setShowReplyForm={setShowReplyForm}
               onRabbitHoleClick={onRabbitHoleClick}
               relatedQuestions={getRelatedQuestions()}
+              childAge={childAge}
             />
           </div>
         ));
@@ -328,12 +329,12 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
               id={block.id}
               liked={block.liked}
               bookmarked={block.bookmarked}
-              type={block.type}
+              type={blockType}
               onToggleLike={handleToggleLike}
               onToggleBookmark={handleToggleBookmark}
-              setShowReplyForm={setShowReplyForm}
               onRabbitHoleClick={onRabbitHoleClick}
               relatedQuestions={getRelatedQuestions()}
+              childAge={childAge}
             />
           </div>
         ));
@@ -351,12 +352,12 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
               id={block.id}
               liked={block.liked}
               bookmarked={block.bookmarked}
-              type={block.type}
+              type={blockType}
               onToggleLike={handleToggleLike}
               onToggleBookmark={handleToggleBookmark}
-              setShowReplyForm={setShowReplyForm}
               onRabbitHoleClick={onRabbitHoleClick}
               relatedQuestions={getRelatedQuestions()}
+              childAge={childAge}
             />
           </div>
         ));
@@ -375,12 +376,12 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
               id={block.id}
               liked={block.liked}
               bookmarked={block.bookmarked}
-              type={block.type}
+              type={blockType}
               onToggleLike={handleToggleLike}
               onToggleBookmark={handleToggleBookmark}
-              setShowReplyForm={setShowReplyForm}
               onRabbitHoleClick={onRabbitHoleClick}
               relatedQuestions={getRelatedQuestions()}
+              childAge={childAge}
             />
           </div>
         ));
@@ -399,12 +400,12 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
               id={block.id}
               liked={block.liked}
               bookmarked={block.bookmarked}
-              type={block.type}
+              type={blockType}
               onToggleLike={handleToggleLike}
               onToggleBookmark={handleToggleBookmark}
-              setShowReplyForm={setShowReplyForm}
               onRabbitHoleClick={onRabbitHoleClick}
               relatedQuestions={getRelatedQuestions()}
+              childAge={childAge}
             />
           </div>
         ));
@@ -423,12 +424,12 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
               id={block.id}
               liked={block.liked}
               bookmarked={block.bookmarked}
-              type={block.type}
+              type={blockType}
               onToggleLike={handleToggleLike}
               onToggleBookmark={handleToggleBookmark}
-              setShowReplyForm={setShowReplyForm}
               onRabbitHoleClick={onRabbitHoleClick}
               relatedQuestions={getRelatedQuestions()}
+              childAge={childAge}
             />
           </div>
         ));
@@ -447,12 +448,12 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
               id={block.id}
               liked={block.liked}
               bookmarked={block.bookmarked}
-              type={block.type}
+              type={blockType}
               onToggleLike={handleToggleLike}
               onToggleBookmark={handleToggleBookmark}
-              setShowReplyForm={setShowReplyForm}
               onRabbitHoleClick={onRabbitHoleClick}
               relatedQuestions={getRelatedQuestions()}
+              childAge={childAge}
             />
           </div>
         ));
@@ -500,12 +501,12 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
               id={block.id}
               liked={block.liked}
               bookmarked={block.bookmarked}
-              type={block.type}
+              type={blockType}
               onToggleLike={handleToggleLike}
               onToggleBookmark={handleToggleBookmark}
-              setShowReplyForm={setShowReplyForm}
               onRabbitHoleClick={onRabbitHoleClick}
               relatedQuestions={getRelatedQuestions()}
+              childAge={childAge}
             />
           </div>
         ));

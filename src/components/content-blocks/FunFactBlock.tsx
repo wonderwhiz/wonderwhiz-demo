@@ -104,7 +104,6 @@ const FunFactBlock: React.FC<FunFactBlockProps> = ({
         type="funFact"
         onToggleLike={onLike || (() => {})}
         onToggleBookmark={onBookmark || (() => {})}
-        setShowReplyForm={setShowReplyForm}
         onRabbitHoleClick={onRabbitHoleClick}
         relatedQuestions={[]}
         childAge={childAge}

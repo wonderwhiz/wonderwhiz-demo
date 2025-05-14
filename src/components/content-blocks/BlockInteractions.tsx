@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ThumbsUp, Bookmark, Volume2, ArrowRight } from 'lucide-react';
 import { ContentBlockType } from '@/types/curio';
+import { Dispatch, SetStateAction } from 'react';
 
 export interface BlockInteractionsProps {
   id: string;
@@ -16,6 +17,8 @@ export interface BlockInteractionsProps {
   relatedQuestions?: string[];
   onRabbitHoleClick?: (question: string) => void;
   childAge?: number;
+  setShowReplyForm?: Dispatch<SetStateAction<boolean>>;
+  block?: any; // Adding block prop
 }
 
 const BlockInteractions: React.FC<BlockInteractionsProps> = ({
@@ -28,9 +31,10 @@ const BlockInteractions: React.FC<BlockInteractionsProps> = ({
   bookmarked,
   relatedQuestions = [],
   onRabbitHoleClick,
-  childAge = 10
+  childAge = 10,
+  setShowReplyForm
 }) => {
-  const buttonSize = childAge <= 7 ? 'sm' : 'xs';
+  const buttonSize = childAge <= 7 ? 'sm' : 'default';
   const iconSize = childAge <= 7 ? 'h-4 w-4' : 'h-3.5 w-3.5';
 
   return (
