@@ -62,6 +62,59 @@ serve(async (req) => {
     
     console.log(`Found child profile with name: ${childProfile.name}`);
 
+    // Check if blocks already exist for this curio to avoid duplicate generation
+    const { count, error: countError } = await supabase
+      .from('content_blocks')
+      .select('*', { count: 'exact', head: true })
+      .eq('curio_id', curioId);
+      
+    if (countError) {
+      throw new Error('Error checking existing blocks: ' + countError.message);
+    }
+    
+    if (count && count > 0) {
+      console.log(`Found ${count} existing blocks, skipping generation`);
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: `Found ${count} existing blocks, no need to generate new ones` 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Generate placeholder blocks
+    const placeholderBlocks = [
+      {
+        curio_id: curioId,
+        specialist_id: 'nova',
+        type: 'fact',
+        content: { 
+          fact: "I'm discovering fascinating information about this topic...",
+          rabbitHoles: []
+        }
+      },
+      {
+        curio_id: curioId,
+        specialist_id: 'spark',
+        type: 'funFact',
+        content: { 
+          text: "Did you know? I'm finding interesting facts about this topic..."
+        }
+      }
+    ];
+    
+    // Insert placeholder blocks first so the UI has something to show
+    for (const block of placeholderBlocks) {
+      const { error: insertError } = await supabase
+        .from('content_blocks')
+        .insert(block);
+
+      if (insertError) {
+        console.error("Error inserting placeholder block:", insertError);
+      }
+    }
+
     // Call the generate-curiosity-blocks function
     const functionUrl = `${supabaseUrl}/functions/v1/generate-curiosity-blocks`;
     console.log(`Calling function at ${functionUrl}`);
@@ -80,8 +133,16 @@ serve(async (req) => {
     });
 
     if (!generateResponse.ok) {
-      const errorData = await generateResponse.text();
-      throw new Error(`Failed to generate blocks: ${errorData}`);
+      const errorText = await generateResponse.text();
+      console.error(`Failed to generate blocks: Status ${generateResponse.status}, ${errorText}`);
+      
+      // Update curio with generation error
+      await supabase
+        .from('curios')
+        .update({ generation_error: `Failed to generate content: ${errorText}` })
+        .eq('id', curioId);
+        
+      throw new Error(`Failed to generate blocks: ${errorText}`);
     }
 
     const generatedBlocks = await generateResponse.json();

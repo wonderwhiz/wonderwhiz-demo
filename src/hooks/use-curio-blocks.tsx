@@ -3,7 +3,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { ContentBlock } from '@/types/curio';
 import { useConsoleLogger } from '@/hooks/useConsoleLogger';
-import { isContentDuplicate, hasValidContent, isPlaceholderContent } from '@/utils/contentValidation';
 
 interface UseCurioBlocksResult {
   blocks: ContentBlock[];
@@ -24,8 +23,6 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const [page, setPage] = useState(0);
   const [generationError, setGenerationError] = useState<string | null>(null);
-  const [isCheckingStatus, setIsCheckingStatus] = useState(false);
-  const [attemptCount, setAttemptCount] = useState(0);
   
   // Store the previous curioId to detect changes
   const previousCurioIdRef = useRef<string | undefined>(undefined);
@@ -34,13 +31,12 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
   const blockLoadingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const fetchInProgressRef = useRef<boolean>(false);
   const lastFetchTimeRef = useRef<number>(0);
-  const checkStatusInProgressRef = useRef<boolean>(false);
+  const callCountRef = useRef<number>(0);
 
   // Debug logging
   useConsoleLogger(curioId, 'Current Curio ID');
   useConsoleLogger(generationError, 'Generation Error');
   useConsoleLogger(blocks.length, 'Block Count');
-  useConsoleLogger(isCheckingStatus, 'Is Checking Status');
 
   // Track when curio ID changes
   useEffect(() => {
@@ -54,10 +50,10 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
         setPage(0);
         setIsFirstLoad(true);
         setGenerationError(null);
-        setAttemptCount(0);
         previousCurioIdRef.current = curioId;
         lastFetchTimeRef.current = 0;
         fetchInProgressRef.current = false;
+        callCountRef.current = 0;
       }
     }
   }, [curioId]);
@@ -132,6 +128,13 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
 
   const fetchBlocks = useCallback(async () => {
     if (!curioId || fetchInProgressRef.current) return;
+    
+    // Prevent too many calls in a short period
+    callCountRef.current += 1;
+    if (callCountRef.current > 5) {
+      console.log("Too many fetch attempts, stopping to prevent infinite loop");
+      return;
+    }
     
     // Prevent fetching too frequently
     const now = Date.now();
@@ -253,7 +256,7 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
               existingBlock.id === block.id
             );
             
-            if (!isDuplicate && hasValidContent(block)) {
+            if (!isDuplicate) {
               newBlocks.push(block);
             }
           });
@@ -264,11 +267,10 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
         setHasMore(data.length === 10);
         setIsFirstLoad(false);
         
-        // Stop checking status if we have blocks now
-        checkStatusInProgressRef.current = false;
-        setAttemptCount(0);
+        // Reset the call count since we got a successful response
+        callCountRef.current = 0;
       } 
-      else if (count === 0 && blocks.length === 0) {
+      else if (count === 0 && blocks.length === 0 && !blockGenerationInProgress.current) {
         // If we still don't have blocks, maybe we need to create some...
         console.log("No content blocks found for this curio");
         
@@ -304,6 +306,11 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
           ]);
         }
         
+        // Try to trigger content generation if we don't have blocks
+        if (childId && !blockGenerationInProgress.current) {
+          triggerContentGeneration();
+        }
+        
         setHasMore(false);
       }
     } catch (err) {
@@ -313,102 +320,13 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
       setIsLoading(false);
       fetchInProgressRef.current = false;
     }
-  }, [curioId, searchQuery, page, blocks]);
+  }, [curioId, searchQuery, page, blocks, childId, triggerContentGeneration]);
 
   useEffect(() => {
     if (curioId) {
       fetchBlocks();
     }
   }, [curioId, searchQuery, page, fetchBlocks]);
-
-  // Check and initiate content generation if needed
-  const checkContentStatus = useCallback(async () => {
-    if (!curioId || !childId || checkStatusInProgressRef.current || blockGenerationInProgress.current) return;
-    
-    checkStatusInProgressRef.current = true;
-    setIsCheckingStatus(true);
-    
-    try {
-      // First check if there are already blocks
-      const { count, error: countError } = await supabase
-        .from('content_blocks')
-        .select('*', { count: 'exact', head: true })
-        .eq('curio_id', curioId);
-        
-      if (countError) {
-        console.error("Error checking block count:", countError);
-        checkStatusInProgressRef.current = false;
-        setIsCheckingStatus(false);
-        return;
-      }
-      
-      // If there are no blocks, check the curio status
-      if (count === 0) {
-        const { data: curioData, error: curioError } = await supabase
-          .from('curios')
-          .select('generation_error')
-          .eq('id', curioId)
-          .single();
-          
-        if (curioError) {
-          console.error("Error fetching curio status:", curioError);
-        } else if (curioData && curioData.generation_error) {
-          setGenerationError(curioData.generation_error);
-        }
-        
-        // Check if we need to trigger generation
-        if (attemptCount >= 3 && attemptCount < 6) {
-          console.log("Multiple attempts with no content, trying to generate content");
-          if (!blockGenerationInProgress.current) {
-            await triggerContentGeneration();
-          }
-        }
-        
-        // Continue checking periodically if needed
-        if (attemptCount < 12) {
-          setAttemptCount(prev => prev + 1);
-          
-          // Use exponential backoff for retries (2, 4, 6, 8, 10, 12 seconds)
-          const backoffTime = Math.min(2000 + (attemptCount * 1000), 12000);
-          
-          setTimeout(() => {
-            checkStatusInProgressRef.current = false;
-            setIsCheckingStatus(false);
-            checkContentStatus();
-          }, backoffTime);
-        } else {
-          console.log("Max attempts reached, stopping automatic checks");
-          setGenerationError("Content generation is taking longer than expected. Please try refreshing.");
-          checkStatusInProgressRef.current = false;
-          setIsCheckingStatus(false);
-        }
-      } else {
-        checkStatusInProgressRef.current = false;
-        setIsCheckingStatus(false);
-      }
-    } catch (err) {
-      console.error("Error checking content status:", err);
-      checkStatusInProgressRef.current = false;
-      setIsCheckingStatus(false);
-    }
-  }, [curioId, childId, attemptCount, triggerContentGeneration]);
-
-  // Run content status check once on initial load
-  useEffect(() => {
-    if (curioId && childId && blocks.length === 0 && !blockGenerationInProgress.current) {
-      checkContentStatus();
-    }
-    
-    return () => {
-      if (blockLoadingTimerRef.current) {
-        clearTimeout(blockLoadingTimerRef.current);
-      }
-      
-      if (generationTimeoutRef.current) {
-        clearTimeout(generationTimeoutRef.current);
-      }
-    };
-  }, [curioId, childId, blocks.length, checkContentStatus]);
 
   const loadMore = useCallback(async () => {
     if (!curioId || isLoading) return;
@@ -426,46 +344,3 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
     triggerContentGeneration
   };
 };
-
-// Helper function to extract main content from a block
-function getBlockMainContent(block: ContentBlock): string | null {
-  if (!block?.content) return null;
-
-  // Extract content based on block type
-  switch (block.type) {
-    case 'fact':
-    case 'funFact':
-      return block.content.fact || block.content.text || null;
-    case 'quiz':
-      return block.content.question || null;
-    case 'flashcard':
-      return `${block.content.front} ${block.content.back}` || null;
-    case 'creative':
-      return block.content.prompt || block.content.description || null;
-    case 'task':
-      return block.content.task || null;
-    case 'riddle':
-      return block.content.riddle || null;
-    case 'activity':
-      return block.content.activity || block.content.instructions || null;
-    case 'mindfulness':
-      return block.content.exercise || block.content.instruction || null;
-    case 'news':
-      return block.content.headline || block.content.body || block.content.summary || null;
-    default:
-      // For other types, try to find any text content
-      const content = block.content;
-      return (
-        content.text ||
-        content.fact ||
-        content.description ||
-        content.question ||
-        content.body ||
-        content.headline ||
-        content.prompt ||
-        content.task ||
-        content.instruction ||
-        null
-      );
-  }
-}

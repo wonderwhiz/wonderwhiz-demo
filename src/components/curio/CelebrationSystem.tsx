@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { Award, Star, Sparkles, Trophy } from 'lucide-react';
@@ -32,12 +31,14 @@ const CelebrationSystem: React.FC<CelebrationSystemProps> = ({
 }) => {
   const [visible, setVisible] = useState(false);
   const [celebrationType, setCelebrationType] = useState<'milestone' | 'sparks' | 'achievement' | null>(null);
+  const hasTriggeredConfetti = useRef<boolean>(false);
 
   useEffect(() => {
-    if (milestone) {
+    if (milestone && !hasTriggeredConfetti.current) {
       setCelebrationType('milestone');
       setVisible(true);
       triggerCelebration('small');
+      hasTriggeredConfetti.current = true;
       
       // Auto-hide milestone celebrations after delay
       const timer = setTimeout(() => {
@@ -48,10 +49,11 @@ const CelebrationSystem: React.FC<CelebrationSystemProps> = ({
   }, [milestone]);
 
   useEffect(() => {
-    if (sparksEarned > 0) {
+    if (sparksEarned > 0 && !hasTriggeredConfetti.current) {
       setCelebrationType('sparks');
       setVisible(true);
       triggerCelebration('small');
+      hasTriggeredConfetti.current = true;
       
       // Auto-hide spark celebrations after delay
       const timer = setTimeout(() => {
@@ -62,14 +64,20 @@ const CelebrationSystem: React.FC<CelebrationSystemProps> = ({
   }, [sparksEarned]);
 
   useEffect(() => {
-    if (achievement) {
+    if (achievement && !hasTriggeredConfetti.current) {
       setCelebrationType('achievement');
       setVisible(true);
       triggerCelebration('large');
+      hasTriggeredConfetti.current = true;
     }
   }, [achievement]);
 
   const triggerCelebration = (size: 'small' | 'medium' | 'large') => {
+    // Prevent multiple confetti calls
+    if (hasTriggeredConfetti.current) {
+      return;
+    }
+    
     switch (size) {
       case 'small':
         confetti({
@@ -85,30 +93,16 @@ const CelebrationSystem: React.FC<CelebrationSystemProps> = ({
           origin: { y: 0.6 }
         });
         break;
-      case 'large':
-        // Multiple bursts
-        const duration = 3000;
-        const end = Date.now() + duration;
-        
-        (function frame() {
-          confetti({
-            particleCount: 7,
-            angle: 60,
-            spread: 55,
-            origin: { x: 0, y: 0.6 }
-          });
-          confetti({
-            particleCount: 7,
-            angle: 120,
-            spread: 55,
-            origin: { x: 1, y: 0.6 }
-          });
-          
-          if (Date.now() < end) {
-            requestAnimationFrame(frame);
-          }
-        }());
+      case 'large': {
+        // Single burst for large celebration instead of continuous animation
+        confetti({
+          particleCount: 100,
+          spread: 100,
+          origin: { y: 0.6 },
+          colors: ['#FFD700', '#FF00FF', '#00FFFF', '#FF4500']
+        });
         break;
+      }
     }
   };
 
