@@ -1,2 +1,5 @@
 
 project_id = "turexhnvsvmllwitllmg"
+
+[complete-task]
+invoke_function_policy = "authenticated"
