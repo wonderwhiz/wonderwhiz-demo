@@ -252,10 +252,10 @@ const CurioContent: React.FC<CurioContentProps> = ({
     );
   };
 
-  const getBlockType = (block: any): ContentBlockType => {
-    // Ensure we return a valid ContentBlockType by validating it first
+  // Get a valid content block type, defaulting to 'fact' if invalid
+  const getValidBlockType = (block: any): ContentBlockType => {
     if (!block || !block.type) return 'fact';
-    return isValidContentBlockType(block.type) ? block.type as ContentBlockType : 'fact';
+    return isValidContentBlockType(block.type) ? block.type : 'fact';
   };
 
   return (
@@ -270,7 +270,7 @@ const CurioContent: React.FC<CurioContentProps> = ({
         <p className="text-sm text-white/70 mt-1 font-lato">{currentCurio?.query}</p>
       </motion.div>
 
-      {loadingContent || loadingBlocks || isGenerating ? (
+      {loadingBlocks || isGenerating ? (
         renderLoadingState()
       ) : generationError ? (
         renderGenerationErrorState()
@@ -295,7 +295,7 @@ const CurioContent: React.FC<CurioContentProps> = ({
                   block.content?.description || 
                   'Content is being generated...'
                 }
-                type={getBlockType(block)}
+                type={getValidBlockType(block)}
                 childAge={childAge}
               />
               
@@ -304,17 +304,17 @@ const CurioContent: React.FC<CurioContentProps> = ({
                   id={block.id}
                   onToggleLike={() => onToggleLike(block.id)}
                   onToggleBookmark={() => onToggleBookmark(block.id)}
-                  onReadAloud={() => handleReadAloud(
+                  onReadAloud={() => playText && playText(
                     block.content?.fact || 
                     block.content?.text || 
                     block.content?.question || 
                     'No content available for reading'
                   )}
-                  type={getBlockType(block)}
+                  type={getValidBlockType(block)}
                   liked={block.liked}
                   bookmarked={block.bookmarked}
                   relatedQuestions={block.content?.rabbitHoles || []}
-                  onRabbitHoleClick={handleRabbitHoleClick}
+                  onRabbitHoleClick={onRabbitHoleFollow}
                   childAge={childAge}
                 />
               )}

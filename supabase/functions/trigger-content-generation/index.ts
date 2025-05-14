@@ -33,14 +33,10 @@ serve(async (req) => {
       throw new Error('Missing Supabase environment variables');
     }
     
-    const supabaseAdmin = Deno.createClient(supabaseUrl, supabaseKey);
-
-    if (!supabaseAdmin) {
-      throw new Error('Supabase client could not be created');
-    }
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Get the curio details
-    const { data: curioData, error: curioError } = await supabaseAdmin
+    const { data: curioData, error: curioError } = await supabase
       .from('curios')
       .select('title, query')
       .eq('id', curioId)
@@ -53,7 +49,7 @@ serve(async (req) => {
     console.log(`Found curio with title: ${curioData.title}`);
 
     // Get the child profile
-    const { data: childProfile, error: childError } = await supabaseAdmin
+    const { data: childProfile, error: childError } = await supabase
       .from('child_profiles')
       .select('*')
       .eq('id', childId)
@@ -92,7 +88,7 @@ serve(async (req) => {
 
     // Insert the generated blocks into the database
     for (const block of generatedBlocks) {
-      const { error: insertError } = await supabaseAdmin
+      const { error: insertError } = await supabase
         .from('content_blocks')
         .insert({
           ...block,
@@ -105,7 +101,7 @@ serve(async (req) => {
     }
 
     // Clear any generation errors on the curio
-    await supabaseAdmin
+    await supabase
       .from('curios')
       .update({ generation_error: null })
       .eq('id', curioId);
@@ -126,3 +122,114 @@ serve(async (req) => {
     );
   }
 });
+
+// Helper function to create a Supabase client
+function createClient(supabaseUrl: string, supabaseKey: string) {
+  return {
+    from: (table: string) => ({
+      select: (columns: string = '*') => ({
+        eq: (column: string, value: any) => ({
+          single: () => fetchFromSupabase(`${supabaseUrl}/rest/v1/${table}?select=${columns}&${column}=eq.${value}&limit=1`, supabaseKey)
+        }),
+        range: (start: number, end: number) => fetchFromSupabase(`${supabaseUrl}/rest/v1/${table}?select=${columns}&offset=${start}&limit=${end-start+1}`, supabaseKey)
+      }),
+      insert: (data: any) => insertToSupabase(`${supabaseUrl}/rest/v1/${table}`, data, supabaseKey),
+      update: (data: any) => ({
+        eq: (column: string, value: any) => updateSupabase(`${supabaseUrl}/rest/v1/${table}?${column}=eq.${value}`, data, supabaseKey)
+      })
+    }),
+    functions: {
+      invoke: (functionName: string, options: { body: any }) => {
+        return fetch(`${supabaseUrl}/functions/v1/${functionName}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseKey}`
+          },
+          body: JSON.stringify(options.body)
+        }).then(async (response) => {
+          const data = await response.json();
+          return {
+            data: response.ok ? data : null,
+            error: response.ok ? null : new Error(data.error || 'Error invoking function')
+          };
+        }).catch(error => ({
+          data: null,
+          error
+        }));
+      }
+    }
+  };
+}
+
+// Helper function to fetch data from Supabase
+async function fetchFromSupabase(url: string, apiKey: string) {
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'apikey': apiKey,
+        'Authorization': `Bearer ${apiKey}`
+      }
+    });
+    
+    const data = await response.json();
+    
+    return {
+      data: response.ok ? (Array.isArray(data) && data.length === 1 ? data[0] : data) : null,
+      error: response.ok ? null : new Error(JSON.stringify(data))
+    };
+  } catch (error) {
+    return {
+      data: null,
+      error
+    };
+  }
+}
+
+// Helper function to insert data to Supabase
+async function insertToSupabase(url: string, data: any, apiKey: string) {
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'apikey': apiKey,
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify(data)
+    });
+    
+    return {
+      error: response.ok ? null : new Error(await response.text())
+    };
+  } catch (error) {
+    return {
+      error
+    };
+  }
+}
+
+// Helper function to update data in Supabase
+async function updateSupabase(url: string, data: any, apiKey: string) {
+  try {
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers: {
+        'apikey': apiKey,
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify(data)
+    });
+    
+    return {
+      error: response.ok ? null : new Error(await response.text())
+    };
+  } catch (error) {
+    return {
+      error
+    };
+  }
+}

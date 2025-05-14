@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { ContentBlock } from '@/types/curio';
 import { useConsoleLogger } from '@/hooks/useConsoleLogger';
@@ -26,7 +26,12 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
   const [attemptCount, setAttemptCount] = useState(0);
-  const [previousCurioId, setPreviousCurioId] = useState<string | undefined>(undefined);
+  
+  // Store the previous curioId to detect changes
+  const previousCurioIdRef = useRef<string | undefined>(undefined);
+  const blockGenerationInProgress = useRef<boolean>(false);
+  const generationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const blockLoadingTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Debug logging
   useConsoleLogger(curioId, 'Current Curio ID');
@@ -36,6 +41,8 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
 
   // Track when curio ID changes
   useEffect(() => {
+    const previousCurioId = previousCurioIdRef.current;
+    
     if (curioId !== previousCurioId) {
       console.log(`Curio ID changed from ${previousCurioId} to ${curioId}`);
       if (curioId) {
@@ -45,10 +52,10 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
         setIsFirstLoad(true);
         setGenerationError(null);
         setAttemptCount(0);
-        setPreviousCurioId(curioId);
+        previousCurioIdRef.current = curioId;
       }
     }
-  }, [curioId, previousCurioId]);
+  }, [curioId]);
 
   const triggerContentGeneration = useCallback(async () => {
     if (!curioId || !childId) return;
@@ -56,79 +63,25 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
     try {
       console.log(`Attempting to trigger content generation for curio: ${curioId}`);
       
-      // First get the curio details to pass to the generation function
-      const { data: curioData, error: curioError } = await supabase
-        .from('curios')
-        .select('title, query')
-        .eq('id', curioId)
-        .single();
-        
-      if (curioError) {
-        console.error("Error fetching curio details:", curioError);
-        return;
-      }
-      
-      if (!curioData) {
-        console.error("No curio data found for generation");
-        return;
-      }
-      
-      // Get child profile for generation
-      const { data: childProfile, error: childError } = await supabase
-        .from('child_profiles')
-        .select('*')
-        .eq('id', childId)
-        .single();
-        
-      if (childError) {
-        console.error("Error fetching child profile for generation:", childError);
-        return;
-      }
-      
       setIsLoading(true);
+      setGenerationError(null);
       
-      // Call the generate-curiosity-blocks edge function
-      const { data: generatedBlocks, error: generationError } = await supabase.functions.invoke(
-        'generate-curiosity-blocks',
-        {
-          body: JSON.stringify({
-            query: curioData.query,
-            childProfile: childProfile,
-            blockCount: 5,
-          })
-        }
-      );
+      const { data, error } = await supabase.functions.invoke('trigger-content-generation', {
+        body: { curioId, childId }
+      });
       
-      if (generationError) {
-        console.error("Error generating blocks:", generationError);
+      if (error) {
+        console.error("Error triggering content generation:", error);
         setGenerationError("Failed to generate content. Please try again.");
         return;
       }
       
-      if (!generatedBlocks || generatedBlocks.length === 0) {
-        console.error("No blocks were generated");
-        setGenerationError("No content was generated. Please try again.");
-        return;
-      }
+      console.log("Content generation triggered successfully:", data);
       
-      console.log(`Generated ${generatedBlocks.length} blocks, now inserting into database`);
-      
-      // Insert the generated blocks into the database
-      for (const block of generatedBlocks) {
-        const { error: insertError } = await supabase
-          .from('content_blocks')
-          .insert({
-            ...block,
-            curio_id: curioId
-          });
-          
-        if (insertError) {
-          console.error("Error inserting block:", insertError);
-        }
-      }
-      
-      // Fetch the newly inserted blocks to update the UI
-      fetchBlocks();
+      // Fetch the newly generated blocks after a delay
+      setTimeout(() => {
+        fetchBlocks();
+      }, 2000);
       
     } catch (err) {
       console.error("Error in content generation process:", err);
@@ -307,82 +260,86 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
 
   useEffect(() => {
     if (curioId) {
-      setBlocks([]);
-      setPage(0);
-      setIsFirstLoad(true);
       fetchBlocks();
     }
-  }, [curioId, searchQuery, fetchBlocks]);
+  }, [curioId, searchQuery, page, fetchBlocks]);
 
-  // Fetch generation error from curios table
-  useEffect(() => {
-    // This is where we fetch any errors coming from content generation
-    const fetchGenerationStatus = async () => {
-      if (!curioId || isCheckingStatus) return;
+  // Check and initiate content generation if needed
+  const checkContentStatus = useCallback(async () => {
+    if (!curioId || !childId || isCheckingStatus || blockGenerationInProgress.current) return;
+    
+    setIsCheckingStatus(true);
+    
+    try {
+      // First check if there are already blocks
+      const { count, error: countError } = await supabase
+        .from('content_blocks')
+        .select('*', { count: 'exact', head: true })
+        .eq('curio_id', curioId);
+        
+      if (countError) {
+        console.error("Error checking block count:", countError);
+        setIsCheckingStatus(false);
+        return;
+      }
       
-      setIsCheckingStatus(true);
-      
-      try {
-        const { data, error } = await supabase
+      // If there are no blocks, check the curio status
+      if (count === 0) {
+        const { data: curioData, error: curioError } = await supabase
           .from('curios')
           .select('generation_error')
           .eq('id', curioId)
           .single();
           
-        if (error) {
-          console.error("Error fetching generation status:", error);
-          setIsCheckingStatus(false);
-          return;
+        if (curioError) {
+          console.error("Error fetching curio status:", curioError);
+        } else if (curioData && curioData.generation_error) {
+          setGenerationError(curioData.generation_error);
         }
         
-        // Handle the data safely
-        if (data) {
-          if (data.generation_error) {
-            console.log("Found generation error:", data.generation_error);
-            setGenerationError(data.generation_error);
-          } else {
-            setGenerationError(null);
-          }
-          
-          // If we have no blocks or only placeholder blocks, we might need to check again
-          const hasOnlyPlaceholders = blocks.every(block => 
-            block.id.startsWith('placeholder-') || 
-            isPlaceholderContent(getBlockMainContent(block) || '')
-          );
-            
-          if (blocks.length === 0 || hasOnlyPlaceholders) {
-            setAttemptCount(prev => prev + 1);
-            console.log(`No blocks yet, will check again in 5 seconds (attempt ${attemptCount + 1})`);
-            
-            // After several attempts, try to trigger content generation
-            if (attemptCount >= 5 && attemptCount < 10) {
-              console.log("Multiple attempts with no content, trying to generate content");
-              triggerContentGeneration();
-            }
-            
-            // Continue checking for a reasonable number of attempts
-            if (attemptCount < 20) {
-              setTimeout(() => {
-                setIsCheckingStatus(false);
-                fetchGenerationStatus();
-              }, 5000);
-            } else {
-              console.log("Max attempts reached, stopping automatic checks");
-              setGenerationError("Content generation is taking longer than expected. Please try refreshing.");
-              setIsCheckingStatus(false);
-            }
-          } else {
-            setIsCheckingStatus(false);
-          }
+        // Check if we need to trigger generation
+        if (attemptCount >= 3 && attemptCount < 10) {
+          console.log("Multiple attempts with no content, trying to generate content");
+          await triggerContentGeneration();
         }
-      } catch (err) {
-        console.error("Error fetching generation status:", err);
+        
+        // Continue checking periodically if needed
+        if (attemptCount < 20) {
+          setAttemptCount(prev => prev + 1);
+          setTimeout(() => {
+            setIsCheckingStatus(false);
+            checkContentStatus();
+          }, 5000);
+        } else {
+          console.log("Max attempts reached, stopping automatic checks");
+          setGenerationError("Content generation is taking longer than expected. Please try refreshing.");
+          setIsCheckingStatus(false);
+        }
+      } else {
         setIsCheckingStatus(false);
       }
-    };
+    } catch (err) {
+      console.error("Error checking content status:", err);
+      setIsCheckingStatus(false);
+    }
+  }, [curioId, childId, isCheckingStatus, attemptCount, triggerContentGeneration]);
+
+  // Run content status check once on initial load
+  useEffect(() => {
+    if (curioId && childId && blocks.length === 0) {
+      checkContentStatus();
+    }
     
-    fetchGenerationStatus();
-  }, [curioId, blocks, triggerContentGeneration, attemptCount, isCheckingStatus]);
+    return () => {
+      if (blockLoadingTimerRef.current) {
+        clearTimeout(blockLoadingTimerRef.current);
+      }
+      
+      if (generationTimeoutRef.current) {
+        clearTimeout(generationTimeoutRef.current);
+      }
+    };
+  }, [curioId, childId, blocks.length, checkContentStatus]);
 
   const loadMore = useCallback(async () => {
     if (!curioId || isLoading) return;
