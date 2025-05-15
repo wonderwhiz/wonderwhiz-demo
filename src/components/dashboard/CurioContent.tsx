@@ -287,17 +287,24 @@ const CurioContent: React.FC<CurioContentProps> = ({
                 block.id?.startsWith('placeholder-') ? "animate-pulse" : ""
               )}
             >
+              {/* Fix: Add all required props to EnhancedContentBlock */}
               <EnhancedContentBlock
-                content={
-                  block.content?.fact || 
-                  block.content?.text || 
-                  block.content?.question || 
-                  block.content?.description || 
-                  'Content is being generated...'
-                }
+                id={block.id || `block-${index}`}
+                content={block.content}
                 type={getValidBlockType(block)}
+                specialistId={block.specialist_id || "spark"}
+                liked={block.liked || false}
+                bookmarked={block.bookmarked || false}
                 childAge={childAge}
-              />
+              >
+                <div>
+                  {block.content?.fact || 
+                   block.content?.text || 
+                   block.content?.question || 
+                   block.content?.description || 
+                   'Content is being generated...'}
+                </div>
+              </EnhancedContentBlock>
               
               {!block.id?.startsWith('placeholder-') && (
                 <BlockInteractions

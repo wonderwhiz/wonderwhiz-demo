@@ -99,14 +99,18 @@ const EnhancedContentBlock: React.FC<EnhancedContentBlockProps> = ({
       className="relative"
     >
       <Card className={`relative overflow-hidden bg-white/5 border border-white/10 hover:border-white/20 transition-colors ${className}`}>
-        <BlockDecorator type={type} />
+        {/* Fix: Add children prop to BlockDecorator */}
+        <BlockDecorator type={type}>
+          <div className="relative z-10">
+            {/* Content will go here */}
+          </div>
+        </BlockDecorator>
         
         <div className="p-4 sm:p-5 relative z-10">
+          {/* Fix: Remove specialistName and specialistAvatar props to match interface */}
           <BlockHeader 
             type={type}
             specialistId={specialistId}
-            specialistName={specialist?.name || 'Specialist'}
-            specialistAvatar={specialist?.avatar}
           />
           
           <div className="mt-2 sm:mt-3 text-white">

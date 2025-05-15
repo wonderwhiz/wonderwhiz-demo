@@ -14,7 +14,7 @@ export function useCurioBlocks(childId?: string, curioId?: string, searchQuery: 
   
   // Use refs to track state for preventing duplicate fetches and race conditions
   const isFetchingRef = useRef(false);
-  const fetchTimerRef = useRef<number | null>(null);
+  const fetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null); // Fix: use ReturnType<typeof setTimeout> instead of number
   const fetchTriesRef = useRef(0);
   const abortControllerRef = useRef<AbortController | null>(null);
   const mountedRef = useRef(true);
