@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -213,8 +214,10 @@ const EnhancedCurioPage: React.FC = () => {
         .delete()
         .eq('curio_id', curioId);
         
+      // Fix the error by removing setBlocks (which doesn't exist) - we'll rely on the hook to update blocks
       // Reset blocks array to show placeholders again
-      setBlocks([]);
+      // setBlocks([]); - REMOVED THIS LINE
+      
       setTimeout(() => {
         triggerContentGeneration();
       }, 1000);

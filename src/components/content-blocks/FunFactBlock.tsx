@@ -32,14 +32,9 @@ const FunFactBlock: React.FC<FunFactBlockProps> = ({
   const [showReplyForm, setShowReplyForm] = useState(false);
   const { textSize, messageStyle } = useAgeAdaptation(childAge);
   
-  const getHeader = () => {
-    if (messageStyle === 'playful') {
-      return "Wow! Did You Know?";
-    } else if (messageStyle === 'casual') {
-      return "Fun Fact";
-    } else {
-      return "Interesting Fact";
-    }
+  // This function now returns a ContentBlockType instead of a string
+  const getHeaderType = () => {
+    return "funFact";
   };
 
   return (
@@ -65,9 +60,8 @@ const FunFactBlock: React.FC<FunFactBlockProps> = ({
       </motion.div>
       
       <BlockHeader 
-        type={getHeader()} 
+        type={getHeaderType()} 
         specialistId={specialistId} 
-        childAge={childAge} 
       />
       
       <div className="p-5">
