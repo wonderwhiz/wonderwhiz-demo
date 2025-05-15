@@ -33,7 +33,7 @@ const EnhancedCurioPage: React.FC = () => {
   const { user } = useUser();
   const { childProfile, isLoading: isLoadingProfile, error: profileError } = useChildProfile(childId);
   const { searchQuery, setSearchQuery, handleSearch } = useSearch();
-  const { blocks, isLoading: isLoadingBlocks, error: blocksError, hasMore, loadMore, isFirstLoad, generationError } = useCurioBlocks(childId, curioId, searchQuery);
+  const { blocks, isLoading: isLoadingBlocks, error: blocksError, hasMore, loadMore, isFirstLoad, generationError, triggerContentGeneration } = useCurioBlocks(childId, curioId, searchQuery);
   const { playText, isLoading: isVoiceLoading, stopPlaying } = useElevenLabsVoice();
   
   const { 
@@ -64,6 +64,7 @@ const EnhancedCurioPage: React.FC = () => {
   const [relatedConnections, setRelatedConnections] = useState<{title: string, description: string, type: 'related' | 'deeper' | 'broader'}[]>([]);
   
   const loadTriggerRef = useRef<HTMLDivElement>(null);
+  const contentGenerationAttempted = useRef<boolean>(false);
 
   useEffect(() => {
     if (user && !childId) {
@@ -97,24 +98,27 @@ const EnhancedCurioPage: React.FC = () => {
     }
   }, [curioId]);
   
-  const loadCurioAncestors = async (parentId: string, pathSoFar: string[] = []) => {
-    try {
-      const { data, error } = await supabase
-        .from('curios')
-        .select('title')
-        .eq('id', parentId)
-        .single();
-        
-      if (data && !error) {
-        const newPath = [data.title, ...pathSoFar];
-        setExplorationPath([data.title, ...pathSoFar, curioTitle || '']);
-        setExplorationDepth(newPath.length);
+  // Trigger content generation if we've got empty or only placeholder blocks
+  useEffect(() => {
+    if (curioId && childId && blocks.length === 0 && !isLoadingBlocks && !contentGenerationAttempted.current) {
+      contentGenerationAttempted.current = true;
+      console.log("Triggering content generation for empty curio");
+      if (triggerContentGeneration) {
+        triggerContentGeneration();
       }
-    } catch (err) {
-      console.error('Error loading curio ancestors:', err);
     }
-  };
-
+    
+    // Check if we only have placeholder blocks
+    const onlyPlaceholders = blocks.length > 0 && blocks.every(block => block.id.startsWith('placeholder-'));
+    if (onlyPlaceholders && !isLoadingBlocks && !contentGenerationAttempted.current) {
+      contentGenerationAttempted.current = true;
+      console.log("Triggering content generation for placeholder blocks");
+      if (triggerContentGeneration) {
+        triggerContentGeneration();
+      }
+    }
+  }, [blocks, curioId, childId, isLoadingBlocks, triggerContentGeneration]);
+  
   useEffect(() => {
     if (blocks.length > 0 && isFirstLoad) {
       setTimeout(() => {
@@ -195,6 +199,32 @@ const EnhancedCurioPage: React.FC = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [blocks.length]);
+
+  // Add this new function to handle manual refresh/regeneration
+  const handleRefreshContent = async () => {
+    if (!triggerContentGeneration) return;
+    
+    setRefreshing(true);
+    contentGenerationAttempted.current = false;
+    
+    try {
+      await supabase
+        .from('content_blocks')
+        .delete()
+        .eq('curio_id', curioId);
+        
+      // Reset blocks array to show placeholders again
+      setBlocks([]);
+      setTimeout(() => {
+        triggerContentGeneration();
+      }, 1000);
+    } catch (error) {
+      console.error("Error refreshing content:", error);
+      toast.error("Failed to refresh content");
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   if (profileError) {
     return <CurioErrorState message="Failed to load profile." />;
@@ -317,6 +347,10 @@ const EnhancedCurioPage: React.FC = () => {
       onExplore={() => toast.info("Explore feature coming soon!")}
       onRabbitHoleClick={handleRabbitHoleClick}
       childAge={childAge}
+      isLoading={isLoadingBlocks}
+      onRefresh={handleRefreshContent}
+      refreshing={refreshing}
+      generationError={generationError}
     />
   );
 };

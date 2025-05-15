@@ -1,246 +1,333 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { ContentBlock } from '@/types/curio';
+import { useConsoleLogger } from '@/hooks/useConsoleLogger';
 
-export function useCurioBlocks(childId?: string, curioId?: string, searchQuery: string = '') {
-  const [blocks, setBlocks] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+interface UseCurioBlocksResult {
+  blocks: ContentBlock[];
+  isLoading: boolean;
+  error: Error | null;
+  hasMore: boolean;
+  loadMore: () => Promise<void>;
+  isFirstLoad: boolean;
+  generationError: string | null;
+  triggerContentGeneration?: () => Promise<void>;
+}
+
+export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery = ''): UseCurioBlocksResult => {
+  const [blocks, setBlocks] = useState<ContentBlock[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const [hasMore, setHasMore] = useState(true);
-  const [lastFetchedIndex, setLastFetchedIndex] = useState(0);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
+  const [page, setPage] = useState(0);
   const [generationError, setGenerationError] = useState<string | null>(null);
   
-  // Use refs to track state for preventing duplicate fetches and race conditions
-  const isFetchingRef = useRef(false);
+  // Store the previous curioId to detect changes
+  const previousCurioIdRef = useRef<string | undefined>(undefined);
+  const blockGenerationInProgress = useRef<boolean>(false);
   const fetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null); // Fix: use ReturnType<typeof setTimeout> instead of number
-  const fetchTriesRef = useRef(0);
-  const abortControllerRef = useRef<AbortController | null>(null);
-  const mountedRef = useRef(true);
-  
-  // Fixed blockSize to avoid issues
-  const BLOCK_SIZE = 10;
+  const fetchInProgressRef = useRef<boolean>(false);
+  const lastFetchTimeRef = useRef<number>(0);
+  const callCountRef = useRef<number>(0);
+  const placeholderAddedRef = useRef<boolean>(false);
 
-  // Ensure maximum of 5 retry attempts with increasing delay
-  const MAX_RETRIES = 5;
-  const getRetryDelay = (attempt: number) => Math.min(2000 * Math.pow(1.5, attempt), 20000);
+  // Debug logging
+  useConsoleLogger(curioId, 'Current Curio ID');
+  useConsoleLogger(generationError, 'Generation Error');
+  useConsoleLogger(blocks.length, 'Block Count');
 
-  // Cleanup aborted requests on component unmount
+  // Track when curio ID changes
   useEffect(() => {
-    return () => {
-      mountedRef.current = false;
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-      if (fetchTimerRef.current) {
-        clearTimeout(fetchTimerRef.current);
-      }
-    };
-  }, []);
-
-  // Reset state when curioId changes
-  useEffect(() => {
-    if (!curioId) return;
+    const previousCurioId = previousCurioIdRef.current;
     
-    setBlocks([]);
-    setLastFetchedIndex(0);
-    setHasMore(true);
-    setIsFirstLoad(true);
-    setError(null);
-    setGenerationError(null);
-    fetchTriesRef.current = 0;
-    
-    // Clear any pending fetches
-    if (fetchTimerRef.current) {
-      clearTimeout(fetchTimerRef.current);
+    if (curioId !== previousCurioId) {
+      console.log(`Curio ID changed from ${previousCurioId} to ${curioId}`);
+      if (curioId) {
+        // Reset states when switching to a new curio
+        setBlocks([]);
+        setPage(0);
+        setIsFirstLoad(true);
+        setGenerationError(null);
+        previousCurioIdRef.current = curioId;
+        lastFetchTimeRef.current = 0;
+        fetchInProgressRef.current = false;
+        callCountRef.current = 0;
+        placeholderAddedRef.current = false;
+      }
     }
-    
-    // Immediately fetch blocks for the new curioId
-    fetchBlocks(0);
   }, [curioId]);
 
-  // Fetch blocks from Supabase
-  const fetchBlocks = useCallback(async (startIndex: number = 0) => {
-    if (!curioId || !childId || isFetchingRef.current) return;
+  const triggerContentGeneration = useCallback(async () => {
+    if (!curioId || !childId || blockGenerationInProgress.current) return;
     
-    // Set loading state for initial load
-    if (startIndex === 0) {
+    try {
+      console.log(`Attempting to trigger content generation for curio: ${curioId}`);
+      
       setIsLoading(true);
-    }
-    
-    isFetchingRef.current = true;
-    
-    try {
-      // Create a new abort controller for this request
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-      abortControllerRef.current = new AbortController();
-      
-      // Fetch blocks with search filter if provided
-      let query = supabase
-        .from('content_blocks')
-        .select('*')
-        .eq('curio_id', curioId)
-        .order('created_at', { ascending: true })
-        .range(startIndex, startIndex + BLOCK_SIZE - 1);
-        
-      if (searchQuery) {
-        query = query.textSearch('content', searchQuery, {
-          type: 'websearch',
-          config: 'english'
-        });
-      }
-      
-      const { data, error } = await query;
-      
-      // Handle response
-      if (!mountedRef.current) return;
-      
-      if (error) throw error;
-      
-      const newBlocks = data || [];
-      
-      // Check if we've reached the end
-      if (newBlocks.length < BLOCK_SIZE) {
-        setHasMore(false);
-        
-        // If first load and no blocks, check if content generation is needed
-        if (startIndex === 0 && newBlocks.length === 0 && isFirstLoad) {
-          await checkAndTriggerContentGeneration();
-        }
-      }
-      
-      // Update blocks with new data
-      if (startIndex === 0) {
-        setBlocks(newBlocks);
-      } else {
-        setBlocks(prevBlocks => [...prevBlocks, ...newBlocks]);
-      }
-      
-      // Update fetch index for pagination
-      setLastFetchedIndex(startIndex + newBlocks.length);
-      
-      // First load complete
-      if (isFirstLoad) {
-        setIsFirstLoad(false);
-      }
-      
-      // Reset retry counter on success
-      fetchTriesRef.current = 0;
-      setError(null);
-    } catch (err: any) {
-      console.error('Error fetching blocks:', err);
-      
-      // Only set error if mounted
-      if (mountedRef.current) {
-        setError(err.message || 'Failed to load content blocks');
-        
-        // Handle retry logic for failed requests
-        if (fetchTriesRef.current < MAX_RETRIES) {
-          fetchTriesRef.current++;
-          
-          if (fetchTimerRef.current) {
-            clearTimeout(fetchTimerRef.current);
-          }
-          
-          const delay = getRetryDelay(fetchTriesRef.current);
-          console.log(`Retry ${fetchTriesRef.current}/${MAX_RETRIES} in ${delay}ms...`);
-          
-          // Schedule retry with exponential backoff
-          fetchTimerRef.current = setTimeout(() => {
-            if (mountedRef.current) {
-              fetchBlocks(startIndex);
-            }
-          }, delay);
-        } else {
-          console.error('Max retries reached for fetching blocks');
-          
-          // If we've hit max retries on first load, check if we need to trigger generation
-          if (startIndex === 0 && isFirstLoad) {
-            checkAndTriggerContentGeneration();
-          }
-        }
-      }
-    } finally {
-      // Reset loading state
-      if (mountedRef.current) {
-        setIsLoading(false);
-        isFetchingRef.current = false;
-      }
-    }
-  }, [curioId, childId, searchQuery, isFirstLoad]);
-
-  // Load more blocks for pagination
-  const loadMore = useCallback(() => {
-    if (!isLoading && hasMore && !isFetchingRef.current) {
-      fetchBlocks(lastFetchedIndex);
-    }
-  }, [isLoading, hasMore, lastFetchedIndex, fetchBlocks]);
-  
-  // Handle content generation if no blocks exist
-  const checkAndTriggerContentGeneration = useCallback(async () => {
-    if (!curioId || !childId) return;
-    
-    try {
-      // Check if there's a generation error on the curio
-      const { data: curioData, error: curioError } = await supabase
-        .from('curios')
-        .select('generation_error')
-        .eq('id', curioId)
-        .single();
-      
-      if (curioError) throw curioError;
-      
-      // If there's already a known generation error, show it
-      if (curioData?.generation_error) {
-        setGenerationError(curioData.generation_error);
-        return;
-      }
-      
-      console.log('Triggering content generation...');
+      setGenerationError(null);
+      blockGenerationInProgress.current = true;
       
       const { data, error } = await supabase.functions.invoke('trigger-content-generation', {
         body: { curioId, childId }
       });
       
-      if (error) throw error;
-      
-      console.log('Content generation response:', data);
-      
-      // Wait a moment and then fetch blocks again
-      setTimeout(() => {
-        if (mountedRef.current) {
-          fetchBlocks(0);
-        }
-      }, 2000);
-    } catch (err: any) {
-      console.error('Error triggering content generation:', err);
-      
-      if (mountedRef.current) {
-        setGenerationError(err.message || 'Failed to generate content');
-        toast.error('Could not generate content. Please try again.');
+      if (error) {
+        console.error("Error triggering content generation:", error);
+        setGenerationError("Failed to generate content. Please try again.");
+        blockGenerationInProgress.current = false;
+        return;
       }
+      
+      console.log("Content generation triggered successfully:", data);
+      
+      // Wait a moment before fetching to allow time for blocks to be created
+      setTimeout(() => {
+        fetchBlocks();
+        blockGenerationInProgress.current = false;
+      }, 2000);
+      
+    } catch (err) {
+      console.error("Error in content generation process:", err);
+      setGenerationError("An unexpected error occurred during content generation.");
+      blockGenerationInProgress.current = false;
+    } finally {
+      setIsLoading(false);
     }
   }, [curioId, childId]);
 
-  // Public function to manually trigger content generation
-  const triggerContentGeneration = useCallback(async () => {
-    if (!curioId || !childId) {
-      throw new Error('Missing curioId or childId');
+  const fetchBlocks = useCallback(async () => {
+    if (!curioId || fetchInProgressRef.current) return;
+    
+    // Prevent too many calls in a short period
+    callCountRef.current += 1;
+    if (callCountRef.current > 5) {
+      console.log("Too many fetch attempts, stopping to prevent infinite loop");
+      return;
     }
     
-    setGenerationError(null);
+    // Prevent fetching too frequently
+    const now = Date.now();
+    if (now - lastFetchTimeRef.current < 2000) {
+      console.log("Throttling fetch requests, last fetch was too recent");
+      return;
+    }
     
+    fetchInProgressRef.current = true;
+    lastFetchTimeRef.current = now;
+    
+    setIsLoading(true);
+    setError(null);
+
+    const start = page * 10;
+    const end = start + 9;
+
     try {
-      await checkAndTriggerContentGeneration();
-      return true;
+      console.log(`Fetching blocks for curioId: ${curioId}, page: ${page}`);
+      
+      // First check if there are any blocks
+      const { count, error: countError } = await supabase
+        .from('content_blocks')
+        .select('*', { count: 'exact', head: true })
+        .eq('curio_id', curioId);
+
+      if (countError) {
+        throw countError;
+      }
+
+      console.log(`Total blocks available: ${count}`);
+      
+      // If no blocks are found, check if there's a generation error in the curio
+      if (count === 0) {
+        const { data: curioData, error: curioError } = await supabase
+          .from('curios')
+          .select('generation_error')
+          .eq('id', curioId)
+          .single();
+          
+        if (curioError) {
+          console.error("Error fetching curio status:", curioError);
+        } else if (curioData && curioData.generation_error) {
+          setGenerationError(curioData.generation_error);
+          
+          // Only add placeholders if we haven't already
+          if (!placeholderAddedRef.current) {
+            placeholderAddedRef.current = true;
+            setBlocks([
+              {
+                id: `placeholder-${Date.now()}-1`,
+                curio_id: curioId,
+                specialist_id: 'nova',
+                type: 'fact',
+                content: { 
+                  fact: "I'm discovering fascinating information about this topic...",
+                  rabbitHoles: []
+                },
+                liked: false,
+                bookmarked: false,
+                created_at: new Date().toISOString()
+              } as ContentBlock,
+              {
+                id: `placeholder-${Date.now()}-2`,
+                curio_id: curioId,
+                specialist_id: 'prism',
+                type: 'funFact',
+                content: { 
+                  text: "Gathering interesting details for you...",
+                  rabbitHoles: []
+                },
+                liked: false,
+                bookmarked: false,
+                created_at: new Date().toISOString()
+              } as ContentBlock
+            ]);
+          }
+        }
+      }
+
+      let query = supabase
+        .from('content_blocks')
+        .select('*')
+        .eq('curio_id', curioId)
+        .order('created_at', { ascending: true });
+
+      if (searchQuery) {
+        query = query.textSearch('content', searchQuery);
+      }
+
+      // Don't use range for the first query to get all current blocks
+      if (page > 0) {
+        query = query.range(start, end);
+      }
+
+      const { data, error: fetchError } = await query;
+
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      if (data && data.length > 0) {
+        console.log(`Fetched ${data.length} blocks`);
+        // Make sure we're properly typing our ContentBlock before setting state
+        const typedBlocks = data.map(block => ({
+          id: block.id,
+          curio_id: block.curio_id,
+          type: block.type,
+          specialist_id: block.specialist_id,
+          content: block.content,
+          liked: block.liked || false,
+          bookmarked: block.bookmarked || false,
+          created_at: block.created_at
+        })) as ContentBlock[];
+        
+        setBlocks(prevBlocks => {
+          // Filter out placeholder blocks when real blocks arrive
+          const newBlocks = prevBlocks.filter(b => !b.id.startsWith('placeholder-'));
+          
+          if (page === 0) {
+            return typedBlocks; // Replace all blocks on first load
+          } else {
+            // Add new blocks, avoiding duplicates
+            typedBlocks.forEach(block => {
+              // Check if this block is already in our list
+              const isDuplicate = newBlocks.some(existingBlock => 
+                existingBlock.id === block.id
+              );
+              
+              if (!isDuplicate) {
+                newBlocks.push(block);
+              }
+            });
+            
+            return newBlocks;
+          }
+        });
+        
+        setHasMore(data.length === 10);
+        setIsFirstLoad(false);
+        
+        // Reset the call count since we got a successful response
+        callCountRef.current = 0;
+      } 
+      else if (count === 0 && blocks.length === 0 && !blockGenerationInProgress.current) {
+        // If we still don't have blocks, maybe we need to create some...
+        console.log("No content blocks found for this curio");
+        
+        // Only create placeholders if we don't already have them
+        if (!placeholderAddedRef.current) {
+          placeholderAddedRef.current = true;
+          setBlocks([
+            {
+              id: `placeholder-${Date.now()}-1`,
+              curio_id: curioId,
+              specialist_id: 'nova',
+              type: 'fact',
+              content: { 
+                fact: "I'm discovering fascinating information about this topic...",
+                rabbitHoles: []
+              },
+              liked: false,
+              bookmarked: false,
+              created_at: new Date().toISOString()
+            } as ContentBlock,
+            {
+              id: `placeholder-${Date.now()}-2`,
+              curio_id: curioId,
+              specialist_id: 'prism',
+              type: 'funFact',
+              content: { 
+                text: "Gathering interesting details for you...",
+                rabbitHoles: []
+              },
+              liked: false,
+              bookmarked: false,
+              created_at: new Date().toISOString()
+            } as ContentBlock
+          ]);
+        }
+        
+        // Try to trigger content generation if we don't have blocks
+        if (childId && !blockGenerationInProgress.current) {
+          triggerContentGeneration();
+        }
+        
+        setHasMore(false);
+      }
     } catch (err) {
-      console.error('Error in triggerContentGeneration:', err);
-      return false;
+      console.error('Error fetching blocks:', err);
+      setError(err instanceof Error ? err : new Error('Failed to fetch blocks'));
+    } finally {
+      setIsLoading(false);
+      fetchInProgressRef.current = false;
     }
-  }, [curioId, childId, checkAndTriggerContentGeneration]);
+  }, [curioId, searchQuery, page, blocks.length, childId, triggerContentGeneration]);
+
+  useEffect(() => {
+    if (curioId) {
+      // Cancel any existing timer
+      if (fetchTimerRef.current) {
+        clearTimeout(fetchTimerRef.current);
+      }
+      
+      // Set a new timer to fetch blocks
+      fetchTimerRef.current = setTimeout(() => {
+        fetchBlocks();
+      }, 300); // Debounce fetch
+    }
+    
+    // Cleanup timer
+    return () => {
+      if (fetchTimerRef.current) {
+        clearTimeout(fetchTimerRef.current);
+      }
+    };
+  }, [curioId, searchQuery, page, fetchBlocks]);
+
+  const loadMore = useCallback(async () => {
+    if (!curioId || isLoading) return;
+    setPage(prevPage => prevPage + 1);
+  }, [curioId, isLoading]);
 
   return {
     blocks,
@@ -252,4 +339,4 @@ export function useCurioBlocks(childId?: string, curioId?: string, searchQuery: 
     generationError,
     triggerContentGeneration
   };
-}
+};

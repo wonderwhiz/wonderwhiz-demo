@@ -1,20 +1,19 @@
 
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { getSpecialistInfo } from '@/utils/specialists';
-import BlockActions from './BlockActions';
+import { motion } from 'framer-motion';
+import { Share2, MessageCircle, Bookmark, ThumbsUp, VolumeUp, Loader2 } from 'lucide-react';
+import { getSpecialistInfo } from '@/lib/specialists';
+import { ContentBlockType } from '@/types/curio';
 import BlockReplies from './BlockReplies';
-import { toast } from 'sonner';
-import EnhancedBlockReplies from './EnhancedBlockReplies';
-import { Star } from 'lucide-react';
 
 interface SpecialistContentBlockProps {
   specialistId: string;
-  title: string;
+  title?: string;
   content: React.ReactNode;
-  contentType?: string;
+  contentType: ContentBlockType;
   difficultyLevel?: 1 | 2 | 3;
   onBookmark?: () => void;
   onReply?: (message: string) => void;
@@ -23,6 +22,8 @@ interface SpecialistContentBlockProps {
   childAge?: number;
   relatedQuestions?: string[];
   onRabbitHoleClick?: (question: string) => void;
+  className?: string;
+  isLoading?: boolean;
 }
 
 const SpecialistContentBlock: React.FC<SpecialistContentBlockProps> = ({
@@ -37,185 +38,185 @@ const SpecialistContentBlock: React.FC<SpecialistContentBlockProps> = ({
   onReadAloud,
   childAge = 10,
   relatedQuestions = [],
-  onRabbitHoleClick
+  onRabbitHoleClick,
+  className = '',
+  isLoading = false
 }) => {
-  const [showReplyForm, setShowReplyForm] = useState(false);
-  const [replies, setReplies] = useState<any[]>([]);
-  
+  const [showReplies, setShowReplies] = useState(false);
   const specialist = getSpecialistInfo(specialistId);
   
-  const getSpecialistStyles = () => {
-    switch (specialistId) {
-      case 'nova':
-        return {
-          gradient: 'from-wonderwhiz-blue-accent/20 via-wonderwhiz-cyan/10 to-transparent',
-          borderColor: 'border-wonderwhiz-blue-accent/20',
-          badgeBg: 'bg-wonderwhiz-blue-accent/20',
-          badgeText: 'text-wonderwhiz-cyan'
-        };
-      case 'spark':
-        return {
-          gradient: 'from-wonderwhiz-vibrant-yellow/20 via-wonderwhiz-orange/10 to-transparent',
-          borderColor: 'border-wonderwhiz-vibrant-yellow/20',
-          badgeBg: 'bg-wonderwhiz-vibrant-yellow/20',
-          badgeText: 'text-wonderwhiz-vibrant-yellow'
-        };
-      case 'prism':
-        return {
-          gradient: 'from-wonderwhiz-purple/20 via-wonderwhiz-bright-pink/10 to-transparent',
-          borderColor: 'border-wonderwhiz-purple/20',
-          badgeBg: 'bg-wonderwhiz-purple/20',
-          badgeText: 'text-wonderwhiz-bright-pink'
-        };
-      case 'pixel':
-        return {
-          gradient: 'from-wonderwhiz-cyan/20 via-wonderwhiz-blue-accent/10 to-transparent',
-          borderColor: 'border-wonderwhiz-cyan/20',
-          badgeBg: 'bg-wonderwhiz-cyan/20',
-          badgeText: 'text-wonderwhiz-cyan'
-        };
-      case 'atlas':
-        return {
-          gradient: 'from-wonderwhiz-orange/20 via-wonderwhiz-vibrant-yellow/10 to-transparent',
-          borderColor: 'border-wonderwhiz-orange/20',
-          badgeBg: 'bg-wonderwhiz-orange/20',
-          badgeText: 'text-wonderwhiz-orange'
-        };
-      case 'lotus':
-        return {
-          gradient: 'from-wonderwhiz-green/20 via-wonderwhiz-cyan/10 to-transparent',
-          borderColor: 'border-wonderwhiz-green/20',
-          badgeBg: 'bg-wonderwhiz-green/20',
-          badgeText: 'text-wonderwhiz-green'
-        };
-      default:
-        return {
-          gradient: 'from-wonderwhiz-deep-purple/20 via-wonderwhiz-light-purple/10 to-transparent',
-          borderColor: 'border-wonderwhiz-deep-purple/20',
-          badgeBg: 'bg-wonderwhiz-deep-purple/20',
-          badgeText: 'text-wonderwhiz-light-purple'
-        };
-    }
+  const contentTypeColor: Record<ContentBlockType, string> = {
+    fact: 'bg-blue-600/80',
+    quiz: 'bg-purple-600/80',
+    flashcard: 'bg-emerald-600/80',
+    creative: 'bg-pink-600/80',
+    task: 'bg-amber-600/80',
+    riddle: 'bg-cyan-600/80',
+    funFact: 'bg-amber-600/80',
+    activity: 'bg-teal-600/80',
+    news: 'bg-red-600/80',
+    mindfulness: 'bg-indigo-600/80'
   };
   
-  const getDifficultyStars = () => {
-    if (!difficultyLevel) return null;
-    
-    const stars = [];
-    for (let i = 0; i < difficultyLevel; i++) {
-      stars.push(
-        <Star key={i} className="h-4 w-4 fill-current text-wonderwhiz-vibrant-yellow" />
-      );
-    }
-    return stars;
+  const getBadgeStyle = () => {
+    return contentTypeColor[contentType] || 'bg-gray-600/80';
   };
   
-  const { gradient, borderColor, badgeBg, badgeText } = getSpecialistStyles();
-  
-  const handleSendReply = (message: string) => {
-    if (onReply) {
-      onReply(message);
-      const newReply = {
-        id: Date.now().toString(),
-        content: message,
-        from_user: true,
-        created_at: new Date().toISOString()
-      };
-      setReplies([...replies, newReply]);
-      toast.success('Reply sent!');
+  const handleRabbitHoleClick = (question: string) => {
+    if (onRabbitHoleClick) {
+      onRabbitHoleClick(question);
     }
   };
   
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className={`mb-8 rounded-xl overflow-hidden backdrop-blur-sm bg-gradient-to-b ${gradient} border ${borderColor} shadow-xl`}
-      whileHover={{ scale: 1.01 }}
-      whileTap={{ scale: 0.99 }}
-      transition={{ type: "spring", stiffness: 400, damping: 30 }}
-    >
-      <div className="p-5">
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center gap-3">
-            <img 
-              src={specialist.avatar} 
-              alt={specialist.name} 
-              className="w-10 h-10 rounded-full border border-white/20"
-            />
-            <div>
-              <h3 className={`text-white font-medium ${childAge <= 8 ? 'text-lg' : 'text-base'}`}>
-                {specialist.name}
-              </h3>
-              <p className="text-white/60 text-xs">
-                {specialist.title}
-              </p>
+    <Card className={`overflow-hidden border border-white/10 bg-wonderwhiz-deep-purple/40 backdrop-blur-sm ${className} ${isLoading ? 'animate-pulse' : ''}`}>
+      <div className="p-4 sm:p-5">
+        {/* Specialist header */}
+        <div className="flex justify-between items-start">
+          <div className="flex items-center">
+            <div className="w-10 h-10 rounded-full overflow-hidden bg-white/10 flex-shrink-0">
+              {isLoading ? (
+                <div className="w-10 h-10 bg-white/10"></div>
+              ) : specialist?.avatar ? (
+                <img 
+                  src={specialist.avatar} 
+                  alt={specialist.name} 
+                  className="w-10 h-10 object-cover"
+                />
+              ) : (
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-700 to-pink-600"></div>
+              )}
+            </div>
+            <div className="ml-3">
+              <div className="font-semibold text-white">
+                {isLoading ? (
+                  <div className="h-4 w-24 bg-white/10 rounded"></div>
+                ) : (
+                  specialist?.name || specialistId
+                )}
+              </div>
+              <div className="text-xs text-white/60">
+                {isLoading ? (
+                  <div className="h-3 w-32 bg-white/10 rounded mt-1"></div>
+                ) : (
+                  specialist?.title || 'Specialist'
+                )}
+              </div>
             </div>
           </div>
-          
-          <div className="flex items-center gap-2">
-            {contentType && (
-              <Badge variant="outline" className={`${badgeBg} ${badgeText} border-none`}>
-                {contentType}
-              </Badge>
+          <Badge className={`${getBadgeStyle()} text-white`}>
+            {contentType === 'funFact' ? 'Fun Fact' : contentType.charAt(0).toUpperCase() + contentType.slice(1)}
+          </Badge>
+        </div>
+        
+        {/* Block content */}
+        <div className="mt-3 text-white">
+          {isLoading ? (
+            <div className="space-y-2">
+              <div className="h-4 bg-white/10 rounded w-full"></div>
+              <div className="h-4 bg-white/10 rounded w-5/6"></div>
+              <div className="h-4 bg-white/10 rounded w-4/6"></div>
+            </div>
+          ) : (
+            <>
+              {title && <h3 className="text-lg font-semibold mb-2">{title}</h3>}
+              <div className="text-white/90 leading-relaxed">{content}</div>
+            </>
+          )}
+        </div>
+        
+        {/* Related Questions */}
+        {relatedQuestions.length > 0 && !isLoading && (
+          <div className="mt-4 space-y-2">
+            <h4 className="text-sm font-medium text-white/70">Related Questions</h4>
+            <div className="flex flex-wrap gap-2">
+              {relatedQuestions.slice(0, 3).map((question, index) => (
+                <Button
+                  key={index}
+                  variant="outline"
+                  size="sm"
+                  className="bg-white/5 text-white/80 border border-white/10 hover:bg-white/10 hover:text-white hover:border-white/20 transition-colors"
+                  onClick={() => handleRabbitHoleClick(question)}
+                >
+                  {question}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {/* Interaction buttons */}
+        {!isLoading && (
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            {onReadAloud && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={onReadAloud}
+                className="text-white/70 hover:text-white hover:bg-white/10"
+              >
+                <VolumeUp className="h-4 w-4 mr-1.5" />
+                Read
+              </Button>
             )}
             
-            {difficultyLevel > 0 && (
-              <div className="flex items-center">
-                {getDifficultyStars()}
-              </div>
+            {onBookmark && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={onBookmark}
+                className="text-white/70 hover:text-white hover:bg-white/10"
+              >
+                <Bookmark className="h-4 w-4 mr-1.5" />
+                Save
+              </Button>
+            )}
+            
+            {onReply && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setShowReplies(!showReplies)}
+                className="text-white/70 hover:text-white hover:bg-white/10"
+              >
+                <MessageCircle className="h-4 w-4 mr-1.5" />
+                Reply
+              </Button>
+            )}
+            
+            {onShare && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={onShare}
+                className="text-white/70 hover:text-white hover:bg-white/10"
+              >
+                <Share2 className="h-4 w-4 mr-1.5" />
+                Share
+              </Button>
             )}
           </div>
-        </div>
-        
-        {title && (
-          <h4 className={`text-white font-medium mb-3 ${childAge <= 8 ? 'text-lg' : 'text-base'}`}>
-            {title}
-          </h4>
         )}
         
-        <div className={`text-white/90 ${childAge <= 8 ? 'text-base' : 'text-sm'}`}>
-          {content}
-        </div>
-        
-        {relatedQuestions && relatedQuestions.length > 0 && (
-          <div className="mt-4 space-y-2">
-            {relatedQuestions.map((question, index) => (
-              <motion.button
-                key={index}
-                whileHover={{ scale: 1.01, x: 5 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => onRabbitHoleClick?.(question)}
-                className="w-full flex items-center text-left p-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/80 text-sm transition-all"
-              >
-                {question}
-              </motion.button>
-            ))}
+        {/* Loading state interaction buttons */}
+        {isLoading && (
+          <div className="mt-4 flex items-center">
+            <div className="flex items-center justify-center w-full">
+              <Loader2 className="h-5 w-5 animate-spin text-white/50 mr-2" />
+              <span className="text-sm text-white/50">Generating content...</span>
+            </div>
           </div>
         )}
-        
-        <div className="mt-4 pt-3 border-t border-white/10">
-          <BlockActions
-            onBookmark={onBookmark}
-            onReply={() => setShowReplyForm(!showReplyForm)}
-            onShare={onShare}
-            onReadAloud={onReadAloud}
-            childAge={childAge}
-            bookmarked={false}
-          />
-        </div>
-        
-        {showReplyForm && (
-          <EnhancedBlockReplies
-            replies={replies}
-            specialistId={specialistId}
-            onSendReply={handleSendReply}
-            childAge={childAge}
-          />
-        )}
       </div>
-    </motion.div>
+      
+      {/* Replies section */}
+      {showReplies && onReply && (
+        <BlockReplies 
+          onReply={onReply} 
+          childAge={childAge} 
+        />
+      )}
+    </Card>
   );
 };
 

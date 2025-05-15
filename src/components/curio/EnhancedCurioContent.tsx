@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Search, Mic, Camera, Star, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { RefreshCw, AlertCircle, Loader2, Sparkles } from 'lucide-react';
 
 import SpecialistContentBlock from '@/components/content-blocks/SpecialistContentBlock';
 import LearningProgressIndicator from './LearningProgressIndicator';
@@ -25,6 +25,10 @@ interface EnhancedCurioContentProps {
   onExplore?: () => void;
   onRabbitHoleClick?: (question: string) => void;
   childAge?: number;
+  isLoading?: boolean;
+  onRefresh?: () => void;
+  refreshing?: boolean;
+  generationError?: string | null;
 }
 
 const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
@@ -38,7 +42,11 @@ const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
   onReadAloud,
   onExplore,
   onRabbitHoleClick,
-  childAge = 10
+  childAge = 10,
+  isLoading = false,
+  onRefresh,
+  refreshing = false,
+  generationError
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isRecording, setIsRecording] = useState(false);
@@ -318,6 +326,19 @@ const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
           </Button>
           
           <div className="flex items-center gap-2">
+            {onRefresh && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="bg-white/10 hover:bg-white/20 text-white"
+                onClick={onRefresh}
+                disabled={refreshing || isLoading}
+              >
+                <RefreshCw className={`h-4 w-4 mr-1.5 ${refreshing ? 'animate-spin' : ''}`} />
+                <span>{refreshing ? 'Refreshing...' : 'Refresh'}</span>
+              </Button>
+            )}
+            
             <Button
               variant="ghost"
               size="sm"
@@ -351,8 +372,70 @@ const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
           </motion.h1>
         )}
         
+        {/* Error Message */}
+        {generationError && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-red-500/20 border border-red-500/40 rounded-lg p-4 mb-6"
+          >
+            <div className="flex items-center">
+              <AlertCircle className="h-5 w-5 text-red-400 mr-2" />
+              <h3 className="font-medium text-white">Content Generation Error</h3>
+            </div>
+            <p className="mt-1 text-white/80 text-sm">{generationError}</p>
+            {onRefresh && (
+              <Button 
+                variant="outline"
+                size="sm"
+                onClick={onRefresh} 
+                disabled={refreshing}
+                className="mt-2 border-red-500/30 text-white hover:bg-red-500/20"
+              >
+                {refreshing ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Refreshing...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Try Again
+                  </>
+                )}
+              </Button>
+            )}
+          </motion.div>
+        )}
+        
+        {/* Loading State */}
+        {isLoading && blocks.length === 0 && (
+          <div className="space-y-6">
+            {[1, 2, 3].map((index) => (
+              <motion.div
+                key={`skeleton-${index}`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3, delay: index * 0.1 }}
+                className="bg-white/5 rounded-lg p-6 h-[200px] animate-pulse"
+              >
+                <div className="flex items-center">
+                  <div className="w-12 h-12 rounded-full bg-white/10"></div>
+                  <div className="ml-3">
+                    <div className="h-4 w-32 bg-white/10 rounded"></div>
+                    <div className="h-3 w-24 bg-white/10 rounded mt-2"></div>
+                  </div>
+                </div>
+                <div className="h-4 bg-white/10 rounded mt-6 w-full"></div>
+                <div className="h-4 bg-white/10 rounded mt-3 w-4/5"></div>
+                <div className="h-4 bg-white/10 rounded mt-3 w-2/3"></div>
+              </motion.div>
+            ))}
+          </div>
+        )}
+        
         {/* Learning Progress */}
-        {blocks.length > 0 && (
+        {blocks.length > 0 && !isLoading && (
           <LearningProgressIndicator
             currentStage={getProgressStage() as any}
             viewedBlocks={viewedBlocks.length}
@@ -430,10 +513,48 @@ const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
                 childAge={childAge}
                 relatedQuestions={block.content?.rabbitHoles || []}
                 onRabbitHoleClick={onRabbitHoleClick}
+                isLoading={block.id?.startsWith('placeholder-')}
               />
             </div>
           ))}
         </div>
+        
+        {/* Empty State */}
+        {blocks.length === 0 && !isLoading && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-12"
+          >
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-wonderwhiz-purple/20 mb-4">
+              <Search className="h-8 w-8 text-wonderwhiz-bright-pink" />
+            </div>
+            <h3 className="text-xl font-medium text-white">No content yet</h3>
+            <p className="text-white/60 mt-2 max-w-md mx-auto">
+              We're still discovering fascinating information about this topic.
+            </p>
+            {onRefresh && (
+              <Button 
+                variant="default"
+                onClick={onRefresh} 
+                disabled={refreshing}
+                className="mt-4 bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/90"
+              >
+                {refreshing ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating Content...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Generate Content
+                  </>
+                )}
+              </Button>
+            )}
+          </motion.div>
+        )}
       </div>
       
       {/* Floating Navigation */}
