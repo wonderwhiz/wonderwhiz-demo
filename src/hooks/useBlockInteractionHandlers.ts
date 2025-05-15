@@ -1,219 +1,192 @@
-import { useState } from 'react';
+
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-interface BlockReply {
-  id: string;
-  block_id: string;
-  content: string;
-  from_user: boolean;
-  created_at: string;
-  user_id?: string | null;
-  specialist_id?: string;
-}
+export function useBlockInteractionHandlers(profileId?: string, childProfile?: any, setChildProfile?: any, contentBlocks?: any[]) {
+  const [blockReplies, setBlockReplies] = useState<{[key: string]: any[]}>({});
+  const [loadingStates, setLoadingStates] = useState<{[key: string]: boolean}>({});
 
-interface ContentBlock {
-  id: string;
-  type: string;
-  specialist_id: string;
-  content: any;
-  liked: boolean;
-  bookmarked: boolean;
-}
-
-interface ChildProfile {
-  id: string;
-  name: string;
-  avatar_url: string;
-  interests: string[];
-  age: number;
-  sparks_balance: number;
-}
-
-export const useBlockInteractionHandlers = (
-  profileId?: string, 
-  childProfile?: ChildProfile | null,
-  setChildProfile?: React.Dispatch<React.SetStateAction<ChildProfile | null>>,
-  contentBlocks: ContentBlock[] = []
-) => {
-  const [blockReplies, setBlockReplies] = useState<Record<string, BlockReply[]>>({});
-
-  const handleBlockReply = async (blockId: string, message: string) => {
-    if (!message.trim() || !childProfile) return;
+  // Handle block replies
+  const handleBlockReply = useCallback(async (blockId: string, message: string) => {
+    if (!profileId || !message.trim()) return;
     
     try {
-      const block = contentBlocks.find(b => b.id === blockId);
-      if (!block) {
-        console.error('Block not found:', blockId);
-        return;
+      setLoadingStates(prev => ({ ...prev, [blockId]: true }));
+      
+      const blockToReplyTo = contentBlocks?.find(block => block.id === blockId);
+      if (!blockToReplyTo) {
+        throw new Error('Block not found');
       }
       
-      const { data: replyData, error: replyError } = await supabase
-        .from('block_replies')
-        .insert({
+      // Add optimistic reply
+      const optimisticReply = {
+        id: `temp-${Date.now()}`,
+        block_id: blockId,
+        content: message,
+        from_user: true,
+        created_at: new Date().toISOString(),
+      };
+      
+      setBlockReplies(prev => ({
+        ...prev,
+        [blockId]: [...(prev[blockId] || []), optimisticReply]
+      }));
+      
+      // Call edge function to get specialist reply
+      const { data, error } = await supabase.functions.invoke('handle-block-chat', {
+        body: {
+          blockId,
+          messageContent: message,
+          blockType: blockToReplyTo.type,
+          blockContent: blockToReplyTo.content,
+          childProfile: childProfile || { age: 10, interests: [] },
+          specialistId: blockToReplyTo.specialist_id
+        }
+      });
+      
+      if (error) throw error;
+      
+      // Store both user message and specialist reply in database
+      const { error: insertError } = await supabase.from('block_replies').insert([
+        {
           block_id: blockId,
           content: message,
           from_user: true
-        })
-        .select()
-        .single();
-        
-      if (replyError) throw replyError;
-      
-      setBlockReplies(prev => ({
-        ...prev,
-        [blockId]: [...(prev[blockId] || []), replyData as BlockReply]
-      }));
-      
-      const aiResponse = await supabase.functions.invoke('handle-block-chat', {
-        body: JSON.stringify({
-          blockId,
-          messageContent: message,
-          blockType: block.type,
-          blockContent: block.content,
-          childProfile,
-          specialistId: block.specialist_id
-        })
-      });
-      
-      if (aiResponse.error) {
-        throw new Error(`Failed to get response: ${aiResponse.error.message}`);
-      }
-      
-      const { data: aiReplyData, error: aiReplyError } = await supabase
-        .from('block_replies')
-        .insert({
+        },
+        {
           block_id: blockId,
-          content: aiResponse.data.reply,
-          from_user: false
-        })
-        .select()
-        .single();
-        
-      if (aiReplyError) throw aiReplyError;
+          content: data?.reply || "I'm not sure how to respond to that.",
+          from_user: false,
+          specialist_id: data?.specialistId || blockToReplyTo.specialist_id
+        }
+      ]);
+      
+      if (insertError) throw insertError;
+      
+      // Fetch updated replies
+      const { data: replies, error: fetchError } = await supabase
+        .from('block_replies')
+        .select('*')
+        .eq('block_id', blockId)
+        .order('created_at', { ascending: true });
+      
+      if (fetchError) throw fetchError;
       
       setBlockReplies(prev => ({
         ...prev,
-        [blockId]: [...(prev[blockId] || []), aiReplyData as BlockReply]
+        [blockId]: replies || []
       }));
+      
+      // Award sparks for engagement
+      await handleSparkEarned(1, 'chat-reply');
+      
+      return true;
     } catch (error) {
-      console.error('Error handling reply:', error);
-      toast.error("Failed to send message");
+      console.error('Error handling block reply:', error);
+      toast.error('Could not send your message. Please try again.');
+      
+      // Remove optimistic reply on error
+      setBlockReplies(prev => {
+        const currentReplies = prev[blockId] || [];
+        return {
+          ...prev,
+          [blockId]: currentReplies.filter(r => !r.id.toString().startsWith('temp-'))
+        };
+      });
+      
+      return false;
+    } finally {
+      setLoadingStates(prev => ({ ...prev, [blockId]: false }));
     }
-  };
+  }, [profileId, contentBlocks, childProfile]);
 
-  const handleQuizCorrect = async (blockId: string) => {
+  // Handle quiz correct
+  const handleQuizCorrect = useCallback(async (blockId: string) => {
+    if (!profileId || !setChildProfile) return;
+    
     try {
-      await supabase.functions.invoke('increment-sparks-balance', {
+      // Award sparks for correct quiz answer
+      await handleSparkEarned(3, 'quiz-correct');
+      return true;
+    } catch (error) {
+      console.error('Error handling quiz:', error);
+      return false;
+    }
+  }, [profileId, setChildProfile]);
+  
+  // Handle news read
+  const handleNewsRead = useCallback(async (blockId: string) => {
+    if (!profileId) return;
+    
+    try {
+      // Award sparks for reading news
+      await handleSparkEarned(1, 'news-read');
+      return true;
+    } catch (error) {
+      console.error('Error handling news read:', error);
+      return false;
+    }
+  }, [profileId]);
+  
+  // Handle creative upload
+  const handleCreativeUpload = useCallback(async (blockId: string) => {
+    if (!profileId) return;
+    
+    try {
+      // Award sparks for creative upload
+      await handleSparkEarned(5, 'creative-upload');
+      return true;
+    } catch (error) {
+      console.error('Error handling creative upload:', error);
+      return false;
+    }
+  }, [profileId]);
+  
+  // Helper function to award sparks and update profile
+  const handleSparkEarned = useCallback(async (amount: number, reason: string) => {
+    if (!profileId || !setChildProfile) return;
+    
+    try {
+      // Call serverless function to award sparks
+      const { data, error } = await supabase.functions.invoke('increment-sparks-balance', {
         body: JSON.stringify({
-          profileId: profileId,
-          amount: 5
+          profileId,
+          amount
         })
       });
       
+      if (error) throw error;
+      
+      // Update local state
       if (childProfile && setChildProfile) {
         setChildProfile({
           ...childProfile,
-          sparks_balance: (childProfile.sparks_balance || 0) + 5
+          sparks_balance: (childProfile.sparks_balance || 0) + amount
         });
       }
       
+      // Record transaction
       await supabase.from('sparks_transactions').insert({
         child_id: profileId,
-        amount: 5,
-        reason: 'Answering quiz correctly',
-        block_id: blockId
+        amount,
+        reason
       });
       
-      toast.success('You earned 5 sparks for answering correctly!', {
-        duration: 2000,
-        position: 'bottom-right'
-      });
+      return true;
     } catch (error) {
-      console.error('Error awarding sparks for correct quiz answer:', error);
+      console.error('Error awarding sparks:', error);
+      return false;
     }
-  };
-
-  const handleNewsRead = async (blockId: string) => {
-    try {
-      await supabase.functions.invoke('increment-sparks-balance', {
-        body: JSON.stringify({
-          profileId: profileId,
-          amount: 3
-        })
-      });
-      
-      if (childProfile && setChildProfile) {
-        setChildProfile({
-          ...childProfile,
-          sparks_balance: (childProfile.sparks_balance || 0) + 3
-        });
-      }
-      
-      await supabase.from('sparks_transactions').insert({
-        child_id: profileId,
-        amount: 3,
-        reason: 'Reading a news card',
-        block_id: blockId
-      });
-      
-      toast.success('You earned 3 sparks for reading the news!', {
-        duration: 2000,
-        position: 'bottom-right'
-      });
-    } catch (error) {
-      console.error('Error awarding sparks for news read:', error);
-    }
-  };
-
-  // Update to consistent signature - just accept blockId
-  const handleCreativeUpload = async (blockId: string) => {
-    try {
-      await supabase.functions.invoke('increment-sparks-balance', {
-        body: JSON.stringify({
-          profileId: profileId,
-          amount: 10
-        })
-      });
-      
-      if (childProfile && setChildProfile) {
-        setChildProfile({
-          ...childProfile,
-          sparks_balance: (childProfile.sparks_balance || 0) + 10
-        });
-      }
-      
-      await supabase.from('sparks_transactions').insert({
-        child_id: profileId,
-        amount: 10,
-        reason: 'Uploading creative content',
-        block_id: blockId
-      });
-      
-      toast.success('You earned 10 sparks for your creativity!', {
-        duration: 2000,
-        position: 'bottom-right'
-      });
-    } catch (error) {
-      console.error('Error awarding sparks for creative upload:', error);
-    }
-  };
-
-  const handleSparkEarned = (amount: number) => {
-    if (childProfile && setChildProfile) {
-      setChildProfile({
-        ...childProfile,
-        sparks_balance: (childProfile.sparks_balance || 0) + amount
-      });
-    }
-  };
-
-  return {
-    blockReplies,
-    handleBlockReply,
-    handleQuizCorrect,
+  }, [profileId, childProfile, setChildProfile]);
+  
+  return { 
+    blockReplies, 
+    handleBlockReply, 
+    handleQuizCorrect, 
     handleNewsRead,
     handleCreativeUpload,
-    handleSparkEarned
+    handleSparkEarned,
+    loadingStates 
   };
-};
+}

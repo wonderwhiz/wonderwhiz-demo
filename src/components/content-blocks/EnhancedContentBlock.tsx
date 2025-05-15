@@ -1,101 +1,159 @@
 
-import React from 'react';
+import React, { useState, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import BlockHeader from './BlockHeader';
+import BlockInteractions from './BlockInteractions';
+import BlockRepliesSystem from './BlockRepliesSystem';
 import { ContentBlockType } from '@/types/curio';
-import { LightbulbIcon, BookOpen, Puzzle, Locate, PenLine, Sparkles } from 'lucide-react';
+import { getSpecialistInfo } from '@/utils/specialists';
+import BlockDecorator from './BlockDecorator';
 
 interface EnhancedContentBlockProps {
-  content: string;
+  id: string;
   type: ContentBlockType;
+  content: any;
+  specialistId: string;
+  liked: boolean;
+  bookmarked: boolean;
+  onToggleLike?: () => void;
+  onToggleBookmark?: () => void;
+  onReply?: (message: string) => void;
+  onReadAloud?: (text: string) => void;
+  replies?: any[];
+  children: React.ReactNode;
+  className?: string;
+  relatedQuestions?: string[];
+  onRabbitHoleClick?: (question: string) => void;
   childAge?: number;
+  childId?: string;
 }
 
 const EnhancedContentBlock: React.FC<EnhancedContentBlockProps> = ({
-  content,
+  id,
   type,
-  childAge = 10
+  content,
+  specialistId,
+  liked,
+  bookmarked,
+  onToggleLike,
+  onToggleBookmark,
+  onReply,
+  onReadAloud,
+  replies = [],
+  children,
+  className = '',
+  relatedQuestions,
+  onRabbitHoleClick,
+  childAge = 10,
+  childId
 }) => {
-  // Adjust font size based on child age
-  const getFontSize = () => {
-    if (childAge <= 7) return 'text-lg';
-    if (childAge <= 10) return 'text-base';
-    return 'text-sm';
-  };
+  const [showReplyForm, setShowReplyForm] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const blockRef = useRef<HTMLDivElement>(null);
+  const specialist = getSpecialistInfo(specialistId);
 
-  // Get appropriate icon for content type
-  const getIcon = () => {
+  // Extract the main text content based on block type
+  const getBlockMainContent = () => {
+    if (!content) return '';
+    
     switch (type) {
       case 'fact':
+        return content.fact || '';
       case 'funFact':
-        return <LightbulbIcon className="h-5 w-5 text-yellow-400" />;
+        return content.text || '';
       case 'quiz':
-        return <Puzzle className="h-5 w-5 text-green-400" />;
+        return content.question || '';
+      case 'activity':
+        return content.activity || '';
       case 'flashcard':
-        return <BookOpen className="h-5 w-5 text-blue-400" />;
+        return `${content.front || ''} ${content.back || ''}`;
+      case 'riddle':
+        return content.riddle || '';
       case 'creative':
-        return <PenLine className="h-5 w-5 text-purple-400" />;
+        return content.prompt || '';
       case 'task':
-        return <Locate className="h-5 w-5 text-red-400" />;
+        return content.task || '';
       case 'mindfulness':
-        return <Sparkles className="h-5 w-5 text-teal-400" />;
+        return content.exercise || '';
+      case 'news':
+        return `${content.headline || ''} ${content.summary || ''}`;
       default:
-        return <LightbulbIcon className="h-5 w-5 text-yellow-400" />;
+        return JSON.stringify(content);
     }
   };
 
-  // Get appropriate background color for content type
-  const getBackgroundColor = () => {
-    switch (type) {
-      case 'fact':
-        return 'bg-gradient-to-br from-blue-500/20 to-blue-700/20';
-      case 'funFact':
-        return 'bg-gradient-to-br from-yellow-500/20 to-yellow-700/20';
-      case 'quiz':
-        return 'bg-gradient-to-br from-green-500/20 to-green-700/20';
-      case 'flashcard':
-        return 'bg-gradient-to-br from-indigo-500/20 to-indigo-700/20';
-      case 'creative':
-        return 'bg-gradient-to-br from-purple-500/20 to-purple-700/20';
-      case 'task':
-        return 'bg-gradient-to-br from-red-500/20 to-red-700/20';
-      case 'riddle':
-        return 'bg-gradient-to-br from-amber-500/20 to-amber-700/20';
-      case 'activity':
-        return 'bg-gradient-to-br from-cyan-500/20 to-cyan-700/20';
-      case 'news':
-        return 'bg-gradient-to-br from-slate-500/20 to-slate-700/20';
-      case 'mindfulness':
-        return 'bg-gradient-to-br from-teal-500/20 to-teal-700/20';
-      default:
-        return 'bg-gradient-to-br from-gray-500/20 to-gray-700/20';
+  const handleReadAloud = () => {
+    if (onReadAloud) {
+      const textToRead = getBlockMainContent();
+      onReadAloud(textToRead);
     }
   };
 
   return (
-    <Card
-      className={cn(
-        "p-5 border border-white/10 shadow-lg backdrop-blur-sm overflow-hidden relative",
-        getBackgroundColor()
-      )}
+    <motion.div
+      ref={blockRef}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="relative"
     >
-      <div className="flex items-start">
-        <div className="mr-3 mt-1">
-          {getIcon()}
-        </div>
-        <div className="flex-1">
-          <p className={cn("text-white", getFontSize())}>
-            {content}
-          </p>
-          <div className="mt-2">
-            <Badge variant="outline" className="text-xs font-normal border-white/20 text-white/70">
-              {type.charAt(0).toUpperCase() + type.slice(1)}
-            </Badge>
+      <Card className={`relative overflow-hidden bg-white/5 border border-white/10 hover:border-white/20 transition-colors ${className}`}>
+        <BlockDecorator type={type} />
+        
+        <div className="p-4 sm:p-5 relative z-10">
+          <BlockHeader 
+            type={type}
+            specialistId={specialistId}
+            specialistName={specialist?.name || 'Specialist'}
+            specialistAvatar={specialist?.avatar}
+          />
+          
+          <div className="mt-2 sm:mt-3 text-white">
+            {children}
           </div>
+          
+          <BlockInteractions
+            id={id}
+            type={type}
+            onToggleLike={onToggleLike}
+            onToggleBookmark={onToggleBookmark}
+            onReadAloud={handleReadAloud}
+            liked={liked}
+            bookmarked={bookmarked}
+            relatedQuestions={relatedQuestions}
+            onRabbitHoleClick={onRabbitHoleClick}
+            childAge={childAge}
+            setShowReplyForm={setShowReplyForm}
+          />
+          
+          <AnimatePresence>
+            {(showReplyForm || replies.length > 0) && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                <BlockRepliesSystem
+                  blockId={id}
+                  specialistId={specialistId}
+                  childId={childId}
+                  childAge={childAge}
+                  initialReplies={replies}
+                  onReplySuccess={() => {
+                    // Add any additional success handling here
+                    if (onReply) {
+                      // Just to match the expected callback signature in parent components
+                      onReply("");
+                    }
+                  }}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-      </div>
-    </Card>
+      </Card>
+    </motion.div>
   );
 };
 

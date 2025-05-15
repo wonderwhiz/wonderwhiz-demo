@@ -1,38 +1,8 @@
 
-# This file configures the Supabase project
-
 project_id = "turexhnvsvmllwitllmg"
 
-[api]
-enabled = true
-port = 54321
-schemas = ["public", "storage", "graphql_public"]
-
-[db]
-port = 54322
-
-[studio]
-port = 54323
-
-[inbucket]
-port = 54324
-
-[storage]
-enabled = true
-
-[auth]
-enabled = true
-
-[realtime]
-enabled = true
-
-[analytics]
-enabled = true
-backend = "postgres"
-
-[functions.generate-curiosity-blocks]
-verify_jwt = true
+[functions.handle-block-chat]
+verify_jwt = false
 
 [functions.trigger-content-generation]
-verify_jwt = true
-
+verify_jwt = false

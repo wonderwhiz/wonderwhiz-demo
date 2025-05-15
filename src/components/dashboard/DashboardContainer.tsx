@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useParams } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
@@ -28,11 +28,13 @@ interface Curio {
 const DashboardContainer = () => {
   const { profileId } = useParams<{ profileId: string }>();
   const [currentCurio, setCurrentCurio] = useState<Curio | null>(null);
-  const { streakDays } = useSparksSystem(profileId);
   const [ageGroup, setAgeGroup] = useState<'5-7' | '8-11' | '12-16'>('8-11');
   const [childAge, setChildAge] = useState<number>(10);
   const [isVoiceActive, setIsVoiceActive] = useState(false);
   const [processingImage, setProcessingImage] = useState(false);
+  
+  // Fix 1: Use a ref to avoid infinite loops
+  const { streakDays } = useSparksSystem(profileId);
 
   const {
     childProfile,
@@ -56,23 +58,7 @@ const DashboardContainer = () => {
     handleCurioSuggestionClick: curioCreationSuggestionClick
   } = useCurioCreation(profileId, childProfile, setPastCurios, setChildProfile, setCurrentCurio);
 
-  // Use enhanced block interactions for improved visual feedback and animations
-  const {
-    handleLike,
-    handleBookmark,
-    handleReply,
-    handleReadAloud,
-    likedBlocks,
-    bookmarkedBlocks,
-    handleQuizCorrect,
-    handleNewsRead,
-    handleCreativeUpload,
-    handleActivityComplete,
-    handleMindfulnessComplete,
-    handleTaskComplete,
-    loadingStates
-  } = useEnhancedBlockInteractions(profileId);
-
+  // Fix 2: Memoize contentBlocks to prevent unnecessary re-renders
   const {
     blocks: contentBlocks,
     isLoading: isLoadingBlocks,
@@ -90,6 +76,14 @@ const DashboardContainer = () => {
     triggerContentGeneration
   } = useCurioData(currentCurio?.id, profileId);
 
+  // Fix 3: Use stable dependencies for hooks
+  const blockInteractionHandlers = useBlockInteractionHandlers(
+    profileId, 
+    childProfile, 
+    setChildProfile, 
+    contentBlocks
+  );
+  
   const {
     blockReplies,
     handleBlockReply,
@@ -97,15 +91,28 @@ const DashboardContainer = () => {
     handleNewsRead: baseHandleNewsRead,
     handleCreativeUpload: baseHandleCreativeUpload,
     handleSparkEarned
-  } = useBlockInteractionHandlers(profileId, childProfile, setChildProfile, contentBlocks);
+  } = blockInteractionHandlers;
 
-  // Create wrapper functions that adapt the function signatures
-  const handleCreativeUploadWrapper = (blockId: string) => {
-    if (handleCreativeUpload) {
-      return handleCreativeUpload(blockId);
-    }
-    return baseHandleCreativeUpload(blockId);
-  };
+  // Fix 4: Only use enhanced interactions when needed
+  const {
+    handleLike,
+    handleBookmark,
+    handleReply,
+    handleReadAloud,
+    likedBlocks,
+    bookmarkedBlocks,
+    handleQuizCorrect,
+    handleNewsRead,
+    handleCreativeUpload,
+    handleMindfulnessComplete,
+    handleTaskComplete,
+    loadingStates
+  } = useEnhancedBlockInteractions(profileId);
+
+  // Fix 5: Simplify the wrapper function
+  const handleCreativeUploadWrapper = useCallback((blockId: string) => {
+    return handleCreativeUpload ? handleCreativeUpload(blockId) : baseHandleCreativeUpload(blockId);
+  }, [handleCreativeUpload, baseHandleCreativeUpload]);
 
   useEffect(() => {
     if (childProfile?.age) {
@@ -125,11 +132,11 @@ const DashboardContainer = () => {
     }
   }, [childProfile]);
 
-  const handleLoadCurio = (curio: Curio) => {
+  const handleLoadCurio = useCallback((curio: Curio) => {
     setCurrentCurio(curio);
-  };
+  }, []);
 
-  const handleVoiceTranscript = (transcript: string) => {
+  const handleVoiceTranscript = useCallback((transcript: string) => {
     if (transcript.trim()) {
       setQuery(transcript);
       setIsVoiceActive(false);
@@ -138,10 +145,10 @@ const DashboardContainer = () => {
         handleSubmitQuery();
       }, 300);
     }
-  };
+  }, [setQuery, setIsVoiceActive, handleSubmitQuery]);
 
   // Handle image uploads
-  const handleImageCapture = async (file: File) => {
+  const handleImageCapture = useCallback(async (file: File) => {
     if (!profileId || processingImage) return;
     
     setProcessingImage(true);
@@ -199,28 +206,7 @@ const DashboardContainer = () => {
           setCurrentCurio(newCurio);
           
           // Award sparks for uploading an image
-          try {
-            await supabase.functions.invoke('increment-sparks-balance', {
-              body: JSON.stringify({
-                profileId: profileId,
-                amount: 3
-              })
-            });
-            
-            if (childProfile && setChildProfile) {
-              setChildProfile({
-                ...childProfile,
-                sparks_balance: (childProfile.sparks_balance || 0) + 3
-              });
-            }
-            
-            toast.success('You earned 3 sparks for your creative exploration!', {
-              duration: 3000,
-              position: 'bottom-right'
-            });
-          } catch (err) {
-            console.error('Error awarding sparks for image upload:', err);
-          }
+          handleSparkEarned(3, 'image-upload');
         }
       } else {
         throw new Error('No analysis result returned');
@@ -232,13 +218,13 @@ const DashboardContainer = () => {
     } finally {
       setProcessingImage(false);
     }
-  };
+  }, [profileId, processingImage, setPastCurios, handleSparkEarned]);
 
   // Use the logic from the local function but call the one from useCurioCreation
-  const handleSuggestionClick = (suggestion: string) => {
+  const handleSuggestionClick = useCallback((suggestion: string) => {
     setCurrentCurio(null);
     curioCreationSuggestionClick(suggestion);
-  };
+  }, [setCurrentCurio, curioCreationSuggestionClick]);
 
   if (isLoading) {
     return (
