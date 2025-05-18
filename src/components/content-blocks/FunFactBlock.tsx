@@ -7,6 +7,7 @@ import BlockInteractions from './BlockInteractions';
 import { useAgeAdaptation } from '@/hooks/useAgeAdaptation';
 import BlockAccent from './BlockAccent';
 import { blockAnimations, floatingEffect, pulseAnimation } from './utils/blockStyles';
+import { ContentBlockType } from '@/types/curio';
 
 interface FunFactBlockProps {
   fact: string;
@@ -32,8 +33,8 @@ const FunFactBlock: React.FC<FunFactBlockProps> = ({
   const [showReplyForm, setShowReplyForm] = useState(false);
   const { textSize, messageStyle } = useAgeAdaptation(childAge);
   
-  // This function now returns a ContentBlockType instead of a string
-  const getHeaderType = () => {
+  // Update this function to return a proper ContentBlockType value
+  const getHeaderType = (): ContentBlockType => {
     return "funFact";
   };
 
