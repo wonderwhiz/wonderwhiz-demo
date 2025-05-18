@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
@@ -32,43 +33,61 @@ const CelebrationSystem: React.FC<CelebrationSystemProps> = ({
   const [visible, setVisible] = useState(false);
   const [celebrationType, setCelebrationType] = useState<'milestone' | 'sparks' | 'achievement' | null>(null);
   const hasTriggeredConfetti = useRef<boolean>(false);
+  const lastCelebrationTime = useRef<number>(0);
+  const celebrationCooldown = 5000; // 5 seconds cooldown between celebrations
 
   useEffect(() => {
-    if (milestone && !hasTriggeredConfetti.current) {
+    const now = Date.now();
+    // Only show celebration if we're not in cooldown period
+    const shouldCelebrate = now - lastCelebrationTime.current > celebrationCooldown;
+    
+    if (milestone && !hasTriggeredConfetti.current && shouldCelebrate) {
       setCelebrationType('milestone');
       setVisible(true);
       triggerCelebration('small');
       hasTriggeredConfetti.current = true;
+      lastCelebrationTime.current = now;
       
       // Auto-hide milestone celebrations after delay
       const timer = setTimeout(() => {
         setVisible(false);
-      }, 4000);
+        hasTriggeredConfetti.current = false;
+      }, 3000);
       return () => clearTimeout(timer);
     }
   }, [milestone]);
 
   useEffect(() => {
-    if (sparksEarned > 0 && !hasTriggeredConfetti.current) {
+    const now = Date.now();
+    const shouldCelebrate = now - lastCelebrationTime.current > celebrationCooldown;
+    
+    // Only celebrate if sparks is significant (more than 1) and not in cooldown
+    if (sparksEarned > 1 && !hasTriggeredConfetti.current && shouldCelebrate) {
       setCelebrationType('sparks');
       setVisible(true);
       triggerCelebration('small');
       hasTriggeredConfetti.current = true;
+      lastCelebrationTime.current = now;
       
       // Auto-hide spark celebrations after delay
       const timer = setTimeout(() => {
         setVisible(false);
+        hasTriggeredConfetti.current = false;
       }, 3000);
       return () => clearTimeout(timer);
     }
   }, [sparksEarned]);
 
   useEffect(() => {
-    if (achievement && !hasTriggeredConfetti.current) {
+    const now = Date.now();
+    const shouldCelebrate = now - lastCelebrationTime.current > celebrationCooldown;
+    
+    if (achievement && !hasTriggeredConfetti.current && shouldCelebrate) {
       setCelebrationType('achievement');
       setVisible(true);
-      triggerCelebration('large');
+      triggerCelebration('medium'); // Reduced from 'large' to 'medium'
       hasTriggeredConfetti.current = true;
+      lastCelebrationTime.current = now;
     }
   }, [achievement]);
 
@@ -81,23 +100,23 @@ const CelebrationSystem: React.FC<CelebrationSystemProps> = ({
     switch (size) {
       case 'small':
         confetti({
-          particleCount: 30,
-          spread: 50,
+          particleCount: 15, // Reduced from 30
+          spread: 40, // Reduced from 50
           origin: { y: 0.6 }
         });
         break;
       case 'medium':
         confetti({
-          particleCount: 70,
-          spread: 70,
+          particleCount: 40, // Reduced from 70
+          spread: 50, // Reduced from 70
           origin: { y: 0.6 }
         });
         break;
       case 'large': {
         // Single burst for large celebration instead of continuous animation
         confetti({
-          particleCount: 100,
-          spread: 100,
+          particleCount: 70, // Reduced from 100
+          spread: 80, // Reduced from 100
           origin: { y: 0.6 },
           colors: ['#FFD700', '#FF00FF', '#00FFFF', '#FF4500']
         });
@@ -108,6 +127,7 @@ const CelebrationSystem: React.FC<CelebrationSystemProps> = ({
 
   const handleClose = () => {
     setVisible(false);
+    hasTriggeredConfetti.current = false;
     if (onClose) onClose();
   };
 
