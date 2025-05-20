@@ -38,8 +38,11 @@ export function useCurioData(curioId?: string, profileId?: string) {
         .from('content_blocks')
         .update({ liked: newLikedState })
         .eq('id', blockId);
+      // Add optimistic update here if needed: update local block state
     } catch (error) {
       console.error('Error toggling like:', error);
+      toast.error("Couldn't save your like. Please try again.");
+      // Add logic to revert optimistic update here if needed
     }
   }, []);
 
@@ -57,8 +60,11 @@ export function useCurioData(curioId?: string, profileId?: string) {
         .from('content_blocks')
         .update({ bookmarked: newBookmarkState })
         .eq('id', blockId);
+      // Add optimistic update here if needed: update local block state
     } catch (error) {
       console.error('Error toggling bookmark:', error);
+      toast.error("Couldn't save your bookmark. Please try again.");
+      // Add logic to revert optimistic update here if needed
     }
   }, []);
 

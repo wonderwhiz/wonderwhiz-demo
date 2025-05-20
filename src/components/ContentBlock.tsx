@@ -553,4 +553,4 @@ const ContentBlock: React.FC<ContentBlockProps> = ({
   );
 };
 
-export default ContentBlock;
+export default React.memo(ContentBlock);

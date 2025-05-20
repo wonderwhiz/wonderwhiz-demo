@@ -2,6 +2,7 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
+import { Loader2 } from "lucide-react" // Import Loader2
 
 import { cn } from "@/lib/utils"
 
@@ -34,21 +35,35 @@ const buttonVariants = cva(
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
-  asChild?: boolean
+  asChild?: boolean;
+  isLoading?: boolean; // New isLoading prop
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
-    const Comp = asChild ? Slot : "button"
+  ({ className, variant, size, asChild = false, isLoading = false, children, ...props }, ref) => {
+    const Comp = asChild ? Slot : "button";
+
+    const { disabled, ...restProps } = props; // Separate disabled from other props
+
     return (
       <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
+        className={cn(buttonVariants({ variant, size, className }), isLoading ? "relative" : "")} // Add relative for spinner positioning
         ref={ref}
-        {...props}
-      />
-    )
+        disabled={isLoading || disabled} // Disable if isLoading or originally disabled
+        {...restProps} // Pass the rest of the props
+      >
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Loader2 className="h-4 w-4 animate-spin" />
+          </div>
+        )}
+        <span className={isLoading ? "opacity-0" : "opacity-100"}> {/* Hide children when loading */}
+          {children}
+        </span>
+      </Comp>
+    );
   }
-)
+);
 Button.displayName = "Button"
 
 export { Button, buttonVariants }

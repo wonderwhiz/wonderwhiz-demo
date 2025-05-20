@@ -37,7 +37,7 @@ serve(async (req) => {
     // Get the child profile
     const { data: profile, error: fetchError } = await supabaseClient
       .from('child_profiles')
-      .select('id, sparks_balance, last_active, streak_days, streak_last_updated')
+      .select('id, sparks_balance, last_active, streak_days, streak_last_updated, last_streak_freeze_used_at, streak_freeze_available')
       .eq('id', childId)
       .single();
 
@@ -50,91 +50,101 @@ serve(async (req) => {
         }),
         { 
           status: 500, 
-          headers: { 
-            "Content-Type": "application/json",
-            ...corsHeaders
-          }
+          headers: { "Content-Type": "application/json", ...corsHeaders }
         }
       );
     }
 
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const lastActive = profile.last_active ? new Date(profile.last_active) : null;
+    // const lastActive = profile.last_active ? new Date(profile.last_active) : null; // Not directly used for streak logic here
     const lastStreakUpdate = profile.streak_last_updated ? new Date(profile.streak_last_updated) : null;
     
-    let streakUpdated = false;
     let streakDays = profile.streak_days || 0;
     let streakBonus = false;
     let streakBonusAmount = 0;
+    let streakFreezeUsed = false;
+    let currentFreezeAvailable = profile.streak_freeze_available ?? true; // Default to true if column is null
+    let lastFreezeUsedAt = profile.last_streak_freeze_used_at ? new Date(profile.last_streak_freeze_used_at) : null;
+    const FREEZE_COOLDOWN_DAYS = 7;
+
+    const profileUpdates: any = {
+      last_active: now.toISOString(),
+      streak_last_updated: today.toISOString().split('T')[0], // Ensure we only store date part
+    };
     
-    // Check if we need to update the streak
     if (lastStreakUpdate) {
       const lastUpdateDay = new Date(lastStreakUpdate.getFullYear(), lastStreakUpdate.getMonth(), lastStreakUpdate.getDate());
       const dayDiff = Math.floor((today.getTime() - lastUpdateDay.getTime()) / (1000 * 60 * 60 * 24));
       
-      if (dayDiff === 1) {
-        // Consecutive day login - increase streak
+      if (dayDiff === 1) { // Consecutive day login
         streakDays++;
-        streakUpdated = true;
-        
-        // Check if we've hit a 3-day streak milestone
-        if (streakDays % 3 === 0) {
-          streakBonus = true;
-          streakBonusAmount = 10; // Award 10 sparks for 3-day streaks
-          
-          // Add sparks transaction for streak bonus
-          await supabaseClient
-            .from('sparks_transactions')
-            .insert({
-              child_id: childId,
-              amount: streakBonusAmount,
-              reason: `${streakDays}-day streak bonus`
-            });
-            
-          // Update sparks balance
-          await supabaseClient
-            .from('child_profiles')
-            .update({ 
-              sparks_balance: (profile.sparks_balance || 0) + streakBonusAmount
-            })
-            .eq('id', childId);
+        // Check for earning back a freeze
+        if (!currentFreezeAvailable && lastFreezeUsedAt) {
+          const daysSinceFreezeUsed = Math.floor((today.getTime() - lastFreezeUsedAt.getTime()) / (1000 * 60 * 60 * 24));
+          if (daysSinceFreezeUsed >= FREEZE_COOLDOWN_DAYS) {
+            currentFreezeAvailable = true;
+            profileUpdates.streak_freeze_available = true; // Will be saved later
+          }
         }
-      } else if (dayDiff > 1) {
-        // Streak broken - reset to 1 (today)
-        streakDays = 1;
-        streakUpdated = true;
+      } else if (dayDiff === 2) { // Missed one day
+        let canUseFreeze = currentFreezeAvailable;
+        if (!canUseFreeze && lastFreezeUsedAt) { // Check if cooldown has passed to earn a new one
+          const daysSinceLastFreeze = Math.floor((today.getTime() - lastFreezeUsedAt.getTime()) / (1000 * 60 * 60 * 24));
+          if (daysSinceLastFreeze >= FREEZE_COOLDOWN_DAYS) {
+            canUseFreeze = true; // Earned it back
+            profileUpdates.streak_freeze_available = true; // Will be saved later
+          }
+        }
+
+        if (canUseFreeze) {
+          streakDays++; // Retroactively count the missed day
+          streakFreezeUsed = true;
+          profileUpdates.last_streak_freeze_used_at = now.toISOString();
+          profileUpdates.streak_freeze_available = false;
+          currentFreezeAvailable = false; // Update local state for response
+        } else {
+          streakDays = 1; // Streak broken, no freeze available/usable
+        }
+      } else if (dayDiff > 2) { // Missed more than one day
+        streakDays = 1; // Streak broken
       }
-    } else {
-      // First recorded streak day
+      // If dayDiff is 0 or negative, means already logged in today or bad data, no streak change.
+    } else { // First recorded streak day
       streakDays = 1;
-      streakUpdated = true;
     }
     
-    // Update profile with last_active time and streak info
+    profileUpdates.streak_days = streakDays;
+
+    // Handle streak bonus if streak continued (normally or via freeze)
+    if (streakDays > 0 && streakDays % 3 === 0 && (lastStreakUpdate ? Math.floor((today.getTime() - new Date(lastStreakUpdate.getFullYear(), lastStreakUpdate.getMonth(), lastStreakUpdate.getDate()).getTime()) / (1000 * 60 * 60 * 24)) >= 1 : true )) {
+        // Ensure bonus is only awarded if the streak actually advanced today or was saved by a freeze
+        // And not if already awarded for this specific streak_day count if no new login occurred.
+        // The condition `dayDiff >=1` (implicitly covered by streakDays++ path) or streakFreezeUsed ensures it's a new qualifying day.
+        streakBonus = true;
+        streakBonusAmount = 10;
+        
+        await supabaseClient
+          .from('sparks_transactions')
+          .insert({
+            child_id: childId,
+            amount: streakBonusAmount,
+            reason: `${streakDays}-day streak bonus${streakFreezeUsed ? " (freeze used)" : ""}`
+          });
+            
+        profileUpdates.sparks_balance = (profile.sparks_balance || 0) + streakBonusAmount;
+    }
+    
     const { error: updateError } = await supabaseClient
       .from('child_profiles')
-      .update({ 
-        last_active: now.toISOString(),
-        streak_days: streakDays,
-        streak_last_updated: today.toISOString().split('T')[0]
-      })
+      .update(profileUpdates)
       .eq('id', childId);
 
     if (updateError) {
       console.error("Error updating child profile:", updateError.message);
       return new Response(
-        JSON.stringify({ 
-          error: "Error updating child profile", 
-          details: updateError.message 
-        }),
-        { 
-          status: 500, 
-          headers: { 
-            "Content-Type": "application/json",
-            ...corsHeaders
-          }
-        }
+        JSON.stringify({ error: "Error updating child profile", details: updateError.message }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
@@ -142,20 +152,15 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true,
         streak_days: streakDays,
-        streak_updated: streakUpdated,
         streak_bonus: streakBonus,
-        streak_bonus_amount: streakBonusAmount
+        streak_bonus_amount: streakBonusAmount,
+        streak_freeze_used: streakFreezeUsed,
+        streak_freeze_available: currentFreezeAvailable 
       }),
-      { 
-        status: 200, 
-        headers: { 
-          "Content-Type": "application/json",
-          ...corsHeaders
-        }
-      }
+      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   } catch (error) {
-    console.error("Unexpected error:", error.message);
+    console.error("Unexpected error in track-login-streak:", error.message, error.stack);
     return new Response(
       JSON.stringify({ error: "Internal Server Error", details: error.message }),
       { 
