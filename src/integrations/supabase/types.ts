@@ -305,6 +305,30 @@ export type Database = {
           },
         ]
       }
+      curio_images: {
+        Row: {
+          created_at: string | null
+          generation_method: string
+          id: string
+          image_url: string
+          topic: string
+        }
+        Insert: {
+          created_at?: string | null
+          generation_method?: string
+          id?: string
+          image_url: string
+          topic: string
+        }
+        Update: {
+          created_at?: string | null
+          generation_method?: string
+          id?: string
+          image_url?: string
+          topic?: string
+        }
+        Relationships: []
+      }
       curios: {
         Row: {
           child_id: string

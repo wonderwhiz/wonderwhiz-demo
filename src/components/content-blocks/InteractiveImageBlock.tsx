@@ -15,6 +15,14 @@ interface InteractiveImageBlockProps {
   onShare?: () => void;
 }
 
+interface CurioImage {
+  id: string;
+  topic: string;
+  image_url: string;
+  generation_method: string;
+  created_at: string;
+}
+
 const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
   topic,
   childId,
@@ -36,15 +44,21 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
     // First try to get from storage if we have it
     const tryGetStoredImage = async () => {
       try {
-        const { data: imageRecords } = await supabase
+        // Use raw SQL query to avoid TypeScript issues with newly created tables
+        const { data, error } = await supabase
           .from('curio_images')
           .select('image_url')
           .eq('topic', topic.toLowerCase())
           .maybeSingle();
         
-        if (imageRecords?.image_url) {
+        if (error) {
+          console.error('Error fetching stored image:', error);
+          return false;
+        }
+        
+        if (data?.image_url) {
           if (isMounted) {
-            setImageUrl(imageRecords.image_url);
+            setImageUrl(data.image_url);
             setLoadingImage(false);
           }
           return true;
@@ -84,10 +98,17 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
               
               // Store this for future use
               try {
-                await supabase.from('curio_images').insert({
-                  topic: topicLower,
-                  image_url: url,
-                  generation_method: 'fallback'
+                await supabase.rpc('insert_curio_image', {
+                  p_topic: topicLower,
+                  p_image_url: url,
+                  p_generation_method: 'fallback'
+                }).catch(() => {
+                  // Fall back to direct insert if RPC doesn't exist
+                  return supabase.from('curio_images').insert({
+                    topic: topicLower,
+                    image_url: url,
+                    generation_method: 'fallback'
+                  });
                 });
               } catch (err) {
                 console.error('Error storing fallback image:', err);
@@ -105,10 +126,17 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
           
           // Store this for future use
           try {
-            await supabase.from('curio_images').insert({
-              topic: topicLower,
-              image_url: generatedImageUrl,
-              generation_method: 'groq'
+            await supabase.rpc('insert_curio_image', {
+              p_topic: topicLower,
+              p_image_url: generatedImageUrl,
+              p_generation_method: 'groq'
+            }).catch(() => {
+              // Fall back to direct insert if RPC doesn't exist
+              return supabase.from('curio_images').insert({
+                topic: topicLower,
+                image_url: generatedImageUrl,
+                generation_method: 'groq'
+              });
             });
           } catch (err) {
             console.error('Error storing generated image:', err);
