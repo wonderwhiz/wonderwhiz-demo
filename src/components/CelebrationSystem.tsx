@@ -19,7 +19,7 @@ const CelebrationSystem: React.FC<CelebrationSystemProps> = ({
   const confettiFiredRef = useRef(false);
   // Add a cooldown mechanism
   const lastCelebrationTime = useRef<number>(0);
-  const celebrationCooldown = 5000; // 5 seconds between celebrations
+  const celebrationCooldown = 8000; // Increased from 5000 to 8000ms (8 seconds between celebrations)
 
   useEffect(() => {
     const now = Date.now();
@@ -30,9 +30,9 @@ const CelebrationSystem: React.FC<CelebrationSystemProps> = ({
       confettiFiredRef.current = true;
       lastCelebrationTime.current = now;
       
-      // Reduce particle counts for all intensities
-      const particleCount = intensity === 'low' ? 30 : intensity === 'medium' ? 60 : 90;
-      const spread = intensity === 'low' ? 50 : intensity === 'medium' ? 70 : 90;
+      // Further reduce particle counts for all intensities
+      const particleCount = intensity === 'low' ? 20 : intensity === 'medium' ? 40 : 60;
+      const spread = intensity === 'low' ? 40 : intensity === 'medium' ? 60 : 80;
       
       confetti({
         particleCount,
@@ -42,12 +42,12 @@ const CelebrationSystem: React.FC<CelebrationSystemProps> = ({
         colors: ['#8b5cf6', '#d946ef', '#3b82f6', '#6366f1', '#ec4899']
       });
       
-      // For high intensity, add just one additional burst instead of multiple
+      // Only add additional burst for high intensity, and reduce its particles too
       if (intensity === 'high') {
         setTimeout(() => {
           confetti({
-            particleCount: 50,
-            spread: 70,
+            particleCount: 30, // Reduced from 50
+            spread: 60, // Reduced from 70
             origin: { y: 0.7, x: 0.5 },
             zIndex: 2000,
             colors: ['#8b5cf6', '#d946ef', '#3b82f6']

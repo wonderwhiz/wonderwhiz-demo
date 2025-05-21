@@ -78,6 +78,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
   const [showFloatingNav, setShowFloatingNav] = useState(false);
   const [recentMilestone, setRecentMilestone] = useState<'first_block' | 'half_complete' | 'all_complete' | null>(null);
   const [recentSparks, setRecentSparks] = useState(0);
+  const celebrationShownForThisSession = useRef<boolean>(false);
   
   const { 
     currentLearningStage,
@@ -116,22 +117,29 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
               
               setCurrentBlockIndex(elementIndex);
               
-              if (viewedBlocks.size < 5) {
+              // Only award sparks for the first 3 blocks viewed
+              if (viewedBlocks.size < 3) {
                 const newSparks = 1;
                 setSparksEarned(prev => prev + newSparks);
                 setRecentSparks(newSparks);
                 setTimeout(() => setRecentSparks(0), 3000);
               }
               
-              if (viewedBlocks.size === 0) {
-                setRecentMilestone('first_block');
-                setTimeout(() => setRecentMilestone(null), 4000);
-              } else if (viewedBlocks.size === Math.floor(blocks.length / 2) - 1) {
-                setRecentMilestone('half_complete');
-                setTimeout(() => setRecentMilestone(null), 4000);
-              } else if (viewedBlocks.size === blocks.length - 1) {
-                setRecentMilestone('all_complete');
-                setTimeout(() => setRecentMilestone(null), 4000);
+              // Only trigger milestone celebrations if we haven't shown one yet in this session
+              if (!celebrationShownForThisSession.current) {
+                if (viewedBlocks.size === 0) {
+                  setRecentMilestone('first_block');
+                  setTimeout(() => setRecentMilestone(null), 4000);
+                  celebrationShownForThisSession.current = true;
+                } else if (viewedBlocks.size === Math.floor(blocks.length / 2) - 1) {
+                  setRecentMilestone('half_complete');
+                  setTimeout(() => setRecentMilestone(null), 4000);
+                  celebrationShownForThisSession.current = true;
+                } else if (viewedBlocks.size === blocks.length - 1) {
+                  setRecentMilestone('all_complete');
+                  setTimeout(() => setRecentMilestone(null), 4000);
+                  celebrationShownForThisSession.current = true;
+                }
               }
             }
           });
@@ -174,7 +182,8 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
     if (!interactedBlocks.has(blockId)) {
       setInteractedBlocks(prev => new Set([...prev, blockId]));
       
-      if (interactedBlocks.size < 3) {
+      // Only award sparks for the first 2 interactions
+      if (interactedBlocks.size < 2) {
         const newSparks = 2;
         setSparksEarned(prev => prev + newSparks);
         setRecentSparks(newSparks);

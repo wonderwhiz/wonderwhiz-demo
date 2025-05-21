@@ -1,363 +1,237 @@
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Image, Download, Share2, Sparkles, AlertCircle, Camera } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
+import { Share, Download, ZoomIn, ZoomOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useGroqGeneration } from '@/hooks/useGroqGeneration';
+import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { BlockError } from './BlockError';
-import { Progress } from '@/components/ui/progress';
-import { cn } from '@/lib/utils';
-import { useHuggingFaceImageGeneration } from '@/hooks/useHuggingFaceImageGeneration';
+import { supabase } from '@/integrations/supabase/client';
 
 interface InteractiveImageBlockProps {
   topic: string;
-  childId: string;
+  childId?: string;
   childAge?: number;
   onShare?: () => void;
-  className?: string;
-  showHeader?: boolean;
 }
 
 const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
   topic,
   childId,
   childAge = 10,
-  onShare,
-  className = '',
-  showHeader = true
+  onShare
 }) => {
-  const [progress, setProgress] = useState(0);
-  const [error, setError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
+  const [imageUrl, setImageUrl] = useState<string>('');
+  const [loadingImage, setLoadingImage] = useState(true);
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const { generateContextualImage } = useGroqGeneration();
+  const imageRef = useRef<HTMLImageElement>(null);
   
-  // Use our new hook for image generation
-  const {
-    generateImage,
-    isGenerating,
-    imageUrl,
-    fallbackSource,
-    generationError,
-    resetImage
-  } = useHuggingFaceImageGeneration({ childAge });
-  
-  // Clean up the topic to make a better prompt
-  const cleanTopic = (topic: string) => {
-    return topic
-      .replace(/^(why|how|what|when|where|who)\s(can|do|does|is|are|did|would|will|should|could|has|have|had)\s/i, '')
-      .replace(/\?$/, '')
-      .trim();
-  };
-  
-  // Generate an appropriate prompt based on the topic and child age
-  const generatePrompt = () => {
-    const cleanedTopic = cleanTopic(topic);
-    
-    if (childAge <= 7) {
-      return `A simple, colorful, cartoon-style educational illustration about "${cleanedTopic}" for a ${childAge} year old child. Child-friendly, engaging, and fun.`;
-    } else if (childAge <= 11) {
-      return `An engaging educational illustration about "${cleanedTopic}" with vibrant colors and details, appropriate for a ${childAge} year old. Educational and accessible.`;
-    } else {
-      return `A detailed educational illustration about "${cleanedTopic}" with modern style, appropriate for a teenager. Informative and visually interesting.`;
-    }
-  };
-  
-  // Generate a fallback colored background as last resort
-  const generateColorBackground = (seed: string) => {
-    // Generate a deterministic but seemingly random color based on the topic string
-    let hash = 0;
-    for (let i = 0; i < seed.length; i++) {
-      hash = seed.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    
-    // Use the hash to generate an HSL color
-    // Use a pleasing saturation and lightness, but let hue vary
-    const hue = Math.abs(hash) % 360;
-    
-    // Return a linear gradient
-    return `linear-gradient(135deg, hsl(${hue}, 70%, 60%), hsl(${(hue + 40) % 360}, 70%, 50%))`;
-  };
-  
-  const handleImageGeneration = async () => {
-    if (isGenerating) return;
-    
-    setError(null);
-    setProgress(0);
-    
-    try {
-      // Ensure we have a valid topic before proceeding
-      if (!topic || topic.trim().length === 0) {
-        throw new Error("No topic provided for image generation");
-      }
-      
-      const prompt = generatePrompt();
-      
-      // Update progress as we go
-      setProgress(10);
-      
-      // Initial progress steps
-      const progressInterval = setInterval(() => {
-        setProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return prev;
-          }
-          return prev + 5;
-        });
-      }, 800);
-      
-      // Generate image with our new hook
-      await generateImage(prompt);
-      
-      // Cleanup and set final progress
-      clearInterval(progressInterval);
-      setProgress(100);
-      
-    } catch (err: any) {
-      console.error('Error in handleImageGeneration:', err);
-      setError(`Error: ${err.message || 'Unknown error'}`);
-      
-      // Final fallback to colored background if all else fails
-      if (!imageUrl) {
-        const colorBackground = generateColorBackground(topic);
-        resetImage();
-        return colorBackground;
-      }
-    }
-  };
-  
-  // Generate the image when the component mounts or when the topic/retryCount changes
   useEffect(() => {
-    if (topic) {
-      handleImageGeneration();
-    }
-  }, [topic, retryCount]);
+    let isMounted = true;
+    setLoadingImage(true);
+    setImageError(false);
+    
+    // First try to get from storage if we have it
+    const tryGetStoredImage = async () => {
+      try {
+        const { data: imageRecords } = await supabase
+          .from('curio_images')
+          .select('image_url')
+          .eq('topic', topic.toLowerCase())
+          .maybeSingle();
+        
+        if (imageRecords?.image_url) {
+          if (isMounted) {
+            setImageUrl(imageRecords.image_url);
+            setLoadingImage(false);
+          }
+          return true;
+        }
+        return false;
+      } catch (err) {
+        console.error('Error fetching stored image:', err);
+        return false;
+      }
+    };
+    
+    const generateImage = async () => {
+      try {
+        const hasStoredImage = await tryGetStoredImage();
+        
+        if (hasStoredImage) return;
+        
+        // Add fallback imagery for specific topics
+        const fallbackImages: Record<string, string> = {
+          ocean: "https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?q=80&w=1000&auto=format&fit=crop",
+          volcano: "https://images.unsplash.com/photo-1562117532-14a6c72858c9?q=80&w=1000&auto=format&fit=crop",
+          space: "https://images.unsplash.com/photo-1543722530-d2c3201371e7?q=80&w=1000&auto=format&fit=crop",
+          dinosaur: "https://images.unsplash.com/photo-1615243029542-4fcced64c70e?q=80&w=1000&auto=format&fit=crop",
+          rainbow: "https://images.unsplash.com/photo-1600865511428-eadfb242ca8c?q=80&w=1000&auto=format&fit=crop",
+          brain: "https://images.unsplash.com/photo-1559757175-5700dde675bc?q=80&w=1000&auto=format&fit=crop",
+          weather: "https://images.unsplash.com/photo-1580193769210-b8d1c049a7d9?q=80&w=1000&auto=format&fit=crop"
+        };
+        
+        const topicLower = topic.toLowerCase();
+        
+        // Check if we have a matching fallback image
+        for (const [key, url] of Object.entries(fallbackImages)) {
+          if (topicLower.includes(key)) {
+            if (isMounted) {
+              setImageUrl(url);
+              setLoadingImage(false);
+              
+              // Store this for future use
+              try {
+                await supabase.from('curio_images').insert({
+                  topic: topicLower,
+                  image_url: url,
+                  generation_method: 'fallback'
+                });
+              } catch (err) {
+                console.error('Error storing fallback image:', err);
+              }
+            }
+            return;
+          }
+        }
+        
+        // If no fallback is found, try to generate one
+        const generatedImageUrl = await generateContextualImage(topic, childAge);
+        
+        if (isMounted && generatedImageUrl) {
+          setImageUrl(generatedImageUrl);
+          
+          // Store this for future use
+          try {
+            await supabase.from('curio_images').insert({
+              topic: topicLower,
+              image_url: generatedImageUrl,
+              generation_method: 'groq'
+            });
+          } catch (err) {
+            console.error('Error storing generated image:', err);
+          }
+        }
+      } catch (error) {
+        console.error('Error generating image:', error);
+        if (isMounted) {
+          setImageError(true);
+          // Set a default image as fallback
+          setImageUrl('https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?q=80&w=1000&auto=format&fit=crop');
+        }
+      } finally {
+        if (isMounted) {
+          setLoadingImage(false);
+        }
+      }
+    };
+    
+    generateImage();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [topic, childAge, generateContextualImage]);
   
-  const handleRetry = () => {
-    setRetryCount(prev => prev + 1);
+  const handleImageError = () => {
+    setImageError(true);
+    // Set a default image as fallback
+    setImageUrl('https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?q=80&w=1000&auto=format&fit=crop');
+  };
+  
+  const handleToggleZoom = () => {
+    setIsZoomed(!isZoomed);
   };
   
   const handleShare = () => {
     if (onShare) {
       onShare();
+    } else {
+      toast.info('Sharing feature coming soon!');
     }
-    
-    toast.success("Image shared with your parent!");
   };
   
   const handleDownload = () => {
-    if (!imageUrl || fallbackSource === 'color') return;
-    
-    // If it's a real image URL (not a CSS gradient), create a download link
-    try {
-      const isDataUrl = imageUrl.startsWith('data:');
-      const a = document.createElement('a');
+    if (imageRef.current && imageUrl) {
+      const link = document.createElement('a');
+      link.href = imageUrl;
+      link.download = `${topic.replace(/\s+/g, '-').toLowerCase()}-image.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
       
-      if (isDataUrl) {
-        // For data URLs, we need to handle them differently
-        a.href = imageUrl;
-      } else {
-        a.href = imageUrl;
-      }
-      
-      a.download = `wonderwhiz-${cleanTopic(topic).replace(/\s+/g, '-')}.jpg`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      
-      toast.success("Image saved!");
-    } catch (err) {
-      console.error('Download error:', err);
-      toast.error("Couldn't download image");
-    }
-  };
-  
-  // Age-appropriate messages
-  const getLoadingMessage = () => {
-    if (childAge <= 7) {
-      return "Drawing a picture for you...";
-    } else if (childAge <= 11) {
-      return "Creating your illustration...";
-    } else {
-      return "Generating visualization...";
-    }
-  };
-  
-  const getErrorMessage = () => {
-    if (childAge <= 7) {
-      return "Oops! I couldn't draw that picture.";
-    } else if (childAge <= 11) {
-      return "Sorry! We had trouble creating that image.";
-    } else {
-      return "Error: Could not generate the requested image.";
+      toast.success('Image downloaded successfully!');
     }
   };
 
-  // For data URLs from HuggingFace, we need some special handling for styling
-  const getImageElement = () => {
-    if (!imageUrl) return null;
-    
-    if (fallbackSource === 'color') {
-      return (
-        <div 
-          className="w-full aspect-video rounded-t-xl flex items-center justify-center"
-          style={{ background: imageUrl }}
-        >
-          <div className="bg-black/30 backdrop-blur-sm p-4 rounded-lg">
-            <Camera className="h-8 w-8 mx-auto mb-2 text-white/80" />
-            <p className="text-white text-center text-sm">
-              {childAge <= 7 
-                ? "Use your imagination!" 
-                : "No image available - use your imagination"}
-            </p>
-          </div>
-        </div>
-      );
-    }
-    
-    // Handle both URL images and data URLs from HuggingFace
-    return (
-      <div className="w-full aspect-video rounded-t-xl overflow-hidden bg-black/30">
-        <img 
-          src={imageUrl} 
-          alt={`Visualization of ${topic}`}
-          className="w-full h-full object-cover"
-          onError={(e) => {
-            console.error('Image loading error:', e);
-            setError("The image failed to load");
-            // Set a color background as final fallback
-            const colorBackground = generateColorBackground(topic);
-            resetImage();
-          }}
-        />
-      </div>
-    );
-  };
-  
-  // Determine fallback label based on source
-  const getFallbackLabel = () => {
-    switch (fallbackSource) {
-      case 'unsplash':
-        return childAge <= 7 
-          ? "We found a nice picture instead!" 
-          : "We used a stock image";
-      case 'huggingface':
-        return childAge <= 7 
-          ? "Our AI drew this just for you!" 
-          : "Created with AI";
-      case 'dalle':
-        return childAge <= 7 
-          ? "Our AI drew this just for you!" 
-          : "Created with DALL-E AI";
-      default:
-        return null;
-    }
-  };
-  
   return (
-    <div className={cn("mb-6", className)}>
-      {showHeader && (
-        <div className="flex items-center mb-3">
-          <div className="w-8 h-8 rounded-full bg-wonderwhiz-light-purple/50 flex items-center justify-center mr-3">
-            <Image className="h-4 w-4 text-white" />
+    <Card className="overflow-hidden bg-gradient-to-b from-indigo-900/30 to-black/30 border-indigo-500/20 mb-8">
+      <div className="relative">
+        {loadingImage ? (
+          <div className="aspect-[16/9] flex items-center justify-center bg-black/20 animate-pulse">
+            <span className="text-white/60 text-sm">Generating a stunning visualization...</span>
           </div>
-          <h2 className="text-lg font-bold text-white font-nunito">Visualize This</h2>
-        </div>
-      )}
-      
-      <AnimatePresence mode="wait">
-        {isGenerating ? (
+        ) : (
           <motion.div
-            key="loading"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="bg-gradient-to-br from-wonderwhiz-deep-purple/40 to-wonderwhiz-light-purple/30 backdrop-blur-md border border-wonderwhiz-light-purple/30 rounded-xl p-4 text-center"
+            transition={{ duration: 0.5 }}
+            className={`relative ${isZoomed ? 'cursor-zoom-out' : 'cursor-zoom-in'}`}
+            onClick={handleToggleZoom}
           >
-            <div className="py-8">
-              <Sparkles className="h-12 w-12 mx-auto mb-4 text-wonderwhiz-vibrant-yellow animate-pulse" />
-              <p className="text-white mb-4">{getLoadingMessage()}</p>
-              <div className="w-full max-w-xs mx-auto mb-2">
-                <Progress value={progress} className="h-2 bg-white/10" />
-              </div>
-              <p className="text-white/60 text-sm">{progress}% complete</p>
-            </div>
-          </motion.div>
-        ) : (error || generationError) && !imageUrl ? (
-          <motion.div
-            key="error"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <BlockError
-              message={getErrorMessage()}
-              error={new Error(error || generationError || "Unknown error")}
-              onRetry={handleRetry}
-              childAge={childAge}
+            <img
+              ref={imageRef}
+              src={imageUrl}
+              alt={`Visualization of ${topic}`}
+              className={`w-full object-cover transition-all duration-300 ${isZoomed ? 'aspect-auto max-h-[80vh]' : 'aspect-[16/9]'}`}
+              onError={handleImageError}
             />
-          </motion.div>
-        ) : imageUrl ? (
-          <motion.div
-            key="image"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0 }}
-            className="bg-gradient-to-br from-wonderwhiz-deep-purple/40 to-wonderwhiz-light-purple/30 backdrop-blur-md border border-wonderwhiz-light-purple/30 rounded-xl overflow-hidden"
-          >
-            {getImageElement()}
             
-            {getFallbackLabel() && (
-              <div className="bg-wonderwhiz-deep-purple/80 text-white/80 px-3 py-1 text-xs flex items-center">
-                <AlertCircle className="h-3 w-3 mr-1" />
-                {getFallbackLabel()}
+            {imageError && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                <span className="text-white/80 text-sm px-4 py-2 rounded bg-black/50">
+                  Could not load image for {topic}
+                </span>
               </div>
             )}
-            
-            <div className="p-4">
-              <p className="text-white/90 text-sm mb-4 font-inter">
-                {childAge <= 7 
-                  ? `A picture about ${cleanTopic(topic)}` 
-                  : `Visual representation of ${cleanTopic(topic)}`}
-              </p>
-              
-              <div className="flex space-x-2">
-                {fallbackSource !== 'color' && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleDownload}
-                    className="bg-white/5 border-white/10 text-white hover:bg-white/10 hover:text-white"
-                  >
-                    <Download className="h-3.5 w-3.5 mr-1.5" />
-                    Save
-                  </Button>
-                )}
-                
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleShare}
-                  className="bg-white/5 border-white/10 text-white hover:bg-white/10 hover:text-white"
-                >
-                  <Share2 className="h-3.5 w-3.5 mr-1.5" />
-                  Share
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleRetry}
-                  className="bg-white/5 border-white/10 text-white hover:bg-white/10 hover:text-white ml-auto"
-                >
-                  <Sparkles className="h-3.5 w-3.5 mr-1.5" />
-                  New Image
-                </Button>
-              </div>
-            </div>
           </motion.div>
-        ) : null}
-      </AnimatePresence>
-    </div>
+        )}
+        
+        {!loadingImage && (
+          <div className="absolute bottom-3 right-3 flex gap-2">
+            <Button
+              size="icon"
+              variant="ghost"
+              className="bg-black/50 hover:bg-black/70 text-white rounded-full h-8 w-8"
+              onClick={handleToggleZoom}
+              title={isZoomed ? "Zoom out" : "Zoom in"}
+            >
+              {isZoomed ? <ZoomOut size={16} /> : <ZoomIn size={16} />}
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="bg-black/50 hover:bg-black/70 text-white rounded-full h-8 w-8"
+              onClick={handleShare}
+              title="Share image"
+            >
+              <Share size={16} />
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="bg-black/50 hover:bg-black/70 text-white rounded-full h-8 w-8"
+              onClick={handleDownload}
+              title="Download image"
+            >
+              <Download size={16} />
+            </Button>
+          </div>
+        )}
+      </div>
+    </Card>
   );
 };
 

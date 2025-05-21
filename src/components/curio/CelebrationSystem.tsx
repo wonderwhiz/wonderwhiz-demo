@@ -34,7 +34,7 @@ const CelebrationSystem: React.FC<CelebrationSystemProps> = ({
   const [celebrationType, setCelebrationType] = useState<'milestone' | 'sparks' | 'achievement' | null>(null);
   const hasTriggeredConfetti = useRef<boolean>(false);
   const lastCelebrationTime = useRef<number>(0);
-  const celebrationCooldown = 5000; // 5 seconds cooldown between celebrations
+  const celebrationCooldown = 10000; // Increased from 5000 to 10000ms (10 seconds between celebrations)
 
   useEffect(() => {
     const now = Date.now();
@@ -61,8 +61,8 @@ const CelebrationSystem: React.FC<CelebrationSystemProps> = ({
     const now = Date.now();
     const shouldCelebrate = now - lastCelebrationTime.current > celebrationCooldown;
     
-    // Only celebrate if sparks is significant (more than 1) and not in cooldown
-    if (sparksEarned > 1 && !hasTriggeredConfetti.current && shouldCelebrate) {
+    // Only celebrate if sparks is significant (more than 2) and not in cooldown
+    if (sparksEarned > 2 && !hasTriggeredConfetti.current && shouldCelebrate) { // Increased threshold from 1 to 2
       setCelebrationType('sparks');
       setVisible(true);
       triggerCelebration('small');
@@ -100,23 +100,23 @@ const CelebrationSystem: React.FC<CelebrationSystemProps> = ({
     switch (size) {
       case 'small':
         confetti({
-          particleCount: 15, // Reduced from 30
-          spread: 40, // Reduced from 50
+          particleCount: 10, // Further reduced from 15
+          spread: 30, // Further reduced from 40
           origin: { y: 0.6 }
         });
         break;
       case 'medium':
         confetti({
-          particleCount: 40, // Reduced from 70
-          spread: 50, // Reduced from 70
+          particleCount: 25, // Further reduced from 40
+          spread: 40, // Further reduced from 50
           origin: { y: 0.6 }
         });
         break;
       case 'large': {
         // Single burst for large celebration instead of continuous animation
         confetti({
-          particleCount: 70, // Reduced from 100
-          spread: 80, // Reduced from 100
+          particleCount: 50, // Further reduced from 70
+          spread: 60, // Further reduced from 80
           origin: { y: 0.6 },
           colors: ['#FFD700', '#FF00FF', '#00FFFF', '#FF4500']
         });

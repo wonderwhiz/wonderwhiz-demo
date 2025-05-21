@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { ContentBlock } from '@/types/curio';
@@ -32,6 +31,7 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
   const fetchInProgressRef = useRef<boolean>(false);
   const lastFetchTimeRef = useRef<number>(0);
   const callCountRef = useRef<number>(0);
+  const contentGenerationAttempted = useRef<boolean>(false);
 
   // Debug logging
   useConsoleLogger(curioId, 'Current Curio ID');
@@ -54,6 +54,7 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
         lastFetchTimeRef.current = 0;
         fetchInProgressRef.current = false;
         callCountRef.current = 0;
+        blockGenerationInProgress.current = false; // Reset generation flag
       }
     }
   }, [curioId]);
@@ -68,6 +69,14 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
       setGenerationError(null);
       blockGenerationInProgress.current = true;
       
+      // Add a cancellation for any pending timers when triggering new generation
+      if (generationTimeoutRef.current) {
+        clearTimeout(generationTimeoutRef.current);
+      }
+      if (blockLoadingTimerRef.current) {
+        clearTimeout(blockLoadingTimerRef.current);
+      }
+      
       const { data, error } = await supabase.functions.invoke('trigger-content-generation', {
         body: { curioId, childId }
       });
@@ -81,7 +90,7 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
       
       console.log("Content generation triggered successfully:", data);
       
-      // Create placeholder blocks while waiting
+      // Create placeholder blocks while waiting, just one of each type to reduce clutter
       setBlocks([
         {
           id: `placeholder-${Date.now()}-1`,
@@ -96,26 +105,42 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
           bookmarked: false,
           created_at: new Date().toISOString()
         } as ContentBlock,
-        {
-          id: `placeholder-${Date.now()}-2`,
-          curio_id: curioId,
-          specialist_id: 'prism',
-          type: 'funFact',
-          content: { 
-            text: "Gathering interesting details for you...",
-            rabbitHoles: []
-          },
-          liked: false,
-          bookmarked: false,
-          created_at: new Date().toISOString()
-        } as ContentBlock
       ]);
       
-      // Fetch the newly generated blocks after a delay
-      setTimeout(() => {
-        fetchBlocks();
-        blockGenerationInProgress.current = false;
-      }, 5000);
+      // Fetch the newly generated blocks after a delay, with retries
+      const maxRetries = 3;
+      let retryCount = 0;
+      
+      const tryFetchBlocks = () => {
+        if (retryCount >= maxRetries) {
+          console.log('Max retries reached, giving up on fetching blocks');
+          blockGenerationInProgress.current = false;
+          return;
+        }
+        
+        retryCount++;
+        console.log(`Trying to fetch blocks, attempt ${retryCount}`);
+        
+        // First check if there are actual blocks
+        supabase
+          .from('content_blocks')
+          .select('*', { count: 'exact', head: true })
+          .eq('curio_id', curioId)
+          .then(({ count }) => {
+            if (count && count > 0) {
+              fetchBlocks();
+              blockGenerationInProgress.current = false;
+            } else if (retryCount < maxRetries) {
+              // Try again after a delay
+              generationTimeoutRef.current = setTimeout(tryFetchBlocks, 5000 * retryCount);
+            } else {
+              blockGenerationInProgress.current = false;
+            }
+          });
+      };
+      
+      // Start the fetch cycle after initial delay
+      generationTimeoutRef.current = setTimeout(tryFetchBlocks, 5000);
       
     } catch (err) {
       console.error("Error in content generation process:", err);
@@ -124,7 +149,7 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
     } finally {
       setIsLoading(false);
     }
-  }, [curioId, childId]);
+  }, [curioId, childId, fetchBlocks]);
 
   const fetchBlocks = useCallback(async () => {
     if (!curioId || fetchInProgressRef.current) return;
@@ -332,6 +357,23 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
     if (!curioId || isLoading) return;
     setPage(prevPage => prevPage + 1);
   }, [curioId, isLoading]);
+
+  // Ensure we only have one attempt at content generation
+  useEffect(() => {
+    if (curioId && childId && blocks.length === 0 && !isLoading && !contentGenerationAttempted.current) {
+      contentGenerationAttempted.current = true;
+      console.log("Triggering content generation for empty curio");
+      triggerContentGeneration();
+    }
+    
+    // Check if we only have placeholder blocks
+    const onlyPlaceholders = blocks.length > 0 && blocks.every(block => block.id.startsWith('placeholder-'));
+    if (onlyPlaceholders && !isLoading && !contentGenerationAttempted.current) {
+      contentGenerationAttempted.current = true;
+      console.log("Triggering content generation for placeholder blocks");
+      triggerContentGeneration();
+    }
+  }, [blocks, curioId, childId, isLoading, triggerContentGeneration]);
 
   return {
     blocks,
