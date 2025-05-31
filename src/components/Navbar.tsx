@@ -3,7 +3,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import WonderWhizLogo from '@/components/WonderWhizLogo';
-import { User, Home } from 'lucide-react';
+import { User, Home, Users } from 'lucide-react';
 
 const Navbar = () => {
   return (
@@ -19,7 +19,7 @@ const Navbar = () => {
         <Link to="/dashboard">
           <Button variant="ghost" className="hover:bg-white/10 text-white">
             <Home className="h-5 w-5 mr-1" />
-            <span className="hidden sm:inline">Dashboard</span>
+            <span className="hidden sm:inline">My Stuff</span>
           </Button>
         </Link>
         <Link to="/login">
@@ -35,8 +35,8 @@ const Navbar = () => {
             variant="ghost" 
             className="bg-white/10 hover:bg-white/20 text-white"
           >
-            <User className="h-5 w-5 mr-1" />
-            <span className="hidden sm:inline">Profiles</span>
+            <Users className="h-5 w-5 mr-1" />
+            <span className="hidden sm:inline">My Heroes</span>
           </Button>
         </Link>
       </div>

@@ -25,9 +25,10 @@ const Index = () => {
     y: 0
   });
   const isMobile = useIsMobile();
+  const [animationsEnabled, setAnimationsEnabled] = useState(false);
 
   useEffect(() => {
-    if (!isMobile) {
+    if (!isMobile && animationsEnabled) {
       document.documentElement.classList.add('magic-cursor-active');
 
       const cursorDot = document.createElement('div');
@@ -88,8 +89,9 @@ const Index = () => {
           el.removeEventListener('mouseleave', handleMouseLeave);
         });
         document.documentElement.classList.remove('magic-cursor-active');
-        if (cursorDot.parentNode) document.body.removeChild(cursorDot);
-        if (cursorOutline.parentNode) document.body.removeChild(cursorOutline);
+        // Ensure elements exist before trying to remove them
+        if (cursorDot && cursorDot.parentNode) document.body.removeChild(cursorDot);
+        if (cursorOutline && cursorOutline.parentNode) document.body.removeChild(cursorOutline);
 
         const particles = document.querySelectorAll('.floating-particle');
         particles.forEach(particle => {
@@ -97,7 +99,7 @@ const Index = () => {
         });
       };
     }
-  }, [isMobile]);
+  }, [isMobile, animationsEnabled]);
 
   const createFloatingParticles = () => {
     const particleCount = isMobile ? 8 : 15;
@@ -147,12 +149,12 @@ const Index = () => {
         <title>WonderWhiz - AI-Powered Learning Platform for Kids | Feed Your Child's Curiosity</title>
         <meta name="description" content="WonderWhiz transforms screen time into educational adventures for children. Our AI-powered learning platform adapts to your child's interests, making learning fun and engaging." />
         <meta name="keywords" content="kids learning app, children AI education, educational platform, kids educational technology, interactive learning" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </Helmet>
       
-      <ParticleEffect type="stars" intensity={isMobile ? "low" : "medium"} />
+      {animationsEnabled && !isMobile && <ParticleEffect type="stars" intensity={isMobile ? "low" : "medium"} />}
       
-      {!isMobile && <AnimatedTooltip content={<div className="text-center">
+      {animationsEnabled && !isMobile && <AnimatedTooltip content={<div className="text-center">
               <p className="font-bold">Webby Award Nominee 2023</p>
               <p className="text-xs mt-1">For Excellence in Innovation</p>
             </div>}>
@@ -171,7 +173,7 @@ const Index = () => {
       </main>
       <Footer />
       
-      {!isMobile && <div className="fixed pointer-events-none z-50 transition-all duration-300 opacity-70" style={{
+      {animationsEnabled && !isMobile && <div className="fixed pointer-events-none z-50 transition-all duration-300 opacity-70" style={{
       left: `${mousePosition.x}px`,
       top: `${mousePosition.y}px`,
       transform: 'translate(-50%, -50%)'

@@ -177,10 +177,10 @@ const App = () => {
     if (!viewportMeta) {
       const meta = document.createElement('meta');
       meta.name = 'viewport';
-      meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+      meta.content = 'width=device-width, initial-scale=1.0';
       document.head.appendChild(meta);
     } else {
-      viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+      viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0');
     }
     
     // Add touch-friendly class to body

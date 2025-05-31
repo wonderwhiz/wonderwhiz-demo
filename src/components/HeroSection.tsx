@@ -127,7 +127,7 @@ const HeroSection = () => {
                   <h3 className="text-xl font-bold mb-2">Today's Curios</h3>
                   
                   {/* Categories Filter */}
-                  <div className="flex space-x-2 mb-4 overflow-x-auto pb-2 scrollbar-none">
+                  <div className="flex space-x-2 mb-4 overflow-x-auto pb-2">
                     <div className="bg-wonderwhiz-blue/30 text-white text-xs px-3 py-1 rounded-full flex-shrink-0">
                       All
                     </div>
@@ -175,9 +175,9 @@ const HeroSection = () => {
                       </div>
                       <div className="text-white">
                         <h4 className="text-sm font-bold">Fun Space Fact</h4>
-                        <p className="text-xs">A year on Venus is shorter than a day on Venus! Venus rotates so slowly that it takes 243 Earth days to spin once.</p>
+                        <p className="text-sm">A year on Venus is shorter than a day on Venus! Venus rotates so slowly that it takes 243 Earth days to spin once.</p>
                         <div className="mt-2 flex justify-between items-center">
-                          <div className="text-[10px] text-white/60">Astronomy</div>
+                          <div className="text-xs text-white/60">Astronomy</div>
                           <div className="flex space-x-2">
                             <button className="p-1 rounded-full hover:bg-white/10 text-white/70">
                               <Star className="h-3 w-3" />
@@ -199,17 +199,17 @@ const HeroSection = () => {
                       </div>
                       <div className="text-white flex-1">
                         <h4 className="text-sm font-bold">Pop Quiz!</h4>
-                        <p className="text-xs mb-2">What's the largest ocean on Earth?</p>
+                        <p className="text-sm mb-2">What's the largest ocean on Earth?</p>
                         <div className="space-y-1">
-                          <button className="bg-white/20 w-full text-left px-2 py-1 rounded text-xs hover:bg-white/30">
+                          <button className="bg-white/20 w-full text-left px-2 py-1 rounded text-sm hover:bg-white/30">
                             Atlantic Ocean
                           </button>
-                          <button className="bg-white/20 w-full text-left px-2 py-1 rounded text-xs hover:bg-white/30">
+                          <button className="bg-white/20 w-full text-left px-2 py-1 rounded text-sm hover:bg-white/30">
                             Pacific Ocean
                           </button>
                         </div>
                         <div className="mt-2 flex justify-end">
-                          <div className="text-[10px] text-white/60">+5 sparks for correct answer</div>
+                          <div className="text-xs text-white/60">+5 sparks for correct answer</div>
                         </div>
                       </div>
                     </div>
@@ -223,12 +223,12 @@ const HeroSection = () => {
                       </div>
                       <div className="text-gray-800 flex-1">
                         <h4 className="text-sm font-bold">Draw Challenge</h4>
-                        <p className="text-xs mb-2">Can you draw your favorite animal? Upload your creation!</p>
-                        <div className="p-1.5 bg-white/30 rounded border border-dashed border-gray-500 flex items-center justify-center">
-                          <span className="text-[10px]">Tap to upload your drawing</span>
+                        <p className="text-sm mb-2">Can you draw your favorite animal? Upload your creation!</p>
+                        <div className="p-2 bg-white/30 rounded border border-dashed border-gray-500 flex items-center justify-center">
+                          <span className="text-xs">Tap to upload your drawing</span>
                         </div>
                         <div className="mt-2 flex justify-end">
-                          <div className="text-[10px] text-gray-700">+10 sparks for uploading</div>
+                          <div className="text-xs text-gray-700">+10 sparks for uploading</div>
                         </div>
                       </div>
                     </div>
