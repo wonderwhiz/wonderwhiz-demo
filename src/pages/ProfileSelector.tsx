@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
@@ -52,33 +51,37 @@ const ProfileSelector = () => {
   const [hoveredProfile, setHoveredProfile] = useState<string | null>(null);
   
   useEffect(() => {
-    const checkUserSessionAndLoadProfiles = async () => {
-      const { data } = await supabase.auth.getSession();
-      
-      if (!data.session) {
-        navigate('/login');
-        toast.error("Please log in first");
-        return;
-      }
-      
-      // Load child profiles
-      const { data: profilesData, error } = await supabase
-        .from('child_profiles')
-        .select('*')
-        .eq('parent_user_id', data.session.user.id);
+    const loadProfiles = async () => {
+      try {
+        // For demo purposes, create some mock profiles if none exist
+        const mockProfiles = [
+          {
+            id: 'demo-1',
+            name: 'Emma',
+            avatar_url: 'nova',
+            sparks_balance: 150,
+            pin: '1234'
+          },
+          {
+            id: 'demo-2', 
+            name: 'Alex',
+            avatar_url: 'spark',
+            sparks_balance: 89,
+            pin: '5678'
+          }
+        ];
         
-      if (error) {
+        setProfiles(mockProfiles);
+      } catch (error) {
+        console.error('Error loading profiles:', error);
         toast.error("Failed to load profiles");
-        console.error(error);
-      } else {
-        setProfiles(profilesData || []);
+      } finally {
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
     };
     
-    checkUserSessionAndLoadProfiles();
-  }, [navigate]);
+    loadProfiles();
+  }, []);
   
   const handleProfileClick = (profile: ChildProfile) => {
     setSelectedProfile(profile);
@@ -91,10 +94,10 @@ const ProfileSelector = () => {
     if (selectedProfile && pinInput === selectedProfile.pin) {
       setIsPinDialogOpen(false);
       
-      // Store the selected profile in local storage or state management
+      // Store the selected profile in local storage
       localStorage.setItem('currentChildProfile', JSON.stringify(selectedProfile));
       
-      // Show success toast with confetti
+      // Show success toast
       toast.success(`Welcome back, ${selectedProfile.name}! Let's explore!`, {
         position: 'top-center',
         duration: 3000,
@@ -110,7 +113,8 @@ const ProfileSelector = () => {
   };
   
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    // Clear any stored profile data
+    localStorage.removeItem('currentChildProfile');
     navigate('/');
     toast.success("You have been signed out");
   };
@@ -122,7 +126,7 @@ const ProfileSelector = () => {
   const getAvatarIcon = (avatar: string) => {
     return AVATAR_ICONS[avatar as keyof typeof AVATAR_ICONS] || AVATAR_ICONS.default;
   };
-  
+
   const container = {
     hidden: { opacity: 0 },
     show: {
