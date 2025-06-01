@@ -98,18 +98,15 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
               
               // Store this for future use
               try {
-                await supabase.rpc('insert_curio_image', {
-                  p_topic: topicLower,
-                  p_image_url: url,
-                  p_generation_method: 'fallback'
-                }).catch(() => {
-                  // Fall back to direct insert if RPC doesn't exist
-                  return supabase.from('curio_images').insert({
-                    topic: topicLower,
-                    image_url: url,
-                    generation_method: 'fallback'
-                  });
+                const { error } = await supabase.from('curio_images').insert({
+                  topic: topicLower,
+                  image_url: url,
+                  generation_method: 'fallback'
                 });
+                
+                if (error) {
+                  console.error('Error storing fallback image:', error);
+                }
               } catch (err) {
                 console.error('Error storing fallback image:', err);
               }
@@ -126,18 +123,15 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
           
           // Store this for future use
           try {
-            await supabase.rpc('insert_curio_image', {
-              p_topic: topicLower,
-              p_image_url: generatedImageUrl,
-              p_generation_method: 'groq'
-            }).catch(() => {
-              // Fall back to direct insert if RPC doesn't exist
-              return supabase.from('curio_images').insert({
-                topic: topicLower,
-                image_url: generatedImageUrl,
-                generation_method: 'groq'
-              });
+            const { error } = await supabase.from('curio_images').insert({
+              topic: topicLower,
+              image_url: generatedImageUrl,
+              generation_method: 'groq'
             });
+            
+            if (error) {
+              console.error('Error storing generated image:', error);
+            }
           } catch (err) {
             console.error('Error storing generated image:', err);
           }
