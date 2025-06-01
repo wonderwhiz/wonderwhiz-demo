@@ -19,6 +19,7 @@ export interface TableOfContentsItem {
   description: string;
   estimated_reading_time: number;
   completed: boolean;
+  [key: string]: any; // Add index signature for Json compatibility
 }
 
 export interface LearningSection {

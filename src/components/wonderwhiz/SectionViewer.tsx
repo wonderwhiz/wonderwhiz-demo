@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Camera, Volume2, Sparkles, CheckCircle } from 'lucide-react';
@@ -49,7 +48,12 @@ const SectionViewer: React.FC<SectionViewerProps> = ({
         .single();
 
       if (existingSection) {
-        setSection(existingSection);
+        // Convert Json type to string array for facts
+        const convertedSection: LearningSection = {
+          ...existingSection,
+          facts: Array.isArray(existingSection.facts) ? existingSection.facts as string[] : []
+        };
+        setSection(convertedSection);
         setLoading(false);
         return;
       }
@@ -84,7 +88,12 @@ const SectionViewer: React.FC<SectionViewerProps> = ({
 
       if (saveError) throw saveError;
 
-      setSection(newSection);
+      // Convert the response to our type
+      const convertedSection: LearningSection = {
+        ...newSection,
+        facts: Array.isArray(newSection.facts) ? newSection.facts as string[] : []
+      };
+      setSection(convertedSection);
       
       // Show image permission after content loads
       setTimeout(() => {

@@ -64,7 +64,7 @@ const TopicInput: React.FC<TopicInputProps> = ({ childAge, childId, onTopicCreat
       // Generate table of contents
       const tableOfContents = await generateTableOfContents(query);
       
-      // Create learning topic in database
+      // Create learning topic in database - cast to any to handle Json type compatibility
       const { data: topic, error } = await supabase
         .from('learning_topics')
         .insert({
@@ -74,16 +74,25 @@ const TopicInput: React.FC<TopicInputProps> = ({ childAge, childId, onTopicCreat
           child_age: childAge,
           total_sections: tableOfContents.length,
           current_section: 0,
-          status: 'planning',
-          table_of_contents: tableOfContents
+          status: 'planning' as const,
+          table_of_contents: tableOfContents as any // Cast to handle Json type
         })
         .select()
         .single();
 
       if (error) throw error;
 
+      // Convert the database response to our type
+      const convertedTopic: LearningTopic = {
+        ...topic,
+        status: topic.status as 'planning' | 'in_progress' | 'completed',
+        table_of_contents: Array.isArray(topic.table_of_contents) 
+          ? topic.table_of_contents as TableOfContentsItem[]
+          : []
+      };
+
       toast.success("Amazing! Let's start this learning adventure! 🚀");
-      onTopicCreated(topic);
+      onTopicCreated(convertedTopic);
       
     } catch (error) {
       console.error('Error creating topic:', error);
