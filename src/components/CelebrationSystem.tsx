@@ -3,71 +3,120 @@ import React, { useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 
 interface CelebrationSystemProps {
-  trigger: boolean;
+  trigger?: boolean;
+  milestone?: 'first_block' | 'half_complete' | 'all_complete' | null;
+  sparksEarned?: number;
+  achievement?: {
+    id: string;
+    title: string;
+    description: string;
+    icon: string;
+    color: string;
+  };
   onComplete?: () => void;
   intensity?: 'low' | 'medium' | 'high';
+  childAge?: number;
+  position?: 'top' | 'center';
+  onClose?: () => void;
 }
 
 const CelebrationSystem: React.FC<CelebrationSystemProps> = ({ 
-  trigger, 
+  trigger = false,
+  milestone,
+  sparksEarned = 0,
+  achievement,
   onComplete, 
-  intensity = 'medium' 
+  intensity = 'low',
+  childAge = 10,
+  position = 'top',
+  onClose
 }) => {
-  // Use a ref to track previous trigger value to avoid duplicate celebrations
-  const previousTriggerRef = useRef(false);
-  // Use a ref to track if confetti has been fired
-  const confettiFiredRef = useRef(false);
-  // Add a cooldown mechanism
+  // Use refs to track celebrations and prevent duplicates
   const lastCelebrationTime = useRef<number>(0);
-  const celebrationCooldown = 8000; // Increased from 5000 to 8000ms (8 seconds between celebrations)
+  const celebrationCooldown = 15000; // 15 seconds between celebrations
+  const milestoneShownRef = useRef<Set<string>>(new Set());
+  const achievementShownRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     const now = Date.now();
     const shouldCelebrate = now - lastCelebrationTime.current > celebrationCooldown;
     
-    // Only trigger confetti if trigger changed from false to true, not in cooldown, and not already fired
-    if (trigger && !previousTriggerRef.current && !confettiFiredRef.current && shouldCelebrate) {
-      confettiFiredRef.current = true;
+    // Handle milestone celebrations
+    if (milestone && !milestoneShownRef.current.has(milestone) && shouldCelebrate) {
+      milestoneShownRef.current.add(milestone);
       lastCelebrationTime.current = now;
       
-      // Further reduce particle counts for all intensities
-      const particleCount = intensity === 'low' ? 20 : intensity === 'medium' ? 40 : 60;
-      const spread = intensity === 'low' ? 40 : intensity === 'medium' ? 60 : 80;
+      // Reduced particle counts for milestones
+      const particleCount = 15;
+      const spread = 40;
+      
+      confetti({
+        particleCount,
+        spread,
+        origin: { y: 0.7 },
+        zIndex: 2000,
+        colors: ['#8b5cf6', '#d946ef', '#3b82f6']
+      });
+      
+      if (onComplete) {
+        setTimeout(onComplete, 1500);
+      }
+      
+      return;
+    }
+    
+    // Handle achievement celebrations
+    if (achievement && !achievementShownRef.current.has(achievement.id) && shouldCelebrate) {
+      achievementShownRef.current.add(achievement.id);
+      lastCelebrationTime.current = now;
+      
+      // Slightly more particles for achievements
+      const particleCount = 25;
+      const spread = 50;
       
       confetti({
         particleCount,
         spread,
         origin: { y: 0.6 },
         zIndex: 2000,
-        colors: ['#8b5cf6', '#d946ef', '#3b82f6', '#6366f1', '#ec4899']
+        colors: [achievement.color, '#8b5cf6', '#d946ef']
       });
       
-      // Only add additional burst for high intensity, and reduce its particles too
-      if (intensity === 'high') {
-        setTimeout(() => {
-          confetti({
-            particleCount: 30, // Reduced from 50
-            spread: 60, // Reduced from 70
-            origin: { y: 0.7, x: 0.5 },
-            zIndex: 2000,
-            colors: ['#8b5cf6', '#d946ef', '#3b82f6']
-          });
-        }, 300);
+      if (onComplete) {
+        setTimeout(onComplete, 2000);
       }
       
-      // Call onComplete after animation finishes
-      setTimeout(() => {
-        if (onComplete) {
-          onComplete();
-        }
-        // Reset the flag after the celebration is complete
-        confettiFiredRef.current = false;
-      }, 2000);
+      return;
     }
     
-    // Update previous trigger value
-    previousTriggerRef.current = trigger;
-  }, [trigger, intensity, onComplete]);
+    // Handle basic trigger celebrations (legacy support)
+    if (trigger && shouldCelebrate) {
+      lastCelebrationTime.current = now;
+      
+      const particleCount = intensity === 'low' ? 10 : intensity === 'medium' ? 20 : 30;
+      const spread = intensity === 'low' ? 30 : intensity === 'medium' ? 40 : 50;
+      
+      confetti({
+        particleCount,
+        spread,
+        origin: { y: 0.6 },
+        zIndex: 2000,
+        colors: ['#8b5cf6', '#d946ef', '#3b82f6']
+      });
+      
+      if (onComplete) {
+        setTimeout(onComplete, 1000);
+      }
+    }
+  }, [trigger, milestone, achievement, intensity, onComplete]);
+  
+  // Reset milestone tracking when component unmounts or resets
+  useEffect(() => {
+    return () => {
+      milestoneShownRef.current.clear();
+      achievementShownRef.current.clear();
+    };
+  }, []);
   
   return null; // This component doesn't render anything
 };

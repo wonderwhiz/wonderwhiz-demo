@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import ContentBlock from './ContentBlock';
@@ -10,7 +11,7 @@ import { useProgressiveLearning } from '@/hooks/use-progressive-learning';
 import ProgressiveLearningBlock from './content-blocks/ProgressiveLearningBlock';
 import LearningProgressIndicator from './curio/LearningProgressIndicator';
 import FloatingNavigation from './curio/FloatingNavigation';
-import CelebrationSystem from './curio/CelebrationSystem';
+import CelebrationSystem from './CelebrationSystem';
 
 interface CurioBlockListProps {
   blocks: any[];
@@ -78,7 +79,9 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
   const [showFloatingNav, setShowFloatingNav] = useState(false);
   const [recentMilestone, setRecentMilestone] = useState<'first_block' | 'half_complete' | 'all_complete' | null>(null);
   const [recentSparks, setRecentSparks] = useState(0);
-  const celebrationShownForThisSession = useRef<boolean>(false);
+  
+  // Track when celebrations have been shown to prevent duplicates
+  const milestoneCelebrationShown = useRef<Set<string>>(new Set());
   
   const { 
     currentLearningStage,
@@ -96,15 +99,18 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
     topic: curioTitle
   });
   
+  // Filter out placeholder blocks for view tracking
+  const realBlocks = blocks.filter(block => !block.id?.startsWith('placeholder-'));
+  
   useEffect(() => {
-    if (blocks.length === 0) return;
+    if (realBlocks.length === 0) return;
     
     const observers: IntersectionObserver[] = [];
     const blockElements = document.querySelectorAll('[data-block-id]');
     
     blockElements.forEach((element, elementIndex) => {
       const blockId = element.getAttribute('data-block-id');
-      if (!blockId || viewedBlocks.has(blockId)) return;
+      if (!blockId || viewedBlocks.has(blockId) || blockId.startsWith('placeholder-')) return;
       
       const observer = new IntersectionObserver(
         (entries) => {
@@ -114,10 +120,9 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
               observer.disconnect();
               
               incrementViewedBlocks();
-              
               setCurrentBlockIndex(elementIndex);
               
-              // Only award sparks for the first 3 blocks viewed
+              // Only award sparks for the first 3 real blocks viewed
               if (viewedBlocks.size < 3) {
                 const newSparks = 1;
                 setSparksEarned(prev => prev + newSparks);
@@ -125,20 +130,21 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
                 setTimeout(() => setRecentSparks(0), 3000);
               }
               
-              // Only trigger milestone celebrations if we haven't shown one yet in this session
-              if (!celebrationShownForThisSession.current) {
-                if (viewedBlocks.size === 0) {
+              // Milestone celebrations with duplicate prevention
+              const milestoneKey = `${blockId}-milestone`;
+              if (!milestoneCelebrationShown.current.has(milestoneKey)) {
+                if (viewedBlocks.size === 0 && !milestoneCelebrationShown.current.has('first_block')) {
                   setRecentMilestone('first_block');
+                  milestoneCelebrationShown.current.add('first_block');
                   setTimeout(() => setRecentMilestone(null), 4000);
-                  celebrationShownForThisSession.current = true;
-                } else if (viewedBlocks.size === Math.floor(blocks.length / 2) - 1) {
+                } else if (viewedBlocks.size === Math.floor(realBlocks.length / 2) - 1 && !milestoneCelebrationShown.current.has('half_complete')) {
                   setRecentMilestone('half_complete');
+                  milestoneCelebrationShown.current.add('half_complete');
                   setTimeout(() => setRecentMilestone(null), 4000);
-                  celebrationShownForThisSession.current = true;
-                } else if (viewedBlocks.size === blocks.length - 1) {
+                } else if (viewedBlocks.size === realBlocks.length - 1 && !milestoneCelebrationShown.current.has('all_complete')) {
                   setRecentMilestone('all_complete');
+                  milestoneCelebrationShown.current.add('all_complete');
                   setTimeout(() => setRecentMilestone(null), 4000);
-                  celebrationShownForThisSession.current = true;
                 }
               }
             }
@@ -154,7 +160,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
     return () => {
       observers.forEach(observer => observer.disconnect());
     };
-  }, [blocks, viewedBlocks, incrementViewedBlocks]);
+  }, [realBlocks, viewedBlocks, incrementViewedBlocks]);
   
   useEffect(() => {
     if (viewedBlocks.size >= 2) {
@@ -163,10 +169,10 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
   }, [viewedBlocks.size]);
   
   useEffect(() => {
-    if (isFirstLoad && blocks.length > 0 && childAge < 8 && onReadAloud) {
-      const firstBlockContent = blocks[0]?.content?.fact || 
-                              blocks[0]?.content?.text || 
-                              blocks[0]?.content?.description || '';
+    if (isFirstLoad && realBlocks.length > 0 && childAge < 8 && onReadAloud) {
+      const firstBlockContent = realBlocks[0]?.content?.fact || 
+                              realBlocks[0]?.content?.text || 
+                              realBlocks[0]?.content?.description || '';
       
       if (firstBlockContent) {
         const timeoutId = setTimeout(() => {
@@ -176,7 +182,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
         return () => clearTimeout(timeoutId);
       }
     }
-  }, [isFirstLoad, blocks, childAge, onReadAloud]);
+  }, [isFirstLoad, realBlocks, childAge, onReadAloud]);
   
   const trackInteraction = (blockId: string) => {
     if (!interactedBlocks.has(blockId)) {
@@ -296,11 +302,11 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
         />
       )}
       
-      {blocks.length > 0 && !searchQuery && (
+      {realBlocks.length > 0 && !searchQuery && (
         <LearningProgressIndicator
           currentStage={currentLearningStage}
           viewedBlocks={viewedBlocks.size}
-          totalBlocks={blocks.length}
+          totalBlocks={realBlocks.length}
           childAge={childAge}
         />
       )}
@@ -392,7 +398,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
         );
       })}
       
-      {blocks.length >= 4 && !searchQuery && (
+      {realBlocks.length >= 4 && !searchQuery && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -407,7 +413,7 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
         </motion.div>
       )}
       
-      {blocks.length > 0 && !searchQuery && curioTitle && (
+      {realBlocks.length > 0 && !searchQuery && curioTitle && (
         <RelatedCurioPaths
           currentTopic={curioTitle}
           onPathSelect={handleRabbitHoleClick}
@@ -427,20 +433,24 @@ const CurioBlockList: React.FC<CurioBlockListProps> = ({
         <div ref={loadTriggerRef} className="h-10" />
       )}
       
-      {showFloatingNav && blocks.length > 3 && !searchQuery && (
+      {showFloatingNav && realBlocks.length > 3 && !searchQuery && (
         <FloatingNavigation
-          blocks={blocks}
+          blocks={realBlocks}
           currentBlockIndex={currentBlockIndex}
           onNavigate={handleNavigateToBlock}
           childAge={childAge}
         />
       )}
       
-      <CelebrationSystem
-        milestone={recentMilestone}
-        sparksEarned={recentSparks}
-        childAge={childAge}
-      />
+      {/* Only show one celebration at a time */}
+      {recentMilestone && (
+        <CelebrationSystem
+          milestone={recentMilestone}
+          sparksEarned={recentSparks}
+          childAge={childAge}
+          onComplete={() => setRecentMilestone(null)}
+        />
+      )}
     </div>
   );
 };

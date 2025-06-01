@@ -10,7 +10,7 @@ import SpecialistContentBlock from '@/components/content-blocks/SpecialistConten
 import LearningProgressIndicator from './LearningProgressIndicator';
 import LearningStyleBlock from '@/components/content-blocks/LearningStyleBlock';
 import EnhancedBlockReplies from '@/components/content-blocks/EnhancedBlockReplies';
-import CelebrationSystem from './CelebrationSystem';
+import CelebrationSystem from '../CelebrationSystem';
 import FloatingNavigation from './FloatingNavigation';
 
 interface EnhancedCurioContentProps {
@@ -57,9 +57,12 @@ const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
   const [hasEarnedAchievement, setHasEarnedAchievement] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
 
-  // First-load celebration effect
+  // Filter out placeholder blocks for proper counting
+  const realBlocks = blocks.filter(block => !block.id?.startsWith('placeholder-'));
+
+  // Simplified first-load celebration - only trigger once when real content loads
   useEffect(() => {
-    if (blocks.length > 0) {
+    if (realBlocks.length > 0 && !showCelebration) {
       const timer = setTimeout(() => {
         setShowCelebration(true);
         setTimeout(() => setShowCelebration(false), 3000);
@@ -67,16 +70,16 @@ const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
       
       return () => clearTimeout(timer);
     }
-  }, [blocks.length]);
+  }, [realBlocks.length, showCelebration]);
   
-  // Track block views
+  // Track block views for real blocks only
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
             const blockId = entry.target.getAttribute('data-block-id');
-            if (blockId) {
+            if (blockId && !blockId.startsWith('placeholder-')) {
               setViewedBlocks(prev => {
                 if (!prev.includes(blockId)) {
                   return [...prev, blockId]; 
@@ -91,22 +94,25 @@ const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
     );
     
     document.querySelectorAll('[data-block-id]').forEach(element => {
-      observer.observe(element);
+      const blockId = element.getAttribute('data-block-id');
+      if (blockId && !blockId.startsWith('placeholder-')) {
+        observer.observe(element);
+      }
     });
     
     return () => observer.disconnect();
-  }, [blocks]);
+  }, [realBlocks]);
   
-  // Achievement when all blocks are viewed
+  // Achievement when all real blocks are viewed
   useEffect(() => {
-    if (blocks.length > 0 && viewedBlocks.length === blocks.length && !hasEarnedAchievement) {
+    if (realBlocks.length > 0 && viewedBlocks.length === realBlocks.length && !hasEarnedAchievement) {
       const timer = setTimeout(() => {
         setHasEarnedAchievement(true);
       }, 1000);
       
       return () => clearTimeout(timer);
     }
-  }, [viewedBlocks.length, blocks.length, hasEarnedAchievement]);
+  }, [viewedBlocks.length, realBlocks.length, hasEarnedAchievement]);
   
   const handleSearch = () => {
     if (searchQuery.trim()) {
@@ -180,7 +186,7 @@ const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
   };
   
   const getProgressStage = () => {
-    const progress = viewedBlocks.length / Math.max(blocks.length, 1);
+    const progress = viewedBlocks.length / Math.max(realBlocks.length, 1);
     
     if (progress < 0.2) return 'foundational';
     if (progress < 0.4) return 'expansion';
@@ -408,8 +414,8 @@ const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
           </motion.div>
         )}
         
-        {/* Loading State */}
-        {isLoading && blocks.length === 0 && (
+        {/* Loading State - only show for real loading, not placeholders */}
+        {isLoading && realBlocks.length === 0 && (
           <div className="space-y-6">
             {[1, 2, 3].map((index) => (
               <motion.div
@@ -434,12 +440,12 @@ const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
           </div>
         )}
         
-        {/* Learning Progress */}
-        {blocks.length > 0 && !isLoading && (
+        {/* Learning Progress - only show for real blocks */}
+        {realBlocks.length > 0 && !isLoading && (
           <LearningProgressIndicator
             currentStage={getProgressStage() as any}
             viewedBlocks={viewedBlocks.length}
-            totalBlocks={blocks.length}
+            totalBlocks={realBlocks.length}
             childAge={childAge}
             onClick={(stage) => {
               toast.info(`${stage} level content`);
@@ -519,8 +525,8 @@ const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
           ))}
         </div>
         
-        {/* Empty State */}
-        {blocks.length === 0 && !isLoading && (
+        {/* Empty State - only show when no real blocks exist */}
+        {realBlocks.length === 0 && !isLoading && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -557,22 +563,23 @@ const EnhancedCurioContent: React.FC<EnhancedCurioContentProps> = ({
         )}
       </div>
       
-      {/* Floating Navigation */}
-      {blocks.length > 3 && (
+      {/* Floating Navigation - only show for real blocks */}
+      {realBlocks.length > 3 && (
         <FloatingNavigation
-          blocks={blocks}
+          blocks={realBlocks}
           currentBlockIndex={currentBlockIndex}
           onNavigate={handleBlockNavigation}
           childAge={childAge}
         />
       )}
       
-      {/* Celebrations */}
-      {showCelebration && (
+      {/* Simplified Celebrations - only one type at a time */}
+      {showCelebration && realBlocks.length > 0 && (
         <CelebrationSystem
           milestone="first_block"
           sparksEarned={0}
           childAge={childAge}
+          onComplete={() => setShowCelebration(false)}
         />
       )}
       
