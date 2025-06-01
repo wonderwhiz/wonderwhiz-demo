@@ -74,6 +74,36 @@ export type Database = {
           },
         ]
       }
+      certificates: {
+        Row: {
+          certificate_url: string | null
+          child_id: string
+          child_name: string
+          completed_at: string
+          id: string
+          points_earned: number | null
+          topic_id: string
+        }
+        Insert: {
+          certificate_url?: string | null
+          child_id: string
+          child_name: string
+          completed_at?: string
+          id?: string
+          points_earned?: number | null
+          topic_id: string
+        }
+        Update: {
+          certificate_url?: string | null
+          child_id?: string
+          child_name?: string
+          completed_at?: string
+          id?: string
+          points_earned?: number | null
+          topic_id?: string
+        }
+        Relationships: []
+      }
       child_daily_activity: {
         Row: {
           activity_date: string
@@ -445,6 +475,120 @@ export type Database = {
           },
         ]
       }
+      learning_points: {
+        Row: {
+          child_id: string
+          earned_at: string
+          id: string
+          points: number
+          reason: string
+          topic_id: string | null
+        }
+        Insert: {
+          child_id: string
+          earned_at?: string
+          id?: string
+          points: number
+          reason: string
+          topic_id?: string | null
+        }
+        Update: {
+          child_id?: string
+          earned_at?: string
+          id?: string
+          points?: number
+          reason?: string
+          topic_id?: string | null
+        }
+        Relationships: []
+      }
+      learning_sections: {
+        Row: {
+          content: string
+          created_at: string
+          facts: Json | null
+          id: string
+          image_generated: boolean | null
+          image_url: string | null
+          section_number: number
+          story_mode_content: string | null
+          title: string
+          topic_id: string
+          updated_at: string
+          word_count: number | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          facts?: Json | null
+          id?: string
+          image_generated?: boolean | null
+          image_url?: string | null
+          section_number: number
+          story_mode_content?: string | null
+          title: string
+          topic_id: string
+          updated_at?: string
+          word_count?: number | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          facts?: Json | null
+          id?: string
+          image_generated?: boolean | null
+          image_url?: string | null
+          section_number?: number
+          story_mode_content?: string | null
+          title?: string
+          topic_id?: string
+          updated_at?: string
+          word_count?: number | null
+        }
+        Relationships: []
+      }
+      learning_topics: {
+        Row: {
+          child_age: number
+          child_id: string
+          created_at: string
+          current_section: number | null
+          description: string | null
+          id: string
+          status: string | null
+          table_of_contents: Json | null
+          title: string
+          total_sections: number | null
+          updated_at: string
+        }
+        Insert: {
+          child_age: number
+          child_id: string
+          created_at?: string
+          current_section?: number | null
+          description?: string | null
+          id?: string
+          status?: string | null
+          table_of_contents?: Json | null
+          title: string
+          total_sections?: number | null
+          updated_at?: string
+        }
+        Update: {
+          child_age?: number
+          child_id?: string
+          created_at?: string
+          current_section?: number | null
+          description?: string | null
+          id?: string
+          status?: string | null
+          table_of_contents?: Json | null
+          title?: string
+          total_sections?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       memory_factors: {
         Row: {
           child_id: string
@@ -507,6 +651,78 @@ export type Database = {
           subscription_expires_at?: string
           subscription_status?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      printable_activities: {
+        Row: {
+          activity_type: string
+          created_at: string
+          description: string | null
+          difficulty_level: number | null
+          id: string
+          image_url: string | null
+          title: string
+          topic_id: string
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string
+          description?: string | null
+          difficulty_level?: number | null
+          id?: string
+          image_url?: string | null
+          title: string
+          topic_id: string
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string
+          description?: string | null
+          difficulty_level?: number | null
+          id?: string
+          image_url?: string | null
+          title?: string
+          topic_id?: string
+        }
+        Relationships: []
+      }
+      quiz_attempts: {
+        Row: {
+          attempted_at: string
+          child_id: string
+          correct_answer: number
+          id: string
+          is_correct: boolean | null
+          options: Json
+          question: string
+          question_number: number
+          topic_id: string
+          user_answer: number | null
+        }
+        Insert: {
+          attempted_at?: string
+          child_id: string
+          correct_answer: number
+          id?: string
+          is_correct?: boolean | null
+          options: Json
+          question: string
+          question_number: number
+          topic_id: string
+          user_answer?: number | null
+        }
+        Update: {
+          attempted_at?: string
+          child_id?: string
+          correct_answer?: number
+          id?: string
+          is_correct?: boolean | null
+          options?: Json
+          question?: string
+          question_number?: number
+          topic_id?: string
+          user_answer?: number | null
         }
         Relationships: []
       }
@@ -631,6 +847,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      award_learning_points: {
+        Args: {
+          child_id_param: string
+          topic_id_param: string
+          points_param: number
+          reason_param: string
+        }
+        Returns: string
+      }
       calculate_memory_strength: {
         Args: {
           last_interaction: string
