@@ -87,9 +87,9 @@ const DashboardContainer = () => {
   const {
     blockReplies,
     handleBlockReply,
-    handleQuizCorrect: baseHandleQuizCorrect,
-    handleNewsRead: baseHandleNewsRead,
-    handleCreativeUpload: baseHandleCreativeUpload,
+    handleQuizCorrect,
+    handleNewsRead,
+    handleCreativeUpload,
     handleSparkEarned
   } = blockInteractionHandlers;
 
@@ -101,11 +101,6 @@ const DashboardContainer = () => {
     handleReadAloud,
     likedBlocks,
     bookmarkedBlocks,
-    handleQuizCorrect,
-    handleNewsRead,
-    handleCreativeUpload,
-    handleMindfulnessComplete,
-    handleTaskComplete,
     loadingStates
   } = useEnhancedBlockInteractions(profileId);
 
@@ -296,11 +291,11 @@ const DashboardContainer = () => {
                   hasMoreBlocks={hasMoreBlocks}
                   onToggleLike={handleToggleLike}
                   onToggleBookmark={handleToggleBookmark}
-                  onReply={(blockId, message) => handleBlockReply(blockId, message)} 
+                  onReply={handleBlockReply} 
                   onSetQuery={setQuery}
                   onRabbitHoleFollow={handleFollowRabbitHole}
-                  onQuizCorrect={handleQuizCorrect || baseHandleQuizCorrect}
-                  onNewsRead={handleNewsRead || baseHandleNewsRead}
+                  onQuizCorrect={handleQuizCorrect}
+                  onNewsRead={handleNewsRead}
                   onCreativeUpload={handleCreativeUploadWrapper}
                   generationError={generationError}
                   playText={playText}
