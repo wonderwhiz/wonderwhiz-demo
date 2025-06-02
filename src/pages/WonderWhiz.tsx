@@ -1,13 +1,16 @@
 
 import React from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import WonderWhizDashboard from '@/components/wonderwhiz/WonderWhizDashboard';
 import { useDashboardProfile } from '@/hooks/useDashboardProfile';
 import { LearningTopic } from '@/types/wonderwhiz';
+import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const WonderWhiz = () => {
   const { profileId } = useParams<{ profileId: string }>();
+  const navigate = useNavigate();
   
   const {
     childProfile,
@@ -16,6 +19,10 @@ const WonderWhiz = () => {
 
   const handleTopicCreate = (topic: LearningTopic) => {
     console.log('New topic created:', topic);
+  };
+
+  const handleBackToDashboard = () => {
+    navigate(`/dashboard/${profileId}`);
   };
 
   if (isLoading) {
@@ -27,11 +34,23 @@ const WonderWhiz = () => {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-wonderwhiz-gradient">
       <Helmet>
         <title>Wonder Whiz Encyclopedia - Interactive Learning</title>
         <meta name="description" content="Explore topics through interactive, age-appropriate encyclopedia content designed by education experts." />
       </Helmet>
+      
+      {/* Header with back button */}
+      <div className="p-4">
+        <Button
+          variant="ghost"
+          onClick={handleBackToDashboard}
+          className="text-white hover:bg-white/10"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Dashboard
+        </Button>
+      </div>
       
       <WonderWhizDashboard 
         childProfile={childProfile}
