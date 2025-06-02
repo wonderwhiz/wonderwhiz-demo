@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useParams } from 'react-router-dom';
@@ -5,7 +6,7 @@ import { Card } from '@/components/ui/card';
 import { useSparksSystem } from '@/hooks/useSparksSystem';
 import DashboardSidebar from '@/components/dashboard/DashboardSidebar';
 import CurioContent from '@/components/dashboard/CurioContent';
-import { useDashboardProfile } from '@/hooks/useDashboardProfile.tsx'; // Use the mock version
+import { useDashboardProfile } from '@/hooks/useDashboardProfile'; // Use the real version
 import { useCurioCreation } from '@/hooks/useCurioCreation';
 import { useCurioData } from '@/hooks/useCurioData';
 import { useBlockInteractionHandlers } from '@/hooks/useBlockInteractionHandlers';
@@ -133,32 +134,42 @@ const DashboardContainer = () => {
     }
   }, [setQuery, setIsVoiceActive, handleSubmitQuery]);
 
-  // Handle image uploads - keep existing functionality but don't actually upload to Supabase for demo
+  // Handle image uploads with proper UUID validation
   const handleImageCapture = useCallback(async (file: File) => {
     if (!profileId || processingImage) return;
+    
+    // Validate that profileId is a valid UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(profileId)) {
+      toast.error("Invalid profile ID. Please check your profile setup.");
+      return;
+    }
     
     setProcessingImage(true);
     
     try {
       toast.loading("Analyzing your image with AI...");
       
-      // For demo purposes, simulate image analysis without actual API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Create a real curio in the database
+      const { data: newCurio, error } = await supabase
+        .from('curios')
+        .insert({
+          child_id: profileId,
+          title: `About ${file.name.split('.')[0]}`,
+          query: `Tell me about this image: ${file.name}`,
+        })
+        .select('*')
+        .single();
+      
+      if (error) {
+        console.error('Error creating curio:', error);
+        toast.dismiss();
+        toast.error("Failed to create learning session. Please try again.");
+        return;
+      }
       
       toast.dismiss();
       toast.success("Image analyzed successfully!");
-      
-      // Create a mock curio based on the image
-      const imageDescription = `Analysis of ${file.name}`;
-      const curioTitle = `About my ${file.name.split('.')[0]}`;
-      
-      // Create a mock curio
-      const newCurio: Curio = {
-        id: `curio-img-${Date.now()}`,
-        title: curioTitle,
-        query: `Tell me about ${file.name.split('.')[0]}`,
-        created_at: new Date().toISOString()
-      };
       
       // Add the curio to the list of past curios
       setPastCurios(prev => [newCurio, ...prev]);

@@ -1,6 +1,7 @@
 
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ChildProfile {
   id: string;
@@ -29,16 +30,32 @@ export const useCurioCreation = (
   const handleSubmitQuery = useCallback(async () => {
     if (!query.trim() || !profileId) return;
 
+    // Validate that profileId is a valid UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(profileId)) {
+      toast.error("Invalid profile ID. Please check your profile setup.");
+      return;
+    }
+
     setIsGenerating(true);
     
     try {
-      // Create a new curio
-      const newCurio: Curio = {
-        id: `curio-${Date.now()}`,
-        title: query.charAt(0).toUpperCase() + query.slice(1),
-        query: query,
-        created_at: new Date().toISOString()
-      };
+      // Create a new curio in the database
+      const { data: newCurio, error } = await supabase
+        .from('curios')
+        .insert({
+          child_id: profileId,
+          title: query.charAt(0).toUpperCase() + query.slice(1),
+          query: query,
+        })
+        .select('*')
+        .single();
+
+      if (error) {
+        console.error('Error creating curio:', error);
+        toast.error("Failed to create learning session. Please try again.");
+        return;
+      }
 
       // Add to past curios if setPastCurios is available
       if (setPastCurios) {
@@ -52,10 +69,25 @@ export const useCurioCreation = (
 
       // Award sparks for asking a question
       if (setChildProfile && childProfile) {
-        setChildProfile({
-          ...childProfile,
-          sparks_balance: childProfile.sparks_balance + 5
-        });
+        try {
+          const { data, error: sparksError } = await supabase
+            .from('child_profiles')
+            .update({ 
+              sparks_balance: (childProfile.sparks_balance || 0) + 5 
+            })
+            .eq('id', profileId)
+            .select('sparks_balance')
+            .single();
+
+          if (!sparksError && data) {
+            setChildProfile({
+              ...childProfile,
+              sparks_balance: data.sparks_balance
+            });
+          }
+        } catch (sparksError) {
+          console.error('Error updating sparks:', sparksError);
+        }
       }
 
       setQuery('');

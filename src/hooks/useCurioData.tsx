@@ -1,83 +1,105 @@
 
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
+import { useCurioBlocks } from '@/hooks/use-curio-blocks';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export const useCurioData = (curioId?: string, profileId?: string) => {
-  const [blocks, setBlocks] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [isGeneratingContent, setIsGeneratingContent] = useState(false);
-  const [hasMoreBlocks] = useState(false);
-  const [loadingMoreBlocks, setLoadingMoreBlocks] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const [totalBlocksLoaded, setTotalBlocksLoaded] = useState(0);
-  const [isFirstLoad] = useState(true);
-  const [generationError, setGenerationError] = useState<string | null>(null);
 
-  const loadMoreBlocks = useCallback(() => {
-    setLoadingMoreBlocks(true);
-    // Simulate loading
-    setTimeout(() => {
-      setLoadingMoreBlocks(false);
-    }, 1000);
+  // Use the real curio blocks hook instead of mock data
+  const {
+    blocks,
+    isLoading,
+    error,
+    hasMore,
+    loadMore,
+    isFirstLoad,
+    generationError,
+    triggerContentGeneration: realTriggerContentGeneration
+  } = useCurioBlocks(profileId, curioId, searchTerm);
+
+  // Update total blocks when blocks change
+  React.useEffect(() => {
+    setTotalBlocksLoaded(blocks.length);
+  }, [blocks]);
+
+  const handleToggleLike = useCallback(async (blockId: string) => {
+    try {
+      const { data } = await supabase
+        .from('content_blocks')
+        .select('liked')
+        .eq('id', blockId)
+        .single();
+
+      const newLikedState = !(data?.liked || false);
+
+      await supabase
+        .from('content_blocks')
+        .update({ liked: newLikedState })
+        .eq('id', blockId);
+    } catch (error) {
+      console.error('Error toggling like:', error);
+    }
   }, []);
 
-  const handleToggleLike = useCallback((blockId: string) => {
-    console.log('Toggle like for block:', blockId);
-  }, []);
+  const handleToggleBookmark = useCallback(async (blockId: string) => {
+    try {
+      const { data } = await supabase
+        .from('content_blocks')
+        .select('bookmarked')
+        .eq('id', blockId)
+        .single();
 
-  const handleToggleBookmark = useCallback((blockId: string) => {
-    console.log('Toggle bookmark for block:', blockId);
+      const newBookmarkState = !(data?.bookmarked || false);
+
+      await supabase
+        .from('content_blocks')
+        .update({ bookmarked: newBookmarkState })
+        .eq('id', blockId);
+    } catch (error) {
+      console.error('Error toggling bookmark:', error);
+    }
   }, []);
 
   const handleSearch = useCallback((query: string) => {
-    console.log('Search:', query);
+    setSearchTerm(query);
   }, []);
 
   const clearSearch = useCallback(() => {
-    console.log('Clear search');
+    setSearchTerm('');
   }, []);
 
-  const triggerContentGeneration = useCallback(() => {
-    if (!curioId) return;
+  const triggerContentGeneration = useCallback(async () => {
+    if (!curioId || !profileId || !realTriggerContentGeneration) {
+      return;
+    }
     
     setIsGeneratingContent(true);
     
-    // Simulate content generation
-    setTimeout(() => {
-      const mockBlocks = [
-        {
-          id: 'block-1',
-          type: 'fact',
-          content: {
-            fact: 'This is a fascinating fact about your topic!',
-            details: 'Here are some additional details that make this topic even more interesting.'
-          },
-          specialist_id: 'nova'
-        },
-        {
-          id: 'block-2',
-          type: 'quiz',
-          content: {
-            question: 'What did you learn from the previous fact?',
-            options: ['Option A', 'Option B', 'Option C', 'Option D'],
-            correct_answer: 0
-          },
-          specialist_id: 'spark'
-        }
-      ];
-      
-      setBlocks(mockBlocks);
-      setTotalBlocksLoaded(mockBlocks.length);
+    try {
+      await realTriggerContentGeneration();
+      toast.success("Content generation started!");
+    } catch (error) {
+      console.error("Error triggering content generation:", error);
+      toast.error("Failed to generate content. Please try again.");
+    } finally {
       setIsGeneratingContent(false);
-      setGenerationError(null);
-    }, 2000);
-  }, [curioId]);
+    }
+  }, [curioId, profileId, realTriggerContentGeneration]);
+
+  const loadingMoreBlocks = isLoading && blocks.length > 0;
 
   return {
     blocks,
     isLoading,
+    error,
     isGeneratingContent,
-    hasMoreBlocks,
+    hasMoreBlocks: hasMore,
     loadingMoreBlocks,
-    loadMoreBlocks,
+    loadMoreBlocks: loadMore,
     totalBlocksLoaded,
     handleToggleLike,
     handleToggleBookmark,
