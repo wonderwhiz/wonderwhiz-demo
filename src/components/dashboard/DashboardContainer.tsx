@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useParams } from 'react-router-dom';
@@ -33,7 +34,6 @@ const DashboardContainer = () => {
   const [isVoiceActive, setIsVoiceActive] = useState(false);
   const [processingImage, setProcessingImage] = useState(false);
   
-  // Fix 1: Use a ref to avoid infinite loops
   const { streakDays } = useSparksSystem(profileId);
 
   const {
@@ -58,7 +58,6 @@ const DashboardContainer = () => {
     handleCurioSuggestionClick: curioCreationSuggestionClick
   } = useCurioCreation(profileId, childProfile, setPastCurios, setChildProfile, setCurrentCurio);
 
-  // Fix 2: Memoize contentBlocks to prevent unnecessary re-renders
   const {
     blocks: contentBlocks,
     isLoading: isLoadingBlocks,
@@ -76,7 +75,6 @@ const DashboardContainer = () => {
     triggerContentGeneration
   } = useCurioData(currentCurio?.id, profileId);
 
-  // Fix 3: Use stable dependencies for hooks
   const blockInteractionHandlers = useBlockInteractionHandlers(
     profileId, 
     childProfile, 
@@ -93,7 +91,6 @@ const DashboardContainer = () => {
     handleSparkEarned
   } = blockInteractionHandlers;
 
-  // Fix 4: Only use enhanced interactions when needed
   const {
     handleLike,
     handleBookmark,
@@ -103,11 +100,6 @@ const DashboardContainer = () => {
     bookmarkedBlocks,
     loadingStates
   } = useEnhancedBlockInteractions(profileId);
-
-  // Fix 5: Simplify the wrapper function
-  const handleCreativeUploadWrapper = useCallback((blockId: string) => {
-    return handleCreativeUpload ? handleCreativeUpload(blockId) : baseHandleCreativeUpload(blockId);
-  }, [handleCreativeUpload, baseHandleCreativeUpload]);
 
   useEffect(() => {
     if (childProfile?.age) {
@@ -296,7 +288,7 @@ const DashboardContainer = () => {
                   onRabbitHoleFollow={handleFollowRabbitHole}
                   onQuizCorrect={handleQuizCorrect}
                   onNewsRead={handleNewsRead}
-                  onCreativeUpload={handleCreativeUploadWrapper}
+                  onCreativeUpload={handleCreativeUpload}
                   generationError={generationError}
                   playText={playText}
                   childAge={childAge}
