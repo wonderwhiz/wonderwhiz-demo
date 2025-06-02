@@ -8,7 +8,7 @@ interface ChildProfile {
   avatar_url: string;
   sparks_balance: number;
   pin: string;
-  interests?: string[];
+  interests: string[]; // Make this required to match the expected type
   grade?: string;
 }
 
@@ -48,7 +48,7 @@ export const useDashboardProfile = (profileId?: string) => {
           avatar_url: profileId === 'demo-1' ? 'nova' : 'spark',
           sparks_balance: profileId === 'demo-1' ? 150 : 89,
           pin: profileId === 'demo-1' ? '1234' : '5678',
-          interests: ['science', 'nature', 'space'],
+          interests: ['science', 'nature', 'space'], // Always provide interests array
           grade: profileId === 'demo-1' ? '3rd Grade' : '5th Grade'
         };
 
