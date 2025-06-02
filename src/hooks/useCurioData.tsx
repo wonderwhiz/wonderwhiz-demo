@@ -1,155 +1,75 @@
 
-import { useState, useEffect, useCallback } from 'react';
-
-interface ContentBlock {
-  id: string;
-  type: string;
-  content: any;
-  specialist_id: string;
-  liked: boolean;
-  bookmarked: boolean;
-  created_at: string;
-}
+import { useState, useCallback } from 'react';
 
 export const useCurioData = (curioId?: string, profileId?: string) => {
-  const [blocks, setBlocks] = useState<ContentBlock[]>([]);
+  const [blocks, setBlocks] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isGeneratingContent, setIsGeneratingContent] = useState(false);
-  const [hasMoreBlocks, setHasMoreBlocks] = useState(true);
+  const [hasMoreBlocks] = useState(false);
   const [loadingMoreBlocks, setLoadingMoreBlocks] = useState(false);
   const [totalBlocksLoaded, setTotalBlocksLoaded] = useState(0);
-  const [isFirstLoad, setIsFirstLoad] = useState(true);
+  const [isFirstLoad] = useState(true);
   const [generationError, setGenerationError] = useState<string | null>(null);
 
-  // Load initial content when curio changes
-  useEffect(() => {
-    if (!curioId) {
-      setBlocks([]);
-      setTotalBlocksLoaded(0);
-      setIsFirstLoad(true);
-      return;
-    }
-
-    const loadInitialContent = async () => {
-      setIsLoading(true);
-      setIsGeneratingContent(true);
-      setGenerationError(null);
-      
-      try {
-        // Simulate loading content
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        const mockBlocks: ContentBlock[] = [
-          {
-            id: `block-1-${curioId}`,
-            type: 'fact',
-            content: {
-              fact: "This is a fascinating topic! Let me explain it in a way that's perfect for your age.",
-              explanation: "We'll explore this step by step with fun examples and cool facts.",
-              fun_fact: "Did you know that asking questions like this makes your brain grow stronger?"
-            },
-            specialist_id: 'whizzy',
-            liked: false,
-            bookmarked: false,
-            created_at: new Date().toISOString()
-          },
-          {
-            id: `block-2-${curioId}`,
-            type: 'activity',
-            content: {
-              title: "Let's Explore Together!",
-              description: "Here's a fun way to think about your question",
-              activity_type: "exploration"
-            },
-            specialist_id: 'nova',
-            liked: false,
-            bookmarked: false,
-            created_at: new Date().toISOString()
-          }
-        ];
-
-        setBlocks(mockBlocks);
-        setTotalBlocksLoaded(mockBlocks.length);
-        setHasMoreBlocks(true);
-        setIsFirstLoad(false);
-      } catch (error) {
-        console.error('Error loading content:', error);
-        setGenerationError('Failed to load content. Please try again.');
-      } finally {
-        setIsLoading(false);
-        setIsGeneratingContent(false);
-      }
-    };
-
-    loadInitialContent();
-  }, [curioId]);
-
-  const loadMoreBlocks = useCallback(async () => {
-    if (!curioId || loadingMoreBlocks || !hasMoreBlocks) return;
-
+  const loadMoreBlocks = useCallback(() => {
     setLoadingMoreBlocks(true);
-    
-    try {
-      // Simulate loading more content
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      const newBlock: ContentBlock = {
-        id: `block-${totalBlocksLoaded + 1}-${curioId}`,
-        type: 'fun_fact',
-        content: {
-          fact: `Here's another interesting aspect of your question!`,
-          explanation: "The more we explore, the more amazing things we discover."
-        },
-        specialist_id: 'spark',
-        liked: false,
-        bookmarked: false,
-        created_at: new Date().toISOString()
-      };
-
-      setBlocks(prev => [...prev, newBlock]);
-      setTotalBlocksLoaded(prev => prev + 1);
-      
-      // Simulate reaching the end after a few blocks
-      if (totalBlocksLoaded >= 4) {
-        setHasMoreBlocks(false);
-      }
-    } catch (error) {
-      console.error('Error loading more blocks:', error);
-    } finally {
+    // Simulate loading
+    setTimeout(() => {
       setLoadingMoreBlocks(false);
-    }
-  }, [curioId, loadingMoreBlocks, hasMoreBlocks, totalBlocksLoaded]);
+    }, 1000);
+  }, []);
 
   const handleToggleLike = useCallback((blockId: string) => {
-    setBlocks(prev => prev.map(block => 
-      block.id === blockId 
-        ? { ...block, liked: !block.liked }
-        : block
-    ));
+    console.log('Toggle like for block:', blockId);
   }, []);
 
   const handleToggleBookmark = useCallback((blockId: string) => {
-    setBlocks(prev => prev.map(block => 
-      block.id === blockId 
-        ? { ...block, bookmarked: !block.bookmarked }
-        : block
-    ));
+    console.log('Toggle bookmark for block:', blockId);
   }, []);
 
-  const handleSearch = useCallback((searchTerm: string) => {
-    // Implement search functionality
-    console.log('Searching for:', searchTerm);
+  const handleSearch = useCallback((query: string) => {
+    console.log('Search:', query);
   }, []);
 
   const clearSearch = useCallback(() => {
-    // Clear search results
-    console.log('Clearing search');
+    console.log('Clear search');
   }, []);
 
   const triggerContentGeneration = useCallback(() => {
-    // Trigger new content generation
-    loadMoreBlocks();
-  }, [loadMoreBlocks]);
+    if (!curioId) return;
+    
+    setIsGeneratingContent(true);
+    
+    // Simulate content generation
+    setTimeout(() => {
+      const mockBlocks = [
+        {
+          id: 'block-1',
+          type: 'fact',
+          content: {
+            fact: 'This is a fascinating fact about your topic!',
+            details: 'Here are some additional details that make this topic even more interesting.'
+          },
+          specialist_id: 'nova'
+        },
+        {
+          id: 'block-2',
+          type: 'quiz',
+          content: {
+            question: 'What did you learn from the previous fact?',
+            options: ['Option A', 'Option B', 'Option C', 'Option D'],
+            correct_answer: 0
+          },
+          specialist_id: 'spark'
+        }
+      ];
+      
+      setBlocks(mockBlocks);
+      setTotalBlocksLoaded(mockBlocks.length);
+      setIsGeneratingContent(false);
+      setGenerationError(null);
+    }, 2000);
+  }, [curioId]);
 
   return {
     blocks,

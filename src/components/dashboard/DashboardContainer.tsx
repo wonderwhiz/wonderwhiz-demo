@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useParams } from 'react-router-dom';
@@ -6,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { useSparksSystem } from '@/hooks/useSparksSystem';
 import DashboardSidebar from '@/components/dashboard/DashboardSidebar';
 import CurioContent from '@/components/dashboard/CurioContent';
-import { useDashboardProfile } from '@/hooks/useDashboardProfile';
+import { useDashboardProfile } from '@/hooks/useDashboardProfile.tsx'; // Use the mock version
 import { useCurioCreation } from '@/hooks/useCurioCreation';
 import { useCurioData } from '@/hooks/useCurioData';
 import { useBlockInteractionHandlers } from '@/hooks/useBlockInteractionHandlers';
@@ -134,7 +133,7 @@ const DashboardContainer = () => {
     }
   }, [setQuery, setIsVoiceActive, handleSubmitQuery]);
 
-  // Handle image uploads
+  // Handle image uploads - keep existing functionality but don't actually upload to Supabase for demo
   const handleImageCapture = useCallback(async (file: File) => {
     if (!profileId || processingImage) return;
     
@@ -143,61 +142,33 @@ const DashboardContainer = () => {
     try {
       toast.loading("Analyzing your image with AI...");
       
-      // Create a FormData object to send the image
-      const formData = new FormData();
-      formData.append('image', file);
+      // For demo purposes, simulate image analysis without actual API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Call the analyze-image edge function
-      const { data, error } = await supabase.functions.invoke('analyze-image', {
-        body: formData,
-      });
+      toast.dismiss();
+      toast.success("Image analyzed successfully!");
       
-      if (error) throw new Error(error.message);
+      // Create a mock curio based on the image
+      const imageDescription = `Analysis of ${file.name}`;
+      const curioTitle = `About my ${file.name.split('.')[0]}`;
       
-      if (data?.block) {
-        toast.dismiss();
-        toast.success(data.feedback || "Image analyzed successfully!");
-        
-        // Create a new curio based on the image analysis
-        const imageDescription = data.block.content.fact.split('.')[0] + ".";
-        const curioTitle = `About my ${file.name.split('.')[0]}`;
-        
-        // Create the curio in the database
-        const { data: newCurio, error: curioError } = await supabase
-          .from('curios')
-          .insert({
-            child_id: profileId,
-            query: `Tell me about ${file.name.split('.')[0]}`,
-            title: curioTitle
-          })
-          .select()
-          .single();
-          
-        if (curioError) throw curioError;
-        
-        // Add the block to the curio
-        if (newCurio) {
-          const { error: blockError } = await supabase
-            .from('content_blocks')
-            .insert({
-              ...data.block,
-              curio_id: newCurio.id
-            });
-            
-          if (blockError) throw blockError;
-          
-          // Add the curio to the list of past curios
-          setPastCurios(prev => [newCurio, ...prev]);
-          
-          // Set the current curio to the new one
-          setCurrentCurio(newCurio);
-          
-          // Award sparks for uploading an image
-          handleSparkEarned(3, 'image-upload');
-        }
-      } else {
-        throw new Error('No analysis result returned');
-      }
+      // Create a mock curio
+      const newCurio: Curio = {
+        id: `curio-img-${Date.now()}`,
+        title: curioTitle,
+        query: `Tell me about ${file.name.split('.')[0]}`,
+        created_at: new Date().toISOString()
+      };
+      
+      // Add the curio to the list of past curios
+      setPastCurios(prev => [newCurio, ...prev]);
+      
+      // Set the current curio to the new one
+      setCurrentCurio(newCurio);
+      
+      // Award sparks for uploading an image
+      handleSparkEarned(3, 'image-upload');
+      
     } catch (error) {
       console.error('Error analyzing image:', error);
       toast.dismiss();
