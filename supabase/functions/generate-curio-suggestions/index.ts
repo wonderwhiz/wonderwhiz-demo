@@ -1,248 +1,248 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+}
 
 serve(async (req) => {
-  // Handle CORS preflight requests
+  console.log("Received request to generate-curio-suggestions")
+  
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders })
   }
-
-  console.log("Received request to generate-curio-suggestions");
 
   try {
-    // Parse request body
-    const reqText = await req.text();
-    let requestBody;
-    
-    try {
-      requestBody = JSON.parse(reqText);
-      console.log("Request body parsed successfully:", JSON.stringify(requestBody).substring(0, 200));
-    } catch (parseError) {
-      console.error("Failed to parse request body:", parseError);
-      console.log("Raw request body:", reqText);
-      throw new Error(`Invalid JSON in request body: ${parseError.message}`);
-    }
-    
-    const { topic, childAge = 10, count = 5, buildingBlockType = null } = requestBody;
-    
-    if (!topic) {
-      throw new Error('Topic is required');
+    const body = await req.json()
+    console.log("Request body parsed successfully:", JSON.stringify(body).substring(0, 200) + "...")
+
+    const { childProfile, pastCurios } = body
+
+    // Validate input
+    if (!childProfile) {
+      throw new Error('Child profile is required')
     }
 
-    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
-    if (!GEMINI_API_KEY) {
-      console.error('Missing GEMINI_API_KEY environment variable');
-      throw new Error('API configuration error');
-    }
-
-    console.log(`Generating curio suggestions for topic: "${topic}", childAge: ${childAge}, count: ${count}, buildingBlockType: ${buildingBlockType}`);
-
-    // Create a specific prompt based on the building block type if provided
-    let specificPrompt = '';
-    if (buildingBlockType) {
-      switch(buildingBlockType) {
-        case 'foundational':
-          specificPrompt = `Focus on basic, foundational knowledge about ${topic} that a ${childAge} year old should know. These should be clear, simple facts that form the basis of understanding the topic.`;
-          break;
-        case 'expansion':
-          specificPrompt = `Build upon basic knowledge of ${topic} with more detailed information. Focus on "how" and "why" questions that expand understanding for a ${childAge} year old.`;
-          break;
-        case 'connection':
-          specificPrompt = `Create questions that help a ${childAge} year old connect ${topic} to other related topics or to their daily life. Focus on relationships between concepts.`;
-          break;
-        case 'application':
-          specificPrompt = `Generate questions that encourage a ${childAge} year old to apply what they've learned about ${topic} in practical ways or through creative thinking.`;
-          break;
-        case 'deeper_dive':
-          specificPrompt = `Create more complex, thought-provoking questions about ${topic} that challenge a ${childAge} year old to think more deeply about the subject.`;
-          break;
-        default:
-          specificPrompt = '';
-      }
+    const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY')
+    
+    if (!GROQ_API_KEY) {
+      console.log('GROQ_API_KEY not found, using fallback suggestions')
+      return generateFallbackSuggestions(childProfile, pastCurios)
     }
 
     try {
-      // Call Gemini API to generate suggestions
-      const geminiResponse = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent", {
-        method: "POST",
+      // Create age-appropriate suggestions prompt
+      const prompt = createSuggestionsPrompt(childProfile, pastCurios)
+      
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": GEMINI_API_KEY,
+          'Authorization': `Bearer ${GROQ_API_KEY}`,
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          contents: [
+          model: "llama-3.1-70b-versatile",
+          messages: [
+            {
+              role: "system",
+              content: `You are Wonder Whiz, an AI that generates age-appropriate curiosity questions for children. You create engaging questions that spark wonder and learning.
+
+CRITICAL: Respond ONLY with a valid JSON array of 6 question strings. No other text.`
+            },
             {
               role: "user",
-              parts: [
-                {
-                  text: `You are an AI designed to generate interesting, educational, and age-appropriate questions for children aged ${childAge} that build upon a topic they're currently learning about.
-
-Based on the topic "${topic}", generate ${count} engaging follow-up questions that would spark a child's curiosity and motivate them to learn more. 
-${specificPrompt}
-
-Format these as a JSON array of objects, each with a "question" field and a "learningStage" field that can be one of: "foundational", "expansion", "connection", "application", or "deeper_dive".
-
-Do not include any other text in your response, just the JSON.
-
-Example output format:
-[
-  {"question": "How do plants make their own food through photosynthesis?", "learningStage": "foundational"},
-  {"question": "Why are some plants carnivorous and how do they catch insects?", "learningStage": "deeper_dive"}
-]
-
-Make sure questions are:
-- Age appropriate for ${childAge} year olds
-- Educational and fact-based
-- Open-ended to encourage exploration
-- Directly related to the original topic
-- Clear and concise (under 100 characters if possible)
-- Free of any harmful, inappropriate, or overly complex content
-- Varied in focus to cover different aspects of the topic
-- Distributed across different learning stages to build progressive understanding`
-                }
-              ]
+              content: prompt
             }
           ],
-          generationConfig: {
-            temperature: 0.7,
-            topK: 40,
-            topP: 0.95,
-            maxOutputTokens: 800,
-          }
+          temperature: 0.8,
+          max_tokens: 500
         })
-      });
+      })
 
-      if (!geminiResponse.ok) {
-        const errorText = await geminiResponse.text();
-        console.error('Gemini API error:', errorText);
-        throw new Error(`Gemini API error: ${geminiResponse.status} - ${errorText}`);
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error(`Groq API error ${response.status}:`, errorText)
+        throw new Error(`Groq API error: ${response.status}`)
       }
 
-      const data = await geminiResponse.json();
-      
-      if (!data.candidates || data.candidates.length === 0) {
-        throw new Error('No response from Gemini');
+      const data = await response.json()
+      const generatedContent = data.choices[0]?.message?.content
+
+      if (!generatedContent) {
+        throw new Error('No content generated from Groq API')
       }
-      
-      const responseText = data.candidates[0].content.parts[0].text;
-      console.log('Raw Gemini response:', responseText.substring(0, 200) + '...');
-      
-      // Parse the JSON response
-      let suggestions = [];
-      try {
-        // Clean the response if it contains markdown code blocks
-        const cleanedResponse = responseText.replace(/```json\s*|\s*```/g, '').trim();
-        console.log('Cleaned JSON:', cleanedResponse.substring(0, 200) + '...');
-        suggestions = JSON.parse(cleanedResponse);
-      } catch (parseError) {
-        console.error('Error parsing JSON response:', parseError);
-        console.log('Raw response:', responseText);
-        
-        // Use a fallback approach to extract questions if JSON parsing fails
-        const lines = responseText.split('\n');
-        const jsonStartIndex = lines.findIndex(line => line.trim().startsWith('['));
-        const jsonEndIndex = lines.findIndex(line => line.trim().startsWith(']'));
-        
-        if (jsonStartIndex >= 0 && jsonEndIndex >= 0 && jsonEndIndex > jsonStartIndex) {
-          const jsonSubset = lines.slice(jsonStartIndex, jsonEndIndex + 1).join('');
-          try {
-            console.log('Attempting to parse JSON subset:', jsonSubset);
-            suggestions = JSON.parse(jsonSubset);
-          } catch (subsetError) {
-            console.error('Error parsing JSON subset:', subsetError);
-            // If all parsing attempts fail, use a regex fallback
-            const questionMatches = responseText.match(/"question":\s*"([^"]+)"/g);
-            if (questionMatches) {
-              suggestions = questionMatches.map(match => {
-                const question = match.match(/"question":\s*"([^"]+)"/)[1];
-                return { 
-                  question,
-                  learningStage: "foundational" // Default stage if parsing fails
-                };
-              });
-            }
-          }
-        }
-      }
-      
-      // If we still have no suggestions, provide fallbacks
-      if (!Array.isArray(suggestions) || suggestions.length === 0) {
-        console.warn('Failed to parse suggestions, using fallbacks');
-        suggestions = [
-          { question: `What else can we learn about ${topic}?`, learningStage: "foundational" },
-          { question: `Why is ${topic} important?`, learningStage: "expansion" },
-          { question: `How does ${topic} affect our everyday lives?`, learningStage: "connection" },
-          { question: `What are the most interesting facts about ${topic}?`, learningStage: "foundational" },
-          { question: `How has ${topic} changed over time?`, learningStage: "deeper_dive" }
-        ];
-      }
-      
-      // Ensure suggestions are valid objects with question field
-      const validSuggestions = suggestions
-        .filter(s => s && typeof s === 'object' && typeof s.question === 'string')
-        .map(s => ({ 
-          question: s.question,
-          learningStage: s.learningStage || "foundational" 
-        }))
-        .slice(0, count);
-        
-      console.log(`Generated ${validSuggestions.length} valid suggestions`);
+
+      // Parse the suggestions
+      const suggestions = parseSuggestions(generatedContent)
       
       return new Response(
-        JSON.stringify({ 
-          success: true, 
-          suggestions: validSuggestions
+        JSON.stringify({
+          suggestions,
+          source: 'groq'
         }),
         { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json' 
+          } 
         }
-      );
+      )
     } catch (apiError) {
-      console.error('Error generating suggestions:', apiError);
-      
-      // Provide fallback suggestions
-      const fallbackSuggestions = [
-        { question: `What else can we learn about ${topic}?`, learningStage: "foundational" },
-        { question: `Why is ${topic} important?`, learningStage: "expansion" },
-        { question: `How does ${topic} affect our everyday lives?`, learningStage: "connection" },
-        { question: `What are the most interesting facts about ${topic}?`, learningStage: "foundational" },
-        { question: `How has ${topic} changed over time?`, learningStage: "deeper_dive" }
-      ];
-      
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          suggestions: fallbackSuggestions.slice(0, count),
-          error: apiError.message,
-          fallback: true 
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+      console.error('Groq API call failed:', apiError)
+      console.log('Falling back to local suggestions')
+      return generateFallbackSuggestions(childProfile, pastCurios)
     }
   } catch (error) {
-    console.error('Error in generate-curio-suggestions:', error);
+    console.error('Error in generate-curio-suggestions:', error)
+    
+    // Always provide fallback suggestions
+    const fallbackSuggestions = [
+      "How do rainbows form in the sky?",
+      "Why do leaves change color in autumn?",
+      "What makes the ocean waves?",
+      "How do birds know where to fly?",
+      "Why do we see lightning before thunder?",
+      "What makes flowers smell so good?"
+    ]
     
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error.message, 
-        suggestions: [
-          { question: "What other topics are you interested in?", learningStage: "connection" },
-          { question: "Would you like to learn about space instead?", learningStage: "connection" },
-          { question: "Are you curious about animals?", learningStage: "connection" }
-        ]
+      JSON.stringify({
+        suggestions: fallbackSuggestions,
+        source: 'error-fallback'
       }),
       { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200 // Return 200 even with errors to prevent crashing the frontend
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        } 
       }
-    );
+    )
   }
-});
+})
+
+function createSuggestionsPrompt(childProfile: any, pastCurios: any[] = []) {
+  const age = childProfile.age || 10
+  const interests = childProfile.interests || []
+  const name = childProfile.name || 'there'
+  
+  const pastTopics = pastCurios?.map(c => c.title || c.query).filter(Boolean).slice(0, 5) || []
+  
+  return `Generate 6 age-appropriate curiosity questions for ${name}, age ${age}.
+
+Interests: ${interests.length > 0 ? interests.join(', ') : 'general learning'}
+${pastTopics.length > 0 ? `Recent topics explored: ${pastTopics.join(', ')}` : ''}
+
+Guidelines:
+- Questions should spark wonder and curiosity
+- Use age-appropriate language for ${age}-year-old
+- Mix topics: some from interests, some general
+- Avoid repeating recent topics
+- Make questions engaging and fun
+- Each question should be 5-15 words
+
+Respond with exactly 6 questions in JSON array format:
+["Question 1?", "Question 2?", "Question 3?", "Question 4?", "Question 5?", "Question 6?"]`
+}
+
+function parseSuggestions(content: string): string[] {
+  try {
+    // Clean the content and find JSON array
+    let cleanContent = content.trim()
+    
+    const arrayStart = cleanContent.indexOf('[')
+    const arrayEnd = cleanContent.lastIndexOf(']')
+    
+    if (arrayStart !== -1 && arrayEnd !== -1) {
+      cleanContent = cleanContent.substring(arrayStart, arrayEnd + 1)
+    }
+    
+    const parsed = JSON.parse(cleanContent)
+    
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed.slice(0, 6).map(q => String(q).trim())
+    }
+    
+    throw new Error('Invalid array format')
+  } catch {
+    // Extract questions from text format
+    const lines = content.split('\n')
+    const questions = lines
+      .filter(line => line.includes('?'))
+      .map(line => line.replace(/^[\d\-\*\s\"\'\[\]]+/, '').replace(/[\"\'\[\]]+$/, '').trim())
+      .filter(q => q.length > 0)
+      .slice(0, 6)
+    
+    return questions.length > 0 ? questions : getDefaultSuggestions()
+  }
+}
+
+function getDefaultSuggestions(): string[] {
+  return [
+    "How do rainbows form in the sky?",
+    "Why do leaves change color in autumn?",
+    "What makes the ocean waves?",
+    "How do birds know where to fly?",
+    "Why do we see lightning before thunder?",
+    "What makes flowers smell so good?"
+  ]
+}
+
+function generateFallbackSuggestions(childProfile: any, pastCurios: any[] = []) {
+  const age = childProfile?.age || 10
+  const interests = childProfile?.interests || []
+  
+  let suggestions = []
+  
+  // Age-appropriate base questions
+  if (age <= 7) {
+    suggestions = [
+      "Why is the sky blue?",
+      "How do birds fly?",
+      "Where do rainbows come from?",
+      "Why do flowers smell nice?",
+      "How do fish breathe underwater?",
+      "Why do we need to sleep?"
+    ]
+  } else if (age <= 11) {
+    suggestions = [
+      "How do volcanoes work?",
+      "Why do planets stay in space?",
+      "How do our brains remember things?",
+      "What makes lightning?",
+      "How do animals talk to each other?",
+      "Why do seasons change?"
+    ]
+  } else {
+    suggestions = [
+      "How do black holes work?",
+      "What causes aurora borealis?",
+      "How does DNA store information?",
+      "What makes gravity work?",
+      "How do computers think?",
+      "Why do we dream?"
+    ]
+  }
+  
+  // Add interest-based questions
+  if (interests.includes('space')) {
+    suggestions[0] = age <= 7 ? "What are stars made of?" : age <= 11 ? "How big is the universe?" : "How do galaxies form?"
+  }
+  
+  if (interests.includes('animals')) {
+    suggestions[1] = age <= 7 ? "Why do cats purr?" : age <= 11 ? "How do dolphins communicate?" : "How do animals evolve?"
+  }
+  
+  return new Response(
+    JSON.stringify({
+      suggestions,
+      source: 'fallback'
+    }),
+    { 
+      headers: { 
+        ...corsHeaders, 
+        'Content-Type': 'application/json' 
+      } 
+    }
+  )
+}

@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Camera, Volume2, Sparkles, CheckCircle } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Camera, Volume2, Sparkles, CheckCircle, RefreshCw } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,17 +27,20 @@ const SectionViewer: React.FC<SectionViewerProps> = ({
 }) => {
   const [section, setSection] = useState<LearningSection | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [requestingImage, setRequestingImage] = useState(false);
   const [showImagePermission, setShowImagePermission] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   const currentSection = topic.table_of_contents[sectionIndex];
 
   useEffect(() => {
     generateSectionContent();
-  }, [sectionIndex]);
+  }, [sectionIndex, retryCount]);
 
   const generateSectionContent = async () => {
     setLoading(true);
+    setError(null);
     
     try {
       // Check if section already exists
@@ -48,7 +52,6 @@ const SectionViewer: React.FC<SectionViewerProps> = ({
         .single();
 
       if (existingSection) {
-        // Convert Json type to string array for facts
         const convertedSection: LearningSection = {
           ...existingSection,
           facts: Array.isArray(existingSection.facts) ? existingSection.facts as string[] : []
@@ -58,8 +61,10 @@ const SectionViewer: React.FC<SectionViewerProps> = ({
         return;
       }
 
-      // Generate new section content
-      const { data, error } = await supabase.functions.invoke('generate-section-content', {
+      console.log(`Generating new section content for: ${currentSection.title}`);
+
+      // Generate new section content with better error handling
+      const { data, error: functionError } = await supabase.functions.invoke('generate-section-content', {
         body: {
           topic: topic.title,
           section_title: currentSection.title,
@@ -69,7 +74,16 @@ const SectionViewer: React.FC<SectionViewerProps> = ({
         }
       });
 
-      if (error) throw error;
+      if (functionError) {
+        console.error('Function error:', functionError);
+        throw new Error(functionError.message || 'Failed to generate content');
+      }
+
+      if (!data) {
+        throw new Error('No data returned from content generation');
+      }
+
+      console.log('Content generated successfully:', data);
 
       // Save section to database
       const { data: newSection, error: saveError } = await supabase
@@ -79,21 +93,38 @@ const SectionViewer: React.FC<SectionViewerProps> = ({
           section_number: sectionIndex + 1,
           title: currentSection.title,
           content: data.content,
-          word_count: data.word_count,
+          word_count: data.word_count || 100,
           facts: data.facts || [],
           story_mode_content: data.story_mode_content
         })
         .select()
         .single();
 
-      if (saveError) throw saveError;
-
-      // Convert the response to our type
-      const convertedSection: LearningSection = {
-        ...newSection,
-        facts: Array.isArray(newSection.facts) ? newSection.facts as string[] : []
-      };
-      setSection(convertedSection);
+      if (saveError) {
+        console.error('Save error:', saveError);
+        // Even if saving fails, we can still show the content
+        const tempSection: LearningSection = {
+          id: `temp-${Date.now()}`,
+          topic_id: topic.id,
+          section_number: sectionIndex + 1,
+          title: currentSection.title,
+          content: data.content,
+          word_count: data.word_count || 100,
+          facts: Array.isArray(data.facts) ? data.facts : [],
+          story_mode_content: data.story_mode_content,
+          image_url: null,
+          image_generated: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        setSection(tempSection);
+      } else {
+        const convertedSection: LearningSection = {
+          ...newSection,
+          facts: Array.isArray(newSection.facts) ? newSection.facts as string[] : []
+        };
+        setSection(convertedSection);
+      }
       
       // Show image permission after content loads
       setTimeout(() => {
@@ -102,10 +133,46 @@ const SectionViewer: React.FC<SectionViewerProps> = ({
 
     } catch (error) {
       console.error('Error generating section:', error);
-      toast.error("Let's try loading this section again! 🔄");
+      setError(error.message || 'Failed to generate content');
+      
+      // Create fallback content
+      const fallbackSection: LearningSection = {
+        id: `fallback-${Date.now()}`,
+        topic_id: topic.id,
+        section_number: sectionIndex + 1,
+        title: currentSection.title,
+        content: `Welcome to "${currentSection.title}"! This is an exciting topic to explore.
+
+${currentSection.description || 'This section covers fascinating aspects of the subject.'}
+
+There's so much to discover about this topic! Scientists and researchers continue to make new discoveries that help us understand more about how our world works.
+
+This subject connects to many other areas of knowledge and has real-world applications that affect our daily lives. By learning about this, you're developing critical thinking skills and expanding your understanding of the world around you.
+
+Keep asking questions and exploring - that's how great discoveries are made!`,
+        word_count: 150,
+        facts: [
+          "This topic has been studied by scientists for many years",
+          "New discoveries are made about this subject regularly",
+          "This knowledge helps us understand our world better",
+          "Learning about this develops critical thinking skills"
+        ],
+        story_mode_content: null,
+        image_url: null,
+        image_generated: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      setSection(fallbackSection);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRetry = () => {
+    setRetryCount(prev => prev + 1);
+    toast.info("Trying again... 🔄");
   };
 
   const handleImagePermission = async (granted: boolean) => {
@@ -127,17 +194,26 @@ const SectionViewer: React.FC<SectionViewerProps> = ({
       if (error) throw error;
 
       // Update section with image
-      const { error: updateError } = await supabase
-        .from('learning_sections')
-        .update({
-          image_url: data.image_url,
-          image_generated: true
-        })
-        .eq('id', section.id);
+      if (section.id.startsWith('temp-') || section.id.startsWith('fallback-')) {
+        // For temporary sections, just update the state
+        setSection(prev => prev ? { ...prev, image_url: data.image_url, image_generated: true } : null);
+      } else {
+        // For saved sections, update the database
+        const { error: updateError } = await supabase
+          .from('learning_sections')
+          .update({
+            image_url: data.image_url,
+            image_generated: true
+          })
+          .eq('id', section.id);
 
-      if (updateError) throw updateError;
+        if (updateError) {
+          console.error('Image update error:', updateError);
+        }
 
-      setSection(prev => prev ? { ...prev, image_url: data.image_url, image_generated: true } : null);
+        setSection(prev => prev ? { ...prev, image_url: data.image_url, image_generated: true } : null);
+      }
+      
       toast.success("Beautiful image generated! 🎨");
 
     } catch (error) {
@@ -180,6 +256,32 @@ const SectionViewer: React.FC<SectionViewerProps> = ({
             : "Generating detailed content tailored just for you... ✨"
           }
         </p>
+      </motion.div>
+    );
+  }
+
+  if (error && !section) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="text-center py-12"
+      >
+        <div className="mb-4">
+          <p className="text-white/80 mb-4">
+            {childAge <= 8 
+              ? "Oops! Let's try that again! 🔄" 
+              : "Having trouble loading this section. Let's retry!"
+            }
+          </p>
+          <Button
+            onClick={handleRetry}
+            className="bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/90"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Try Again
+          </Button>
+        </div>
       </motion.div>
     );
   }
@@ -318,6 +420,24 @@ const SectionViewer: React.FC<SectionViewerProps> = ({
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Error indicator with retry option */}
+        {error && (
+          <div className="mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+            <p className="text-red-400 text-sm mb-2">
+              Having trouble with some features, but don't worry - the content is still here!
+            </p>
+            <Button
+              onClick={handleRetry}
+              size="sm"
+              variant="outline"
+              className="border-red-500/20 text-red-400 hover:bg-red-500/10"
+            >
+              <RefreshCw className="h-3 w-3 mr-1" />
+              Retry
+            </Button>
           </div>
         )}
 
