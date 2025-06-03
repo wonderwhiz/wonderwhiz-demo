@@ -4,24 +4,34 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import WonderWhizLogo from '@/components/WonderWhizLogo';
 import { User, Home } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const handleDashboardClick = () => {
-    // Check if there's a current profile in localStorage
-    const currentProfile = localStorage.getItem('currentChildProfile');
-    if (currentProfile) {
-      const profile = JSON.parse(currentProfile);
-      navigate(`/dashboard/${profile.id}`);
+    if (user) {
+      // Check if there's a current profile in localStorage
+      const currentProfile = localStorage.getItem('currentChildProfile');
+      if (currentProfile) {
+        const profile = JSON.parse(currentProfile);
+        navigate(`/dashboard/${profile.id}`);
+      } else {
+        // Redirect to profile selector if no current profile
+        navigate('/profiles');
+      }
     } else {
-      // Redirect to profile selector if no current profile
-      navigate('/profiles');
+      navigate('/login');
     }
   };
 
   const handleProfilesClick = () => {
-    navigate('/profiles');
+    if (user) {
+      navigate('/profiles');
+    } else {
+      navigate('/login');
+    }
   };
 
   return (
@@ -42,14 +52,16 @@ const Navbar = () => {
           <Home className="h-5 w-5 mr-1" />
           <span className="hidden sm:inline">Dashboard</span>
         </Button>
-        <Link to="/login">
-          <Button 
-            variant="ghost" 
-            className="bg-wonderwhiz-bright-pink/20 hover:bg-wonderwhiz-bright-pink/30 text-white"
-          >
-            Login
-          </Button>
-        </Link>
+        {!user && (
+          <Link to="/login">
+            <Button 
+              variant="ghost" 
+              className="bg-wonderwhiz-bright-pink/20 hover:bg-wonderwhiz-bright-pink/30 text-white"
+            >
+              Login
+            </Button>
+          </Link>
+        )}
         <Button 
           variant="ghost" 
           className="bg-white/10 hover:bg-white/20 text-white"

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
@@ -13,6 +14,7 @@ import ParticleEffect from '@/components/ParticleEffect';
 import FloatingElements from '@/components/FloatingElements';
 import MagicalBorder from '@/components/MagicalBorder';
 import SparksBadge from '@/components/SparksBadge';
+import { useAuth } from '@/hooks/useAuth';
 
 interface ChildProfile {
   id: string;
@@ -42,6 +44,7 @@ const AVATAR_ICONS = {
 
 const ProfileSelector = () => {
   const navigate = useNavigate();
+  const { user, signOut } = useAuth();
   const [profiles, setProfiles] = useState<ChildProfile[]>([]);
   const [selectedProfile, setSelectedProfile] = useState<ChildProfile | null>(null);
   const [pinInput, setPinInput] = useState('');
@@ -52,26 +55,25 @@ const ProfileSelector = () => {
   
   useEffect(() => {
     const loadProfiles = async () => {
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
-        // For demo purposes, create some mock profiles if none exist
-        const mockProfiles = [
-          {
-            id: 'demo-1',
-            name: 'Emma',
-            avatar_url: 'nova',
-            sparks_balance: 150,
-            pin: '1234'
-          },
-          {
-            id: 'demo-2', 
-            name: 'Alex',
-            avatar_url: 'spark',
-            sparks_balance: 89,
-            pin: '5678'
-          }
-        ];
+        const { data, error } = await supabase
+          .from('child_profiles')
+          .select('*')
+          .eq('parent_user_id', user.id)
+          .order('created_at', { ascending: false });
         
-        setProfiles(mockProfiles);
+        if (error) {
+          console.error('Error loading profiles:', error);
+          toast.error("Failed to load profiles");
+          return;
+        }
+        
+        setProfiles(data || []);
       } catch (error) {
         console.error('Error loading profiles:', error);
         toast.error("Failed to load profiles");
@@ -81,7 +83,7 @@ const ProfileSelector = () => {
     };
     
     loadProfiles();
-  }, []);
+  }, [user]);
   
   const handleProfileClick = (profile: ChildProfile) => {
     setSelectedProfile(profile);
@@ -113,10 +115,14 @@ const ProfileSelector = () => {
   };
   
   const handleSignOut = async () => {
-    // Clear any stored profile data
-    localStorage.removeItem('currentChildProfile');
-    navigate('/');
-    toast.success("You have been signed out");
+    try {
+      await signOut();
+      navigate('/');
+      toast.success("You have been signed out");
+    } catch (error) {
+      console.error('Sign out error:', error);
+      toast.error("Failed to sign out");
+    }
   };
   
   const getAvatarBg = (avatar: string) => {
@@ -313,7 +319,7 @@ const ProfileSelector = () => {
         )}
       </div>
       
-      {/* Pin Dialog with improved visuals */}
+      {/* Pin Dialog */}
       <AnimatePresence>
         {isPinDialogOpen && (
           <Dialog open={isPinDialogOpen} onOpenChange={setIsPinDialogOpen}>

@@ -11,9 +11,11 @@ import { motion } from 'framer-motion';
 import WonderWhizLogo from '@/components/WonderWhizLogo';
 import ParticleEffect from '@/components/ParticleEffect';
 import { ArrowLeft, Mail, Lock, UserPlus, LogIn } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 const Login = () => {
   const navigate = useNavigate();
+  const { signIn, signUp } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -22,20 +24,23 @@ const Login = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email || !password) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
     setIsLoading(true);
     
     try {
-      // Simulate login for demo
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await signIn(email, password);
       toast.success("Welcome back!", {
         description: "You're now signed in.",
       });
-      
       navigate('/profiles');
     } catch (error: any) {
+      console.error('Login error:', error);
       toast.error("Login failed", {
-        description: "Please check your credentials.",
+        description: error.message || "Please check your credentials.",
       });
     } finally {
       setIsLoading(false);
@@ -44,21 +49,24 @@ const Login = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email || !password || !name) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      // Simulate signup for demo
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await signUp(email, password, name);
       toast.success("Account created successfully!", {
-        description: "You can now create child profiles.",
+        description: "Please check your email to verify your account.",
         duration: 4000,
       });
-      
       navigate('/profiles');
     } catch (error: any) {
+      console.error('Sign up error:', error);
       toast.error("Sign up failed", {
-        description: "Please try again.",
+        description: error.message || "Please try again.",
       });
     } finally {
       setIsLoading(false);

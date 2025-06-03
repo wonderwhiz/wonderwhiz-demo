@@ -1,15 +1,18 @@
 
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
 
 interface ChildProfile {
   id: string;
   name: string;
-  age: number;
   avatar_url: string;
+  interests: string[];
+  age: number;
   sparks_balance: number;
-  pin: string;
-  interests: string[]; // Make this required to match the expected type
-  grade?: string;
+  streak_days: number;
 }
 
 interface Curio {
@@ -20,86 +23,218 @@ interface Curio {
 }
 
 export const useDashboardProfile = (profileId?: string) => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [childProfile, setChildProfile] = useState<ChildProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [pastCurios, setPastCurios] = useState<Curio[]>([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
-  const [curioSuggestions, setCurioSuggestions] = useState<string[]>([
-    "How do butterflies change colors?",
-    "Why do we dream when we sleep?",
-    "How do robots learn to walk?",
-    "What makes the ocean blue?",
-    "How do plants eat sunlight?"
-  ]);
+  const [curioSuggestions, setCurioSuggestions] = useState<string[]>([]);
+
+  // Smart suggestions based on time of day and age
+  const getDefaultSuggestions = () => {
+    const hour = new Date().getHours();
+    const defaultSuggestions = {
+      morning: [
+        "How do our brains wake up in the morning?",
+        "Why is the sky blue?",
+        "What makes rainbows appear?",
+        "How do birds know which way to fly?"
+      ],
+      afternoon: [
+        "How do volcanoes work?",
+        "What are the coolest dinosaurs ever discovered?",
+        "How do computers think?",
+        "What's inside a black hole?"
+      ],
+      evening: [
+        "Why can we see the stars at night?",
+        "How do dreams work?",
+        "What animals can see in the dark?",
+        "How do fireflies make light?"
+      ]
+    };
+
+    // Return time-appropriate suggestions
+    if (hour < 12) return defaultSuggestions.morning;
+    if (hour < 18) return defaultSuggestions.afternoon;
+    return defaultSuggestions.evening;
+  };
 
   useEffect(() => {
-    const loadProfile = async () => {
+    // Set initial default suggestions based on time of day
+    setCurioSuggestions(getDefaultSuggestions());
+    
+    const loadProfileAndCurios = async () => {
       if (!profileId) {
-        setIsLoading(false);
+        navigate('/profiles');
         return;
       }
 
+      if (!user) {
+        navigate('/login');
+        return;
+      }
+      
       try {
-        // Mock profile data - in real implementation, this would come from Supabase
-        const mockProfile: ChildProfile = {
-          id: profileId,
-          name: profileId === 'demo-1' ? 'Emma' : 'Alex',
-          age: profileId === 'demo-1' ? 8 : 10,
-          avatar_url: profileId === 'demo-1' ? 'nova' : 'spark',
-          sparks_balance: profileId === 'demo-1' ? 150 : 89,
-          pin: profileId === 'demo-1' ? '1234' : '5678',
-          interests: ['science', 'nature', 'space'], // Always provide interests array
-          grade: profileId === 'demo-1' ? '3rd Grade' : '5th Grade'
-        };
+        setIsLoading(true);
+        
+        // Load child profile
+        const { data: profileData, error: profileError } = await supabase
+          .from('child_profiles')
+          .select('*')
+          .eq('id', profileId)
+          .eq('parent_user_id', user.id)
+          .single();
+        
+        if (profileError) {
+          console.error('Error loading profile:', profileError);
+          toast.error("Failed to load profile or access denied");
+          navigate('/profiles');
+          return;
+        }
 
-        // Mock past curios
-        const mockCurios: Curio[] = [
-          {
-            id: 'curio-1',
-            title: 'How Do Birds Fly?',
-            query: 'How do birds fly in the sky?',
-            created_at: new Date().toISOString()
-          },
-          {
-            id: 'curio-2',
-            title: 'Why Is The Sky Blue?',
-            query: 'Why is the sky blue during the day?',
-            created_at: new Date().toISOString()
-          }
-        ];
-
-        setChildProfile(mockProfile);
-        setPastCurios(mockCurios);
+        // Load curios for this child
+        const { data: curiosData, error: curiosError } = await supabase
+          .from('curios')
+          .select('*')
+          .eq('child_id', profileId)
+          .order('created_at', { ascending: false })
+          .limit(20);
+        
+        if (curiosError) {
+          console.error('Error loading curios:', curiosError);
+          // Don't fail completely if curios can't be loaded
+        }
+        
+        setChildProfile(profileData);
+        setPastCurios(curiosData || []);
+        
+        if (profileData) {
+          fetchCurioSuggestions(profileData, curiosData || []);
+        }
       } catch (error) {
-        console.error('Error loading profile:', error);
+        console.error('Error loading profile or curios:', error);
+        toast.error("Failed to load your profile");
+        navigate('/profiles');
       } finally {
         setIsLoading(false);
       }
     };
-
-    loadProfile();
-  }, [profileId]);
-
-  const handleRefreshSuggestions = async () => {
-    setIsLoadingSuggestions(true);
     
+    loadProfileAndCurios();
+  }, [profileId, navigate, user]);
+
+  const fetchCurioSuggestions = async (profile: any, curios: any[]) => {
+    setIsLoadingSuggestions(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // First quickly set some default suggestions based on time of day
+      setCurioSuggestions(getDefaultSuggestions());
       
-      const newSuggestions = [
-        "How do volcanoes make new islands?",
-        "Why do cats always land on their feet?",
-        "How do computers remember things?",
-        "What makes rainbows appear?",
-        "How do fish breathe underwater?"
-      ];
+      const response = await supabase.functions.invoke('generate-curio-suggestions', {
+        body: JSON.stringify({
+          childProfile: profile,
+          pastCurios: curios
+        })
+      });
       
-      setCurioSuggestions(newSuggestions);
+      if (response.error) {
+        console.error('Error fetching curio suggestions:', response.error);
+        if (response.data?.fallbackSuggestions) {
+          setCurioSuggestions(response.data.fallbackSuggestions);
+        }
+        return;
+      }
+      
+      const suggestions = response.data;
+      if (Array.isArray(suggestions) && suggestions.length > 0) {
+        setCurioSuggestions(suggestions);
+      }
     } catch (error) {
-      console.error('Error refreshing suggestions:', error);
+      console.error('Error fetching curio suggestions:', error);
+      // If API fails, generate smart fallback suggestions
+      generateFallbackSuggestions(profile, curios);
     } finally {
       setIsLoadingSuggestions(false);
+    }
+  };
+
+  // Generate smart fallback suggestions based on profile and past curios
+  const generateFallbackSuggestions = (profile: any, curios: any[]) => {
+    const interests = profile?.interests || [];
+    const age = profile?.age || 10;
+    
+    // Age-appropriate suggestion templates
+    const suggestionsByAge = {
+      young: [
+        "Why is the sky blue?",
+        "How do butterflies fly?",
+        "Why do we need to sleep?",
+        "How do plants grow?"
+      ],
+      middle: [
+        "How do volcanos work?",
+        "What are black holes?",
+        "How do computers work?",
+        "Why do some animals hibernate?"
+      ],
+      older: [
+        "How does the internet work?",
+        "What causes climate change?",
+        "How do rockets fly to space?",
+        "How does the human brain work?"
+      ]
+    };
+    
+    // Get age-appropriate suggestions
+    let ageSuggestions = suggestionsByAge.middle;
+    if (age <= 7) {
+      ageSuggestions = suggestionsByAge.young;
+    } else if (age >= 12) {
+      ageSuggestions = suggestionsByAge.older;
+    }
+    
+    // Get interest-based suggestions
+    const interestSuggestions: string[] = [];
+    
+    if (interests.includes('space')) {
+      interestSuggestions.push("What is the biggest planet?");
+      interestSuggestions.push("How many stars are in the universe?");
+    }
+    
+    if (interests.includes('animals')) {
+      interestSuggestions.push("What's the fastest animal on Earth?");
+      interestSuggestions.push("How do chameleons change color?");
+    }
+    
+    if (interests.includes('science')) {
+      interestSuggestions.push("How do magnets work?");
+      interestSuggestions.push("What are atoms made of?");
+    }
+    
+    if (interests.includes('history')) {
+      interestSuggestions.push("Who built the pyramids?");
+      interestSuggestions.push("What was life like for dinosaurs?");
+    }
+    
+    // Combine and randomize suggestions
+    const allSuggestions = [...ageSuggestions, ...interestSuggestions];
+    
+    // Shuffle array using Fisher-Yates algorithm
+    for (let i = allSuggestions.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [allSuggestions[i], allSuggestions[j]] = [allSuggestions[j], allSuggestions[i]];
+    }
+    
+    // Return a subset of suggestions
+    setCurioSuggestions(allSuggestions.slice(0, 6));
+  };
+
+  const handleRefreshSuggestions = () => {
+    if (childProfile && pastCurios) {
+      // Show toast to indicate refreshing
+      toast.info("Finding new wonders for you...");
+      fetchCurioSuggestions(childProfile, pastCurios);
     }
   };
 
