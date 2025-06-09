@@ -3,14 +3,13 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Compass, BookOpen, Lightbulb, Map, Calendar } from 'lucide-react';
+import { RefreshCw, Compass, BookOpen, Lightbulb, Map, Calendar, ArrowRight } from 'lucide-react';
 import { useChildLearningHistory } from '@/hooks/useChildLearningHistory';
-import CurioSuggestion from '@/components/CurioSuggestion';
 import SparksOverview from '@/components/SparksOverview';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import DynamicWonderSuggestions from './DynamicWonderSuggestions';
 import ParentTasksSection from './ParentTasksSection';
+import StreamlinedDashboard from './StreamlinedDashboard';
 
 const getCardTypeForSuggestion = (suggestion: string): 'space' | 'animals' | 'science' | 'history' | 'technology' | 'general' => {
   suggestion = suggestion.toLowerCase();
@@ -48,6 +47,7 @@ interface ConsolidatedDashboardProps {
   onReadAloud?: (text: string) => () => void;
   likedBlocks?: Record<string, boolean>;
   bookmarkedBlocks?: Record<string, boolean>;
+  onImageCapture?: (file: File) => void;
 }
 
 const ConsolidatedDashboard: React.FC<ConsolidatedDashboardProps> = ({
@@ -60,14 +60,9 @@ const ConsolidatedDashboard: React.FC<ConsolidatedDashboardProps> = ({
   pastCurios = [],
   sparksBalance,
   streakDays,
-  onLike,
-  onBookmark,
-  onReply,
-  onReadAloud,
-  likedBlocks = {},
-  bookmarkedBlocks = {}
+  onImageCapture
 }) => {
-  const [activeTab, setActiveTab] = useState<'wonders' | 'journey'>('wonders');
+  const [activeTab, setActiveTab] = useState<'explore' | 'progress'>('explore');
   const {
     recentlyViewedTopics,
     strongestTopics
@@ -75,64 +70,88 @@ const ConsolidatedDashboard: React.FC<ConsolidatedDashboardProps> = ({
 
   const uniqueSuggestions = dedupeSuggestions(curioSuggestions);
 
+  // Convert recent curios to the format expected by StreamlinedDashboard
+  const recentTopics = pastCurios.slice(0, 3).map(curio => ({
+    id: curio.id,
+    title: curio.title,
+    progress: Math.floor(Math.random() * 60) + 20, // Simulated progress - replace with real data
+    lastAccessed: curio.created_at
+  }));
+
   const containerVariants = {
-    hidden: {
-      opacity: 0
-    },
+    hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
+      transition: { staggerChildren: 0.1 }
     }
   };
+
   const itemVariants = {
-    hidden: {
-      y: 10,
-      opacity: 0
-    },
+    hidden: { y: 10, opacity: 0 },
     visible: {
       y: 0,
       opacity: 1,
-      transition: {
-        duration: 0.4
-      }
+      transition: { duration: 0.4 }
     }
   };
 
-  return <motion.div className="max-w-5xl mx-auto px-4 py-6 space-y-8" variants={containerVariants} initial="hidden" animate="visible">
+  return (
+    <motion.div 
+      className="max-w-5xl mx-auto px-4 py-6 space-y-8" 
+      variants={containerVariants} 
+      initial="hidden" 
+      animate="visible"
+    >
+      {/* Tab Navigation */}
       <div className="flex space-x-2 overflow-x-auto pb-2">
-        <Button variant={activeTab === 'wonders' ? 'default' : 'ghost'} size="sm" onClick={() => setActiveTab('wonders')} className={cn("rounded-full", activeTab === 'wonders' ? "bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/90" : "text-white/70 hover:text-white hover:bg-white/10")}>
+        <Button 
+          variant={activeTab === 'explore' ? 'default' : 'ghost'} 
+          size="sm" 
+          onClick={() => setActiveTab('explore')} 
+          className={cn(
+            "rounded-full", 
+            activeTab === 'explore' 
+              ? "bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/90" 
+              : "text-white/70 hover:text-white hover:bg-white/10"
+          )}
+        >
           <Compass className="w-4 h-4 mr-2" />
-          Wonder Journeys
+          Explore
         </Button>
-        <Button variant={activeTab === 'journey' ? 'default' : 'ghost'} size="sm" onClick={() => setActiveTab('journey')} className={cn("rounded-full", activeTab === 'journey' ? "bg-wonderwhiz-vibrant-yellow hover:bg-wonderwhiz-vibrant-yellow/90 text-wonderwhiz-deep-purple" : "text-white/70 hover:text-white hover:bg-white/10")}>
+        <Button 
+          variant={activeTab === 'progress' ? 'default' : 'ghost'} 
+          size="sm" 
+          onClick={() => setActiveTab('progress')} 
+          className={cn(
+            "rounded-full", 
+            activeTab === 'progress' 
+              ? "bg-wonderwhiz-vibrant-yellow hover:bg-wonderwhiz-vibrant-yellow/90 text-wonderwhiz-deep-purple" 
+              : "text-white/70 hover:text-white hover:bg-white/10"
+          )}
+        >
           <Map className="w-4 h-4 mr-2" />
-          Your Progress
+          Your Journey
         </Button>
       </div>
       
-      {activeTab === 'wonders' && <>
-          <motion.div variants={itemVariants} className="mb-8">
-            <DynamicWonderSuggestions
-              childId={childId}
-              suggestions={curioSuggestions}
-              childInterests={childProfile?.interests || []}
-              isLoading={isLoadingSuggestions}
-              onSuggestionClick={onCurioSuggestionClick}
-              childAge={childProfile?.age}
-            />
-          </motion.div>
+      {activeTab === 'explore' && (
+        <StreamlinedDashboard
+          childProfile={childProfile}
+          onSearch={onCurioSuggestionClick}
+          onImageCapture={onImageCapture}
+          recentTopics={recentTopics}
+          suggestedTopics={uniqueSuggestions}
+          streakDays={streakDays}
+          sparksBalance={sparksBalance}
+        />
+      )}
 
-          <motion.div variants={itemVariants}>
-            <ParentTasksSection childId={childId} />
-          </motion.div>
-        </>}
-
-      {activeTab === 'journey' && <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {activeTab === 'progress' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <motion.div variants={itemVariants}>
             <SparksOverview childId={childId} sparksBalance={sparksBalance} />
           </motion.div>
+          
           <motion.div variants={itemVariants}>
             <Card className="bg-white/5 backdrop-blur-sm border-white/10 shadow-glow-sm">
               <CardContent className="p-4 space-y-4">
@@ -141,7 +160,9 @@ const ConsolidatedDashboard: React.FC<ConsolidatedDashboardProps> = ({
                   Your Learning Strengths
                 </h3>
                 <div className="space-y-3">
-                  {strongestTopics.length > 0 ? strongestTopics.slice(0, 3).map((topic, index) => <div key={`topic-${index}`} className="bg-white/10 rounded-lg p-3 flex items-center justify-between">
+                  {strongestTopics.length > 0 ? (
+                    strongestTopics.slice(0, 3).map((topic, index) => (
+                      <div key={`topic-${index}`} className="bg-white/10 rounded-lg p-3 flex items-center justify-between">
                         <div className="flex items-center">
                           <div className="p-2 rounded-full bg-wonderwhiz-cyan/20 mr-3">
                             <Lightbulb className="h-4 w-4 text-wonderwhiz-cyan" />
@@ -153,18 +174,32 @@ const ConsolidatedDashboard: React.FC<ConsolidatedDashboardProps> = ({
                             </div>
                           </div>
                         </div>
-                      </div>) : <div className="text-white/60 text-center py-4">
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-white/60 text-center py-4">
                       Start exploring to build your strengths!
-                    </div>}
+                    </div>
+                  )}
                 </div>
-                <Button variant="ghost" className="w-full text-wonderwhiz-cyan hover:text-white hover:bg-wonderwhiz-cyan/20" onClick={() => window.location.href = `/profile/${childId}`}>
+                <Button 
+                  variant="ghost" 
+                  className="w-full text-wonderwhiz-cyan hover:text-white hover:bg-wonderwhiz-cyan/20" 
+                  onClick={() => window.location.href = `/profile/${childId}`}
+                >
                   View Complete Journey
                 </Button>
               </CardContent>
             </Card>
           </motion.div>
-        </div>}
-    </motion.div>;
+          
+          <motion.div variants={itemVariants} className="lg:col-span-2">
+            <ParentTasksSection childId={childId} />
+          </motion.div>
+        </div>
+      )}
+    </motion.div>
+  );
 };
 
 export default ConsolidatedDashboard;

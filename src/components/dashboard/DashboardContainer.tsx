@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card';
 import { useSparksSystem } from '@/hooks/useSparksSystem';
 import DashboardSidebar from '@/components/dashboard/DashboardSidebar';
 import CurioContent from '@/components/dashboard/CurioContent';
-import { useDashboardProfile } from '@/hooks/useDashboardProfile'; // Use the real version
+import { useDashboardProfile } from '@/hooks/useDashboardProfile';
 import { useCurioCreation } from '@/hooks/useCurioCreation';
 import { useCurioData } from '@/hooks/useCurioData';
 import { useBlockInteractionHandlers } from '@/hooks/useBlockInteractionHandlers';
@@ -134,6 +134,52 @@ const DashboardContainer = () => {
     }
   }, [setQuery, setIsVoiceActive, handleSubmitQuery]);
 
+  // Handle search from dashboard - this will create a curio and set it as current
+  const handleDashboardSearch = useCallback(async (searchQuery: string) => {
+    if (!profileId || processingImage) return;
+    
+    // Validate that profileId is a valid UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(profileId)) {
+      toast.error("Invalid profile ID. Please check your profile setup.");
+      return;
+    }
+    
+    try {
+      // Create a new curio
+      const { data: newCurio, error } = await supabase
+        .from('curios')
+        .insert({
+          child_id: profileId,
+          title: searchQuery,
+          query: searchQuery,
+        })
+        .select('*')
+        .single();
+      
+      if (error) {
+        console.error('Error creating curio:', error);
+        toast.error("Failed to create learning session. Please try again.");
+        return;
+      }
+      
+      toast.success("Starting your learning journey!");
+      
+      // Add the curio to the list of past curios
+      setPastCurios(prev => [newCurio, ...prev]);
+      
+      // Set the current curio to the new one
+      setCurrentCurio(newCurio);
+      
+      // Award sparks for starting a new topic
+      handleSparkEarned(2, 'topic-start');
+      
+    } catch (error) {
+      console.error('Error creating curio:', error);
+      toast.error("Sorry, we couldn't start your learning session. Please try again.");
+    }
+  }, [profileId, processingImage, setPastCurios, handleSparkEarned]);
+
   // Handle image uploads with proper UUID validation
   const handleImageCapture = useCallback(async (file: File) => {
     if (!profileId || processingImage) return;
@@ -224,11 +270,10 @@ const DashboardContainer = () => {
           childId={profileId || ''}
           sparksBalance={childProfile?.sparks_balance || 0}
           streakDays={streakDays}
-          query={query}
-          setQuery={setQuery}
-          handleSubmitQuery={handleSubmitQuery}
+          onSearch={handleDashboardSearch}
           isGenerating={isGenerating || isGeneratingContent || processingImage}
           onImageCapture={handleImageCapture}
+          childProfile={childProfile}
         />
         
         <div className="flex-1 overflow-y-auto">
@@ -238,7 +283,7 @@ const DashboardContainer = () => {
               childProfile={childProfile}
               curioSuggestions={curioSuggestions}
               isLoadingSuggestions={isLoadingSuggestions}
-              onCurioSuggestionClick={handleSuggestionClick}
+              onCurioSuggestionClick={handleDashboardSearch}
               handleRefreshSuggestions={handleRefreshSuggestions}
               pastCurios={pastCurios}
               sparksBalance={childProfile?.sparks_balance || 0}
@@ -249,6 +294,7 @@ const DashboardContainer = () => {
               onReadAloud={handleReadAloud}
               likedBlocks={likedBlocks}
               bookmarkedBlocks={bookmarkedBlocks}
+              onImageCapture={handleImageCapture}
             />
           ) : (
             <div className="max-w-5xl mx-auto space-y-6 p-4">

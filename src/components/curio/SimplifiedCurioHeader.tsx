@@ -9,10 +9,8 @@ interface SimplifiedCurioHeaderProps {
   title: string;
   showLearningPath: boolean;
   setShowLearningPath: (show: boolean) => void;
-  query: string;
-  setQuery: (query: string) => void;
-  handleSearch: (e: React.FormEvent) => void;
-  recentQueries?: string[];
+  onSearch: (query: string) => void;
+  childProfile?: any;
   isGenerating?: boolean;
 }
 
@@ -20,10 +18,8 @@ const SimplifiedCurioHeader: React.FC<SimplifiedCurioHeaderProps> = ({
   title,
   showLearningPath,
   setShowLearningPath,
-  query,
-  setQuery,
-  handleSearch,
-  recentQueries = [],
+  onSearch,
+  childProfile,
   isGenerating = false
 }) => {
   return (
@@ -51,16 +47,12 @@ const SimplifiedCurioHeader: React.FC<SimplifiedCurioHeaderProps> = ({
         </div>
         
         <MagicalSearchBar
-          query={query}
-          setQuery={setQuery}
-          handleSubmitQuery={() => {
-            if (query.trim()) {
-              handleSearch({ preventDefault: () => {} } as React.FormEvent);
-            }
-          }}
-          isGenerating={isGenerating}
-          recentQueries={recentQueries}
+          onSearch={onSearch}
+          childProfile={childProfile}
+          isLoading={isGenerating}
           placeholder="Ask another question or search within this topic..."
+          showSuggestions={false}
+          size="md"
         />
       </div>
     </motion.div>

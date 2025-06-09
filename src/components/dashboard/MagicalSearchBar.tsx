@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { Search, Sparkles, Wand2 } from 'lucide-react';
+import { Search, Sparkles, Wand2, Camera, Mic } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -8,21 +8,28 @@ import { useWonderSuggestions } from '@/hooks/use-wonder-suggestions';
 
 interface MagicalSearchBarProps {
   onSearch: (query: string) => void;
-  childProfile: any;
+  childProfile?: any;
   isLoading?: boolean;
   placeholder?: string;
+  onImageCapture?: (file: File) => void;
+  showSuggestions?: boolean;
+  size?: 'sm' | 'md' | 'lg';
 }
 
 const MagicalSearchBar: React.FC<MagicalSearchBarProps> = ({
   onSearch,
   childProfile,
   isLoading = false,
-  placeholder = "What makes you wonder today?"
+  placeholder = "What makes you wonder today?",
+  onImageCapture,
+  showSuggestions = true,
+  size = 'lg'
 }) => {
   const [query, setQuery] = useState('');
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showSuggestionsList, setShowSuggestionsList] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Memoize the child data to prevent unnecessary re-renders
   const childData = React.useMemo(() => ({
@@ -45,14 +52,14 @@ const MagicalSearchBar: React.FC<MagicalSearchBarProps> = ({
     if (query.trim()) {
       onSearch(query.trim());
       setQuery('');
-      setShowSuggestions(false);
+      setShowSuggestionsList(false);
     }
   }, [query, onSearch]);
 
   const handleSuggestionClick = useCallback((suggestion: string) => {
     setQuery(suggestion);
     onSearch(suggestion);
-    setShowSuggestions(false);
+    setShowSuggestionsList(false);
   }, [onSearch]);
 
   const handleRefreshSuggestions = useCallback(() => {
@@ -61,19 +68,40 @@ const MagicalSearchBar: React.FC<MagicalSearchBarProps> = ({
   }, [refreshSuggestions]);
 
   const handleFocus = useCallback(() => {
-    setShowSuggestions(true);
-  }, []);
+    if (showSuggestions) {
+      setShowSuggestionsList(true);
+    }
+  }, [showSuggestions]);
 
   const handleBlur = useCallback(() => {
     // Delay hiding suggestions to allow clicks
-    setTimeout(() => setShowSuggestions(false), 200);
+    setTimeout(() => setShowSuggestionsList(false), 200);
   }, []);
+
+  const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && onImageCapture) {
+      onImageCapture(file);
+    }
+  }, [onImageCapture]);
+
+  const sizeClasses = {
+    sm: 'text-sm py-2 pl-10 pr-12',
+    md: 'text-base py-3 pl-12 pr-14',
+    lg: 'text-lg py-4 pl-12 pr-16'
+  };
+
+  const iconSizes = {
+    sm: 'h-4 w-4',
+    md: 'h-5 w-5',
+    lg: 'h-5 w-5'
+  };
 
   return (
     <div className="relative w-full max-w-2xl mx-auto">
       <form onSubmit={handleSubmit} className="relative">
         <div className="relative">
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white/40 h-5 w-5" />
+          <Search className={`absolute left-4 top-1/2 transform -translate-y-1/2 text-white/40 ${iconSizes[size]}`} />
           <Input
             ref={inputRef}
             type="text"
@@ -82,26 +110,50 @@ const MagicalSearchBar: React.FC<MagicalSearchBarProps> = ({
             onFocus={handleFocus}
             onBlur={handleBlur}
             placeholder={placeholder}
-            className="pl-12 pr-16 py-4 text-lg bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-wonderwhiz-bright-pink focus:ring-wonderwhiz-bright-pink/20"
+            className={`${sizeClasses[size]} bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-wonderwhiz-bright-pink focus:ring-wonderwhiz-bright-pink/20 rounded-xl`}
             disabled={isLoading}
           />
-          <Button
-            type="submit"
-            size="sm"
-            disabled={!query.trim() || isLoading}
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/90"
-          >
-            {isLoading ? (
-              <div className="h-4 w-4 border-t-2 border-white rounded-full animate-spin" />
-            ) : (
-              <Sparkles className="h-4 w-4" />
+          
+          <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
+            {onImageCapture && (
+              <>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="h-8 w-8 p-0 text-white/60 hover:text-white hover:bg-white/10"
+                >
+                  <Camera className="h-4 w-4" />
+                </Button>
+              </>
             )}
-          </Button>
+            
+            <Button
+              type="submit"
+              size="sm"
+              disabled={!query.trim() || isLoading}
+              className="bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/90 h-8"
+            >
+              {isLoading ? (
+                <div className="h-4 w-4 border-t-2 border-white rounded-full animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
         </div>
       </form>
 
       <AnimatePresence>
-        {showSuggestions && suggestions.length > 0 && (
+        {showSuggestionsList && showSuggestions && suggestions.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
