@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 
 interface LearningPreference {
@@ -35,7 +36,7 @@ interface InteractionData {
   difficulty: string;
   engagement: number;
   needsHelp: boolean;
-  timestamp: string;
+  timestamp?: string; // Made optional since trackInteraction adds it automatically
 }
 
 export const usePersonalizationEngine = (childId: string) => {
@@ -202,7 +203,7 @@ export const usePersonalizationEngine = (childId: string) => {
 
     // Determine time of day preference (simplified)
     const timePreferences = interactions.reduce((acc, interaction) => {
-      const hour = new Date(interaction.timestamp).getHours();
+      const hour = new Date(interaction.timestamp || new Date().toISOString()).getHours();
       let timeOfDay: string;
       if (hour < 12) timeOfDay = 'morning';
       else if (hour < 17) timeOfDay = 'afternoon';
