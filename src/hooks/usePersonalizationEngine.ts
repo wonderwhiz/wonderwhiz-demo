@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 
 interface LearningPreference {
@@ -28,21 +27,24 @@ interface PersonalizationData {
   };
 }
 
+interface InteractionData {
+  topicId?: string;
+  contentType: string;
+  timeSpent: number;
+  completionRate: number;
+  difficulty: string;
+  engagement: number;
+  needsHelp: boolean;
+  timestamp: string;
+}
+
 export const usePersonalizationEngine = (childId: string) => {
   const [personalizationData, setPersonalizationData] = useState<PersonalizationData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Track learning behavior - simplified to just store in localStorage for now
-  const trackInteraction = useCallback(async (data: {
-    topicId?: string;
-    contentType: string;
-    timeSpent: number;
-    completionRate: number;
-    difficulty: string;
-    engagement: number; // 0-1 scale
-    needsHelp: boolean;
-  }) => {
+  const trackInteraction = useCallback(async (data: InteractionData) => {
     try {
       // Store interaction data in localStorage for now
       const interactions = JSON.parse(localStorage.getItem(`interactions-${childId}`) || '[]');
@@ -130,7 +132,7 @@ export const usePersonalizationEngine = (childId: string) => {
   }, [childId]);
 
   // Analyze interactions to determine learning patterns
-  const analyzeInteractions = (interactions: any[]): PersonalizationData => {
+  const analyzeInteractions = (interactions: InteractionData[]): PersonalizationData => {
     if (interactions.length === 0) {
       // Return default values
       return {
