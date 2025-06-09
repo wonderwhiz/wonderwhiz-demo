@@ -1,7 +1,7 @@
 
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronRight, Home, BookOpen, Compass, ArrowLeft } from 'lucide-react';
+import { ChevronRight, Home, BookOpen, Compass, ArrowLeft, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';

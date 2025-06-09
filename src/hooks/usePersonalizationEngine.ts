@@ -1,6 +1,5 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 
 interface LearningPreference {
   preferredDifficulty: 'easy' | 'medium' | 'hard';
@@ -34,7 +33,7 @@ export const usePersonalizationEngine = (childId: string) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Track learning behavior
+  // Track learning behavior - simplified to just store in localStorage for now
   const trackInteraction = useCallback(async (data: {
     topicId?: string;
     contentType: string;
@@ -45,11 +44,13 @@ export const usePersonalizationEngine = (childId: string) => {
     needsHelp: boolean;
   }) => {
     try {
-      await supabase.from('learning_interactions').insert({
-        child_id: childId,
+      // Store interaction data in localStorage for now
+      const interactions = JSON.parse(localStorage.getItem(`interactions-${childId}`) || '[]');
+      interactions.push({
         ...data,
         timestamp: new Date().toISOString()
       });
+      localStorage.setItem(`interactions-${childId}`, JSON.stringify(interactions));
     } catch (error) {
       console.error('Error tracking interaction:', error);
     }
@@ -60,32 +61,15 @@ export const usePersonalizationEngine = (childId: string) => {
     try {
       setIsLoading(true);
       
-      // Fetch recent learning interactions
-      const { data: interactions, error: interactionsError } = await supabase
-        .from('learning_interactions')
-        .select('*')
-        .eq('child_id', childId)
-        .order('timestamp', { ascending: false })
-        .limit(50);
-
-      if (interactionsError) throw interactionsError;
-
-      // Analyze patterns
-      const analysis = analyzeInteractions(interactions || []);
+      // Get interactions from localStorage
+      const interactions = JSON.parse(localStorage.getItem(`interactions-${childId}`) || '[]');
       
-      // Update or create personalization data
-      const { error: upsertError } = await supabase
-        .from('child_personalization')
-        .upsert({
-          child_id: childId,
-          preferences: analysis.preferences,
-          adaptive_settings: analysis.adaptiveSettings,
-          recommendations: analysis.recommendations,
-          updated_at: new Date().toISOString()
-        });
-
-      if (upsertError) throw upsertError;
-
+      // Analyze patterns
+      const analysis = analyzeInteractions(interactions);
+      
+      // Store personalization data in localStorage
+      localStorage.setItem(`personalization-${childId}`, JSON.stringify(analysis));
+      
       setPersonalizationData(analysis);
     } catch (error) {
       console.error('Error updating personalization:', error);
@@ -99,22 +83,11 @@ export const usePersonalizationEngine = (childId: string) => {
   useEffect(() => {
     const loadPersonalizationData = async () => {
       try {
-        const { data, error } = await supabase
-          .from('child_personalization')
-          .select('*')
-          .eq('child_id', childId)
-          .single();
-
-        if (error && error.code !== 'PGRST116') {
-          throw error;
-        }
-
-        if (data) {
-          setPersonalizationData({
-            preferences: data.preferences,
-            adaptiveSettings: data.adaptive_settings,
-            recommendations: data.recommendations
-          });
+        // Try to load from localStorage first
+        const stored = localStorage.getItem(`personalization-${childId}`);
+        
+        if (stored) {
+          setPersonalizationData(JSON.parse(stored));
         } else {
           // Initialize with defaults
           const defaultPersonalization: PersonalizationData = {
@@ -191,7 +164,7 @@ export const usePersonalizationEngine = (childId: string) => {
       const diff = interaction.difficulty;
       if (!acc[diff]) acc[diff] = { total: 0, completions: 0, engagement: 0 };
       acc[diff].total++;
-      acc[diff].completions += interaction.completion_rate;
+      acc[diff].completions += interaction.completionRate;
       acc[diff].engagement += interaction.engagement;
       return acc;
     }, {} as Record<string, { total: number; completions: number; engagement: number }>);
@@ -209,7 +182,7 @@ export const usePersonalizationEngine = (childId: string) => {
 
     // Analyze content type preferences
     const contentTypePerformance = interactions.reduce((acc, interaction) => {
-      const type = interaction.content_type;
+      const type = interaction.contentType;
       if (!acc[type]) acc[type] = { engagement: 0, count: 0 };
       acc[type].engagement += interaction.engagement;
       acc[type].count++;
@@ -222,7 +195,7 @@ export const usePersonalizationEngine = (childId: string) => {
       .map(([type]) => type);
 
     // Calculate optimal session length
-    const avgTimeSpent = interactions.reduce((sum, i) => sum + i.time_spent, 0) / interactions.length;
+    const avgTimeSpent = interactions.reduce((sum, i) => sum + i.timeSpent, 0) / interactions.length;
     const optimalSessionLength = Math.max(5, Math.min(30, Math.round(avgTimeSpent)));
 
     // Determine time of day preference (simplified)
@@ -244,8 +217,8 @@ export const usePersonalizationEngine = (childId: string) => {
 
     // Calculate adaptive settings
     const avgEngagement = interactions.reduce((sum, i) => sum + i.engagement, 0) / interactions.length;
-    const avgCompletion = interactions.reduce((sum, i) => sum + i.completion_rate, 0) / interactions.length;
-    const helpRequests = interactions.filter(i => i.needs_help).length / interactions.length;
+    const avgCompletion = interactions.reduce((sum, i) => sum + i.completionRate, 0) / interactions.length;
+    const helpRequests = interactions.filter(i => i.needsHelp).length / interactions.length;
 
     return {
       preferences: {

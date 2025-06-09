@@ -164,28 +164,35 @@ const EnhancedDashboardContainer = () => {
       />
 
       {/* Global Styles for Accessibility */}
-      <style jsx global>{`
+      <style>{`
         :root {
           --font-size-scale: ${accessibilitySettings.fontSize / 100};
         }
         
+        ${accessibilitySettings.highContrast ? `
         .high-contrast {
           --wonderwhiz-deep-purple: #000000;
           --wonderwhiz-bright-pink: #ffffff;
           --wonderwhiz-vibrant-yellow: #ffff00;
         }
+        ` : ''}
         
+        ${accessibilitySettings.reduceMotion ? `
         .reduce-motion * {
           animation-duration: 0.01ms !important;
           animation-iteration-count: 1 !important;
           transition-duration: 0.01ms !important;
         }
+        ` : ''}
         
+        ${accessibilitySettings.focusIndicators ? `
         .enhanced-focus *:focus {
           outline: 3px solid #4A6FFF !important;
           outline-offset: 2px !important;
         }
+        ` : ''}
         
+        ${accessibilitySettings.colorBlindMode !== 'none' ? `
         [data-colorblind-mode="protanopia"] {
           filter: url(#protanopia);
         }
@@ -197,6 +204,7 @@ const EnhancedDashboardContainer = () => {
         [data-colorblind-mode="tritanopia"] {
           filter: url(#tritanopia);
         }
+        ` : ''}
         
         html {
           font-size: calc(16px * var(--font-size-scale, 1));

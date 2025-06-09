@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Star, Target, Zap, BookOpen, Brain, Heart } from 'lucide-react';
+import { Trophy, Star, Target, Zap, BookOpen, Brain, Heart, Compass } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
