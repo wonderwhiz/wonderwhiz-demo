@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -105,7 +106,7 @@ End with a question that encourages them to think more deeply about the topic or
     console.log("Sending request to Groq API for chat response");
     
     try {
-      // First try using Groq API with Llama model
+      // First try using Groq API with latest Llama model
       const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -113,7 +114,7 @@ End with a question that encourages them to think more deeply about the topic or
           'Authorization': `Bearer ${GROQ_API_KEY}`
         },
         body: JSON.stringify({
-          model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+          model: 'llama-3.3-70b-versatile', // Updated to latest Groq Llama model
           messages: [
             { role: 'system', content: systemMessage },
             { role: 'user', content: messageContent }

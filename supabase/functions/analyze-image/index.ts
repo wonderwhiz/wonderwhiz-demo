@@ -49,7 +49,7 @@ serve(async (req) => {
     let apiResponse = null;
     let data = null;
     
-    // Try Groq first with Llama 4 Insight (Vision model)
+    // Try Groq first with latest Llama Vision model
     while (attempts < maxAttempts) {
       attempts++;
       try {
@@ -63,7 +63,7 @@ serve(async (req) => {
               "Authorization": `Bearer ${groqApiKey}`
             },
             body: JSON.stringify({
-              model: "meta-llama/llama-4-insight-32b-preview",
+              model: "llama-3.2-90b-vision-preview", // Updated to latest Groq vision model
               messages: [
                 {
                   role: "system",
