@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Camera, Volume2, Sparkles, CheckCircle, RefreshCw } from 'lucide-react';
@@ -63,14 +62,14 @@ const SectionViewer: React.FC<SectionViewerProps> = ({
 
       console.log(`Generating new section content for: ${currentSection.title}`);
 
-      // Generate new section content with better error handling
+      // Generate new section content with correct parameter names
       const { data, error: functionError } = await supabase.functions.invoke('generate-section-content', {
         body: {
-          topic: topic.title,
-          section_title: currentSection.title,
-          section_description: currentSection.description,
-          child_age: childAge,
-          section_number: sectionIndex + 1
+          topicId: topic.id,
+          sectionTitle: currentSection.title,
+          sectionNumber: sectionIndex + 1,
+          childAge: childAge,
+          topicTitle: topic.title
         }
       });
 
@@ -85,46 +84,12 @@ const SectionViewer: React.FC<SectionViewerProps> = ({
 
       console.log('Content generated successfully:', data);
 
-      // Save section to database
-      const { data: newSection, error: saveError } = await supabase
-        .from('learning_sections')
-        .insert({
-          topic_id: topic.id,
-          section_number: sectionIndex + 1,
-          title: currentSection.title,
-          content: data.content,
-          word_count: data.word_count || 100,
-          facts: data.facts || [],
-          story_mode_content: data.story_mode_content
-        })
-        .select()
-        .single();
-
-      if (saveError) {
-        console.error('Save error:', saveError);
-        // Even if saving fails, we can still show the content
-        const tempSection: LearningSection = {
-          id: `temp-${Date.now()}`,
-          topic_id: topic.id,
-          section_number: sectionIndex + 1,
-          title: currentSection.title,
-          content: data.content,
-          word_count: data.word_count || 100,
-          facts: Array.isArray(data.facts) ? data.facts : [],
-          story_mode_content: data.story_mode_content,
-          image_url: null,
-          image_generated: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
-        setSection(tempSection);
-      } else {
-        const convertedSection: LearningSection = {
-          ...newSection,
-          facts: Array.isArray(newSection.facts) ? newSection.facts as string[] : []
-        };
-        setSection(convertedSection);
-      }
+      // The function now returns the complete section data, so use it directly
+      const convertedSection: LearningSection = {
+        ...data,
+        facts: Array.isArray(data.facts) ? data.facts as string[] : []
+      };
+      setSection(convertedSection);
       
       // Show image permission after content loads
       setTimeout(() => {
@@ -445,7 +410,7 @@ Keep asking questions and exploring - that's how great discoveries are made!`,
         <div className="flex justify-between items-center mt-12 pt-6 border-t border-white/10">
           <div className="text-white/60 text-sm">
             📊 Word count: {section?.word_count || 0} • 
-            ⏱️ Reading time: ~{currentSection.estimated_reading_time} minutes
+            ⏱️ Reading time: ~{Math.ceil((section?.word_count || 0) / 200)} minutes
           </div>
           
           <Button
