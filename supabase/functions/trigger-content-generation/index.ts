@@ -1,7 +1,6 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.21.0"
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9,287 +8,206 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { curioId, childId } = await req.json();
+    const { curioId, childId } = await req.json()
+    console.log(`Triggering content generation for curio ${curioId} and child ${childId}`)
 
-    if (!curioId || !childId) {
-      return new Response(
-        JSON.stringify({ error: 'Missing required parameters' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabase = createClient(supabaseUrl, supabaseKey)
 
-    console.log(`Triggering content generation for curio ${curioId} and child ${childId}`);
-    
-    // Create a Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    
-    if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Missing Supabase environment variables');
-    }
-    
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    // Get the curio details
-    const { data: curioData, error: curioError } = await supabase
+    // Get curio details
+    const { data: curio, error: curioError } = await supabase
       .from('curios')
       .select('title, query')
       .eq('id', curioId)
-      .single();
+      .single()
 
-    if (curioError || !curioData) {
-      throw new Error('Could not fetch curio data: ' + (curioError?.message || 'No data found'));
+    if (curioError || !curio) {
+      throw new Error('Curio not found')
     }
-    
-    console.log(`Found curio with title: ${curioData.title}`);
 
-    // Get the child profile
-    const { data: childProfile, error: childError } = await supabase
+    console.log('Found curio with title:', curio.title)
+
+    // Get child profile
+    const { data: child, error: childError } = await supabase
       .from('child_profiles')
-      .select('*')
+      .select('name, age, interests')
       .eq('id', childId)
-      .single();
+      .single()
 
-    if (childError || !childProfile) {
-      throw new Error('Could not fetch child profile: ' + (childError?.message || 'No profile found'));
-    }
-    
-    console.log(`Found child profile with name: ${childProfile.name}`);
-
-    // Check if blocks already exist for this curio to avoid duplicate generation
-    const { count, error: countError } = await supabase
-      .from('content_blocks')
-      .select('*', { count: 'exact', head: true })
-      .eq('curio_id', curioId);
-      
-    if (countError) {
-      throw new Error('Error checking existing blocks: ' + countError.message);
-    }
-    
-    if (count && count > 0) {
-      console.log(`Found ${count} existing blocks, skipping generation`);
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: `Found ${count} existing blocks, no need to generate new ones` 
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (childError || !child) {
+      throw new Error('Child profile not found')
     }
 
-    // Generate placeholder blocks
-    const placeholderBlocks = [
-      {
-        curio_id: curioId,
-        specialist_id: 'nova',
-        type: 'fact',
-        content: { 
-          fact: "I'm discovering fascinating information about this topic...",
-          rabbitHoles: []
+    console.log('Found child profile with name:', child.name)
+
+    // Generate content blocks immediately
+    const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY')
+    const childAge = child.age || 10
+
+    const contentBlocks = []
+
+    if (GROQ_API_KEY) {
+      try {
+        // Generate multiple blocks in parallel
+        const blockPromises = [
+          generateBlock('fact', curio.title, childAge, 'nova'),
+          generateBlock('quiz', curio.title, childAge, 'spark'),
+          generateBlock('funFact', curio.title, childAge, 'prism'),
+          generateBlock('activity', curio.title, childAge, 'pixel')
+        ]
+
+        const results = await Promise.allSettled(blockPromises)
+        
+        results.forEach((result, index) => {
+          if (result.status === 'fulfilled' && result.value) {
+            contentBlocks.push(result.value)
+          }
+        })
+
+      } catch (error) {
+        console.error('Error generating blocks with Groq:', error)
+      }
+    }
+
+    // Add fallback blocks if needed
+    if (contentBlocks.length === 0) {
+      contentBlocks.push(
+        {
+          specialist_id: 'nova',
+          type: 'fact',
+          content: {
+            fact: `${curio.title} is a fascinating topic that has captured human curiosity for ages. Let's explore what makes it so special!`,
+            rabbitHoles: [`How does ${curio.title} work?`, `Why is ${curio.title} important?`]
+          }
+        },
+        {
+          specialist_id: 'spark',
+          type: 'quiz',
+          content: {
+            question: `What would you like to know most about ${curio.title}?`,
+            options: [
+              'How it works',
+              'Where we find it',
+              'Why it matters',
+              'Fun facts about it'
+            ],
+            correctIndex: 0
+          }
         }
-      },
-      {
-        curio_id: curioId,
-        specialist_id: 'spark',
-        type: 'funFact',
-        content: { 
-          text: "Did you know? I'm finding interesting facts about this topic..."
+      )
+    }
+
+    // Insert all blocks into database
+    for (const block of contentBlocks) {
+      try {
+        const { error: insertError } = await supabase
+          .from('content_blocks')
+          .insert({
+            curio_id: curioId,
+            specialist_id: block.specialist_id,
+            type: block.type,
+            content: block.content
+          })
+
+        if (insertError) {
+          console.error('Error inserting block:', insertError)
+        } else {
+          console.log('Successfully inserted content block')
         }
-      }
-    ];
-    
-    // Insert placeholder blocks first so the UI has something to show
-    for (const block of placeholderBlocks) {
-      const { error: insertError } = await supabase
-        .from('content_blocks')
-        .insert(block);
-
-      if (insertError) {
-        console.error("Error inserting placeholder block:", insertError);
+      } catch (err) {
+        console.error('Error inserting block:', err)
       }
     }
 
-    // Generate relevant content based on the curio query
-    const topic = curioData.title || curioData.query;
-    const blocks = generateContentForTopic(topic);
-    
-    // Insert the generated blocks into the database
-    for (const block of blocks) {
-      const blockWithCurioId = {
-        ...block,
-        curio_id: curioId
-      };
-      
-      const { error: insertError } = await supabase
-        .from('content_blocks')
-        .insert(blockWithCurioId);
-
-      if (insertError) {
-        console.error("Error inserting block:", insertError);
-      } else {
-        console.log("Successfully inserted content block");
-      }
-    }
-
-    // Clear any generation errors on the curio
-    await supabase
-      .from('curios')
-      .update({ generation_error: null })
-      .eq('id', curioId);
-
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: `Generated ${blocks.length} blocks for curio ${curioId}` 
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ 
+      success: true, 
+      blocksGenerated: contentBlocks.length 
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
 
   } catch (error) {
-    console.error('Error in trigger-content-generation function:', error);
-    return new Response(
-      JSON.stringify({ error: error.message || 'Failed to trigger content generation' }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-    );
+    console.error('Error in trigger-content-generation:', error)
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
   }
-});
+})
 
-// Helper function to generate content based on the topic
-function generateContentForTopic(topic: string) {
-  // Extract key concepts from the topic
-  const lowerTopic = topic.toLowerCase();
+async function generateBlock(type: string, topic: string, childAge: number, specialistId: string) {
+  const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY')
   
-  // Brain waking up content (for the example shown)
-  if (lowerTopic.includes('brain') && (lowerTopic.includes('wake') || lowerTopic.includes('waking'))) {
-    return [
-      {
-        specialist_id: 'nova',
-        type: 'fact',
-        content: { 
-          fact: "When you wake up, your brain transitions from slow delta waves of deep sleep to faster alpha and beta waves of alertness. This process is triggered by your circadian rhythm, a natural 24-hour cycle regulated by a tiny region in your brain called the suprachiasmatic nucleus.",
-          rabbitHoles: [
-            "What are brain waves?",
-            "How does the circadian rhythm work?",
-            "Why do we feel groggy sometimes when waking up?"
-          ]
-        }
-      },
-      {
-        specialist_id: 'spark',
-        type: 'funFact',
-        content: { 
-          text: "Did you know? Your brain actually begins the waking process about an hour before you actually open your eyes! Special cells detect changing light levels through your eyelids and trigger the release of cortisol, a hormone that helps you feel alert and ready for the day."
-        }
-      },
-      {
-        specialist_id: 'prism',
-        type: 'quiz',
-        content: {
-          question: "What hormone helps your brain wake up in the morning?",
-          options: [
-            "Melatonin",
-            "Cortisol",
-            "Insulin",
-            "Adrenaline"
-          ],
-          correctIndex: 1,
-          explanation: "Cortisol is often called the 'wake-up hormone' because it increases in the morning and helps your brain become alert and ready for the day's activities."
-        }
-      },
-      {
-        specialist_id: 'pixel',
-        type: 'fact',
-        content: {
-          fact: "Morning brain fog happens when you wake during the wrong sleep stage. Your brain cycles through different sleep stages including deep sleep and REM sleep. If you wake during deep sleep, your brain needs extra time to 'boot up,' similar to how computers take time to start.",
-          rabbitHoles: [
-            "What are the different sleep stages?",
-            "How long should each sleep cycle be?",
-            "What is REM sleep?"
-          ]
-        }
-      },
-      {
-        specialist_id: 'lotus',
-        type: 'mindfulness',
-        content: {
-          title: "Morning Brain Activation",
-          instruction: "Try this quick exercise: When you first wake up, wiggle your fingers and toes while taking three deep breaths. This simple activity helps increase blood flow to your brain and activates neural pathways, helping you wake up more quickly.",
-          duration: "1 minute"
-        }
-      },
-      {
-        specialist_id: 'nova',
-        type: 'fact',
-        content: {
-          fact: "Light is crucial for waking up your brain! When light enters your eyes, it signals special receptors called ipRGCs that help regulate your body clock and suppress melatonin (the sleep hormone). This is why exposure to morning sunlight or bright light can help you feel more awake and alert.",
-          rabbitHoles: [
-            "How does light affect our sleep-wake cycle?",
-            "What happens if you wake up before sunrise?",
-            "Do screens affect our morning wakefulness?"
-          ]
-        }
-      }
-    ];
+  if (!GROQ_API_KEY) {
+    return null
   }
-  
-  // Default to general knowledge content if topic doesn't match specific patterns
-  return generateDefaultContent(topic);
+
+  try {
+    const prompt = createPrompt(type, topic, childAge)
+    
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${GROQ_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          {
+            role: 'system',
+            content: `You are an expert educational content creator for children aged ${childAge}. Create engaging, age-appropriate content. Return ONLY valid JSON.`
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        max_tokens: 400,
+        temperature: 0.8
+      })
+    })
+
+    if (!response.ok) {
+      throw new Error(`Groq API error: ${response.status}`)
+    }
+
+    const data = await response.json()
+    const content = JSON.parse(data.choices[0].message.content)
+
+    return {
+      specialist_id: specialistId,
+      type: type,
+      content: content
+    }
+
+  } catch (error) {
+    console.error(`Error generating ${type} block:`, error)
+    return null
+  }
 }
 
-// Generate general knowledge content when we don't have specific content for a topic
-function generateDefaultContent(topic: string) {
-  return [
-    {
-      specialist_id: 'nova',
-      type: 'fact',
-      content: { 
-        fact: `${topic} is a fascinating subject that connects to many areas of knowledge. Exploring this topic can help us understand the world around us in new ways.`,
-        rabbitHoles: [
-          `What is the history of ${topic}?`,
-          `How does ${topic} work?`,
-          `Why is ${topic} important?`
-        ]
-      }
-    },
-    {
-      specialist_id: 'spark',
-      type: 'funFact',
-      content: { 
-        text: `Did you know? ${topic} has connections to many different fields of study, and new discoveries about it are being made all the time!`
-      }
-    },
-    {
-      specialist_id: 'prism',
-      type: 'quiz',
-      content: {
-        question: `Which of these is most closely related to ${topic}?`,
-        options: [
-          "Science",
-          "History",
-          "Art",
-          "All of the above"
-        ],
-        correctIndex: 3,
-        explanation: `${topic} connects to many different fields, including science, history, and art. Learning about it from different perspectives can deepen our understanding!`
-      }
-    },
-    {
-      specialist_id: 'atlas',
-      type: 'fact',
-      content: {
-        fact: `People have been interested in ${topic} throughout history. Different cultures and civilizations have developed their own understanding and approaches to this subject.`,
-        rabbitHoles: [
-          `How has our understanding of ${topic} changed over time?`,
-          `How do different cultures view ${topic}?`,
-          `What might be the future of ${topic}?`
-        ]
-      }
-    }
-  ];
+function createPrompt(type: string, topic: string, childAge: number) {
+  switch (type) {
+    case 'fact':
+      return `Create a fact block about "${topic}". Return JSON: {"fact": "Amazing fact text", "rabbitHoles": ["Question 1", "Question 2"]}`
+    
+    case 'quiz':
+      return `Create a quiz about "${topic}". Return JSON: {"question": "Question text", "options": ["A", "B", "C", "D"], "correctIndex": 0}`
+    
+    case 'funFact':
+      return `Create a fun fact about "${topic}". Return JSON: {"text": "Did you know that..."}`
+    
+    case 'activity':
+      return `Create an activity about "${topic}". Return JSON: {"activity": "Try this fun activity...", "instructions": ["Step 1", "Step 2"]}`
+    
+    default:
+      return `Create educational content about "${topic}". Return JSON with appropriate fields.`
+  }
 }

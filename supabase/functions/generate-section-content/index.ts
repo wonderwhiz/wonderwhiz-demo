@@ -1,5 +1,6 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,247 +13,180 @@ serve(async (req) => {
   }
 
   try {
-    const { topic, section_title, section_description, child_age, section_number } = await req.json()
-
-    // Validate required parameters
-    if (!topic || !section_title || !child_age) {
-      throw new Error('Missing required parameters: topic, section_title, and child_age are required')
-    }
+    const { topicId, sectionTitle, sectionNumber, childAge, topicTitle } = await req.json()
+    console.log(`Generating content for: ${sectionTitle} (Age: ${childAge})`)
 
     const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY')
-    if (!GROQ_API_KEY) {
-      console.error('GROQ_API_KEY not found in environment variables')
-      return generateFallbackContent(topic, section_title, section_description, child_age)
-    }
+    
+    let content = ''
+    let facts = []
 
-    // Create age-appropriate content prompt
-    const prompt = createContentPrompt(topic, section_title, section_description, child_age)
-    console.log(`Generating content for: ${section_title} (Age: ${child_age})`)
+    if (GROQ_API_KEY) {
+      try {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${GROQ_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'llama-3.3-70b-versatile',
+            messages: [
+              {
+                role: 'system',
+                content: `You are an expert children's educator. Create engaging, age-appropriate content for ${childAge}-year-olds about ${topicTitle}. 
 
-    try {
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${GROQ_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: "llama-3.1-70b-versatile",
-          messages: [
-            {
-              role: "system",
-              content: `You are Wonder Whiz, an award-winning educational AI created by leading IB educationalists and Cambridge PhD child psychologists. You create engaging, age-appropriate encyclopedia content that makes learning fun and addictive through gamification principles.
+Write 2-3 paragraphs of clear, educational content about "${sectionTitle}". Use simple language, exciting examples, and make it fun to read.
 
-CRITICAL: You MUST respond with valid JSON only. No extra text before or after the JSON.`
-            },
-            {
-              role: "user",
-              content: prompt
-            }
-          ],
-          temperature: 0.7,
-          max_tokens: 2000
+Then provide 3 fascinating facts as a JSON array.
+
+Format your response exactly like this:
+CONTENT:
+[Your 2-3 paragraphs here]
+
+FACTS:
+["Fact 1", "Fact 2", "Fact 3"]`
+              },
+              {
+                role: 'user',
+                content: `Create content for the section "${sectionTitle}" about ${topicTitle}`
+              }
+            ],
+            max_tokens: 800,
+            temperature: 0.8
+          })
         })
-      })
 
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error(`Groq API error ${response.status}:`, errorText)
-        throw new Error(`Groq API error: ${response.status}`)
-      }
+        if (response.ok) {
+          const data = await response.json()
+          const fullResponse = data.choices[0].message.content
 
-      const data = await response.json()
-      const generatedContent = data.choices[0]?.message?.content
+          // Parse the response
+          const contentMatch = fullResponse.match(/CONTENT:\s*([\s\S]*?)\s*FACTS:/);
+          const factsMatch = fullResponse.match(/FACTS:\s*(\[[\s\S]*\])/);
 
-      if (!generatedContent) {
-        throw new Error('No content generated from Groq API')
-      }
+          if (contentMatch) {
+            content = contentMatch[1].trim()
+          }
 
-      console.log('Successfully generated content from Groq API')
-      
-      // Parse the generated content
-      const parsedContent = parseGeneratedContent(generatedContent)
-      
-      return new Response(
-        JSON.stringify(parsedContent),
-        { 
-          headers: { 
-            ...corsHeaders, 
-            'Content-Type': 'application/json' 
-          } 
+          if (factsMatch) {
+            try {
+              facts = JSON.parse(factsMatch[1])
+            } catch (e) {
+              console.log('Failed to parse facts, using fallback')
+              facts = generateFallbackFacts(sectionTitle, topicTitle)
+            }
+          }
+
+          console.log('Successfully generated content with Groq')
+        } else {
+          throw new Error(`Groq API error: ${response.status}`)
         }
-      )
-    } catch (apiError) {
-      console.error('Groq API call failed:', apiError)
-      console.log('Falling back to local content generation')
-      return generateFallbackContent(topic, section_title, section_description, child_age)
+      } catch (groqError) {
+        console.error('Groq API call failed:', groqError.message)
+        // Fall back to local content generation
+        const fallbackContent = generateFallbackContent(sectionTitle, topicTitle, childAge)
+        content = fallbackContent.content
+        facts = fallbackContent.facts
+      }
+    } else {
+      console.log('No Groq API key, using fallback content generation')
+      const fallbackContent = generateFallbackContent(sectionTitle, topicTitle, childAge)
+      content = fallbackContent.content
+      facts = fallbackContent.facts
     }
+
+    // Save to database
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabase = createClient(supabaseUrl, supabaseKey)
+
+    const { data: section, error } = await supabase
+      .from('learning_sections')
+      .insert({
+        topic_id: topicId,
+        title: sectionTitle,
+        section_number: sectionNumber,
+        content: content,
+        facts: facts,
+        word_count: content.split(' ').length
+      })
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Database error:', error)
+      throw error
+    }
+
+    console.log('Successfully created section:', section.id)
+    return new Response(JSON.stringify(section), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+
   } catch (error) {
     console.error('Error in generate-section-content:', error)
-    
-    // Always try to provide fallback content instead of failing
-    const fallbackContent = {
-      content: "This is an exciting topic we're exploring together! Let's dive in and discover amazing things about this subject.",
-      facts: [
-        "This topic has fascinating aspects that scientists are still discovering!",
-        "There are many real-world applications of this concept!",
-        "This knowledge connects to many other interesting subjects!"
-      ],
-      story_mode_content: null,
-      word_count: 50
-    }
-    
-    return new Response(
-      JSON.stringify(fallbackContent),
-      { 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        } 
-      }
-    )
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
   }
 })
 
-function createContentPrompt(topic: string, sectionTitle: string, sectionDescription: string, childAge: number) {
-  const ageGuidance = getAgeGuidance(childAge)
+function generateFallbackContent(sectionTitle: string, topicTitle: string, childAge: number) {
+  console.log('Falling back to local content generation')
   
-  return `Create engaging encyclopedia content for "${sectionTitle}" about "${topic}".
+  const templates = {
+    'Introduction': {
+      content: `Welcome to the amazing world of ${topicTitle}! This is going to be an exciting journey where we'll discover incredible things together.
 
-Section Description: ${sectionDescription || 'Exploring this fascinating topic'}
-Target Age: ${childAge} years old
-${ageGuidance}
+${topicTitle} is all around us, and once you start learning about it, you'll see it everywhere! From the moment you wake up in the morning to when you go to sleep at night, ${topicTitle} plays an important role in our daily lives.
 
-Requirements:
-- Write approximately 500 words of detailed, engaging content
-- Include 3-5 amazing facts that will blow young minds
-- Use ${childAge <= 8 ? 'simple, fun language with emojis' : childAge <= 12 ? 'clear explanations with some technical terms' : 'detailed explanations with proper scientific/technical terminology'}
-- If the topic is complex or heavy, include a simple story/analogy to explain it
-- Make it educational but entertaining
-- Include specific examples and real-world applications
+Get ready to become an expert! We'll explore fascinating facts, learn how things work, and discover why ${topicTitle} is so special. Let's begin our adventure!`,
+      facts: [
+        `${topicTitle} has been fascinating people for thousands of years!`,
+        `Scientists are still discovering new things about ${topicTitle} every day.`,
+        `You can find examples of ${topicTitle} in your own backyard or home!`
+      ]
+    },
+    'Fun Facts': {
+      content: `Did you know that ${topicTitle} is full of surprises? There are so many amazing things that will blow your mind!
 
-CRITICAL: Respond ONLY with valid JSON in this exact format:
-{
-  "content": "Main 500-word content here...",
-  "facts": ["Fact 1", "Fact 2", "Fact 3", "Fact 4", "Fact 5"],
-  "story_mode_content": "Optional story/analogy if needed for complex topics",
-  "word_count": 500
-}
+Some of the coolest facts about ${topicTitle} might seem almost impossible to believe, but they're absolutely true! Scientists have spent years studying these incredible phenomena, and what they've discovered is truly spectacular.
 
-Make this content amazing and memorable!`
-}
+These fun facts will help you understand just how awesome ${topicTitle} really is. You'll be able to share these amazing discoveries with your friends and family!`,
+      facts: [
+        `The largest example of ${topicTitle} is bigger than you could ever imagine!`,
+        `${topicTitle} can be found in the most unexpected places on Earth.`,
+        `Some forms of ${topicTitle} are older than the dinosaurs!`
+      ]
+    },
+    'How It Works': {
+      content: `Have you ever wondered how ${topicTitle} actually works? The science behind it is absolutely fascinating!
 
-function getAgeGuidance(age: number) {
-  if (age <= 6) {
-    return `Age Guidance (5-6 years):
-- Use very simple words and short sentences
-- Include lots of emojis and exclamation points
-- Compare to things they know (toys, animals, family)
-- Use "imagine if..." scenarios
-- Keep paragraphs very short`
-  } else if (age <= 9) {
-    return `Age Guidance (7-9 years):
-- Use clear, straightforward language
-- Include fun comparisons and analogies
-- Add "did you know?" facts
-- Use some educational vocabulary but explain it
-- Make it interactive and engaging`
-  } else if (age <= 12) {
-    return `Age Guidance (10-12 years):
-- Use more sophisticated vocabulary
-- Include scientific concepts explained simply
-- Add historical context where relevant
-- Use real statistics and measurements
-- Encourage critical thinking`
-  } else {
-    return `Age Guidance (13-16 years):
-- Use proper scientific/academic terminology
-- Include complex concepts and theories
-- Add detailed explanations and mechanisms
-- Include current research and discoveries
-- Encourage deeper analysis and understanding`
+Everything in nature follows special rules, and ${topicTitle} is no exception. These rules, called scientific principles, help us understand why things happen the way they do. It's like solving an exciting puzzle!
+
+When we understand how ${topicTitle} works, we can appreciate it even more. We can also use this knowledge to create amazing inventions and solve important problems in our world.`,
+      facts: [
+        `The process behind ${topicTitle} involves incredible forces of nature.`,
+        `Scientists use special tools to study how ${topicTitle} works.`,
+        `Understanding ${topicTitle} has led to many important inventions!`
+      ]
+    }
+  }
+
+  const template = templates[sectionTitle] || templates['Introduction']
+  
+  return {
+    content: template.content,
+    facts: template.facts
   }
 }
 
-function parseGeneratedContent(content: string) {
-  try {
-    // Clean the content - remove any markdown formatting or extra text
-    let cleanContent = content.trim()
-    
-    // Find JSON content between curly braces
-    const jsonStart = cleanContent.indexOf('{')
-    const jsonEnd = cleanContent.lastIndexOf('}')
-    
-    if (jsonStart !== -1 && jsonEnd !== -1) {
-      cleanContent = cleanContent.substring(jsonStart, jsonEnd + 1)
-    }
-    
-    return JSON.parse(cleanContent)
-  } catch {
-    // If JSON parsing fails, create structured response from text
-    const lines = content.split('\n').filter(line => line.trim())
-    
-    // Extract facts (lines that start with bullet points or numbers)
-    const facts = lines
-      .filter(line => /^[\d•\-\*]/.test(line.trim()))
-      .map(line => line.replace(/^[\d•\-\*\s\.]+/, '').trim())
-      .slice(0, 5)
-    
-    // Remove facts from main content
-    const mainContent = lines
-      .filter(line => !/^[\d•\-\*]/.test(line.trim()))
-      .join('\n')
-    
-    return {
-      content: mainContent || "This is a fascinating topic with many interesting aspects to explore!",
-      facts: facts.length > 0 ? facts : [
-        "This topic has fascinating aspects that scientists are still discovering!",
-        "There are many real-world applications of this concept!",
-        "This knowledge connects to many other interesting subjects!"
-      ],
-      story_mode_content: null,
-      word_count: mainContent ? mainContent.split(' ').length : 20
-    }
-  }
-}
-
-function generateFallbackContent(topic: string, sectionTitle: string, sectionDescription: string, childAge: number) {
-  const content = `${sectionTitle} is a fascinating aspect of ${topic}! 
-
-${sectionDescription || 'This section explores the amazing world of this topic.'}
-
-There are so many incredible things to discover about this subject. Scientists and researchers continue to make new discoveries that help us understand more about how our world works.
-
-This topic connects to many other subjects and has real-world applications that affect our daily lives. By learning about this, you're developing critical thinking skills and expanding your knowledge of the world around you.
-
-${childAge <= 8 ? '🌟 Keep asking questions and exploring! 🌟' : childAge <= 12 ? 'Remember, every expert was once a beginner. Keep learning!' : 'Continue your journey of discovery and never stop questioning the world around you.'}`
-
-  const facts = childAge <= 8 ? [
-    "Scientists love learning about this topic too! 🔬",
-    "This connects to so many other cool things! 🌟",
-    "You can find examples of this everywhere! 👀"
-  ] : childAge <= 12 ? [
-    "This topic has been studied for many years by scientists",
-    "New discoveries are made about this subject regularly",
-    "This knowledge helps us solve real-world problems"
-  ] : [
-    "This field of study continues to evolve with new research",
-    "Understanding this topic provides insights into broader scientific principles",
-    "This knowledge has practical applications across multiple disciplines"
+function generateFallbackFacts(sectionTitle: string, topicTitle: string) {
+  return [
+    `${topicTitle} is more amazing than most people realize!`,
+    `There are still many mysteries about ${topicTitle} waiting to be discovered.`,
+    `Learning about ${topicTitle} can help us understand our world better.`
   ]
-
-  return new Response(
-    JSON.stringify({
-      content,
-      facts,
-      story_mode_content: null,
-      word_count: content.split(' ').length
-    }),
-    { 
-      headers: { 
-        ...corsHeaders, 
-        'Content-Type': 'application/json' 
-      } 
-    }
-  )
 }
