@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
@@ -52,7 +51,7 @@ const RecentExplorations: React.FC<RecentExplorationsProps> = ({
               </h4>
               
               <p className="text-white/60 text-sm mb-3">
-                {new Date(curio.updated_at).toLocaleDateString()}
+                {new Date(curio.last_updated_at).toLocaleDateString()}
               </p>
               
               <Button

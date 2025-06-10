@@ -8,10 +8,9 @@ import { Toaster } from 'sonner';
 // Pages
 import Index from '@/pages/Index';
 import Login from '@/pages/Login';
-import Profiles from '@/pages/Profiles';
+import ProfileSelector from '@/pages/ProfileSelector';
 import Dashboard from '@/pages/Dashboard';
 import UnifiedDashboard from '@/pages/UnifiedDashboard';
-import CurioPage from '@/pages/CurioPage';
 import WonderWhiz from '@/pages/WonderWhiz';
 
 // Create a client
@@ -38,10 +37,9 @@ function App() {
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
-              <Route path="/profiles" element={<Profiles />} />
+              <Route path="/profiles" element={<ProfileSelector />} />
               <Route path="/dashboard/:childId" element={<UnifiedDashboard />} />
               <Route path="/legacy-dashboard/:childId" element={<Dashboard />} />
-              <Route path="/curio/:childId/:curioId" element={<CurioPage />} />
               <Route path="/wonderwhiz/:childId" element={<WonderWhiz />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

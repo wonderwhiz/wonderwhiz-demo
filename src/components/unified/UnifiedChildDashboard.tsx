@@ -48,7 +48,7 @@ const UnifiedChildDashboard: React.FC = () => {
         .from('curios')
         .select('*')
         .eq('child_id', childId)
-        .order('updated_at', { ascending: false })
+        .order('last_updated_at', { ascending: false })
         .limit(3);
 
       // Load recent Wonder Whiz topics
@@ -64,7 +64,7 @@ const UnifiedChildDashboard: React.FC = () => {
 
       // Calculate streak (simplified)
       const today = new Date().toDateString();
-      const lastActivity = curios?.[0]?.updated_at || topics?.[0]?.updated_at;
+      const lastActivity = curios?.[0]?.last_updated_at || topics?.[0]?.updated_at;
       if (lastActivity) {
         const lastDate = new Date(lastActivity).toDateString();
         setStreakDays(lastDate === today ? 1 : 0);
