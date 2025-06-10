@@ -40,7 +40,14 @@ const WonderWhizDashboard: React.FC<WonderWhizDashboardProps> = ({
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setTopics(data || []);
+      
+      // Cast the database response to match our TypeScript types
+      const typedTopics = (data || []).map(topic => ({
+        ...topic,
+        status: topic.status as 'planning' | 'in_progress' | 'completed'
+      })) as LearningTopic[];
+      
+      setTopics(typedTopics);
     } catch (error) {
       console.error('Error loading topics:', error);
       toast.error('Failed to load learning topics');
@@ -76,7 +83,10 @@ const WonderWhizDashboard: React.FC<WonderWhizDashboardProps> = ({
         throw new Error('No topic data returned');
       }
 
-      const newTopic = topicResponse as LearningTopic;
+      const newTopic = {
+        ...topicResponse,
+        status: topicResponse.status as 'planning' | 'in_progress' | 'completed'
+      } as LearningTopic;
       
       // Generate content for the first section immediately
       if (newTopic.table_of_contents && newTopic.table_of_contents.length > 0) {
