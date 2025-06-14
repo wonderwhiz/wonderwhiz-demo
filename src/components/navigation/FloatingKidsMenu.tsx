@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Home, BookOpen, Sparkles, Settings, Menu, X, Star, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,6 +17,25 @@ const FloatingKidsMenu: React.FC<FloatingKidsMenuProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  // Keyboard: Close menu when Tab away
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsOpen(false);
+      if (e.key === "Tab") setIsOpen(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen]);
+
+  // Trap focus inside when open
+  useEffect(() => {
+    if (isOpen && menuRef.current) {
+      menuRef.current.focus();
+    }
+  }, [isOpen]);
 
   const menuItems = [
     {
@@ -26,7 +44,8 @@ const FloatingKidsMenu: React.FC<FloatingKidsMenuProps> = ({
       icon: Home,
       emoji: '🏠',
       color: 'from-wonderwhiz-vibrant-yellow to-orange-400',
-      description: 'Back to your adventure hub!'
+      description: 'Back to your adventure hub!',
+      ariaLabel: 'Go to Home Dashboard'
     },
     {
       label: 'Encyclopedia',
@@ -34,7 +53,8 @@ const FloatingKidsMenu: React.FC<FloatingKidsMenuProps> = ({
       icon: BookOpen,
       emoji: '📚',
       color: 'from-wonderwhiz-bright-pink to-purple-500',
-      description: 'Deep dive into topics you love!'
+      description: 'Deep dive into topics you love!',
+      ariaLabel: 'Go to Encyclopedia'
     },
     {
       label: 'Quick Explore',
@@ -42,7 +62,8 @@ const FloatingKidsMenu: React.FC<FloatingKidsMenuProps> = ({
       icon: Sparkles,
       emoji: '✨',
       color: 'from-wonderwhiz-purple to-blue-500',
-      description: 'Fast facts and fun discoveries!'
+      description: 'Fast facts and fun discoveries!',
+      ariaLabel: 'Start Quick Exploration'
     },
     {
       label: 'Profiles',
@@ -50,7 +71,8 @@ const FloatingKidsMenu: React.FC<FloatingKidsMenuProps> = ({
       icon: Settings,
       emoji: '👥',
       color: 'from-green-400 to-emerald-500',
-      description: 'Switch between profiles'
+      description: 'Switch between profiles',
+      ariaLabel: 'Switch Profiles'
     }
   ];
 
@@ -66,7 +88,12 @@ const FloatingKidsMenu: React.FC<FloatingKidsMenuProps> = ({
   };
 
   return (
-    <div className={cn("fixed bottom-6 right-6 z-50", className)}>
+    <div 
+      className={cn("fixed bottom-6 right-6 z-50", className)}
+      ref={menuRef}
+      tabIndex={isOpen ? 0 : -1}
+      aria-label="Main Navigation for Children"
+    >
       {/* Main Menu Button */}
       <motion.div
         whileHover={{ scale: 1.1 }}
@@ -74,7 +101,8 @@ const FloatingKidsMenu: React.FC<FloatingKidsMenuProps> = ({
       >
         <Button
           onClick={() => setIsOpen(!isOpen)}
-          className="h-16 w-16 rounded-full bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-purple shadow-xl border-4 border-white/20 backdrop-blur-sm"
+          aria-label={isOpen ? "Close Menu" : "Open Menu"}
+          className="h-16 w-16 rounded-full bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-purple shadow-xl border-4 border-white/20 backdrop-blur-sm focus-visible:ring-2 focus-visible:ring-wonderwhiz-bright-pink focus-visible:outline-none"
         >
           <AnimatePresence mode="wait">
             {isOpen ? (
@@ -116,6 +144,7 @@ const FloatingKidsMenu: React.FC<FloatingKidsMenuProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="absolute bottom-20 right-0 space-y-3"
+            tabIndex={0}
           >
             {menuItems.map((item, index) => (
               <motion.div
@@ -123,7 +152,7 @@ const FloatingKidsMenu: React.FC<FloatingKidsMenuProps> = ({
                 initial={{ opacity: 0, x: 50, y: 20 }}
                 animate={{ opacity: 1, x: 0, y: 0 }}
                 exit={{ opacity: 0, x: 50, y: 20 }}
-                transition={{ 
+                transition={{
                   delay: index * 0.1,
                   type: "spring",
                   stiffness: 200,
@@ -132,11 +161,13 @@ const FloatingKidsMenu: React.FC<FloatingKidsMenuProps> = ({
               >
                 <Button
                   onClick={() => handleItemClick(item.path)}
+                  aria-label={item.ariaLabel}
                   className={cn(
-                    "h-14 px-4 rounded-2xl shadow-lg border-2 border-white/20 backdrop-blur-sm transition-all duration-300",
-                    `bg-gradient-to-r ${item.color}`,
+                    "h-14 px-4 rounded-2xl shadow-lg border-2 border-white/20 backdrop-blur-sm transition-all duration-300 focus-visible:ring-2 focus-visible:ring-wonderwhiz-bright-pink bg-gradient-to-r",
+                    item.color,
                     isActive(item.path) && "ring-4 ring-white/30 scale-105"
                   )}
+                  tabIndex={0}
                 >
                   <div className="flex items-center gap-3">
                     <motion.span
@@ -147,7 +178,7 @@ const FloatingKidsMenu: React.FC<FloatingKidsMenuProps> = ({
                       {item.emoji}
                     </motion.span>
                     <item.icon className="h-5 w-5 text-white" />
-                    <div className="text-left">
+                    <div className="text-left min-w-[80px]">
                       <div className="text-sm font-bold text-white">{item.label}</div>
                       <div className="text-xs text-white/80">{item.description}</div>
                     </div>
