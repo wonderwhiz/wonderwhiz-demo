@@ -1,14 +1,10 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useParams } from 'react-router-dom';
-import { Card } from '@/components/ui/card';
 import { useSparksSystem } from '@/hooks/useSparksSystem';
 import DashboardSidebar from '@/components/dashboard/DashboardSidebar';
-import CurioContent from '@/components/dashboard/CurioContent';
 import { useDashboardProfile } from '@/hooks/useDashboardProfile';
 import { useCurioCreation } from '@/hooks/useCurioCreation';
-import { useCurioData } from '@/hooks/useCurioData';
 import { useBlockInteractionHandlers } from '@/hooks/useBlockInteractionHandlers';
 import TalkToWhizzy from '@/components/curio/TalkToWhizzy';
 import { useElevenLabsVoice } from '@/hooks/useElevenLabsVoice';
@@ -28,7 +24,6 @@ interface Curio {
 
 const DashboardContainer = () => {
   const { profileId } = useParams<{ profileId: string }>();
-  const [currentCurio, setCurrentCurio] = useState<Curio | null>(null);
   const [ageGroup, setAgeGroup] = useState<'5-7' | '8-11' | '12-16'>('8-11');
   const [childAge, setChildAge] = useState<number>(10);
   const [isVoiceActive, setIsVoiceActive] = useState(false);
@@ -56,34 +51,16 @@ const DashboardContainer = () => {
     handleSubmitQuery,
     handleFollowRabbitHole,
     handleCurioSuggestionClick: curioCreationSuggestionClick
-  } = useCurioCreation(profileId, childProfile, setPastCurios, setChildProfile, setCurrentCurio);
-
-  const {
-    blocks: contentBlocks,
-    isLoading: isLoadingBlocks,
-    isGeneratingContent,
-    hasMoreBlocks,
-    loadingMoreBlocks,
-    loadMoreBlocks,
-    totalBlocksLoaded,
-    handleToggleLike,
-    handleToggleBookmark,
-    handleSearch,
-    clearSearch,
-    isFirstLoad,
-    generationError,
-    triggerContentGeneration
-  } = useCurioData(currentCurio?.id, profileId);
+  } = useCurioCreation(profileId, childProfile, setPastCurios, setChildProfile, () => {});
 
   const blockInteractionHandlers = useBlockInteractionHandlers(
     profileId, 
     childProfile, 
     setChildProfile, 
-    contentBlocks
+    []
   );
   
   const {
-    blockReplies,
     handleBlockReply,
     handleQuizCorrect,
     handleNewsRead,
@@ -120,7 +97,7 @@ const DashboardContainer = () => {
   }, [childProfile]);
 
   const handleLoadCurio = useCallback((curio: Curio) => {
-    setCurrentCurio(curio);
+    // This component no longer displays single curios.
   }, []);
 
   const handleVoiceTranscript = useCallback((transcript: string) => {
@@ -169,7 +146,7 @@ const DashboardContainer = () => {
       setPastCurios(prev => [newCurio, ...prev]);
       
       // Set the current curio to the new one
-      setCurrentCurio(newCurio);
+      // No longer setting current curio
       
       // Award sparks for starting a new topic
       handleSparkEarned(2, 'topic-start');
@@ -221,7 +198,7 @@ const DashboardContainer = () => {
       setPastCurios(prev => [newCurio, ...prev]);
       
       // Set the current curio to the new one
-      setCurrentCurio(newCurio);
+      // No longer setting current curio
       
       // Award sparks for uploading an image
       handleSparkEarned(3, 'image-upload');
@@ -237,9 +214,8 @@ const DashboardContainer = () => {
 
   // Use the logic from the local function but call the one from useCurioCreation
   const handleSuggestionClick = useCallback((suggestion: string) => {
-    setCurrentCurio(null);
     curioCreationSuggestionClick(suggestion);
-  }, [setCurrentCurio, curioCreationSuggestionClick]);
+  }, [curioCreationSuggestionClick]);
 
   if (isLoading) {
     return (
@@ -260,7 +236,7 @@ const DashboardContainer = () => {
         childId={profileId || ''} 
         sparksBalance={childProfile?.sparks_balance || 0}
         pastCurios={pastCurios}
-        currentCurioId={currentCurio?.id}
+        currentCurioId={null}
         onCurioSelect={handleLoadCurio}
       />
       
@@ -271,60 +247,30 @@ const DashboardContainer = () => {
           sparksBalance={childProfile?.sparks_balance || 0}
           streakDays={streakDays}
           onSearch={handleDashboardSearch}
-          isGenerating={isGenerating || isGeneratingContent || processingImage}
+          isGenerating={isGenerating || processingImage}
           onImageCapture={handleImageCapture}
           childProfile={childProfile}
         />
         
         <div className="flex-1 overflow-y-auto">
-          {!currentCurio ? (
-            <ConsolidatedDashboard
-              childId={profileId || ''}
-              childProfile={childProfile}
-              curioSuggestions={curioSuggestions}
-              isLoadingSuggestions={isLoadingSuggestions}
-              onCurioSuggestionClick={handleDashboardSearch}
-              handleRefreshSuggestions={handleRefreshSuggestions}
-              pastCurios={pastCurios}
-              sparksBalance={childProfile?.sparks_balance || 0}
-              streakDays={streakDays}
-              onLike={handleLike}
-              onBookmark={handleBookmark}
-              onReply={handleReply}
-              onReadAloud={handleReadAloud}
-              likedBlocks={likedBlocks}
-              bookmarkedBlocks={bookmarkedBlocks}
-              onImageCapture={handleImageCapture}
-            />
-          ) : (
-            <div className="max-w-5xl mx-auto space-y-6 p-4">
-              <Card className="bg-wonderwhiz-purple/50 backdrop-blur-sm border-white/10 flex-grow relative overflow-hidden shadow-xl rounded-xl">
-                <CurioContent
-                  currentCurio={currentCurio}
-                  contentBlocks={contentBlocks}
-                  blockReplies={blockReplies}
-                  isGenerating={isGeneratingContent}
-                  loadingBlocks={loadingMoreBlocks}
-                  visibleBlocksCount={totalBlocksLoaded}
-                  profileId={profileId}
-                  onLoadMore={loadMoreBlocks}
-                  hasMoreBlocks={hasMoreBlocks}
-                  onToggleLike={handleToggleLike}
-                  onToggleBookmark={handleToggleBookmark}
-                  onReply={handleBlockReply} 
-                  onSetQuery={setQuery}
-                  onRabbitHoleFollow={handleFollowRabbitHole}
-                  onQuizCorrect={handleQuizCorrect}
-                  onNewsRead={handleNewsRead}
-                  onCreativeUpload={handleCreativeUpload}
-                  generationError={generationError}
-                  playText={playText}
-                  childAge={childAge}
-                  triggerGeneration={triggerContentGeneration}
-                />
-              </Card>
-            </div>
-          )}
+          <ConsolidatedDashboard
+            childId={profileId || ''}
+            childProfile={childProfile}
+            curioSuggestions={curioSuggestions}
+            isLoadingSuggestions={isLoadingSuggestions}
+            onCurioSuggestionClick={handleDashboardSearch}
+            handleRefreshSuggestions={handleRefreshSuggestions}
+            pastCurios={pastCurios}
+            sparksBalance={childProfile?.sparks_balance || 0}
+            streakDays={streakDays}
+            onLike={handleLike}
+            onBookmark={handleBookmark}
+            onReply={handleReply}
+            onReadAloud={handleReadAloud}
+            likedBlocks={likedBlocks}
+            bookmarkedBlocks={bookmarkedBlocks}
+            onImageCapture={handleImageCapture}
+          />
         </div>
         
         <VoiceInputButton 
@@ -337,7 +283,7 @@ const DashboardContainer = () => {
         {profileId && (
           <TalkToWhizzy 
             childId={profileId}
-            curioTitle={currentCurio?.title}
+            curioTitle={undefined}
             ageGroup={ageGroup}
             onNewQuestionGenerated={handleFollowRabbitHole}
           />
