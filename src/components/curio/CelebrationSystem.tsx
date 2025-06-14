@@ -1,7 +1,5 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import confetti from 'canvas-confetti';
 import { Award, Star, Sparkles, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -95,33 +93,6 @@ const CelebrationSystem: React.FC<CelebrationSystemProps> = ({
     // Prevent multiple confetti calls
     if (hasTriggeredConfetti.current) {
       return;
-    }
-    
-    switch (size) {
-      case 'small':
-        confetti({
-          particleCount: 10, // Further reduced from 15
-          spread: 30, // Further reduced from 40
-          origin: { y: 0.6 }
-        });
-        break;
-      case 'medium':
-        confetti({
-          particleCount: 25, // Further reduced from 40
-          spread: 40, // Further reduced from 50
-          origin: { y: 0.6 }
-        });
-        break;
-      case 'large': {
-        // Single burst for large celebration instead of continuous animation
-        confetti({
-          particleCount: 50, // Further reduced from 70
-          spread: 60, // Further reduced from 80
-          origin: { y: 0.6 },
-          colors: ['#FFD700', '#FF00FF', '#00FFFF', '#FF4500']
-        });
-        break;
-      }
     }
   };
 

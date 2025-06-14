@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Star, Target, Zap, BookOpen, Brain, Heart, Compass } from 'lucide-react';
@@ -92,14 +91,6 @@ const AchievementSystem: React.FC<AchievementSystemProps> = ({
   }, []);
 
   const handleCelebration = (achievement: Achievement) => {
-    // Trigger confetti
-    confetti({
-      particleCount: 100,
-      spread: 70,
-      origin: { y: 0.6 },
-      colors: ['#FF5BA3', '#4A6FFF', '#FFE066']
-    });
-
     // Show achievement notification
     setNewlyUnlocked([achievement]);
     setTimeout(() => setNewlyUnlocked([]), 4000);

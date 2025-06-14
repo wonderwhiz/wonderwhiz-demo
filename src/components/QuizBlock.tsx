@@ -1,8 +1,6 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Check, X } from 'lucide-react';
-import confetti from 'canvas-confetti';
 
 interface QuizBlockProps {
   question: string;
@@ -32,13 +30,6 @@ const QuizBlock: React.FC<QuizBlockProps> = ({
 
     if (correct) {
       if (onCorrect) onCorrect();
-      setTimeout(() => {
-        confetti({
-          particleCount: 80,
-          spread: 60,
-          origin: { y: 0.7 }
-        });
-      }, 300);
     }
   };
 

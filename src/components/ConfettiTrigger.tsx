@@ -1,6 +1,5 @@
 
-import React, { useState } from 'react';
-import ParticleEffect from './ParticleEffect';
+import React from 'react';
 
 interface ConfettiTriggerProps {
   children: React.ReactNode;
@@ -9,29 +8,10 @@ interface ConfettiTriggerProps {
 }
 
 const ConfettiTrigger: React.FC<ConfettiTriggerProps> = ({ 
-  children, 
-  intensity = 'high',
-  duration = 3000
+  children,
 }) => {
-  const [showConfetti, setShowConfetti] = useState(false);
-  
-  const triggerConfetti = () => {
-    setShowConfetti(true);
-    setTimeout(() => setShowConfetti(false), duration);
-  };
-  
   return (
-    <div 
-      onClick={triggerConfetti}
-      className="inline-block"
-    >
-      {showConfetti && (
-        <ParticleEffect 
-          type="confetti" 
-          intensity={intensity} 
-          triggerAnimation={true} 
-        />
-      )}
+    <div className="inline-block">
       {children}
     </div>
   );

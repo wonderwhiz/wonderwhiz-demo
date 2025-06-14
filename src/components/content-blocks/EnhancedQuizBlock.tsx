@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, XCircle, HelpCircle, Award, Star, ChevronRight } from 'lucide-react';
@@ -8,7 +7,6 @@ import { useAgeAdaptation, getAnimationSettings } from '@/hooks/useAgeAdaptation
 import AccessibleBlockWrapper from './AccessibleBlockWrapper';
 import EnhancedBlockInteractions from './EnhancedBlockInteractions';
 import { toast } from 'sonner';
-import confetti from 'canvas-confetti';
 
 interface EnhancedQuizBlockProps {
   id: string;
@@ -117,37 +115,14 @@ const EnhancedQuizBlock: React.FC<EnhancedQuizBlockProps> = ({
   const triggerSuccessFeedback = (age: number) => {
     // Different success feedback based on age
     if (age <= 8) {
-      // More confetti for younger kids
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#FF5733', '#33FFF5', '#FF33F5', '#F5FF33']
-      });
-      
       toast.success("🎉 Great job! You got it right!", {
         duration: 3000,
       });
     } else if (age <= 12) {
-      // Medium celebration
-      confetti({
-        particleCount: 70,
-        spread: 50,
-        origin: { y: 0.6 }
-      });
-      
       toast.success("Correct answer! Well done!", {
         duration: 2000,
       });
     } else {
-      // Subtle celebration for teens
-      confetti({
-        particleCount: 30,
-        spread: 40,
-        origin: { y: 0.6 },
-        colors: ['#4F46E5', '#0EA5E9']
-      });
-      
       toast.success("Correct!", {
         duration: 1500,
       });

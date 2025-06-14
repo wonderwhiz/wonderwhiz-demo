@@ -1,9 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Star, Zap, Crown, Heart, Sparkles } from 'lucide-react';
 import { Card } from '@/components/ui/card';
-import confetti from 'canvas-confetti';
 
 interface Achievement {
   id: string;
@@ -108,14 +106,6 @@ const CelebrationSystem: React.FC<CelebrationSystemProps> = ({
       setNewAchievements(newlyEarned);
       setShowCelebration(true);
       
-      // Trigger confetti
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#FF6B9D', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7']
-      });
-
       // Auto-hide after 5 seconds
       setTimeout(() => {
         setShowCelebration(false);

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Compass, Sparkles, Lightbulb } from 'lucide-react';
@@ -6,7 +5,6 @@ import SpecialistAvatar from '@/components/SpecialistAvatar';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import confetti from 'canvas-confetti';
 
 interface RabbitHoleSuggestionsProps {
   curioTitle: string;
@@ -76,14 +74,6 @@ const RabbitHoleSuggestions: React.FC<RabbitHoleSuggestionsProps> = ({
               profileId: profileId,
               amount: 2
             })
-          });
-          
-          confetti({
-            particleCount: 70,
-            spread: 80,
-            origin: { y: 0.6 },
-            zIndex: 1000,
-            colors: ['#FF5BA3', '#00E2FF', '#4A6FFF'] // Brand colors
           });
           
           toast.success("You earned 2 sparks for your curiosity!", {
