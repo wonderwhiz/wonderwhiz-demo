@@ -78,7 +78,11 @@ const MagicalBreadcrumbs: React.FC<MagicalBreadcrumbsProps> = ({
   const breadcrumbs = getBreadcrumbs();
 
   return (
-    <nav aria-label="Breadcrumb" className="w-full">
+    <nav
+      aria-label="Breadcrumb"
+      className="w-full"
+      tabIndex={-1}
+    >
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -87,6 +91,7 @@ const MagicalBreadcrumbs: React.FC<MagicalBreadcrumbsProps> = ({
           className
         )}
         tabIndex={0}
+        role="list"
       >
         <AnimatePresence>
           {breadcrumbs.map((crumb, index) => (
@@ -94,33 +99,52 @@ const MagicalBreadcrumbs: React.FC<MagicalBreadcrumbsProps> = ({
               key={crumb.path}
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: index * 0.1 }}
+              transition={{ delay: index * 0.06 }}
               className="flex items-center gap-2"
+              role="listitem"
             >
               <Button
                 variant="ghost"
                 size="sm"
                 aria-current={crumb.isActive ? "page" : undefined}
                 aria-label={crumb.label}
+                tabIndex={0}
                 onClick={() => !crumb.isActive && navigate(crumb.path)}
                 className={cn(
-                  "flex items-center gap-2 text-sm transition-all duration-300 rounded-full px-3 py-2 max-w-[180px] truncate focus-visible:ring-2 focus-visible:ring-wonderwhiz-bright-pink focus-visible:outline-none",
+                  "flex items-center gap-2 text-sm transition-all duration-300 rounded-full px-3 py-2 max-w-[180px] truncate focus-visible:ring-2 focus-visible:ring-wonderwhiz-bright-pink focus-visible:outline-none focus-visible:z-20",
                   crumb.isActive
-                    ? "text-white font-bold bg-white/20 cursor-default"
-                    : "text-white/70 hover:text-white hover:bg-white/10 hover:scale-105"
+                    ? "text-white font-bold bg-white/20 shadow-lg cursor-default ring-2 ring-wonderwhiz-vibrant-yellow"
+                    : "text-white/80 hover:text-white hover:bg-white/10 hover:scale-105"
                 )}
                 disabled={crumb.isActive}
-                tabIndex={0}
+                title={crumb.label.length > 25 ? crumb.label : undefined}
               >
-                <motion.span
-                  animate={{ rotate: [0, 10, -10, 0] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                  className="text-base"
+                <span
+                  aria-hidden="true"
+                  tabIndex={-1}
+                  className="relative group"
+                  title={crumb.emoji}
                 >
-                  {crumb.emoji}
-                </motion.span>
+                  <motion.span
+                    animate={{ rotate: [0, 10, -10, 0] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    className="text-base"
+                  >
+                    {crumb.emoji}
+                  </motion.span>
+                  <span className="sr-only">{crumb.emoji}</span>
+                  {/* Tooltip for emoji */}
+                  <span className="absolute left-1/2 -translate-x-1/2 -top-7 bg-black/80 text-xs text-white px-2 py-1 rounded shadow-md pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-30">
+                    {crumb.label}
+                  </span>
+                </span>
                 <crumb.icon className={cn("h-4 w-4", crumb.color)} />
-                <span className="truncate max-w-[72px] block">{crumb.label}</span>
+                <span
+                  className="truncate max-w-[72px] block"
+                  title={crumb.label}
+                >
+                  {crumb.label}
+                </span>
                 {crumb.isActive && (
                   <motion.div
                     animate={{ scale: [1, 1.2, 1] }}
@@ -136,7 +160,10 @@ const MagicalBreadcrumbs: React.FC<MagicalBreadcrumbsProps> = ({
                   animate={{ x: [0, 3, 0] }}
                   transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                 >
-                  <ChevronRight className="h-4 w-4 text-white/40" aria-hidden />
+                  <ChevronRight
+                    className="h-4 w-4 text-white/40"
+                    aria-hidden
+                  />
                 </motion.div>
               )}
             </motion.div>
@@ -148,4 +175,3 @@ const MagicalBreadcrumbs: React.FC<MagicalBreadcrumbsProps> = ({
 };
 
 export default MagicalBreadcrumbs;
-

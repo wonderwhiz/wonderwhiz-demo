@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Home, BookOpen, Sparkles, Settings, Menu, X, Star, Heart } from 'lucide-react';
@@ -19,12 +20,11 @@ const FloatingKidsMenu: React.FC<FloatingKidsMenuProps> = ({
   const location = useLocation();
   const menuRef = useRef<HTMLDivElement | null>(null);
 
-  // Keyboard: Close menu when Tab away
+  // Keyboard: Close menu when Tab/Escape
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setIsOpen(false);
-      if (e.key === "Tab") setIsOpen(false);
+      if (e.key === "Escape" || e.key === "Tab") setIsOpen(false);
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
@@ -93,6 +93,9 @@ const FloatingKidsMenu: React.FC<FloatingKidsMenuProps> = ({
       ref={menuRef}
       tabIndex={isOpen ? 0 : -1}
       aria-label="Main Navigation for Children"
+      aria-haspopup="menu"
+      aria-expanded={isOpen}
+      role="menu"
     >
       {/* Main Menu Button */}
       <motion.div
@@ -102,7 +105,10 @@ const FloatingKidsMenu: React.FC<FloatingKidsMenuProps> = ({
         <Button
           onClick={() => setIsOpen(!isOpen)}
           aria-label={isOpen ? "Close Menu" : "Open Menu"}
-          className="h-16 w-16 rounded-full bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-purple shadow-xl border-4 border-white/20 backdrop-blur-sm focus-visible:ring-2 focus-visible:ring-wonderwhiz-bright-pink focus-visible:outline-none"
+          className={cn(
+            "h-16 w-16 rounded-full bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-purple shadow-xl border-4 border-white/20 backdrop-blur-sm focus-visible:ring-2 focus-visible:ring-wonderwhiz-bright-pink focus-visible:outline-none focus-visible:ring-offset-2",
+            isOpen && "ring-4 ring-wonderwhiz-vibrant-yellow"
+          )}
         >
           <AnimatePresence mode="wait">
             {isOpen ? (
@@ -140,11 +146,13 @@ const FloatingKidsMenu: React.FC<FloatingKidsMenuProps> = ({
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute bottom-20 right-0 space-y-3"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="absolute bottom-20 right-0 space-y-3 outline-none bg-white/90 rounded-3xl px-2 pt-2 pb-2 shadow-2xl z-40"
             tabIndex={0}
+            aria-label="Menu Items"
+            role="menu"
           >
             {menuItems.map((item, index) => (
               <motion.div
@@ -153,34 +161,39 @@ const FloatingKidsMenu: React.FC<FloatingKidsMenuProps> = ({
                 animate={{ opacity: 1, x: 0, y: 0 }}
                 exit={{ opacity: 0, x: 50, y: 20 }}
                 transition={{
-                  delay: index * 0.1,
+                  delay: index * 0.08,
                   type: "spring",
                   stiffness: 200,
                   damping: 20
                 }}
+                role="menuitem"
+                aria-current={isActive(item.path) ? "page" : undefined}
+                tabIndex={0}
               >
                 <Button
                   onClick={() => handleItemClick(item.path)}
                   aria-label={item.ariaLabel}
                   className={cn(
-                    "h-14 px-4 rounded-2xl shadow-lg border-2 border-white/20 backdrop-blur-sm transition-all duration-300 focus-visible:ring-2 focus-visible:ring-wonderwhiz-bright-pink bg-gradient-to-r",
+                    "h-14 px-4 rounded-2xl shadow-lg border-2 border-white/20 backdrop-blur-sm transition-all duration-300 focus-visible:ring-2 focus-visible:ring-wonderwhiz-bright-pink focus-visible:outline-none focus-visible:ring-offset-2 bg-gradient-to-r group",
                     item.color,
-                    isActive(item.path) && "ring-4 ring-white/30 scale-105"
+                    isActive(item.path) && "ring-4 ring-wonderwhiz-vibrant-yellow scale-105 font-bold text-gray-900 shadow-2xl"
                   )}
                   tabIndex={0}
+                  role="menuitem"
+                  title={item.label}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 truncate">
                     <motion.span
-                      animate={{ scale: [1, 1.2, 1] }}
+                      animate={{ scale: [1, 1.18, 1] }}
                       transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                       className="text-lg"
                     >
                       {item.emoji}
                     </motion.span>
-                    <item.icon className="h-5 w-5 text-white" />
-                    <div className="text-left min-w-[80px]">
-                      <div className="text-sm font-bold text-white">{item.label}</div>
-                      <div className="text-xs text-white/80">{item.description}</div>
+                    <item.icon className="h-5 w-5 text-white drop-shadow filter" />
+                    <div className="text-left min-w-[80px] max-w-[120px] truncate">
+                      <div className="text-sm font-bold truncate">{item.label}</div>
+                      <div className="text-xs text-gray-700/80 group-hover:text-black group-focus:text-black">{item.description}</div>
                     </div>
                     {isActive(item.path) && (
                       <motion.div
