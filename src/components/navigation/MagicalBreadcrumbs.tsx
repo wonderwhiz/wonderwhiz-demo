@@ -6,6 +6,15 @@ import { Button } from '@/components/ui/button';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
+interface BreadcrumbItem {
+  label: string;
+  path: string;
+  icon: any;
+  color: string;
+  emoji: string;
+  isActive?: boolean;
+}
+
 interface MagicalBreadcrumbsProps {
   childId: string;
   currentTopic?: string;
@@ -22,8 +31,8 @@ const MagicalBreadcrumbs: React.FC<MagicalBreadcrumbsProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
 
-  const getBreadcrumbs = () => {
-    const crumbs = [
+  const getBreadcrumbs = (): BreadcrumbItem[] => {
+    const crumbs: BreadcrumbItem[] = [
       {
         label: 'Home',
         path: `/dashboard/${childId}`,
