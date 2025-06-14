@@ -1,9 +1,9 @@
 
 import React from 'react';
-import UnifiedChildDashboard from '@/components/unified/UnifiedChildDashboard';
+import OptimizedUnifiedDashboard from '@/components/unified/OptimizedUnifiedDashboard';
 
 const UnifiedDashboard: React.FC = () => {
-  return <UnifiedChildDashboard />;
+  return <OptimizedUnifiedDashboard />;
 };
 
 export default UnifiedDashboard;
