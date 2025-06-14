@@ -1,4 +1,3 @@
-
 import { Helmet, HelmetProvider } from 'react-helmet-async';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -12,6 +11,7 @@ import ProfileSelector from '@/pages/ProfileSelector';
 import Dashboard from '@/pages/Dashboard';
 import UnifiedDashboard from '@/pages/UnifiedDashboard';
 import WonderWhiz from '@/pages/WonderWhiz';
+import Curio from '@/pages/Curio';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -43,7 +43,7 @@ function App() {
                 <Route path="/legacy-dashboard/:childId" element={<Dashboard />} />
                 <Route path="/wonderwhiz/:childId" element={<WonderWhiz />} />
                 {/* Add curio route for content exploration */}
-                <Route path="/curio/:childId/:curioId" element={<UnifiedDashboard />} />
+                <Route path="/curio/:childId/:curioId" element={<Curio />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </div>

@@ -1,7 +1,6 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, BookOpen, Sparkles, Settings, Menu, X, Star, Heart } from 'lucide-react';
+import { Home, BookOpen, Settings, Menu, X, Star, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -55,15 +54,6 @@ const FloatingKidsMenu: React.FC<FloatingKidsMenuProps> = ({
       color: 'from-wonderwhiz-bright-pink to-purple-500',
       description: 'Deep dive into topics you love!',
       ariaLabel: 'Go to Encyclopedia'
-    },
-    {
-      label: 'Quick Explore',
-      path: `/dashboard/${childId}`,
-      icon: Sparkles,
-      emoji: '✨',
-      color: 'from-wonderwhiz-purple to-blue-500',
-      description: 'Fast facts and fun discoveries!',
-      ariaLabel: 'Start Quick Exploration'
     },
     {
       label: 'Profiles',

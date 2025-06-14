@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -91,7 +90,7 @@ const OptimizedUnifiedDashboard: React.FC = () => {
     
     try {
       if (mode === 'encyclopedia') {
-        // Create Wonder Whiz topic and stay on current page
+        // Create Wonder Whiz topic and navigate
         console.log('Creating Wonder Whiz topic...');
         const { data: topicResponse, error } = await supabase.functions
           .invoke('generate-wonderwhiz-topic', {
@@ -110,14 +109,13 @@ const OptimizedUnifiedDashboard: React.FC = () => {
         console.log('Wonder Whiz topic created:', topicResponse);
         toast.success('Encyclopedia created! 📚');
         
-        // Refresh recent activity to show new content
-        await loadRecentActivity();
-        
         // Navigate to Wonder Whiz page
         navigate(`/wonderwhiz/${childId}`);
       } else {
-        // Create Curio exploration and stay on current page
+        // Create Curio exploration and navigate
         console.log('Creating Curio exploration...');
+        toast.success('Starting your adventure! 🚀');
+
         const { data: newCurio, error } = await supabase
           .from('curios')
           .insert({
@@ -133,14 +131,8 @@ const OptimizedUnifiedDashboard: React.FC = () => {
           throw error;
         }
 
-        console.log('Curio created:', newCurio);
-        toast.success('Exploration started! 🚀');
-        
-        // Refresh recent activity to show new content
-        await loadRecentActivity();
-        
-        // For now, stay on dashboard and show success
-        // Later we can implement inline content generation
+        console.log('Curio created, navigating:', newCurio);
+        navigate(`/curio/${childId}/${newCurio.id}`);
       }
     } catch (error) {
       console.error('Error creating content:', error);
