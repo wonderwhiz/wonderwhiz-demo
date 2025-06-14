@@ -30,26 +30,38 @@ function App() {
         <AuthProvider>
           <Router>
             <Helmet>
-              <title>WonderWhiz - Personalized Learning for Curious Kids</title>
-              <meta name="description" content="WonderWhiz provides personalized, age-appropriate learning experiences that spark curiosity and make education fun for children of all ages." />
-              <meta name="keywords" content="children education, personalized learning, STEM education, curiosity-driven learning, interactive education" />
+              <title>WonderWhiz - The World's Best AI App for Kids! 🌟</title>
+              <meta name="description" content="WonderWhiz provides the most intuitive, magical, and engaging personalized learning experiences that spark curiosity and make education incredibly fun for children of all ages." />
+              <meta name="keywords" content="best kids AI app, children education, personalized learning, STEM education, curiosity-driven learning, interactive education, magical learning experience" />
             </Helmet>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/profiles" element={<ProfileSelector />} />
-              <Route path="/dashboard/:childId" element={<UnifiedDashboard />} />
-              <Route path="/legacy-dashboard/:childId" element={<Dashboard />} />
-              <Route path="/wonderwhiz/:childId" element={<WonderWhiz />} />
-              {/* Add curio route for content exploration */}
-              <Route path="/curio/:childId/:curioId" element={<UnifiedDashboard />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+            <div className="min-h-screen bg-gradient-to-br from-wonderwhiz-deep-purple via-wonderwhiz-purple to-wonderwhiz-bright-pink">
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/profiles" element={<ProfileSelector />} />
+                <Route path="/dashboard/:childId" element={<UnifiedDashboard />} />
+                <Route path="/legacy-dashboard/:childId" element={<Dashboard />} />
+                <Route path="/wonderwhiz/:childId" element={<WonderWhiz />} />
+                {/* Add curio route for content exploration */}
+                <Route path="/curio/:childId/:curioId" element={<UnifiedDashboard />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </div>
             <Toaster 
-              position="bottom-right" 
+              position="bottom-left" 
               expand={true}
               richColors
               closeButton
+              toastOptions={{
+                style: {
+                  background: 'rgba(255, 255, 255, 0.95)',
+                  backdropFilter: 'blur(10px)',
+                  border: '2px solid rgba(255, 192, 203, 0.3)',
+                  borderRadius: '16px',
+                  fontSize: '16px',
+                  fontWeight: '600'
+                }
+              }}
             />
           </Router>
         </AuthProvider>

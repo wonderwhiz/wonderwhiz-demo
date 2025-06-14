@@ -13,6 +13,8 @@ import StreamlinedSearchExperience from './StreamlinedSearchExperience';
 import QuickDiscoveryCards from './QuickDiscoveryCards';
 import CelebrationSystem from './CelebrationSystem';
 import VoiceAssistant from './VoiceAssistant';
+import MagicalBreadcrumbs from '@/components/navigation/MagicalBreadcrumbs';
+import FloatingKidsMenu from '@/components/navigation/FloatingKidsMenu';
 
 const OptimizedUnifiedDashboard: React.FC = () => {
   const { childId } = useParams<{ childId: string }>();
@@ -191,8 +193,39 @@ const OptimizedUnifiedDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-wonderwhiz-deep-purple via-wonderwhiz-purple to-wonderwhiz-bright-pink">
-      <div className="max-w-4xl mx-auto px-4 py-6">
+    <div className="min-h-screen bg-gradient-to-br from-wonderwhiz-deep-purple via-wonderwhiz-purple to-wonderwhiz-bright-pink relative overflow-hidden">
+      {/* Magical floating particles background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {[...Array(20)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-2 h-2 bg-white/20 rounded-full"
+            animate={{
+              y: [0, -100, 0],
+              x: [0, Math.random() * 50 - 25, 0],
+              opacity: [0.2, 0.8, 0.2],
+              scale: [1, 1.5, 1]
+            }}
+            transition={{
+              duration: Math.random() * 10 + 10,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: Math.random() * 5
+            }}
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Navigation */}
+      <div className="relative z-10 p-4">
+        <MagicalBreadcrumbs childId={childId!} />
+      </div>
+
+      <div className="max-w-4xl mx-auto px-4 py-6 relative z-10">
         {/* Simplified Welcome */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -200,10 +233,10 @@ const OptimizedUnifiedDashboard: React.FC = () => {
           className="mb-8"
         >
           <PersonalizedWelcome
-            childName={childProfile.name}
-            childAge={childProfile.age || 10}
+            childName={childProfile?.name || ''}
+            childAge={childProfile?.age || 10}
             streakDays={streakDays}
-            sparksBalance={childProfile.sparks_balance || 0}
+            sparksBalance={childProfile?.sparks_balance || 0}
           />
         </motion.div>
 
@@ -217,7 +250,7 @@ const OptimizedUnifiedDashboard: React.FC = () => {
           <StreamlinedSearchExperience
             onSearch={handleUnifiedSearch}
             isLoading={isCreatingContent}
-            childAge={childProfile.age || 10}
+            childAge={childProfile?.age || 10}
             recentTopics={recentCurios.map(c => c.title)}
           />
         </motion.div>
@@ -231,7 +264,7 @@ const OptimizedUnifiedDashboard: React.FC = () => {
         >
           <QuickDiscoveryCards
             onCardSelect={(title) => handleUnifiedSearch(title, 'explore')}
-            childAge={childProfile.age || 10}
+            childAge={childProfile?.age || 10}
             recentExplorations={recentCurios}
           />
         </motion.div>
@@ -245,18 +278,29 @@ const OptimizedUnifiedDashboard: React.FC = () => {
               exit={{ opacity: 0, y: -20 }}
               className="mb-8"
             >
-              <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-6">
-                <div className="flex items-center gap-4">
-                  <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-wonderwhiz-bright-pink"></div>
+              <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-6 border-2 border-wonderwhiz-bright-pink/30">
+                <motion.div 
+                  className="flex items-center gap-4"
+                  animate={{ scale: [1, 1.02, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <motion.div 
+                    className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-wonderwhiz-bright-pink"
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  />
                   <div>
-                    <h3 className="text-lg font-semibold text-white">
-                      Creating your {activeSearchMode === 'encyclopedia' ? 'encyclopedia' : 'exploration'}...
+                    <h3 className="text-xl font-bold text-white">
+                      ✨ Creating your magical {activeSearchMode === 'encyclopedia' ? 'encyclopedia' : 'adventure'}...
                     </h3>
-                    <p className="text-white/70">
-                      {searchQuery && `Working on: "${searchQuery}"`}
+                    <p className="text-white/80 text-lg">
+                      {searchQuery && `🔍 Working on: "${searchQuery}"`}
+                    </p>
+                    <p className="text-white/60 text-sm mt-1">
+                      This usually takes just a few seconds! 🚀
                     </p>
                   </div>
-                </div>
+                </motion.div>
               </Card>
             </motion.div>
           )}
@@ -274,7 +318,7 @@ const OptimizedUnifiedDashboard: React.FC = () => {
               <CelebrationSystem
                 childId={childId!}
                 streakDays={streakDays}
-                sparksBalance={childProfile.sparks_balance || 0}
+                sparksBalance={childProfile?.sparks_balance || 0}
                 explorationsCount={explorationsCount}
               />
             </motion.div>
@@ -282,10 +326,13 @@ const OptimizedUnifiedDashboard: React.FC = () => {
         </AnimatePresence>
       </div>
 
+      {/* Floating Navigation Menu */}
+      <FloatingKidsMenu childId={childId!} />
+
       {/* Voice Assistant */}
       <VoiceAssistant
         onVoiceQuery={handleVoiceQuery}
-        childAge={childProfile.age || 10}
+        childAge={childProfile?.age || 10}
       />
     </div>
   );

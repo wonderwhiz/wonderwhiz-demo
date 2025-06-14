@@ -7,6 +7,8 @@ import ImprovedWonderWhizDashboard from '@/components/wonderwhiz/ImprovedWonderW
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BookOpen, ArrowLeft } from 'lucide-react';
+import MagicalBreadcrumbs from '@/components/navigation/MagicalBreadcrumbs';
+import FloatingKidsMenu from '@/components/navigation/FloatingKidsMenu';
 
 const WonderWhiz: React.FC = () => {
   const { childId } = useParams<{ childId: string }>();
@@ -116,24 +118,50 @@ const WonderWhiz: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-wonderwhiz-deep-purple via-wonderwhiz-purple to-wonderwhiz-bright-pink">
-      {/* Back to Dashboard Button */}
-      <div className="absolute top-4 left-4 z-10">
-        <Button
-          onClick={handleBackToDashboard}
-          variant="ghost"
-          size="sm"
-          className="text-white/80 hover:text-white hover:bg-white/10"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Dashboard
-        </Button>
+    <div className="min-h-screen bg-gradient-to-br from-wonderwhiz-deep-purple via-wonderwhiz-purple to-wonderwhiz-bright-pink relative overflow-hidden">
+      {/* Magical floating particles background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {[...Array(15)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-1 h-1 bg-white/30 rounded-full"
+            animate={{
+              y: [0, -80, 0],
+              x: [0, Math.random() * 30 - 15, 0],
+              opacity: [0.3, 0.9, 0.3]
+            }}
+            transition={{
+              duration: Math.random() * 8 + 8,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: Math.random() * 4
+            }}
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Enhanced Navigation */}
+      <div className="relative z-10 p-4">
+        <MagicalBreadcrumbs 
+          childId={childId!} 
+          currentTopic="Encyclopedia Adventures"
+          onBack={handleBackToDashboard}
+        />
       </div>
       
-      <ImprovedWonderWhizDashboard
-        childProfile={childProfile}
-        onTopicCreate={handleTopicCreate}
-      />
+      <div className="relative z-10">
+        <ImprovedWonderWhizDashboard
+          childProfile={childProfile}
+          onTopicCreate={handleTopicCreate}
+        />
+      </div>
+
+      {/* Floating Navigation Menu */}
+      <FloatingKidsMenu childId={childId!} />
     </div>
   );
 };
