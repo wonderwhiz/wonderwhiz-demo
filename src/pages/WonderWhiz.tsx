@@ -35,14 +35,20 @@ const WonderWhiz: React.FC = () => {
 
     try {
       setIsLoading(true);
+      console.log('Loading child profile for WonderWhiz:', childId);
+      
       const { data, error } = await supabase
         .from('child_profiles')
         .select('*')
         .eq('id', childId)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error loading child profile:', error);
+        throw error;
+      }
       
+      console.log('Child profile loaded:', data);
       setChildProfile(data);
     } catch (error) {
       console.error('Error loading child profile:', error);
@@ -54,6 +60,11 @@ const WonderWhiz: React.FC = () => {
 
   const handleTopicCreate = (topic: any) => {
     console.log('Topic created:', topic);
+    // Refresh or handle new topic creation
+  };
+
+  const handleBackToDashboard = () => {
+    navigate(`/dashboard/${childId}`);
   };
 
   if (isLoading) {
@@ -82,13 +93,22 @@ const WonderWhiz: React.FC = () => {
             <p className="text-white/70 mb-4">
               {error || 'Child profile not found'}
             </p>
-            <Button
-              onClick={() => navigate('/profiles')}
-              className="bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/90"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Profiles
-            </Button>
+            <div className="flex gap-2 justify-center">
+              <Button
+                onClick={handleBackToDashboard}
+                className="bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/90"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Dashboard
+              </Button>
+              <Button
+                onClick={() => navigate('/profiles')}
+                variant="outline"
+                className="border-white/20 text-white hover:bg-white/10"
+              >
+                All Profiles
+              </Button>
+            </div>
           </div>
         </Card>
       </div>
@@ -97,6 +117,19 @@ const WonderWhiz: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-wonderwhiz-deep-purple via-wonderwhiz-purple to-wonderwhiz-bright-pink">
+      {/* Back to Dashboard Button */}
+      <div className="absolute top-4 left-4 z-10">
+        <Button
+          onClick={handleBackToDashboard}
+          variant="ghost"
+          size="sm"
+          className="text-white/80 hover:text-white hover:bg-white/10"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Dashboard
+        </Button>
+      </div>
+      
       <ImprovedWonderWhizDashboard
         childProfile={childProfile}
         onTopicCreate={handleTopicCreate}

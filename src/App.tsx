@@ -41,6 +41,8 @@ function App() {
               <Route path="/dashboard/:childId" element={<UnifiedDashboard />} />
               <Route path="/legacy-dashboard/:childId" element={<Dashboard />} />
               <Route path="/wonderwhiz/:childId" element={<WonderWhiz />} />
+              {/* Add curio route for content exploration */}
+              <Route path="/curio/:childId/:curioId" element={<UnifiedDashboard />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
             <Toaster 

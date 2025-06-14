@@ -25,6 +25,8 @@ const OptimizedUnifiedDashboard: React.FC = () => {
   const [streakDays, setStreakDays] = useState(0);
   const [explorationsCount, setExplorationsCount] = useState(0);
   const [isCreatingContent, setIsCreatingContent] = useState(false);
+  const [activeSearchMode, setActiveSearchMode] = useState<'explore' | 'encyclopedia' | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     if (user && !childId) {
@@ -79,11 +81,16 @@ const OptimizedUnifiedDashboard: React.FC = () => {
   const handleUnifiedSearch = async (query: string, mode: 'explore' | 'encyclopedia' = 'explore') => {
     if (!childId || !query.trim()) return;
 
+    console.log('Search initiated:', { query, mode, childId });
+    
     setIsCreatingContent(true);
+    setActiveSearchMode(mode);
+    setSearchQuery(query);
     
     try {
       if (mode === 'encyclopedia') {
-        // Create Wonder Whiz topic
+        // Create Wonder Whiz topic and stay on current page
+        console.log('Creating Wonder Whiz topic...');
         const { data: topicResponse, error } = await supabase.functions
           .invoke('generate-wonderwhiz-topic', {
             body: {
@@ -93,12 +100,22 @@ const OptimizedUnifiedDashboard: React.FC = () => {
             }
           });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Wonder Whiz creation error:', error);
+          throw error;
+        }
 
+        console.log('Wonder Whiz topic created:', topicResponse);
         toast.success('Encyclopedia created! 📚');
+        
+        // Refresh recent activity to show new content
+        await loadRecentActivity();
+        
+        // Navigate to Wonder Whiz page
         navigate(`/wonderwhiz/${childId}`);
       } else {
-        // Create Curio exploration
+        // Create Curio exploration and stay on current page
+        console.log('Creating Curio exploration...');
         const { data: newCurio, error } = await supabase
           .from('curios')
           .insert({
@@ -109,16 +126,27 @@ const OptimizedUnifiedDashboard: React.FC = () => {
           .select('id')
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Curio creation error:', error);
+          throw error;
+        }
 
+        console.log('Curio created:', newCurio);
         toast.success('Exploration started! 🚀');
-        navigate(`/curio/${childId}/${newCurio.id}`);
+        
+        // Refresh recent activity to show new content
+        await loadRecentActivity();
+        
+        // For now, stay on dashboard and show success
+        // Later we can implement inline content generation
       }
     } catch (error) {
       console.error('Error creating content:', error);
       toast.error('Something went wrong. Try again!');
     } finally {
       setIsCreatingContent(false);
+      setActiveSearchMode(null);
+      setSearchQuery('');
     }
   };
 
@@ -207,6 +235,32 @@ const OptimizedUnifiedDashboard: React.FC = () => {
             recentExplorations={recentCurios}
           />
         </motion.div>
+
+        {/* Content Generation Status */}
+        <AnimatePresence>
+          {isCreatingContent && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="mb-8"
+            >
+              <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-6">
+                <div className="flex items-center gap-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-wonderwhiz-bright-pink"></div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-white">
+                      Creating your {activeSearchMode === 'encyclopedia' ? 'encyclopedia' : 'exploration'}...
+                    </h3>
+                    <p className="text-white/70">
+                      {searchQuery && `Working on: "${searchQuery}"`}
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Minimal Celebration System */}
         <AnimatePresence>
