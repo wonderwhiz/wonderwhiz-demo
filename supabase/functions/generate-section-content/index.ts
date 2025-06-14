@@ -1,4 +1,3 @@
-
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -19,7 +18,7 @@ serve(async (req) => {
     const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY')
     
     let content = ''
-    let facts = []
+    let facts: string[] = []
 
     if (GROQ_API_KEY) {
       try {
@@ -30,22 +29,21 @@ serve(async (req) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'llama-3.3-70b-versatile',
+            model: 'llama3-70b-8192',
             messages: [
               {
                 role: 'system',
-                content: `You are an expert children's educator. Create engaging, age-appropriate content for ${childAge}-year-olds about ${topicTitle}. 
+                content: `You are an expert children's educator. Create engaging, age-appropriate content for a ${childAge}-year-old child about "${sectionTitle}" which is part of a larger topic on "${topicTitle}".
 
-Write 2-3 paragraphs of clear, educational content about "${sectionTitle}". Use simple language, exciting examples, and make it fun to read.
+Your response must be a single, valid JSON object with the following structure:
+{
+  "content": "string",
+  "facts": ["string", "string", "string"]
+}
 
-Then provide 3 fascinating facts as a JSON array.
-
-Format your response exactly like this:
-CONTENT:
-[Your 2-3 paragraphs here]
-
-FACTS:
-["Fact 1", "Fact 2", "Fact 3"]`
+The "content" should be 2-3 paragraphs of clear, educational text. Use simple language, exciting examples, and make it fun.
+The "facts" should be an array of 3 fascinating facts.
+Do not include any text or formatting outside of the single JSON object.`
               },
               {
                 role: 'user',
@@ -53,7 +51,8 @@ FACTS:
               }
             ],
             max_tokens: 800,
-            temperature: 0.8
+            temperature: 0.8,
+            response_format: { type: "json_object" }
           })
         })
 
@@ -61,30 +60,28 @@ FACTS:
           const data = await response.json()
           const fullResponse = data.choices[0].message.content
 
-          // Parse the response
-          const contentMatch = fullResponse.match(/CONTENT:\s*([\s\S]*?)\s*FACTS:/);
-          const factsMatch = fullResponse.match(/FACTS:\s*(\[[\s\S]*\])/);
-
-          if (contentMatch) {
-            content = contentMatch[1].trim()
-          }
-
-          if (factsMatch) {
-            try {
-              facts = JSON.parse(factsMatch[1])
-            } catch (e) {
-              console.log('Failed to parse facts, using fallback')
-              facts = generateFallbackFacts(sectionTitle, topicTitle)
+          try {
+            const parsed = JSON.parse(fullResponse)
+            content = parsed.content || ''
+            facts = parsed.facts || []
+            
+            if (!content || !Array.isArray(facts) || facts.length === 0) {
+              console.log('Generated JSON missing fields, falling back.')
+              throw new Error('Generated JSON missing required fields.')
             }
-          }
 
-          console.log('Successfully generated content with Groq')
+            console.log('Successfully generated content with Groq')
+          } catch (parseError) {
+            console.error('Failed to parse JSON from Groq, falling back.', parseError)
+            const fallbackContent = generateFallbackContent(sectionTitle, topicTitle, childAge)
+            content = fallbackContent.content
+            facts = fallbackContent.facts
+          }
         } else {
           throw new Error(`Groq API error: ${response.status}`)
         }
       } catch (groqError) {
         console.error('Groq API call failed:', groqError.message)
-        // Fall back to local content generation
         const fallbackContent = generateFallbackContent(sectionTitle, topicTitle, childAge)
         content = fallbackContent.content
         facts = fallbackContent.facts

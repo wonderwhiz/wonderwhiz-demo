@@ -158,7 +158,7 @@ async function generateBlock(type: string, topic: string, childAge: number, spec
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: 'llama3-70b-8192',
         messages: [
           {
             role: 'system',
@@ -170,7 +170,8 @@ async function generateBlock(type: string, topic: string, childAge: number, spec
           }
         ],
         max_tokens: 400,
-        temperature: 0.8
+        temperature: 0.8,
+        response_format: { type: 'json_object' }
       })
     })
 
