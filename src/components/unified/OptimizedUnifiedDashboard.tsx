@@ -21,7 +21,6 @@ const OptimizedUnifiedDashboard: React.FC = () => {
   const { user } = useUser();
   const { childProfile, isLoading: isLoadingProfile } = useChildProfile(childId);
   
-  const [recentCurios, setRecentCurios] = useState<any[]>([]);
   const [recentTopics, setRecentTopics] = useState<any[]>([]);
   const [streakDays, setStreakDays] = useState(0);
   const [explorationsCount, setExplorationsCount] = useState(0);
@@ -44,14 +43,6 @@ const OptimizedUnifiedDashboard: React.FC = () => {
     if (!childId) return;
 
     try {
-      // Load recent curios
-      const { data: curios } = await supabase
-        .from('curios')
-        .select('*')
-        .eq('child_id', childId)
-        .order('last_updated_at', { ascending: false })
-        .limit(5);
-
       // Load recent Wonder Whiz topics
       const { data: topics } = await supabase
         .from('learning_topics')
@@ -60,16 +51,15 @@ const OptimizedUnifiedDashboard: React.FC = () => {
         .order('updated_at', { ascending: false })
         .limit(3);
 
-      setRecentCurios(curios || []);
       setRecentTopics(topics || []);
       
       // Set total explorations count
-      const totalExplorations = (curios?.length || 0) + (topics?.length || 0);
+      const totalExplorations = (topics?.length || 0);
       setExplorationsCount(totalExplorations);
 
       // Calculate streak (simplified)
       const today = new Date().toDateString();
-      const lastActivity = curios?.[0]?.last_updated_at || topics?.[0]?.updated_at;
+      const lastActivity = topics?.[0]?.updated_at;
       if (lastActivity) {
         const lastDate = new Date(lastActivity).toDateString();
         setStreakDays(lastDate === today ? 1 : 0);
@@ -79,61 +69,37 @@ const OptimizedUnifiedDashboard: React.FC = () => {
     }
   };
 
-  const handleUnifiedSearch = async (query: string, mode: 'explore' | 'encyclopedia' = 'explore') => {
+  const handleUnifiedSearch = async (query: string) => {
     if (!childId || !query.trim()) return;
 
-    console.log('Search initiated:', { query, mode, childId });
+    console.log('Search initiated, creating encyclopedia topic:', { query, childId });
     
     setIsCreatingContent(true);
-    setActiveSearchMode(mode);
+    setActiveSearchMode('encyclopedia');
     setSearchQuery(query);
     
     try {
-      if (mode === 'encyclopedia') {
-        // Create Wonder Whiz topic and navigate
-        console.log('Creating Wonder Whiz topic...');
-        const { data: topicResponse, error } = await supabase.functions
-          .invoke('generate-wonderwhiz-topic', {
-            body: {
-              topic: query,
-              childAge: childProfile?.age || 10,
-              childId
-            }
-          });
+      // Create Wonder Whiz topic and navigate
+      console.log('Creating Wonder Whiz topic...');
+      const { data: topicResponse, error } = await supabase.functions
+        .invoke('generate-wonderwhiz-topic', {
+          body: {
+            topic: query,
+            childAge: childProfile?.age || 10,
+            childId
+          }
+        });
 
-        if (error) {
-          console.error('Wonder Whiz creation error:', error);
-          throw error;
-        }
-
-        console.log('Wonder Whiz topic created:', topicResponse);
-        toast.success('Encyclopedia created! 📚');
-        
-        // Navigate to Wonder Whiz page
-        navigate(`/wonderwhiz/${childId}`);
-      } else {
-        // Create Curio exploration and navigate
-        console.log('Creating Curio exploration...');
-        toast.success('Starting your adventure! 🚀');
-
-        const { data: newCurio, error } = await supabase
-          .from('curios')
-          .insert({
-            child_id: childId,
-            title: query,
-            query: query
-          })
-          .select('id')
-          .single();
-
-        if (error) {
-          console.error('Curio creation error:', error);
-          throw error;
-        }
-
-        console.log('Curio created, navigating:', newCurio);
-        navigate(`/curio/${childId}/${newCurio.id}`);
+      if (error) {
+        console.error('Wonder Whiz creation error:', error);
+        throw error;
       }
+
+      console.log('Wonder Whiz topic created:', topicResponse);
+      toast.success('Encyclopedia created! 📚');
+      
+      // Navigate to Wonder Whiz page
+      navigate(`/wonderwhiz/${childId}`);
     } catch (error) {
       console.error('Error creating content:', error);
       toast.error('Something went wrong. Try again!');
@@ -148,7 +114,7 @@ const OptimizedUnifiedDashboard: React.FC = () => {
     if (query.toLowerCase().includes('hey wonderwhiz')) {
       const cleanQuery = query.replace(/hey wonderwhiz,?\s*/i, '');
       if (cleanQuery.trim()) {
-        handleUnifiedSearch(cleanQuery.trim(), 'explore');
+        handleUnifiedSearch(cleanQuery.trim());
       }
     }
   };
@@ -243,23 +209,12 @@ const OptimizedUnifiedDashboard: React.FC = () => {
             onSearch={handleUnifiedSearch}
             isLoading={isCreatingContent}
             childAge={childProfile?.age || 10}
-            recentTopics={recentCurios.map(c => c.title)}
+            recentTopics={[]}
           />
         </motion.div>
 
-        {/* Quick Discovery */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mb-8"
-        >
-          <QuickDiscoveryCards
-            onCardSelect={(title) => handleUnifiedSearch(title, 'explore')}
-            childAge={childProfile?.age || 10}
-            recentExplorations={recentCurios}
-          />
-        </motion.div>
+        {/* Quick Discovery component has been removed to simplify the interface */}
+        
 
         {/* Content Generation Status */}
         <AnimatePresence>
@@ -283,7 +238,7 @@ const OptimizedUnifiedDashboard: React.FC = () => {
                   />
                   <div>
                     <h3 className="text-xl font-bold text-white">
-                      ✨ Creating your magical {activeSearchMode === 'encyclopedia' ? 'encyclopedia' : 'adventure'}...
+                      ✨ Creating your magical encyclopedia...
                     </h3>
                     <p className="text-white/80 text-lg">
                       {searchQuery && `🔍 Working on: "${searchQuery}"`}
