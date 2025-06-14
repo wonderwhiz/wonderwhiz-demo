@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,11 +8,14 @@ import { toast } from 'sonner';
 import { Sparkles, BookOpen, Compass, Star, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import UnifiedSearchBar from './UnifiedSearchBar';
+import PersonalizedWelcome from './PersonalizedWelcome';
+import EnhancedUnifiedSearchBar from './EnhancedUnifiedSearchBar';
 import QuickStartOnboarding from './QuickStartOnboarding';
 import RecentExplorations from './RecentExplorations';
 import SuggestedTopics from './SuggestedTopics';
+import CelebrationSystem from './CelebrationSystem';
 import SparksBalance from '@/components/SparksBalance';
+import VoiceAssistant from './VoiceAssistant';
 
 const UnifiedChildDashboard: React.FC = () => {
   const { childId } = useParams<{ childId: string }>();
@@ -25,6 +27,7 @@ const UnifiedChildDashboard: React.FC = () => {
   const [recentCurios, setRecentCurios] = useState<any[]>([]);
   const [recentTopics, setRecentTopics] = useState<any[]>([]);
   const [streakDays, setStreakDays] = useState(0);
+  const [explorationsCount, setExplorationsCount] = useState(0);
   const [isCreatingContent, setIsCreatingContent] = useState(false);
 
   useEffect(() => {
@@ -61,6 +64,10 @@ const UnifiedChildDashboard: React.FC = () => {
 
       setRecentCurios(curios || []);
       setRecentTopics(topics || []);
+      
+      // Set total explorations count
+      const totalExplorations = (curios?.length || 0) + (topics?.length || 0);
+      setExplorationsCount(totalExplorations);
 
       // Calculate streak (simplified)
       const today = new Date().toDateString();
@@ -133,6 +140,15 @@ const UnifiedChildDashboard: React.FC = () => {
     handleUnifiedSearch(topic, 'explore');
   };
 
+  const handleVoiceQuery = (query: string) => {
+    if (query.toLowerCase().includes('hey wonderwhiz')) {
+      const cleanQuery = query.replace(/hey wonderwhiz,?\s*/i, '');
+      if (cleanQuery.trim()) {
+        handleUnifiedSearch(cleanQuery.trim(), 'explore');
+      }
+    }
+  };
+
   if (isLoadingProfile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-wonderwhiz-deep-purple via-wonderwhiz-purple to-wonderwhiz-bright-pink flex items-center justify-center">
@@ -167,48 +183,41 @@ const UnifiedChildDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-wonderwhiz-deep-purple via-wonderwhiz-purple to-wonderwhiz-bright-pink">
       <div className="max-w-6xl mx-auto px-4 py-6">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between mb-8"
-        >
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2">
-              Hey {childProfile.name}! 👋
-            </h1>
-            <div className="flex items-center gap-4">
-              <SparksBalance childId={childId} size="md" />
-              {streakDays > 0 && (
-                <div className="flex items-center gap-1 text-white/80">
-                  <Star className="h-4 w-4 text-yellow-400" />
-                  <span className="text-sm">{streakDays} day streak!</span>
-                </div>
-              )}
-            </div>
-          </div>
-          
-          <Button
-            variant="ghost"
-            onClick={() => navigate('/profiles')}
-            className="text-white/70 hover:text-white hover:bg-white/10"
-          >
-            Switch Profile
-          </Button>
-        </motion.div>
+        {/* Enhanced Personalized Welcome */}
+        <PersonalizedWelcome
+          childName={childProfile.name}
+          childAge={childProfile.age || 10}
+          streakDays={streakDays}
+          sparksBalance={childProfile.sparks_balance || 0}
+        />
 
-        {/* Main Search */}
+        {/* Enhanced Search Bar */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
           className="mb-8"
         >
-          <UnifiedSearchBar
+          <EnhancedUnifiedSearchBar
             onSearch={handleUnifiedSearch}
             isLoading={isCreatingContent}
             childAge={childProfile.age || 10}
-            placeholder="What do you want to explore today?"
+            placeholder="What sparks your curiosity today?"
+          />
+        </motion.div>
+
+        {/* Celebration System */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mb-8"
+        >
+          <CelebrationSystem
+            childId={childId!}
+            streakDays={streakDays}
+            sparksBalance={childProfile.sparks_balance || 0}
+            explorationsCount={explorationsCount}
           />
         </motion.div>
 
@@ -228,7 +237,7 @@ const UnifiedChildDashboard: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
+            transition={{ delay: 0.3 }}
             className="mb-8"
           >
             <RecentExplorations
@@ -244,7 +253,7 @@ const UnifiedChildDashboard: React.FC = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0.4 }}
         >
           <SuggestedTopics
             childAge={childProfile.age || 10}
@@ -252,6 +261,12 @@ const UnifiedChildDashboard: React.FC = () => {
           />
         </motion.div>
       </div>
+
+      {/* Voice Assistant */}
+      <VoiceAssistant
+        onVoiceQuery={handleVoiceQuery}
+        childAge={childProfile.age || 10}
+      />
     </div>
   );
 };
