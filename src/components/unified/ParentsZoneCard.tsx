@@ -22,6 +22,7 @@ const ParentsZoneCard: React.FC<ParentsZoneCardProps> = ({
       className="rounded-2xl"
     >
       <button
+        type="button"
         onClick={onParentsZoneClick}
         onMouseEnter={() => onHover(true)}
         onMouseLeave={() => onHover(false)}
