@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, Link } from 'react-router-dom';
@@ -303,11 +304,12 @@ const ProfileSelector = () => {
             ))}
             
             <motion.div variants={item}>
-              <ParentsZoneCard
-                onClick={handleParentsZoneClick}
-                isHovered={isParentsZoneHovered}
-                onHover={setIsParentsZoneHovered}
-              />
+              <Link to="/parent-zone" className="block w-full h-full">
+                <ParentsZoneCard
+                  isHovered={isParentsZoneHovered}
+                  onHover={setIsParentsZoneHovered}
+                />
+              </Link>
             </motion.div>
             
             <motion.div variants={item}>
