@@ -452,88 +452,72 @@ const ParentZone = () => {
       }
     };
 
-    const loadProfileAndTasks = async () => {
-      if (!profileId || !user) return;
-      
+    const loadParentZoneData = async () => {
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
       setIsLoading(true);
+
       try {
-        const { data: profileData, error: profileError } = await supabase
+        const { data: profiles, error: profilesError } = await supabase
           .from('child_profiles')
           .select('*')
-          .eq('id', profileId)
-          .single();
-          
-        if (profileError) throw profileError;
+          .eq('parent_user_id', user.id)
+          .order('created_at', { ascending: true });
         
-        if (profileData.parent_user_id !== user.id) {
-          toast.error("You don't have permission to view this profile");
-          navigate('/profiles');
-          return;
+        if (profilesError) throw profilesError;
+
+        setAllProfiles(profiles as ChildProfile[]);
+
+        if (profileId) {
+          const currentProfile = profiles.find(p => p.id === profileId);
+          if (currentProfile) {
+            setChildProfile(currentProfile);
+
+            if (currentProfile.parent_user_id !== user.id) {
+              toast.error("You don't have permission to view this profile");
+              navigate('/profiles');
+              return;
+            }
+
+            const { data: tasksData, error: tasksError } = await supabase
+              .from('tasks')
+              .select('*')
+              .eq('parent_user_id', user.id);
+            if (tasksError) throw tasksError;
+            setTasks(tasksData || []);
+
+            await Promise.all([
+              fetchAssignedTasks(),
+              fetchWeeklyActivityData(),
+              fetchLearningStats(),
+              fetchRecentActivity(),
+              fetchPopularTopics(),
+            ]);
+          } else {
+            toast.error("Profile not found.");
+            navigate('/parent-zone');
+          }
+        } else {
+          if (!profiles || profiles.length === 0) {
+            toast.info("You need to create a child profile to access the Parent Zone.");
+            navigate('/profiles');
+          } else if (profiles.length === 1) {
+            navigate(`/parent-zone/${profiles[0].id}`, { replace: true });
+          }
         }
-        
-        setChildProfile(profileData);
-        
-        const { data: tasksData, error: tasksError } = await supabase
-          .from('tasks')
-          .select('*')
-          .eq('parent_user_id', user.id);
-          
-        if (tasksError) throw tasksError;
-        setTasks(tasksData || []);
-        
-        await fetchAssignedTasks();
-        await fetchWeeklyActivityData();
-        await fetchLearningStats();
-        await fetchRecentActivity();
-        await fetchPopularTopics();
-        
       } catch (error) {
-        console.error('Error loading profile or tasks:', error);
-        toast.error("Failed to load profile data");
+        console.error("Failed to load Parent Zone data:", error);
+        toast.error("Failed to load Parent Zone data.");
         navigate('/profiles');
       } finally {
         setIsLoading(false);
       }
     };
-
-    const fetchAllProfiles = async () => {
-      if (!user) return;
-      setIsLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('child_profiles')
-          .select('*')
-          .eq('parent_user_id', user.id)
-          .order('created_at', { ascending: true });
-
-        if (error) throw error;
-
-        if (!data || data.length === 0) {
-          toast.info("You need to create a child profile to access the Parent Zone.");
-          navigate('/profiles');
-        } else if (data.length === 1) {
-          navigate(`/parent-zone/${data[0].id}`, { replace: true });
-        } else {
-          setAllProfiles(data as ChildProfile[]);
-          setIsLoading(false);
-        }
-      } catch (e) {
-        console.error("Failed to load profiles for Parent Zone:", e);
-        toast.error("Failed to load profiles for Parent Zone.");
-        navigate('/profiles');
-      }
-    };
     
-    if (!user) {
-      setIsLoading(false);
-      return;
-    }
+    loadParentZoneData();
 
-    if (profileId) {
-      loadProfileAndTasks();
-    } else {
-      fetchAllProfiles();
-    }
   }, [profileId, user, navigate]);
 
   const handleBackToChild = () => {
@@ -542,6 +526,12 @@ const ParentZone = () => {
   
   const handleReturnToProfiles = () => {
     navigate('/profiles');
+  };
+
+  const handleProfileSwitch = (newProfileId: string) => {
+    if (newProfileId) {
+      navigate(`/parent-zone/${newProfileId}`);
+    }
   };
   
   const handleProfileUpdate = (updatedData: Partial<ChildProfile>) => {
@@ -564,8 +554,10 @@ const ParentZone = () => {
         </Helmet>
         <ParentZoneHeader 
           childProfile={null}
+          allProfiles={allProfiles}
           handleBackToChild={() => navigate('/profiles')}
           handleReturnToProfiles={handleReturnToProfiles}
+          handleProfileSwitch={handleProfileSwitch}
         />
         <main className="p-4 md:p-6 max-w-4xl mx-auto">
           <h1 className="text-3xl font-bold text-white text-center mb-2 font-baloo">Parent Zone</h1>
@@ -599,8 +591,10 @@ const ParentZone = () => {
       
       <ParentZoneHeader 
         childProfile={childProfile}
+        allProfiles={allProfiles}
         handleBackToChild={handleBackToChild}
         handleReturnToProfiles={handleReturnToProfiles}
+        handleProfileSwitch={handleProfileSwitch}
       />
       
       <main className="p-4 md:p-6">
