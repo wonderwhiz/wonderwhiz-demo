@@ -3,7 +3,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Settings, BarChart3, Shield, Users } from 'lucide-react';
 import MagicalBorder from '@/components/MagicalBorder';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 interface ParentsZoneCardProps {
   to: string;
@@ -16,12 +16,18 @@ const ParentsZoneCard: React.FC<ParentsZoneCardProps> = ({
   isHovered,
   onHover
 }) => {
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    navigate(to);
+  };
+
   return (
-    <Link
-      to={to}
+    <button
+      onClick={handleClick}
       onMouseEnter={() => onHover(true)}
       onMouseLeave={() => onHover(false)}
-      className="w-full block perspective-800 transform transition-all duration-500"
+      className="w-full block text-left perspective-800 transform transition-all duration-500"
     >
       <MagicalBorder 
         active={isHovered} 
@@ -85,7 +91,7 @@ const ParentsZoneCard: React.FC<ParentsZoneCardProps> = ({
           </div>
         </motion.div>
       </MagicalBorder>
-    </Link>
+    </button>
   );
 };
 
