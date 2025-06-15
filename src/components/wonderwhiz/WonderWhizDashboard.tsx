@@ -138,6 +138,7 @@ const WonderWhizDashboard: React.FC<WonderWhizDashboardProps> = ({
         childAge={childProfile?.age || 10}
         childProfile={childProfile}
         onBackToTopics={handleBackToTopics}
+        onTopicUpdate={setSelectedTopic}
       />
     );
   }

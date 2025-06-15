@@ -123,6 +123,7 @@ const StreamlinedDashboard: React.FC<StreamlinedDashboardProps> = ({
         childAge={childProfile?.age || 10}
         childProfile={childProfile}
         onBackToTopics={handleBackToTopics}
+        onTopicUpdate={setSelectedTopic}
       />
     );
   }
