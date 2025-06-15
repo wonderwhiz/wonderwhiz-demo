@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Sparkles, CheckCircle } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Sparkles, CheckCircle, BookOpen, Clock, Award } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -145,13 +145,16 @@ Keep exploring and asking questions - that's how great discoveries are made!`,
         reason_param: `Completed section: ${currentSection.title}`
       });
       
-      // Simple toast notification instead of popup
-      toast.success(`+10 Wonder Points!`, {
+      // Simple toast notification
+      toast.success(`Great work! +10 Wonder Points!`, {
         duration: 2000,
         style: {
-          background: '#C0006A',
+          background: '#10B981',
           color: 'white',
-          border: 'none'
+          border: 'none',
+          borderRadius: '12px',
+          fontSize: '16px',
+          fontWeight: '600'
         }
       });
     } catch (error) {
@@ -166,15 +169,22 @@ Keep exploring and asking questions - that's how great discoveries are made!`,
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="text-center py-12"
+        className="max-w-4xl mx-auto"
       >
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-wonderwhiz-bright-pink mx-auto mb-4"></div>
-        <p className="text-white text-lg font-medium">
-          {isYoungChild 
-            ? "Creating something magical for you... ✨" 
-            : "Preparing your content... 🚀"
-          }
-        </p>
+        <Card className="bg-white p-12 shadow-lg border border-gray-200 rounded-3xl">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+              <BookOpen className="h-8 w-8 text-white animate-pulse" />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">
+              {isYoungChild 
+                ? "Creating something amazing for you... ✨" 
+                : "Preparing your content... 🚀"
+              }
+            </h3>
+            <p className="text-gray-600 text-lg">This will just take a moment!</p>
+          </div>
+        </Card>
       </motion.div>
     );
   }
@@ -185,93 +195,114 @@ Keep exploring and asking questions - that's how great discoveries are made!`,
       animate={{ opacity: 1, y: 0 }}
       className="max-w-4xl mx-auto"
     >
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      {/* Modern Header */}
+      <div className="flex items-center justify-between mb-8">
         <Button
           variant="ghost"
           onClick={onBackToTOC}
-          className="text-white hover:text-white hover:bg-white/20 font-medium"
+          className="text-gray-700 hover:text-gray-900 hover:bg-gray-100 font-semibold text-lg px-6 py-3 rounded-2xl"
         >
-          <ArrowLeft className="h-4 w-4 mr-2" />
+          <ArrowLeft className="h-5 w-5 mr-2" />
           Back to Contents
         </Button>
         
-        <div className="text-white/80 text-sm font-medium bg-white/10 px-3 py-1 rounded-full">
+        <div className="bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800 px-6 py-3 rounded-2xl font-semibold border border-purple-200">
           Section {sectionIndex + 1} of {topic.table_of_contents.length}
         </div>
       </div>
 
-      {/* Main Content */}
-      <Card className="bg-white/10 backdrop-blur-sm border-white/30 p-8 shadow-xl">
-        {/* Section Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white mb-3">{section?.title}</h1>
-          <p className="text-white/90 text-lg font-medium">
-            {currentSection.description}
-          </p>
+      {/* Enhanced Main Content */}
+      <Card className="bg-white shadow-xl border border-gray-200 rounded-3xl overflow-hidden">
+        {/* Beautiful Header Section */}
+        <div className="bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 p-8 text-white">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+              <BookOpen className="h-8 w-8 text-white" />
+            </div>
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold mb-2">{section?.title}</h1>
+              <p className="text-white/90 text-lg font-medium">
+                {currentSection.description}
+              </p>
+            </div>
+          </div>
         </div>
 
-        {/* Generated Image */}
-        {section?.image_url && (
-          <div className="mb-8">
-            <motion.img
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              src={section.image_url}
-              alt={section.title}
-              className="w-full aspect-[16/9] object-cover rounded-lg shadow-lg"
-            />
-          </div>
-        )}
-
-        {/* Content */}
-        {section && (
-          <div className="prose prose-invert max-w-none">
-            <div className="text-white text-lg leading-relaxed whitespace-pre-wrap mb-8 font-medium">
-              {section.content}
+        {/* Content Area */}
+        <div className="p-8">
+          {/* Generated Image */}
+          {section?.image_url && (
+            <div className="mb-8">
+              <motion.img
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                src={section.image_url}
+                alt={section.title}
+                className="w-full aspect-[16/9] object-cover rounded-2xl shadow-lg"
+              />
             </div>
+          )}
 
-            {/* Fun Facts */}
-            {section.facts && section.facts.length > 0 && (
-              <div className="p-6 bg-gradient-to-r from-yellow-400/20 to-orange-400/20 rounded-lg border border-yellow-400/30 shadow-lg">
-                <h3 className="text-xl font-bold text-yellow-300 mb-4 flex items-center gap-2">
-                  <Sparkles className="h-5 w-5" />
-                  {isYoungChild ? "Cool Facts! 🤩" : "Did You Know? 🧠"}
-                </h3>
-                <ul className="space-y-3">
-                  {section.facts.map((fact, index) => (
-                    <motion.li
-                      key={index}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className="text-white font-medium flex items-start gap-3"
-                    >
-                      <span className="text-yellow-300 text-xl">•</span>
-                      <span>{fact}</span>
-                    </motion.li>
-                  ))}
-                </ul>
+          {/* Main Content */}
+          {section && (
+            <div className="space-y-8">
+              <div className="prose prose-lg max-w-none">
+                <div className="text-gray-800 text-lg leading-relaxed whitespace-pre-wrap font-medium">
+                  {section.content}
+                </div>
               </div>
-            )}
-          </div>
-        )}
 
-        {/* Navigation */}
-        <div className="flex justify-between items-center mt-12 pt-6 border-t border-white/20">
-          <div className="text-white/70 text-sm font-medium bg-white/10 px-3 py-2 rounded-lg">
-            📖 {section?.word_count || 0} words • ⏱️ ~{Math.ceil((section?.word_count || 0) / 200)} min read
+              {/* Enhanced Fun Facts */}
+              {section.facts && section.facts.length > 0 && (
+                <Card className="bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-200 p-6 shadow-md rounded-2xl">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl flex items-center justify-center shadow-md">
+                      <Sparkles className="h-6 w-6 text-white" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-gray-900">
+                      {isYoungChild ? "Amazing Facts! 🤩" : "Did You Know? 🧠"}
+                    </h3>
+                  </div>
+                  <div className="space-y-3">
+                    {section.facts.map((fact, index) => (
+                      <div key={index} className="flex items-start gap-3">
+                        <div className="w-8 h-8 bg-yellow-200 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <span className="text-yellow-800 font-bold text-sm">{index + 1}</span>
+                        </div>
+                        <p className="text-gray-800 font-medium text-lg">{fact}</p>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Modern Footer */}
+        <div className="bg-gray-50 px-8 py-6 border-t border-gray-200">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-6 text-gray-600">
+              <div className="flex items-center gap-2">
+                <BookOpen className="h-5 w-5" />
+                <span className="font-semibold">{section?.word_count || 0} words</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                <span className="font-semibold">~{Math.ceil((section?.word_count || 0) / 200)} min read</span>
+              </div>
+            </div>
+            
+            <Button
+              onClick={handleComplete}
+              size="lg"
+              className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold text-lg px-8 py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200"
+            >
+              <Award className="h-6 w-6 mr-2" />
+              {isYoungChild ? "I'm Done! 🎉" : "Complete Section"}
+              <ArrowRight className="h-6 w-6 ml-2" />
+            </Button>
           </div>
-          
-          <Button
-            onClick={handleComplete}
-            size="lg"
-            className="bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/90 text-white font-semibold shadow-lg"
-          >
-            <CheckCircle className="h-5 w-5 mr-2" />
-            {isYoungChild ? "I'm Done! 🎉" : "Complete Section"}
-            <ArrowRight className="h-5 w-5 ml-2" />
-          </Button>
         </div>
       </Card>
     </motion.div>

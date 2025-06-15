@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, CheckCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, BookOpen, Trophy } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { LearningTopic } from '@/types/wonderwhiz';
@@ -57,45 +57,58 @@ const EncyclopediaView: React.FC<EncyclopediaViewProps> = ({
 
   return (
     <div className="max-w-6xl mx-auto">
-      {/* Improved Header */}
+      {/* Modern Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mb-6"
+        className="mb-8"
       >
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-6">
           <Button
             variant="ghost"
             onClick={onBackToTopics}
-            className="text-white hover:text-white hover:bg-white/20 font-medium"
+            className="text-gray-700 hover:text-gray-900 hover:bg-gray-100 font-semibold text-lg px-6 py-3 rounded-2xl"
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
+            <ArrowLeft className="h-5 w-5 mr-2" />
             {isYoungChild ? "Back to Topics" : "Back to Dashboard"}
           </Button>
           
-          <div className="flex items-center gap-2 text-white bg-white/10 px-3 py-2 rounded-full">
-            <CheckCircle className="h-4 w-4 text-green-400" />
-            <span className="text-sm font-medium">
-              {completedSections.length}/{topic.table_of_contents.length} complete
+          <div className="flex items-center gap-3 bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 px-6 py-3 rounded-2xl border border-green-200">
+            <CheckCircle className="h-5 w-5 text-green-600" />
+            <span className="font-bold">
+              {completedSections.length}/{topic.table_of_contents.length} sections complete
             </span>
           </div>
         </div>
 
-        {/* Enhanced Progress Bar */}
-        <Card className="bg-white/15 backdrop-blur-sm border-white/30 p-4 shadow-lg">
-          <div className="flex items-center justify-between mb-2">
-            <h1 className="text-xl font-bold text-white">{topic.title}</h1>
-            <span className="text-white/90 text-sm font-semibold bg-white/20 px-2 py-1 rounded">
-              {Math.round(progress)}%
-            </span>
-          </div>
-          <div className="w-full bg-white/20 rounded-full h-3 shadow-inner">
-            <motion.div
-              className="bg-gradient-to-r from-wonderwhiz-bright-pink to-purple-500 h-3 rounded-full shadow-sm"
-              initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.5 }}
-            />
+        {/* Beautiful Progress Card */}
+        <Card className="bg-white shadow-lg border border-gray-200 rounded-3xl overflow-hidden">
+          <div className="bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 p-6 text-white">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+                  <BookOpen className="h-7 w-7 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold">{topic.title}</h1>
+                  <p className="text-white/90 font-medium">
+                    {isYoungChild ? "Your learning adventure!" : "Encyclopedia journey"}
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-3xl font-bold">{Math.round(progress)}%</div>
+                <div className="text-sm text-white/90 font-medium">Complete</div>
+              </div>
+            </div>
+            <div className="w-full bg-white/20 rounded-full h-4 shadow-inner">
+              <motion.div
+                className="bg-white h-4 rounded-full shadow-sm"
+                initial={{ width: 0 }}
+                animate={{ width: `${progress}%` }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+              />
+            </div>
           </div>
         </Card>
       </motion.div>
