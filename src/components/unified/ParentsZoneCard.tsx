@@ -24,6 +24,7 @@ const ParentsZoneCard: React.FC<ParentsZoneCardProps> = ({
 
   return (
     <button
+      type="button"
       onClick={handleClick}
       onMouseEnter={() => onHover(true)}
       onMouseLeave={() => onHover(false)}
