@@ -9,6 +9,8 @@ import EncyclopediaView from '@/components/wonderwhiz/EncyclopediaView';
 import DashboardHomeView from './DashboardHomeView';
 import FloatingKidsMenu from '@/components/navigation/FloatingKidsMenu';
 import VoiceAssistant from './VoiceAssistant';
+import ParentTasksSection from '@/components/dashboard/ParentTasksSection';
+import WonderWhizLogo from '@/components/WonderWhizLogo';
 
 const OptimizedUnifiedDashboard: React.FC = () => {
   const {
@@ -40,8 +42,9 @@ const OptimizedUnifiedDashboard: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-wonderwhiz-deep-purple via-wonderwhiz-purple to-wonderwhiz-bright-pink relative overflow-hidden">
       <MagicalBackground />
 
-      <div className="relative z-10 p-4">
+      <div className="relative z-10 p-4 flex justify-between items-center">
         <MagicalBreadcrumbs childId={childId!} />
+        <WonderWhizLogo className="h-8 text-white" />
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-6 relative z-10">
@@ -65,6 +68,9 @@ const OptimizedUnifiedDashboard: React.FC = () => {
                 isCreatingContent={isCreatingContent}
                 searchQuery={searchQuery}
               />
+              <div className="mt-6">
+                <ParentTasksSection childId={childId!} />
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
