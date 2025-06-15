@@ -1,20 +1,23 @@
-
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Sparkles, CheckCircle, BookOpen, Clock, Award } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
-import { LearningTopic, LearningSection } from '@/types/wonderwhiz';
-import { toast } from 'sonner';
+import { LearningTopic } from '@/types/wonderwhiz';
+import { ArrowLeft, ArrowRight, List, Trophy, Sparkles, BookOpen } from 'lucide-react';
+import ContentTypography from '../content-blocks/ContentTypography';
+import FunFactBlock from '../content-blocks/FunFactBlock';
 
 interface SimplifiedSectionViewerProps {
   topic: LearningTopic;
   sectionIndex: number;
   childAge: number;
   childProfile: any;
-  onSectionComplete: () => void;
   onBackToTOC: () => void;
+  onNextSection: () => void;
+  onPreviousSection: () => void;
+  onFinishTopic: () => void;
+  isFirstSection: boolean;
+  isLastSection: boolean;
 }
 
 const SimplifiedSectionViewer: React.FC<SimplifiedSectionViewerProps> = ({
@@ -22,289 +25,116 @@ const SimplifiedSectionViewer: React.FC<SimplifiedSectionViewerProps> = ({
   sectionIndex,
   childAge,
   childProfile,
-  onSectionComplete,
-  onBackToTOC
+  onBackToTOC,
+  onNextSection,
+  onPreviousSection,
+  onFinishTopic,
+  isFirstSection,
+  isLastSection,
 }) => {
-  const [section, setSection] = useState<LearningSection | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const currentSection = topic.table_of_contents[sectionIndex];
+  const section = topic.table_of_contents[sectionIndex];
   const isYoungChild = childAge <= 8;
 
-  useEffect(() => {
-    generateSectionContent();
-  }, [sectionIndex]);
-
-  const generateSectionContent = async () => {
-    setLoading(true);
-    
-    try {
-      // Check if section already exists
-      const { data: existingSection } = await supabase
-        .from('learning_sections')
-        .select('*')
-        .eq('topic_id', topic.id)
-        .eq('section_number', sectionIndex + 1)
-        .single();
-
-      if (existingSection) {
-        const convertedSection: LearningSection = {
-          ...existingSection,
-          facts: Array.isArray(existingSection.facts) ? existingSection.facts as string[] : []
-        };
-        setSection(convertedSection);
-        
-        // Generate image silently if needed
-        if (!convertedSection.image_url) {
-          generateImageSilently();
-        }
-      } else {
-        // Generate new section content
-        const { data, error } = await supabase.functions.invoke('generate-section-content', {
-          body: {
-            topicId: topic.id,
-            sectionTitle: currentSection.title,
-            sectionNumber: sectionIndex + 1,
-            childAge: childAge,
-            topicTitle: topic.title
-          }
-        });
-
-        if (error) throw error;
-
-        const convertedSection: LearningSection = {
-          ...data,
-          facts: Array.isArray(data.facts) ? data.facts as string[] : []
-        };
-        setSection(convertedSection);
-        
-        // Generate image silently
-        generateImageSilently();
-      }
-    } catch (error) {
-      console.error('Error generating section:', error);
-      
-      // Create simple fallback content
-      const fallbackSection: LearningSection = {
-        id: `fallback-${Date.now()}`,
-        topic_id: topic.id,
-        section_number: sectionIndex + 1,
-        title: currentSection.title,
-        content: `Welcome to "${currentSection.title}"! 
-
-${currentSection.description || 'This section covers fascinating aspects of the subject.'}
-
-This topic connects to many other areas of knowledge and has real-world applications. By learning about this, you're developing your understanding of the world around you.
-
-Keep exploring and asking questions - that's how great discoveries are made!`,
-        word_count: 100,
-        facts: [
-          "This topic is studied by scientists around the world",
-          "New discoveries are made about this subject regularly",
-          "This knowledge helps us understand our world better"
-        ],
-        story_mode_content: null,
-        image_url: null,
-        image_generated: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      
-      setSection(fallbackSection);
-    } finally {
-      setLoading(false);
-    }
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
   };
 
-  const generateImageSilently = async () => {
-    if (!section) return;
-    
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-section-image', {
-        body: {
-          section_title: section.title,
-          section_content: section.content.substring(0, 500),
-          child_age: childAge
-        }
-      });
-
-      if (!error && data?.image_url) {
-        setSection(prev => prev ? { ...prev, image_url: data.image_url, image_generated: true } : null);
-      }
-    } catch (error) {
-      console.error('Image generation failed:', error);
-    }
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        type: 'spring',
+        stiffness: 100,
+      },
+    },
   };
-
-  const handleComplete = async () => {
-    try {
-      await supabase.rpc('award_learning_points', {
-        child_id_param: childProfile.id,
-        topic_id_param: topic.id,
-        points_param: 10,
-        reason_param: `Completed section: ${currentSection.title}`
-      });
-      
-      // Simple toast notification
-      toast.success(`Great work! +10 Wonder Points!`, {
-        duration: 2000,
-        style: {
-          background: '#10B981',
-          color: 'white',
-          border: 'none',
-          borderRadius: '12px',
-          fontSize: '16px',
-          fontWeight: '600'
-        }
-      });
-    } catch (error) {
-      console.error('Error awarding points:', error);
-    }
-    
-    onSectionComplete();
-  };
-
-  if (loading) {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="max-w-4xl mx-auto"
-      >
-        <Card className="bg-white p-12 shadow-lg border border-gray-200 rounded-3xl">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
-              <BookOpen className="h-8 w-8 text-white animate-pulse" />
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">
-              {isYoungChild 
-                ? "Creating something amazing for you... ✨" 
-                : "Preparing your content... 🚀"
-              }
-            </h3>
-            <p className="text-gray-600 text-lg">This will just take a moment!</p>
-          </div>
-        </Card>
-      </motion.div>
-    );
-  }
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="max-w-4xl mx-auto"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      exit="hidden"
+      className="space-y-8"
     >
-      {/* Modern Header */}
-      <div className="flex items-center justify-between mb-8">
+      <Card className="bg-white shadow-xl border-2 border-gray-200 p-8 rounded-3xl overflow-hidden">
+        <motion.div variants={itemVariants} className="mb-6">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4 flex items-center gap-3">
+            <BookOpen className="h-7 w-7 text-purple-500" />
+            {section.title}
+          </h2>
+          {section.image_url && (
+            <img
+              src={section.image_url}
+              alt={section.title}
+              className="w-full rounded-2xl shadow-md mb-4"
+            />
+          )}
+        </motion.div>
+
+        <motion.div variants={itemVariants} className="mt-8">
+          <ContentTypography content={section.content || ''} childAge={childAge} />
+        </motion.div>
+
+        {section.facts && section.facts.length > 0 && (
+          <motion.div variants={itemVariants} className="mt-8">
+            <FunFactBlock facts={section.facts} childAge={childAge} />
+          </motion.div>
+        )}
+      </Card>
+
+      <motion.div
+        className="mt-12 flex flex-col sm:flex-row items-center justify-between gap-4"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.8, duration: 0.5 }}
+      >
         <Button
           variant="ghost"
           onClick={onBackToTOC}
-          className="text-gray-700 hover:text-gray-900 hover:bg-gray-100 font-semibold text-lg px-6 py-3 rounded-2xl"
+          className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 font-semibold px-6 py-3 rounded-xl"
         >
-          <ArrowLeft className="h-5 w-5 mr-2" />
-          Back to Contents
+          <List className="h-5 w-5 mr-2" />
+          {isYoungChild ? "See all parts" : "Table of Contents"}
         </Button>
-        
-        <div className="bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800 px-6 py-3 rounded-2xl font-semibold border border-purple-200">
-          Section {sectionIndex + 1} of {topic.table_of_contents.length}
-        </div>
-      </div>
 
-      {/* Enhanced Main Content */}
-      <Card className="bg-white shadow-xl border border-gray-200 rounded-3xl overflow-hidden">
-        {/* Beautiful Header Section */}
-        <div className="bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 p-8 text-white">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
-              <BookOpen className="h-8 w-8 text-white" />
-            </div>
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold mb-2">{section?.title}</h1>
-              <p className="text-white/90 text-lg font-medium">
-                {currentSection.description}
-              </p>
-            </div>
-          </div>
-        </div>
+        <div className="flex items-center gap-4">
+          <Button
+            onClick={onPreviousSection}
+            disabled={isFirstSection}
+            className="bg-white/80 hover:bg-white text-gray-800 font-bold px-6 py-3 rounded-xl shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ArrowLeft className="h-5 w-5 mr-2" />
+            Previous
+          </Button>
 
-        {/* Content Area */}
-        <div className="p-8">
-          {/* Generated Image */}
-          {section?.image_url && (
-            <div className="mb-8">
-              <motion.img
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                src={section.image_url}
-                alt={section.title}
-                className="w-full aspect-[16/9] object-cover rounded-2xl shadow-lg"
-              />
-            </div>
-          )}
-
-          {/* Main Content */}
-          {section && (
-            <div className="space-y-8">
-              <div className="prose prose-lg max-w-none">
-                <div className="text-gray-800 text-lg leading-relaxed whitespace-pre-wrap font-medium">
-                  {section.content}
-                </div>
-              </div>
-
-              {/* Enhanced Fun Facts */}
-              {section.facts && section.facts.length > 0 && (
-                <Card className="bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-200 p-6 shadow-md rounded-2xl">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl flex items-center justify-center shadow-md">
-                      <Sparkles className="h-6 w-6 text-white" />
-                    </div>
-                    <h3 className="text-2xl font-bold text-gray-900">
-                      {isYoungChild ? "Amazing Facts! 🤩" : "Did You Know? 🧠"}
-                    </h3>
-                  </div>
-                  <div className="space-y-3">
-                    {section.facts.map((fact, index) => (
-                      <div key={index} className="flex items-start gap-3">
-                        <div className="w-8 h-8 bg-yellow-200 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <span className="text-yellow-800 font-bold text-sm">{index + 1}</span>
-                        </div>
-                        <p className="text-gray-800 font-medium text-lg">{fact}</p>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Modern Footer */}
-        <div className="bg-gray-50 px-8 py-6 border-t border-gray-200">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-6 text-gray-600">
-              <div className="flex items-center gap-2">
-                <BookOpen className="h-5 w-5" />
-                <span className="font-semibold">{section?.word_count || 0} words</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                <span className="font-semibold">~{Math.ceil((section?.word_count || 0) / 200)} min read</span>
-              </div>
-            </div>
-            
+          {!isLastSection ? (
             <Button
-              onClick={handleComplete}
-              size="lg"
-              className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold text-lg px-8 py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200"
+              onClick={onNextSection}
+              className="bg-gradient-to-r from-green-400 to-blue-500 hover:from-green-500 hover:to-blue-600 text-white font-bold px-8 py-3 rounded-xl shadow-lg transition-all"
             >
-              <Award className="h-6 w-6 mr-2" />
-              {isYoungChild ? "I'm Done! 🎉" : "Complete Section"}
-              <ArrowRight className="h-6 w-6 ml-2" />
+              Next Section
+              <ArrowRight className="h-5 w-5 ml-2" />
             </Button>
-          </div>
+          ) : (
+            <Button
+              onClick={onFinishTopic}
+              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold px-8 py-3 rounded-xl shadow-lg transition-all"
+            >
+              Finish Topic!
+              <Trophy className="h-5 w-5 ml-2" />
+            </Button>
+          )}
         </div>
-      </Card>
+      </motion.div>
     </motion.div>
   );
 };

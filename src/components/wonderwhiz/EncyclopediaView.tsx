@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, CheckCircle, BookOpen, Trophy } from 'lucide-react';
@@ -32,17 +31,28 @@ const EncyclopediaView: React.FC<EncyclopediaViewProps> = ({
   const progress = (completedSections.length / topic.table_of_contents.length) * 100;
   const isYoungChild = childAge <= 8;
 
-  const handleSectionFinished = () => {
-    if (!completedSections.includes(currentSectionIndex)) {
-      setCompletedSections(prev => [...prev, currentSectionIndex]);
+  const handleMarkSectionComplete = (index: number) => {
+    if (!completedSections.includes(index)) {
+      setCompletedSections(prev => [...prev, index]);
     }
-    
-    // Auto-advance to next section or return to TOC
+  };
+
+  const handleNextSection = () => {
+    handleMarkSectionComplete(currentSectionIndex);
     if (currentSectionIndex < topic.table_of_contents.length - 1) {
-      setCurrentSectionIndex(currentSectionIndex + 1);
-    } else {
-      setCurrentView('toc');
+      setCurrentSectionIndex(prev => prev + 1);
     }
+  };
+
+  const handlePreviousSection = () => {
+    if (currentSectionIndex > 0) {
+      setCurrentSectionIndex(prev => prev - 1);
+    }
+  };
+
+  const handleFinishTopic = () => {
+    handleMarkSectionComplete(currentSectionIndex);
+    setCurrentView('toc');
   };
 
   const handleStartSection = (sectionIndex: number) => {
@@ -135,8 +145,12 @@ const EncyclopediaView: React.FC<EncyclopediaViewProps> = ({
             sectionIndex={currentSectionIndex}
             childAge={childAge}
             childProfile={childProfile}
-            onSectionComplete={handleSectionFinished}
             onBackToTOC={() => setCurrentView('toc')}
+            onNextSection={handleNextSection}
+            onPreviousSection={handlePreviousSection}
+            onFinishTopic={handleFinishTopic}
+            isFirstSection={currentSectionIndex === 0}
+            isLastSection={currentSectionIndex === topic.table_of_contents.length - 1}
           />
         )}
 
