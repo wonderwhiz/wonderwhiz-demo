@@ -29,6 +29,13 @@ const OptimizedUnifiedDashboard: React.FC = () => {
     return <DashboardLoadingState isLoading={isLoadingProfile} childProfile={childProfile} />;
   }
 
+  const animationProps = {
+    initial: { opacity: 0, scale: 0.95, y: 20 },
+    animate: { opacity: 1, scale: 1, y: 0 },
+    exit: { opacity: 0, scale: 0.95, y: -20 },
+    transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] },
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-wonderwhiz-deep-purple via-wonderwhiz-purple to-wonderwhiz-bright-pink relative overflow-hidden">
       <MagicalBackground />
@@ -40,13 +47,7 @@ const OptimizedUnifiedDashboard: React.FC = () => {
       <div className="max-w-6xl mx-auto px-4 py-6 relative z-10">
         <AnimatePresence mode="wait">
           {activeTopic ? (
-            <motion.div
-              key="encyclopedia"
-              initial={{ opacity: 0, x: 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -50 }}
-              transition={{ duration: 0.4, ease: "easeInOut" }}
-            >
+            <motion.div key="encyclopedia" {...animationProps}>
               <EncyclopediaView
                 topic={activeTopic}
                 childAge={childProfile?.age || 10}
@@ -55,14 +56,16 @@ const OptimizedUnifiedDashboard: React.FC = () => {
               />
             </motion.div>
           ) : (
-            <DashboardHomeView
-              childProfile={childProfile}
-              streakDays={streakDays}
-              explorationsCount={explorationsCount}
-              handleUnifiedSearch={handleUnifiedSearch}
-              isCreatingContent={isCreatingContent}
-              searchQuery={searchQuery}
-            />
+            <motion.div key="dashboard-home" {...animationProps}>
+              <DashboardHomeView
+                childProfile={childProfile}
+                streakDays={streakDays}
+                explorationsCount={explorationsCount}
+                handleUnifiedSearch={handleUnifiedSearch}
+                isCreatingContent={isCreatingContent}
+                searchQuery={searchQuery}
+              />
+            </motion.div>
           )}
         </AnimatePresence>
       </div>
@@ -78,4 +81,3 @@ const OptimizedUnifiedDashboard: React.FC = () => {
 };
 
 export default OptimizedUnifiedDashboard;
-

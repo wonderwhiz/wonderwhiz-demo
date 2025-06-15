@@ -67,7 +67,7 @@ const EncyclopediaView: React.FC<EncyclopediaViewProps> = ({
           <Button
             variant="ghost"
             onClick={onBackToTopics}
-            className="text-gray-700 hover:text-gray-900 hover:bg-gray-100 font-semibold text-lg px-6 py-3 rounded-2xl"
+            className="text-white/80 hover:text-white hover:bg-white/10 font-semibold text-lg px-6 py-3 rounded-2xl"
           >
             <ArrowLeft className="h-5 w-5 mr-2" />
             {isYoungChild ? "Back to Topics" : "Back to Dashboard"}
