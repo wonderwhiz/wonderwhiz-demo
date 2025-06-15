@@ -22,6 +22,7 @@ const OptimizedUnifiedDashboard: React.FC = () => {
     isCreatingContent,
     searchQuery,
     activeTopic,
+    recentTopics,
     handleUnifiedSearch,
     handleVoiceQuery,
     setActiveTopic,
@@ -67,6 +68,7 @@ const OptimizedUnifiedDashboard: React.FC = () => {
                 handleUnifiedSearch={handleUnifiedSearch}
                 isCreatingContent={isCreatingContent}
                 searchQuery={searchQuery}
+                recentTopics={recentTopics}
               />
               <div className="mt-6">
                 <ParentTasksSection childId={childId!} />

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import PersonalizedWelcome from './PersonalizedWelcome';
 import StreamlinedSearchExperience from './StreamlinedSearchExperience';
+import { LearningTopic } from '@/types/wonderwhiz';
 
 interface DashboardHomeViewProps {
   childProfile: any;
@@ -12,6 +13,7 @@ interface DashboardHomeViewProps {
   handleUnifiedSearch: (query: string) => void;
   isCreatingContent: boolean;
   searchQuery: string;
+  recentTopics: LearningTopic[];
 }
 
 const DashboardHomeView: React.FC<DashboardHomeViewProps> = ({
@@ -21,6 +23,7 @@ const DashboardHomeView: React.FC<DashboardHomeViewProps> = ({
   handleUnifiedSearch,
   isCreatingContent,
   searchQuery,
+  recentTopics,
 }) => {
   return (
     <motion.div
@@ -89,7 +92,7 @@ const DashboardHomeView: React.FC<DashboardHomeViewProps> = ({
           onSearch={handleUnifiedSearch}
           isLoading={isCreatingContent}
           childAge={childProfile?.age || 10}
-          recentTopics={[]}
+          recentTopics={recentTopics}
         />
       </motion.div>
 

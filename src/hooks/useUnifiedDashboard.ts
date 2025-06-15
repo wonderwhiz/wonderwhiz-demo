@@ -13,7 +13,7 @@ export const useUnifiedDashboard = () => {
   const { user } = useUser();
   const { childProfile, isLoading: isLoadingProfile } = useChildProfile(childId);
   
-  const [recentTopics, setRecentTopics] = useState<any[]>([]);
+  const [recentTopics, setRecentTopics] = useState<LearningTopic[]>([]);
   const [streakDays, setStreakDays] = useState(0);
   const [explorationsCount, setExplorationsCount] = useState(0);
   const [isCreatingContent, setIsCreatingContent] = useState(false);
@@ -43,7 +43,7 @@ export const useUnifiedDashboard = () => {
         .order('updated_at', { ascending: false })
         .limit(3);
 
-      setRecentTopics(topics || []);
+      setRecentTopics((topics as LearningTopic[]) || []);
       
       // Set total explorations count
       const totalExplorations = (topics?.length || 0);
@@ -126,9 +126,9 @@ export const useUnifiedDashboard = () => {
     isCreatingContent,
     searchQuery,
     activeTopic,
+    recentTopics,
     handleUnifiedSearch,
     handleVoiceQuery,
     setActiveTopic
   };
 };
-
