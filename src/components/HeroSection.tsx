@@ -75,7 +75,7 @@ const HeroSection = () => {
           </p>
           <p className="text-sm md:text-base mb-10 text-gray-300">Trusted by parents building smarter habits at home.</p>
           <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-6 justify-center md:justify-start">
-            <Link to="/register">
+            <Link to="/login">
               <Button className="jelly-button w-full sm:w-auto text-lg group relative overflow-hidden">
                 <span className="relative z-10 flex items-center gap-2">
                   Try WonderWhiz
@@ -83,9 +83,6 @@ const HeroSection = () => {
                 </span>
                 <span className="absolute inset-0 bg-white bg-opacity-20 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></span>
               </Button>
-            </Link>
-            <Link to="/demo">
-              
             </Link>
           </div>
         </motion.div>

@@ -183,20 +183,10 @@ const ConsolidatedDashboard: React.FC<ConsolidatedDashboardProps> = ({
                     </div>
                   )}
                 </div>
-                <Button 
-                  variant="ghost" 
-                  className="w-full text-wonderwhiz-cyan hover:text-white hover:bg-wonderwhiz-cyan/20" 
-                  onClick={() => navigate('/parent-zone')}
-                >
-                  View Complete Journey
-                </Button>
               </CardContent>
             </Card>
           </motion.div>
           
-          <motion.div variants={itemVariants} className="lg:col-span-2">
-            <ParentTasksSection childId={childId} />
-          </motion.div>
         </div>
       )}
     </motion.div>

@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Book, Sparkles, Star, Clock, Trophy, ArrowRight } from 'lucide-react';
+import { Book, Sparkles, Star, Clock, Trophy, ArrowRight, PartyPopper } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -51,6 +52,13 @@ const StreamlinedDashboard: React.FC<StreamlinedDashboardProps> = ({
 
   const handleRecentTopicClick = (topicId: string) => {
     navigate(`/wonderwhiz/${childProfile?.id}?topicId=${topicId}`);
+  };
+
+  const handleSurpriseMeClick = () => {
+    if (suggestedTopics.length > 0) {
+      const randomTopic = suggestedTopics[Math.floor(Math.random() * suggestedTopics.length)];
+      handleTopicClick(randomTopic);
+    }
   };
 
   const containerVariants = {
@@ -215,6 +223,14 @@ const StreamlinedDashboard: React.FC<StreamlinedDashboardProps> = ({
                 >
                   <Book className="h-4 w-4 mr-2" />
                   Browse Encyclopedia
+                </Button>
+                <Button
+                  onClick={handleSurpriseMeClick}
+                  className="bg-wonderwhiz-vibrant-yellow hover:bg-wonderwhiz-vibrant-yellow/90 text-wonderwhiz-deep-purple"
+                  disabled={suggestedTopics.length === 0}
+                >
+                  <PartyPopper className="h-4 w-4 mr-2" />
+                  Surprise Me!
                 </Button>
               </div>
             </div>

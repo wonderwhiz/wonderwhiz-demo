@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -140,6 +141,17 @@ const UnifiedChildDashboard: React.FC = () => {
     handleUnifiedSearch(topic, 'explore');
   };
 
+  const handleRecentCurioClick = (id: string) => {
+    const curio = recentCurios.find(c => c.id === id);
+    if (curio) {
+      navigate(`/wonderwhiz/${childId}?topic=${encodeURIComponent(curio.title)}`);
+    }
+  };
+
+  const handleRecentTopicClick = (id: string) => {
+    navigate(`/wonderwhiz/${childId}?topicId=${id}`);
+  };
+
   const handleVoiceQuery = (query: string) => {
     if (query.toLowerCase().includes('hey wonderwhiz')) {
       const cleanQuery = query.replace(/hey wonderwhiz,?\s*/i, '');
@@ -243,8 +255,8 @@ const UnifiedChildDashboard: React.FC = () => {
             <RecentExplorations
               curios={recentCurios}
               topics={recentTopics}
-              onCurioClick={(id) => navigate(`/curio/${childId}/${id}`)}
-              onTopicClick={() => navigate(`/wonderwhiz/${childId}`)}
+              onCurioClick={handleRecentCurioClick}
+              onTopicClick={handleRecentTopicClick}
             />
           </motion.div>
         )}
