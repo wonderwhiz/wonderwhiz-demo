@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Settings, BarChart3, Shield, Users } from 'lucide-react';
@@ -15,27 +16,36 @@ const ParentsZoneCard: React.FC<ParentsZoneCardProps> = ({
   onHover
 }) => {
   const handleClick = (e: React.MouseEvent) => {
-    console.log('ParentsZoneCard button clicked');
+    console.log('ParentsZoneCard clicked - preventing defaults and calling handler');
     e.preventDefault();
     e.stopPropagation();
     onParentsZoneClick();
   };
 
+  const handleMouseEnter = () => {
+    console.log('ParentsZoneCard mouse enter');
+    onHover(true);
+  };
+
+  const handleMouseLeave = () => {
+    console.log('ParentsZoneCard mouse leave');
+    onHover(false);
+  };
+
   return (
-    <MagicalBorder 
-      active={isHovered} 
-      type="purple"
-      className="rounded-2xl"
+    <div
+      onClick={handleClick}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      className="w-full cursor-pointer perspective-800 transform transition-all duration-500"
     >
-      <button
-        type="button"
-        onClick={handleClick}
-        onMouseEnter={() => onHover(true)}
-        onMouseLeave={() => onHover(false)}
-        className="w-full perspective-800 transform transition-all duration-500"
+      <MagicalBorder 
+        active={isHovered} 
+        type="purple"
+        className="rounded-2xl pointer-events-none"
       >
         <motion.div 
-          className="rounded-2xl overflow-hidden shadow-xl border border-white/20 bg-white/10 backdrop-blur-sm hover:shadow-wonderwhiz-purple/20 h-full"
+          className="rounded-2xl overflow-hidden shadow-xl border border-white/20 bg-white/10 backdrop-blur-sm hover:shadow-wonderwhiz-purple/20 h-full pointer-events-none"
           whileHover={{ scale: 1.03, y: -5 }}
           whileTap={{ scale: 0.98 }}
         >
@@ -90,8 +100,8 @@ const ParentsZoneCard: React.FC<ParentsZoneCardProps> = ({
             </div>
           </div>
         </motion.div>
-      </button>
-    </MagicalBorder>
+      </MagicalBorder>
+    </div>
   );
 };
 
