@@ -1,3 +1,4 @@
+
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -13,16 +14,17 @@ serve(async (req) => {
 
   try {
     const { topic, childAge, childId } = await req.json()
-    console.log(`Generating WonderWhiz topic for: ${topic}, age: ${childAge}`)
+    console.log(`NEW REQUEST: Generating WonderWhiz topic for: ${topic}, age: ${childAge}`)
 
     const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY')
     
     if (!GROQ_API_KEY) {
-      console.error('No Groq API key found')
+      console.error('No Groq API key found. Using fallback.')
       return generateFallbackTopic(topic, childAge, childId)
     }
 
     try {
+      console.log('Calling Groq API...')
       const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -30,7 +32,7 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
+          model: 'llama3-70b-8192',
           messages: [
             {
               role: 'system',
@@ -57,20 +59,32 @@ serve(async (req) => {
       })
 
       if (!response.ok) {
+        const errorBody = await response.text()
+        console.error(`Groq API error: ${response.status}`, errorBody)
         throw new Error(`Groq API error: ${response.status}`)
       }
 
       const data = await response.json()
+      console.log('Groq response received.')
       const content = data.choices[0].message.content
+      console.log('Raw content from Groq:', content)
+
+      let topicData
+      try {
+        topicData = JSON.parse(content)
+        console.log('Successfully parsed Groq response:', topicData)
+      } catch (parseError) {
+        console.error('Failed to parse Groq response content:', content, parseError)
+        return generateFallbackTopic(topic, childAge, childId)
+      }
 
       try {
-        const topicData = JSON.parse(content)
-        
         // Insert into database
         const supabaseUrl = Deno.env.get('SUPABASE_URL')!
         const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
         const supabase = createClient(supabaseUrl, supabaseKey)
-
+        
+        console.log('Inserting generated topic into database...')
         const { data: insertedTopic, error } = await supabase
           .from('learning_topics')
           .insert({
@@ -86,7 +100,7 @@ serve(async (req) => {
           .single()
 
         if (error) {
-          console.error('Database error:', error)
+          console.error('Database insertion error:', error)
           throw error
         }
 
@@ -95,18 +109,18 @@ serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         })
 
-      } catch (parseError) {
-        console.error('Failed to parse Groq response:', parseError)
+      } catch (dbError) {
+        console.error('Caught DB error after parsing, using fallback.', dbError)
         return generateFallbackTopic(topic, childAge, childId)
       }
 
     } catch (groqError) {
-      console.error('Groq API failed:', groqError)
+      console.error('Groq API call failed:', groqError)
       return generateFallbackTopic(topic, childAge, childId)
     }
 
   } catch (error) {
-    console.error('Error in generate-wonderwhiz-topic:', error)
+    console.error('Generic error in generate-wonderwhiz-topic:', error.message)
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -115,7 +129,7 @@ serve(async (req) => {
 })
 
 async function generateFallbackTopic(topic: string, childAge: number, childId: string) {
-  console.log('Using fallback topic generation')
+  console.log('Using fallback topic generation logic')
   
   const fallbackTopic = {
     title: topic,
@@ -134,6 +148,7 @@ async function generateFallbackTopic(topic: string, childAge: number, childId: s
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseKey)
 
+    console.log('Inserting fallback topic into database...')
     const { data: insertedTopic, error } = await supabase
       .from('learning_topics')
       .insert({
@@ -148,16 +163,20 @@ async function generateFallbackTopic(topic: string, childAge: number, childId: s
       .select()
       .single()
 
-    if (error) throw error
-
+    if (error) {
+        console.error('Database fallback insertion failed:', error)
+        throw error
+    }
+    
+    console.log('Successfully created fallback topic:', insertedTopic.id)
     return new Response(JSON.stringify(insertedTopic), {
-      headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' }
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   } catch (dbError) {
-    console.error('Database fallback failed:', dbError)
+    console.error('Caught final DB error in fallback:', dbError.message)
     return new Response(JSON.stringify({ error: 'Failed to create topic' }), {
       status: 500,
-      headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' }
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   }
 }
