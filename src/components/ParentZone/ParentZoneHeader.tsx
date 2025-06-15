@@ -30,14 +30,16 @@ const ParentZoneHeader = ({ childProfile, handleBackToChild, handleReturnToProfi
           </div>
           
           <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              className="text-white hover:bg-white/10"
-              onClick={handleBackToChild}
-            >
-              <User className="h-4 w-4 mr-2" />
-              Child View
-            </Button>
+            {childProfile && (
+              <Button
+                variant="ghost"
+                className="text-white hover:bg-white/10"
+                onClick={handleBackToChild}
+              >
+                <User className="h-4 w-4 mr-2" />
+                Child View
+              </Button>
+            )}
             
             <Button
               variant="ghost"
