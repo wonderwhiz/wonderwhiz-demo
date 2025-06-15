@@ -126,7 +126,7 @@ const UnifiedChildDashboard: React.FC = () => {
         if (error) throw error;
 
         toast.success('Exploration started! 🚀');
-        navigate(`/curio/${childId}/${newCurio.id}`);
+        navigate(`/wonderwhiz/${childId}?topic=${encodeURIComponent(query)}`);
       }
     } catch (error) {
       console.error('Error creating content:', error);

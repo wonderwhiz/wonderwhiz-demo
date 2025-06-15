@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Book, Sparkles, Star, Clock, Trophy, ArrowRight } from 'lucide-react';
@@ -51,7 +50,7 @@ const StreamlinedDashboard: React.FC<StreamlinedDashboardProps> = ({
   };
 
   const handleRecentTopicClick = (topicId: string) => {
-    navigate(`/wonderwhiz/${childProfile?.id}/topic/${topicId}`);
+    navigate(`/wonderwhiz/${childProfile?.id}?topicId=${topicId}`);
   };
 
   const containerVariants = {

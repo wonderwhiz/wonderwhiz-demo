@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -79,7 +78,7 @@ const HowItWorksSection = () => {
         delay: 0.6
       }} className="text-center mt-16">
           <p className="text-lg text-wonderwhiz-blue mb-8">Ready to transform screen time into growth time?</p>
-          <Link to="/register" className="inline-block">
+          <Link to="/login" className="inline-block">
             <button className="jelly-button text-lg px-10 py-4">Try WonderWhiz</button>
           </Link>
         </motion.div>

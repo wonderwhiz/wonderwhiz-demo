@@ -1,5 +1,5 @@
-
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -62,6 +62,7 @@ const ConsolidatedDashboard: React.FC<ConsolidatedDashboardProps> = ({
   streakDays,
   onImageCapture
 }) => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'explore' | 'progress'>('explore');
   const {
     recentlyViewedTopics,
@@ -185,7 +186,7 @@ const ConsolidatedDashboard: React.FC<ConsolidatedDashboardProps> = ({
                 <Button 
                   variant="ghost" 
                   className="w-full text-wonderwhiz-cyan hover:text-white hover:bg-wonderwhiz-cyan/20" 
-                  onClick={() => window.location.href = `/profile/${childId}`}
+                  onClick={() => navigate('/parent-zone')}
                 >
                   View Complete Journey
                 </Button>
