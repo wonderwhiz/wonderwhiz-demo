@@ -102,16 +102,7 @@ const DashboardHomeView: React.FC<DashboardHomeViewProps> = ({
             transition={{ duration: 0.5, ease: "easeOut" }}
             className="mb-8 relative"
           >
-            <Card className="bg-gradient-to-r from-wonderwhiz-bright-pink/30 via-purple-500/25 to-wonderwhiz-vibrant-yellow/20 backdrop-blur-lg border-2 border-wonderwhiz-bright-pink/40 p-8 shadow-2xl overflow-hidden relative">
-              {/* Animated background pattern */}
-              <div className="absolute inset-0 opacity-10">
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12"
-                />
-              </div>
-              
+            <Card className="bg-white shadow-xl border-2 border-purple-200 p-8 rounded-3xl overflow-hidden relative">
               <motion.div 
                 className="flex items-center gap-6 relative z-10"
                 animate={{ scale: [1, 1.02, 1] }}
@@ -119,18 +110,12 @@ const DashboardHomeView: React.FC<DashboardHomeViewProps> = ({
               >
                 <div className="relative">
                   <motion.div 
-                    className="w-16 h-16 bg-gradient-to-r from-wonderwhiz-bright-pink via-purple-500 to-wonderwhiz-vibrant-yellow rounded-full flex items-center justify-center shadow-xl"
+                    className="w-16 h-16 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 rounded-full flex items-center justify-center shadow-xl"
                     animate={{ 
-                      rotate: 360,
-                      boxShadow: [
-                        "0 0 20px rgba(192, 0, 106, 0.3)",
-                        "0 0 40px rgba(192, 0, 106, 0.6)",
-                        "0 0 20px rgba(192, 0, 106, 0.3)"
-                      ]
+                      rotate: 360
                     }}
                     transition={{ 
-                      rotate: { duration: 2, repeat: Infinity, ease: "linear" },
-                      boxShadow: { duration: 2, repeat: Infinity, ease: "easeInOut" }
+                      rotate: { duration: 2, repeat: Infinity, ease: "linear" }
                     }}
                   >
                     <motion.div
@@ -148,37 +133,29 @@ const DashboardHomeView: React.FC<DashboardHomeViewProps> = ({
                     transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
                     className="absolute inset-0"
                   >
-                    <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 text-yellow-300 text-xs">⭐</div>
-                    <div className="absolute top-1/2 -right-2 transform -translate-y-1/2 text-pink-300 text-xs">💫</div>
-                    <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 text-blue-300 text-xs">✨</div>
+                    <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 text-yellow-500 text-xs">⭐</div>
+                    <div className="absolute top-1/2 -right-2 transform -translate-y-1/2 text-pink-500 text-xs">💫</div>
+                    <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 text-blue-500 text-xs">✨</div>
                   </motion.div>
                 </div>
                 
                 <div className="flex-1">
-                  <motion.h3 
-                    className="text-2xl font-bold text-white mb-2 drop-shadow-lg"
-                    animate={{ textShadow: ["0 0 10px rgba(255,255,255,0.5)", "0 0 20px rgba(255,255,255,0.8)", "0 0 10px rgba(255,255,255,0.5)"] }}
-                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                  >
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">
                     🎨 Creating your magical encyclopedia...
-                  </motion.h3>
+                  </h3>
                   {searchQuery && (
                     <motion.p 
-                      className="text-white/95 text-lg font-semibold mb-1"
+                      className="text-gray-700 text-lg font-semibold mb-1"
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.3 }}
                     >
-                      🔍 Working on: <span className="text-wonderwhiz-vibrant-yellow font-bold">"{searchQuery}"</span>
+                      🔍 Working on: <span className="text-purple-600 font-bold">"{searchQuery}"</span>
                     </motion.p>
                   )}
-                  <motion.p 
-                    className="text-white/80 text-sm font-medium"
-                    animate={{ opacity: [0.8, 1, 0.8] }}
-                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                  >
+                  <p className="text-gray-600 text-sm font-medium">
                     Get ready for an amazing learning adventure! 🚀✨
-                  </motion.p>
+                  </p>
                 </div>
 
                 {/* Floating particles */}
@@ -186,7 +163,7 @@ const DashboardHomeView: React.FC<DashboardHomeViewProps> = ({
                   {[...Array(6)].map((_, i) => (
                     <motion.div
                       key={i}
-                      className="absolute w-2 h-2 bg-white/30 rounded-full"
+                      className="absolute w-2 h-2 bg-purple-300 rounded-full"
                       style={{
                         left: `${20 + i * 15}%`,
                         top: `${30 + (i % 2) * 40}%`,

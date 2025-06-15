@@ -47,82 +47,49 @@ const StreamlinedSearchExperience: React.FC<StreamlinedSearchExperienceProps> = 
       className="space-y-8"
     >
       {/* Enhanced Search Bar */}
-      <Card className="bg-gradient-to-r from-white/15 via-white/10 to-white/15 backdrop-blur-xl border-2 border-white/30 p-2 shadow-2xl overflow-hidden relative">
-        {/* Animated background pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <motion.div
-            animate={{ 
-              x: ['-100%', '100%'],
-              opacity: [0, 0.5, 0]
-            }}
-            transition={{ 
-              duration: 3,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent transform skew-x-12"
-          />
-        </div>
-
-        <form onSubmit={handleSubmit} className="relative z-10">
+      <Card className="bg-white shadow-xl border-2 border-gray-200 p-2 rounded-3xl overflow-hidden">
+        <form onSubmit={handleSubmit}>
           <div className="flex items-center gap-3">
             <div className="relative flex-1">
-              <motion.div
-                animate={isFocused ? { 
-                  boxShadow: [
-                    "0 0 0 0 rgba(192, 0, 106, 0)",
-                    "0 0 0 4px rgba(192, 0, 106, 0.3)",
-                    "0 0 0 0 rgba(192, 0, 106, 0)"
-                  ]
-                } : {}}
-                transition={{ duration: 2, repeat: isFocused ? Infinity : 0 }}
-                className="relative"
-              >
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-white/70 z-10" />
-                <Input
-                  ref={inputRef}
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  onFocus={() => setIsFocused(true)}
-                  onBlur={() => setIsFocused(false)}
-                  placeholder={isYoungChild 
-                    ? "What do you want to learn about? 🌟" 
-                    : "What sparks your curiosity today? ✨"
-                  }
-                  className="pl-12 pr-4 py-4 bg-white/10 border-2 border-white/20 text-white text-lg placeholder:text-white/60 focus:border-wonderwhiz-bright-pink/60 focus:bg-white/15 rounded-2xl font-medium shadow-inner backdrop-blur-sm transition-all duration-300"
-                  disabled={isLoading}
-                />
-              </motion.div>
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-500 z-10" />
+              <Input
+                ref={inputRef}
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                placeholder={isYoungChild 
+                  ? "What do you want to learn about? 🌟" 
+                  : "What sparks your curiosity today? ✨"
+                }
+                className="pl-12 pr-4 py-4 bg-gray-50 border-2 border-gray-200 text-gray-900 text-lg placeholder:text-gray-500 focus:border-purple-400 focus:bg-white rounded-2xl font-medium transition-all duration-300"
+                disabled={isLoading}
+              />
             </div>
 
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+            <Button
+              type="submit"
+              disabled={!query.trim() || isLoading}
+              className="px-6 py-4 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 hover:from-purple-600 hover:via-pink-600 hover:to-orange-500 text-white font-bold text-lg rounded-2xl shadow-lg border-2 border-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+              size="lg"
             >
-              <Button
-                type="submit"
-                disabled={!query.trim() || isLoading}
-                className="px-6 py-4 bg-gradient-to-r from-wonderwhiz-bright-pink via-purple-500 to-wonderwhiz-vibrant-yellow hover:from-wonderwhiz-bright-pink/90 hover:via-purple-500/90 hover:to-wonderwhiz-vibrant-yellow/90 text-white font-bold text-lg rounded-2xl shadow-xl border-2 border-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
-                size="lg"
-              >
-                {isLoading ? (
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                    className="flex items-center gap-2"
-                  >
-                    <Sparkles className="h-5 w-5" />
-                    <span>Creating...</span>
-                  </motion.div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <Rocket className="h-5 w-5" />
-                    <span>Explore!</span>
-                  </div>
-                )}
-              </Button>
-            </motion.div>
+              {isLoading ? (
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  className="flex items-center gap-2"
+                >
+                  <Sparkles className="h-5 w-5" />
+                  <span>Creating...</span>
+                </motion.div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Rocket className="h-5 w-5" />
+                  <span>Explore!</span>
+                </div>
+              )}
+            </Button>
           </div>
         </form>
       </Card>
@@ -144,9 +111,9 @@ const StreamlinedSearchExperience: React.FC<StreamlinedSearchExperienceProps> = 
               scale: { duration: 3, repeat: Infinity, ease: "easeInOut" }
             }}
           >
-            <Zap className="h-7 w-7 text-wonderwhiz-vibrant-yellow drop-shadow-lg" />
+            <Zap className="h-7 w-7 text-yellow-500 drop-shadow-lg" />
           </motion.div>
-          <h3 className="text-2xl font-bold text-white drop-shadow">
+          <h3 className="text-2xl font-bold text-gray-900 drop-shadow">
             {isYoungChild ? "🚀 Quick Adventures" : "⚡ Quick Start"}
           </h3>
           <motion.div
@@ -160,7 +127,7 @@ const StreamlinedSearchExperience: React.FC<StreamlinedSearchExperienceProps> = 
               ease: "easeInOut"
             }}
           >
-            <Star className="h-6 w-6 text-wonderwhiz-bright-pink drop-shadow-lg" />
+            <Star className="h-6 w-6 text-pink-500 drop-shadow-lg" />
           </motion.div>
         </div>
 
