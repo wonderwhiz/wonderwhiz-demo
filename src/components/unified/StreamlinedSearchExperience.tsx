@@ -1,181 +1,176 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Sparkles, Zap, ArrowRight, Clock } from 'lucide-react';
+import { Search, Mic, Sparkles, Rocket, Zap, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';
+import QuickDiscoveryCards from './QuickDiscoveryCards';
 
 interface StreamlinedSearchExperienceProps {
-  onSearch: (query: string, mode?: 'explore' | 'encyclopedia') => void;
-  isLoading?: boolean;
+  onSearch: (query: string) => void;
+  isLoading: boolean;
   childAge: number;
-  recentTopics?: string[];
-  popularTopics?: string[];
+  recentTopics: any[];
 }
 
 const StreamlinedSearchExperience: React.FC<StreamlinedSearchExperienceProps> = ({
   onSearch,
-  isLoading = false,
+  isLoading,
   childAge,
-  recentTopics = [],
-  popularTopics = []
+  recentTopics
 }) => {
   const [query, setQuery] = useState('');
-  const [showSuggestions, setShowSuggestions] = useState(true);
-  const [selectedMode, setSelectedMode] = useState<'explore' | 'encyclopedia'>('explore');
+  const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  const quickTopics = childAge <= 7 ? [
-    "🦕 Dinosaurs", "🌈 Rainbows", "🐛 Butterflies", "🌙 Moon", "🐠 Ocean Animals"
-  ] : childAge <= 11 ? [
-    "🚀 Space", "🌋 Volcanoes", "🤖 Robots", "⚡ Electricity", "🧬 DNA"
-  ] : [
-    "🔬 Quantum Physics", "🧠 Brain Science", "🌍 Climate Change", "💻 AI Technology", "🔬 CRISPR"
-  ];
-
-  const handleQuickTopic = (topic: string) => {
-    const cleanTopic = topic.replace(/^[^\s]+\s/, ''); // Remove emoji
-    setQuery(cleanTopic);
-    onSearch(cleanTopic, selectedMode);
-    setShowSuggestions(false);
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim() && !isLoading) {
-      onSearch(query.trim(), selectedMode);
-      setShowSuggestions(false);
+      onSearch(query.trim());
+      setQuery('');
+      inputRef.current?.blur();
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setQuery(e.target.value);
-    if (!e.target.value.trim()) {
-      setShowSuggestions(true);
-    }
+  const handleQuickSearch = (topic: string) => {
+    onSearch(topic);
   };
+
+  const isYoungChild = childAge <= 8;
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
-      {/* Main Search */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative"
-      >
-        <form onSubmit={handleSubmit} className="relative">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white/60 h-5 w-5" />
-            <Input
-              ref={inputRef}
-              type="text"
-              value={query}
-              onChange={handleInputChange}
-              onFocus={() => !query && setShowSuggestions(true)}
-              placeholder="What sparks your curiosity?"
-              className="pl-12 pr-32 py-4 text-lg bg-white/10 border-white/20 text-white placeholder:text-white/60 rounded-2xl focus:border-wonderwhiz-bright-pink transition-all duration-300 focus:ring-2 focus:ring-wonderwhiz-bright-pink/20"
-              disabled={isLoading}
-            />
-            
-            <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setSelectedMode(selectedMode === 'explore' ? 'encyclopedia' : 'explore')}
-                className={`text-xs px-3 py-1 h-8 rounded-full transition-all ${
-                  selectedMode === 'explore' 
-                    ? 'bg-wonderwhiz-bright-pink/20 text-wonderwhiz-bright-pink' 
-                    : 'bg-wonderwhiz-purple/20 text-white/70'
-                }`}
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+      className="space-y-8"
+    >
+      {/* Enhanced Search Bar */}
+      <Card className="bg-gradient-to-r from-white/15 via-white/10 to-white/15 backdrop-blur-xl border-2 border-white/30 p-2 shadow-2xl overflow-hidden relative">
+        {/* Animated background pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <motion.div
+            animate={{ 
+              x: ['-100%', '100%'],
+              opacity: [0, 0.5, 0]
+            }}
+            transition={{ 
+              duration: 3,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+            className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent transform skew-x-12"
+          />
+        </div>
+
+        <form onSubmit={handleSubmit} className="relative z-10">
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1">
+              <motion.div
+                animate={isFocused ? { 
+                  boxShadow: [
+                    "0 0 0 0 rgba(192, 0, 106, 0)",
+                    "0 0 0 4px rgba(192, 0, 106, 0.3)",
+                    "0 0 0 0 rgba(192, 0, 106, 0)"
+                  ]
+                } : {}}
+                transition={{ duration: 2, repeat: isFocused ? Infinity : 0 }}
+                className="relative"
               >
-                {selectedMode === 'explore' ? (
-                  <>
-                    <Sparkles className="h-3 w-3 mr-1" />
-                    Quick
-                  </>
-                ) : (
-                  <>
-                    <Zap className="h-3 w-3 mr-1" />
-                    Deep
-                  </>
-                )}
-              </Button>
-              
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-white/70 z-10" />
+                <Input
+                  ref={inputRef}
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onFocus={() => setIsFocused(true)}
+                  onBlur={() => setIsFocused(false)}
+                  placeholder={isYoungChild 
+                    ? "What do you want to learn about? 🌟" 
+                    : "What sparks your curiosity today? ✨"
+                  }
+                  className="pl-12 pr-4 py-4 bg-white/10 border-2 border-white/20 text-white text-lg placeholder:text-white/60 focus:border-wonderwhiz-bright-pink/60 focus:bg-white/15 rounded-2xl font-medium shadow-inner backdrop-blur-sm transition-all duration-300"
+                  disabled={isLoading}
+                />
+              </motion.div>
+            </div>
+
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
               <Button
                 type="submit"
                 disabled={!query.trim() || isLoading}
-                className="bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/80 text-white rounded-xl px-4 h-8 transition-all duration-200 hover:scale-105 disabled:opacity-50"
+                className="px-6 py-4 bg-gradient-to-r from-wonderwhiz-bright-pink via-purple-500 to-wonderwhiz-vibrant-yellow hover:from-wonderwhiz-bright-pink/90 hover:via-purple-500/90 hover:to-wonderwhiz-vibrant-yellow/90 text-white font-bold text-lg rounded-2xl shadow-xl border-2 border-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+                size="lg"
               >
                 {isLoading ? (
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    className="flex items-center gap-2"
+                  >
+                    <Sparkles className="h-5 w-5" />
+                    <span>Creating...</span>
+                  </motion.div>
                 ) : (
-                  <ArrowRight className="h-4 w-4" />
+                  <div className="flex items-center gap-2">
+                    <Rocket className="h-5 w-5" />
+                    <span>Explore!</span>
+                  </div>
                 )}
               </Button>
-            </div>
+            </motion.div>
           </div>
         </form>
-      </motion.div>
+      </Card>
 
-      {/* Quick Discovery */}
-      <AnimatePresence>
-        {showSuggestions && !query && (
+      {/* Quick Start Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3, duration: 0.6 }}
+      >
+        <div className="flex items-center gap-3 mb-6">
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="mt-4 space-y-4"
+            animate={{ 
+              rotate: [0, 360],
+              scale: [1, 1.2, 1]
+            }}
+            transition={{ 
+              rotate: { duration: 8, repeat: Infinity, ease: "linear" },
+              scale: { duration: 3, repeat: Infinity, ease: "easeInOut" }
+            }}
           >
-            {/* Recent Topics */}
-            {recentTopics.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Clock className="h-4 w-4 text-white/60" />
-                  <span className="text-sm text-white/60">Continue exploring</span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {recentTopics.slice(0, 3).map((topic, index) => (
-                    <motion.button
-                      key={topic}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: index * 0.1 }}
-                      onClick={() => handleQuickTopic(topic)}
-                      className="px-3 py-2 bg-white/10 hover:bg-white/20 text-white text-sm rounded-full transition-all duration-200 hover:scale-105"
-                    >
-                      {topic}
-                    </motion.button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Quick Topics */}
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Sparkles className="h-4 w-4 text-wonderwhiz-bright-pink" />
-                <span className="text-sm text-white/80">Quick start</span>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {quickTopics.map((topic, index) => (
-                  <motion.button
-                    key={topic}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    onClick={() => handleQuickTopic(topic)}
-                    className="p-3 bg-gradient-to-r from-white/10 to-white/5 hover:from-white/20 hover:to-white/10 text-white text-sm rounded-xl transition-all duration-200 hover:scale-105 text-center border border-white/10 hover:border-white/20"
-                  >
-                    {topic}
-                  </motion.button>
-                ))}
-              </div>
-            </div>
+            <Zap className="h-7 w-7 text-wonderwhiz-vibrant-yellow drop-shadow-lg" />
           </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+          <h3 className="text-2xl font-bold text-white drop-shadow">
+            {isYoungChild ? "🚀 Quick Adventures" : "⚡ Quick Start"}
+          </h3>
+          <motion.div
+            animate={{ 
+              scale: [1, 1.3, 1],
+              opacity: [0.7, 1, 0.7]
+            }}
+            transition={{ 
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          >
+            <Star className="h-6 w-6 text-wonderwhiz-bright-pink drop-shadow-lg" />
+          </motion.div>
+        </div>
+
+        <QuickDiscoveryCards
+          onCardSelect={handleQuickSearch}
+          childAge={childAge}
+          recentExplorations={recentTopics}
+        />
+      </motion.div>
+    </motion.div>
   );
 };
 
