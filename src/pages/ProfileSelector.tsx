@@ -125,7 +125,11 @@ const ProfileSelector = () => {
       toast.error("Failed to sign out");
     }
   };
-  
+
+  const handleParentsZoneClick = () => {
+    navigate('/parent-zone');
+  };
+
   const getAvatarBg = (avatar: string) => {
     return AVATAR_BG[avatar as keyof typeof AVATAR_BG] || AVATAR_BG.default;
   };
@@ -299,12 +303,11 @@ const ProfileSelector = () => {
             ))}
             
             <motion.div variants={item}>
-              <Link to="/parent-zone" className="block h-full">
-                <ParentsZoneCard
-                  isHovered={isParentsZoneHovered}
-                  onHover={setIsParentsZoneHovered}
-                />
-              </Link>
+              <ParentsZoneCard
+                onClick={handleParentsZoneClick}
+                isHovered={isParentsZoneHovered}
+                onHover={setIsParentsZoneHovered}
+              />
             </motion.div>
             
             <motion.div variants={item}>

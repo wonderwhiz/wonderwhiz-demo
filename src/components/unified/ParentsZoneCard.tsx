@@ -7,14 +7,18 @@ import MagicalBorder from '@/components/MagicalBorder';
 interface ParentsZoneCardProps {
   isHovered: boolean;
   onHover: (hovered: boolean) => void;
+  onClick: () => void;
 }
 
 const ParentsZoneCard: React.FC<ParentsZoneCardProps> = ({
   isHovered,
-  onHover
+  onHover,
+  onClick
 }) => {
   return (
-    <div
+    <button
+      type="button"
+      onClick={onClick}
       onMouseEnter={() => onHover(true)}
       onMouseLeave={() => onHover(false)}
       className="w-full h-full block text-left perspective-800 transform transition-all duration-500"
@@ -81,7 +85,7 @@ const ParentsZoneCard: React.FC<ParentsZoneCardProps> = ({
           </div>
         </motion.div>
       </MagicalBorder>
-    </div>
+    </button>
   );
 };
 
