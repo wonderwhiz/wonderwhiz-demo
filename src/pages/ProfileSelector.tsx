@@ -126,11 +126,6 @@ const ProfileSelector = () => {
     }
   };
   
-  const handleParentsZoneClick = () => {
-    console.log('handleParentsZoneClick called - navigating to /parent-zone');
-    navigate('/parent-zone');
-  };
-
   const getAvatarBg = (avatar: string) => {
     return AVATAR_BG[avatar as keyof typeof AVATAR_BG] || AVATAR_BG.default;
   };
@@ -305,7 +300,7 @@ const ProfileSelector = () => {
             
             <motion.div variants={item}>
               <ParentsZoneCard
-                onParentsZoneClick={handleParentsZoneClick}
+                to="/parent-zone"
                 isHovered={isParentsZoneHovered}
                 onHover={setIsParentsZoneHovered}
               />

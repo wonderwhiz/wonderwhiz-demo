@@ -3,49 +3,33 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Settings, BarChart3, Shield, Users } from 'lucide-react';
 import MagicalBorder from '@/components/MagicalBorder';
+import { Link } from 'react-router-dom';
 
 interface ParentsZoneCardProps {
-  onParentsZoneClick: () => void;
+  to: string;
   isHovered: boolean;
   onHover: (hovered: boolean) => void;
 }
 
 const ParentsZoneCard: React.FC<ParentsZoneCardProps> = ({
-  onParentsZoneClick,
+  to,
   isHovered,
   onHover
 }) => {
-  const handleClick = (e: React.MouseEvent) => {
-    console.log('ParentsZoneCard clicked - preventing defaults and calling handler');
-    e.preventDefault();
-    e.stopPropagation();
-    onParentsZoneClick();
-  };
-
-  const handleMouseEnter = () => {
-    console.log('ParentsZoneCard mouse enter');
-    onHover(true);
-  };
-
-  const handleMouseLeave = () => {
-    console.log('ParentsZoneCard mouse leave');
-    onHover(false);
-  };
-
   return (
-    <div
-      onClick={handleClick}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      className="w-full cursor-pointer perspective-800 transform transition-all duration-500"
+    <Link
+      to={to}
+      onMouseEnter={() => onHover(true)}
+      onMouseLeave={() => onHover(false)}
+      className="w-full block perspective-800 transform transition-all duration-500"
     >
       <MagicalBorder 
         active={isHovered} 
         type="purple"
-        className="rounded-2xl pointer-events-none"
+        className="rounded-2xl"
       >
         <motion.div 
-          className="rounded-2xl overflow-hidden shadow-xl border border-white/20 bg-white/10 backdrop-blur-sm hover:shadow-wonderwhiz-purple/20 h-full pointer-events-none"
+          className="rounded-2xl overflow-hidden shadow-xl border border-white/20 bg-white/10 backdrop-blur-sm hover:shadow-wonderwhiz-purple/20 h-full"
           whileHover={{ scale: 1.03, y: -5 }}
           whileTap={{ scale: 0.98 }}
         >
@@ -101,7 +85,7 @@ const ParentsZoneCard: React.FC<ParentsZoneCardProps> = ({
           </div>
         </motion.div>
       </MagicalBorder>
-    </div>
+    </Link>
   );
 };
 
