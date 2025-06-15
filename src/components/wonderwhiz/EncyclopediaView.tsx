@@ -8,28 +8,81 @@ import SimplifiedTableOfContents from './SimplifiedTableOfContents';
 import SimplifiedSectionViewer from './SimplifiedSectionViewer';
 import QuizSystem from './QuizSystem';
 import CertificateGenerator from './CertificateGenerator';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface EncyclopediaViewProps {
   topic: LearningTopic;
   childAge: number;
   childProfile: any;
   onBackToTopics: () => void;
+  onTopicUpdate: (topic: LearningTopic) => void;
 }
 
 const EncyclopediaView: React.FC<EncyclopediaViewProps> = ({
   topic,
   childAge,
   childProfile,
-  onBackToTopics
+  onBackToTopics,
+  onTopicUpdate,
 }) => {
   const [currentView, setCurrentView] = useState<'toc' | 'section' | 'quiz' | 'certificate'>('toc');
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [completedSections, setCompletedSections] = useState<number[]>([]);
   const [quizCompleted, setQuizCompleted] = useState(false);
+  const [isSectionLoading, setIsSectionLoading] = useState(false);
 
   const allSectionsCompleted = completedSections.length === topic.table_of_contents.length;
   const progress = (completedSections.length / topic.table_of_contents.length) * 100;
   const isYoungChild = childAge <= 8;
+
+  const loadSectionContent = async (index: number) => {
+    if (isSectionLoading) return;
+
+    const section = topic.table_of_contents[index];
+    if (section.content && section.facts) {
+      return; // Content already exists
+    }
+
+    setIsSectionLoading(true);
+    try {
+      const { data: generatedSection, error } = await supabase.functions.invoke('generate-section-content', {
+        body: {
+          topicId: topic.id,
+          sectionTitle: section.title,
+          sectionNumber: section.section_number,
+          childAge: childAge,
+          topicTitle: topic.title,
+        },
+      });
+
+      if (error) {
+        toast.error(`Failed to load section: ${error.message}`);
+        throw error;
+      }
+
+      if (generatedSection) {
+        const updatedToc = [...topic.table_of_contents];
+        updatedToc[index] = {
+          ...updatedToc[index],
+          content: generatedSection.content,
+          facts: generatedSection.facts,
+          image_url: generatedSection.image_url,
+        };
+
+        const updatedTopic: LearningTopic = {
+          ...topic,
+          table_of_contents: updatedToc,
+        };
+        onTopicUpdate(updatedTopic);
+      }
+    } catch (e) {
+      console.error("Error loading section content:", e);
+      setCurrentView('toc'); // Go back to TOC on error
+    } finally {
+      setIsSectionLoading(false);
+    }
+  };
 
   const handleMarkSectionComplete = (index: number) => {
     if (!completedSections.includes(index)) {
@@ -37,16 +90,20 @@ const EncyclopediaView: React.FC<EncyclopediaViewProps> = ({
     }
   };
 
-  const handleNextSection = () => {
+  const handleNextSection = async () => {
     handleMarkSectionComplete(currentSectionIndex);
     if (currentSectionIndex < topic.table_of_contents.length - 1) {
-      setCurrentSectionIndex(prev => prev + 1);
+      const nextIndex = currentSectionIndex + 1;
+      await loadSectionContent(nextIndex);
+      setCurrentSectionIndex(nextIndex);
     }
   };
 
-  const handlePreviousSection = () => {
+  const handlePreviousSection = async () => {
     if (currentSectionIndex > 0) {
-      setCurrentSectionIndex(prev => prev - 1);
+      const prevIndex = currentSectionIndex - 1;
+      await loadSectionContent(prevIndex);
+      setCurrentSectionIndex(prevIndex);
     }
   };
 
@@ -55,7 +112,8 @@ const EncyclopediaView: React.FC<EncyclopediaViewProps> = ({
     setCurrentView('toc');
   };
 
-  const handleStartSection = (sectionIndex: number) => {
+  const handleStartSection = async (sectionIndex: number) => {
+    await loadSectionContent(sectionIndex);
     setCurrentSectionIndex(sectionIndex);
     setCurrentView('section');
   };
@@ -138,21 +196,41 @@ const EncyclopediaView: React.FC<EncyclopediaViewProps> = ({
           />
         )}
 
-        {currentView === 'section' && (
-          <SimplifiedSectionViewer
-            key="section"
-            topic={topic}
-            sectionIndex={currentSectionIndex}
-            childAge={childAge}
-            childProfile={childProfile}
-            onBackToTOC={() => setCurrentView('toc')}
-            onNextSection={handleNextSection}
-            onPreviousSection={handlePreviousSection}
-            onFinishTopic={handleFinishTopic}
-            isFirstSection={currentSectionIndex === 0}
-            isLastSection={currentSectionIndex === topic.table_of_contents.length - 1}
-          />
-        )}
+        {currentView === 'section' &&
+          (isSectionLoading ? (
+            <motion.div
+              key="section-loading"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className="flex justify-center items-center py-20"
+            >
+              <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-8">
+                <div className="flex items-center gap-4">
+                  <BookOpen className="h-8 w-8 text-wonderwhiz-bright-pink animate-pulse" />
+                  <div>
+                    <h2 className="text-xl font-bold text-white">Preparing your lesson...</h2>
+                    <p className="text-white/70">Our educational experts are getting it ready!</p>
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+          ) : (
+            <SimplifiedSectionViewer
+              key="section"
+              topic={topic}
+              sectionIndex={currentSectionIndex}
+              childAge={childAge}
+              childProfile={childProfile}
+              onBackToTOC={() => setCurrentView('toc')}
+              onNextSection={handleNextSection}
+              onPreviousSection={handlePreviousSection}
+              onFinishTopic={handleFinishTopic}
+              isFirstSection={currentSectionIndex === 0}
+              isLastSection={currentSectionIndex === topic.table_of_contents.length - 1}
+            />
+          ))}
 
         {currentView === 'quiz' && (
           <QuizSystem

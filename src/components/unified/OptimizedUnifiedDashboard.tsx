@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useUnifiedDashboard } from '@/hooks/useUnifiedDashboard';
@@ -57,6 +56,7 @@ const OptimizedUnifiedDashboard: React.FC = () => {
                 childAge={childProfile?.age || 10}
                 childProfile={childProfile}
                 onBackToTopics={() => setActiveTopic(null)}
+                onTopicUpdate={setActiveTopic}
               />
             </motion.div>
           ) : (
