@@ -50,7 +50,7 @@ const EncyclopediaView: React.FC<EncyclopediaViewProps> = ({
         body: {
           topicId: topic.id,
           sectionTitle: section.title,
-          sectionNumber: section.section_number,
+          sectionNumber: index + 1, // Use index + 1 for section number
           childAge: childAge,
           topicTitle: topic.title,
         },
