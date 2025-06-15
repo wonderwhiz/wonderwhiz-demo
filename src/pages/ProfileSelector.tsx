@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -299,11 +299,12 @@ const ProfileSelector = () => {
             ))}
             
             <motion.div variants={item}>
-              <ParentsZoneCard
-                to="/parent-zone"
-                isHovered={isParentsZoneHovered}
-                onHover={setIsParentsZoneHovered}
-              />
+              <Link to="/parent-zone" className="block h-full">
+                <ParentsZoneCard
+                  isHovered={isParentsZoneHovered}
+                  onHover={setIsParentsZoneHovered}
+                />
+              </Link>
             </motion.div>
             
             <motion.div variants={item}>
