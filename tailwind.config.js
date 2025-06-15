@@ -1,4 +1,3 @@
-
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: ["class"],
@@ -27,16 +26,16 @@ module.exports = {
         wonderwhiz: {
           blue: '#4A6FFF',
           'blue-accent': '#4A6FFF',
-          cyan: '#00E2FF',
+          cyan: '#00A8C0',
           purple: '#7E30E1',
           'light-purple': '#3D2A7D',
           'deep-purple': '#2A1B5D',
-          'bright-pink': '#FF5BA3',
-          'vibrant-yellow': '#FFD54F',
-          orange: '#FF8A3D',
-          green: '#00D68F',
+          'bright-pink': '#C0006A',
+          'vibrant-yellow': '#F0A500',
+          orange: '#E66A2E',
+          green: '#00A36C',
           teal: '#00CED1',
-          'light-blue': '#87CEFA',
+          'light-blue': '#4169E1',
           gold: '#FFC72C',
           dark: '#20053D',
         },
@@ -162,7 +161,7 @@ module.exports = {
         'lexend': ['Lexend Deca', 'sans-serif'],
       },
       backgroundImage: {
-        'button-gradient': 'linear-gradient(90deg, #FF5BA3 0%, #FF5BA3 100%)',
+        'button-gradient': 'linear-gradient(90deg, #C0006A 0%, #C0006A 100%)',
       }
     },
   },
