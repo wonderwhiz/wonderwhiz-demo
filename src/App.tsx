@@ -1,3 +1,4 @@
+
 import { Helmet, HelmetProvider } from 'react-helmet-async';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -11,6 +12,7 @@ import ProfileSelector from '@/pages/ProfileSelector';
 import Dashboard from '@/pages/Dashboard';
 import UnifiedDashboard from '@/pages/UnifiedDashboard';
 import WonderWhiz from '@/pages/WonderWhiz';
+import ParentZone from '@/pages/ParentZone';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -38,6 +40,7 @@ function App() {
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/profiles" element={<ProfileSelector />} />
+                <Route path="/parent-zone" element={<ParentZone />} />
                 <Route path="/dashboard/:childId" element={<UnifiedDashboard />} />
                 <Route path="/legacy-dashboard/:childId" element={<Dashboard />} />
                 <Route path="/wonderwhiz/:childId" element={<WonderWhiz />} />
