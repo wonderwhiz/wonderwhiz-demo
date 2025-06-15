@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
@@ -14,6 +13,7 @@ import ParticleEffect from '@/components/ParticleEffect';
 import FloatingElements from '@/components/FloatingElements';
 import MagicalBorder from '@/components/MagicalBorder';
 import SparksBadge from '@/components/SparksBadge';
+import ParentsZoneCard from '@/components/unified/ParentsZoneCard';
 import { useAuth } from '@/hooks/useAuth';
 
 interface ChildProfile {
@@ -52,6 +52,7 @@ const ProfileSelector = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [pinError, setPinError] = useState(false);
   const [hoveredProfile, setHoveredProfile] = useState<string | null>(null);
+  const [isParentsZoneHovered, setIsParentsZoneHovered] = useState(false);
   
   useEffect(() => {
     const loadProfiles = async () => {
@@ -125,6 +126,10 @@ const ProfileSelector = () => {
     }
   };
   
+  const handleParentsZoneClick = () => {
+    navigate('/parent-zone');
+  };
+
   const getAvatarBg = (avatar: string) => {
     return AVATAR_BG[avatar as keyof typeof AVATAR_BG] || AVATAR_BG.default;
   };
@@ -233,7 +238,7 @@ const ProfileSelector = () => {
           </div>
         ) : (
           <motion.div 
-            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 max-w-4xl w-full"
+            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 max-w-6xl w-full"
             variants={container}
             initial="hidden"
             animate="show"
@@ -296,6 +301,14 @@ const ProfileSelector = () => {
                 </MagicalBorder>
               </motion.div>
             ))}
+            
+            <motion.div variants={item}>
+              <ParentsZoneCard
+                onParentsZoneClick={handleParentsZoneClick}
+                isHovered={isParentsZoneHovered}
+                onHover={setIsParentsZoneHovered}
+              />
+            </motion.div>
             
             <motion.div variants={item}>
               <button 
