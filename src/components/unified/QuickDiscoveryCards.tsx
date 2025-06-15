@@ -56,19 +56,30 @@ const QuickDiscoveryCards: React.FC<QuickDiscoveryCardsProps> = ({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: index * 0.1, duration: 0.5 }}
-          whileHover={{ scale: 1.02 }}
+          whileHover={{ scale: 1.03 }}
           whileTap={{ scale: 0.98 }}
         >
           <Card 
             onClick={() => onCardSelect(card.topic)}
-            className="p-6 bg-white border-2 border-gray-200 hover:border-gray-300 cursor-pointer transition-all duration-200 shadow-md hover:shadow-lg rounded-2xl group"
+            className="p-6 bg-white border-2 border-gray-200 hover:border-purple-300 cursor-pointer transition-all duration-300 shadow-md hover:shadow-xl rounded-2xl group relative overflow-hidden"
           >
-            <div className="flex items-center gap-4">
+            <motion.div
+              className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/50 to-transparent pointer-events-none"
+              initial={{ x: "-150%" }}
+              animate={{ x: "150%" }}
+              transition={{
+                repeat: Infinity,
+                duration: 1.5,
+                ease: 'linear',
+                delay: 2 + index * 0.3
+              }}
+            />
+            <div className="relative z-10 flex items-center gap-4">
               <div className={`w-14 h-14 bg-gradient-to-br ${card.color} rounded-2xl flex items-center justify-center text-2xl shadow-lg group-hover:shadow-xl transition-all duration-200`}>
                 {card.icon}
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-bold text-gray-900 group-hover:text-gray-700 transition-colors">
+                <h3 className="text-lg font-bold text-gray-900 group-hover:text-purple-700 transition-colors">
                   {card.title}
                 </h3>
                 <p className="text-gray-600 text-sm font-medium">

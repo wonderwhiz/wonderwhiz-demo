@@ -10,7 +10,8 @@ import { blockAnimations, floatingEffect, pulseAnimation } from './utils/blockSt
 import { ContentBlockType } from '@/types/curio';
 
 interface FunFactBlockProps {
-  facts: string[];
+  facts?: string[];
+  fact?: string;
   specialistId: string;
   onLike?: () => void;
   onBookmark?: () => void;
@@ -22,6 +23,7 @@ interface FunFactBlockProps {
 
 const FunFactBlock: React.FC<FunFactBlockProps> = ({
   facts,
+  fact,
   specialistId,
   onLike,
   onBookmark,
@@ -33,6 +35,8 @@ const FunFactBlock: React.FC<FunFactBlockProps> = ({
   const [showReplyForm, setShowReplyForm] = useState(false);
   const { textSize, messageStyle } = useAgeAdaptation(childAge);
   
+  const displayFacts = facts || (fact ? [fact] : []);
+
   // Update this function to return a proper ContentBlockType value
   const getHeaderType = (): ContentBlockType => {
     return "funFact";
@@ -75,9 +79,9 @@ const FunFactBlock: React.FC<FunFactBlockProps> = ({
           </div>
           <div>
             <ul className="space-y-2 list-none">
-              {facts.map((fact, index) => (
+              {displayFacts.map((factItem, index) => (
                 <li key={index} className={`text-white ${textSize} font-nunito leading-relaxed`}>
-                  {fact}
+                  {factItem}
                 </li>
               ))}
             </ul>
