@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Settings, BarChart3, Shield, Users } from 'lucide-react';
@@ -15,6 +14,13 @@ const ParentsZoneCard: React.FC<ParentsZoneCardProps> = ({
   isHovered,
   onHover
 }) => {
+  const handleClick = (e: React.MouseEvent) => {
+    console.log('ParentsZoneCard button clicked');
+    e.preventDefault();
+    e.stopPropagation();
+    onParentsZoneClick();
+  };
+
   return (
     <MagicalBorder 
       active={isHovered} 
@@ -23,7 +29,7 @@ const ParentsZoneCard: React.FC<ParentsZoneCardProps> = ({
     >
       <button
         type="button"
-        onClick={onParentsZoneClick}
+        onClick={handleClick}
         onMouseEnter={() => onHover(true)}
         onMouseLeave={() => onHover(false)}
         className="w-full perspective-800 transform transition-all duration-500"

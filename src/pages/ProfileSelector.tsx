@@ -127,6 +127,7 @@ const ProfileSelector = () => {
   };
   
   const handleParentsZoneClick = () => {
+    console.log('handleParentsZoneClick called - navigating to /parent-zone');
     navigate('/parent-zone');
   };
 
