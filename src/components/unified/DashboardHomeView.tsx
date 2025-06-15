@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import PersonalizedWelcome from './PersonalizedWelcome';
 import StreamlinedSearchExperience from './StreamlinedSearchExperience';
-import CelebrationSystem from './CelebrationSystem';
 
 interface DashboardHomeViewProps {
   childProfile: any;
@@ -67,7 +66,7 @@ const DashboardHomeView: React.FC<DashboardHomeViewProps> = ({
             exit={{ opacity: 0, y: -20 }}
             className="mb-8"
           >
-            <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-6 border-2 border-wonderwhiz-bright-pink/30">
+            <Card className="bg-white/15 backdrop-blur-sm border-white/30 p-6 border-2 border-wonderwhiz-bright-pink/50 shadow-lg">
               <motion.div 
                 className="flex items-center gap-4"
                 animate={{ scale: [1, 1.02, 1] }}
@@ -82,10 +81,10 @@ const DashboardHomeView: React.FC<DashboardHomeViewProps> = ({
                   <h3 className="text-xl font-bold text-white">
                     ✨ Creating your magical encyclopedia...
                   </h3>
-                  <p className="text-white/80 text-lg">
+                  <p className="text-white/90 text-lg font-medium">
                     {searchQuery && `🔍 Working on: "${searchQuery}"`}
                   </p>
-                  <p className="text-white/60 text-sm mt-1">
+                  <p className="text-white/70 text-sm mt-1 font-medium">
                     This usually takes just a few seconds! 🚀
                   </p>
                 </div>
@@ -95,26 +94,9 @@ const DashboardHomeView: React.FC<DashboardHomeViewProps> = ({
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {(streakDays > 0 || explorationsCount > 0) && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="mb-8"
-          >
-            <CelebrationSystem
-              childId={childProfile.id!}
-              streakDays={streakDays}
-              sparksBalance={childProfile?.sparks_balance || 0}
-              explorationsCount={explorationsCount}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Removed CelebrationSystem component completely to eliminate popups */}
     </motion.div>
   );
 };
 
 export default DashboardHomeView;
-
