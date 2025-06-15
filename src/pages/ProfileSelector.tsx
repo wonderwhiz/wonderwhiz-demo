@@ -31,16 +31,18 @@ const ProfileSelector = () => {
   
   useEffect(() => {
     const loadProfiles = async () => {
-      if (!user) {
-        setIsLoading(false);
-        return;
-      }
+      // ProtectedRoute ensures user is not null, so this check is no longer needed.
+      // if (!user) {
+      //   setIsLoading(false);
+      //   return;
+      // }
 
       try {
+        setIsLoading(true);
         const { data, error } = await supabase
           .from('child_profiles')
           .select('*')
-          .eq('parent_user_id', user.id)
+          .eq('parent_user_id', user!.id)
           .order('created_at', { ascending: false });
         
         if (error) {
@@ -58,7 +60,9 @@ const ProfileSelector = () => {
       }
     };
     
-    loadProfiles();
+    if (user) {
+      loadProfiles();
+    }
   }, [user]);
   
   const handleProfileClick = (profile: ChildProfile) => {

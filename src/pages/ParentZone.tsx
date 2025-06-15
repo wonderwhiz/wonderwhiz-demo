@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { BarChart3, CheckCircle, Settings } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 // Import components
 import ParentZoneHeader from '@/components/ParentZone/ParentZoneHeader';
@@ -71,6 +72,7 @@ interface PopularTopic {
 const ParentZone = () => {
   const navigate = useNavigate();
   const { profileId } = useParams<{ profileId: string }>();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [childProfile, setChildProfile] = useState<ChildProfile | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -88,19 +90,47 @@ const ParentZone = () => {
   const [popularTopics, setPopularTopics] = useState<PopularTopic[]>([]);
   
   useEffect(() => {
+    // If there's no profileId in the URL, we find the first profile
+    // for the user and redirect to its parent zone page.
+    if (!profileId && user) {
+      const redirectToFirstProfile = async () => {
+        setIsLoading(true);
+        try {
+          const { data, error } = await supabase
+            .from('child_profiles')
+            .select('id')
+            .eq('parent_user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+          if (error) throw error;
+
+          if (data && data.length > 0) {
+            navigate(`/parent-zone/${data[0].id}`, { replace: true });
+          } else {
+            toast.info("You need to create a child profile to access the Parent Zone.");
+            navigate('/profiles');
+          }
+        } catch (error) {
+          console.error("Error redirecting to first profile in parent zone:", error);
+          toast.error("Could not load the Parent Zone.");
+          navigate('/profiles');
+        }
+      };
+      redirectToFirstProfile();
+    }
+  }, [profileId, user, navigate]);
+
+  useEffect(() => {
     const loadProfileAndTasks = async () => {
-      if (!profileId) {
-        navigate('/profiles');
+      // We need a profileId to load data. The effect above will provide it if missing.
+      // ProtectedRoute ensures we have a user.
+      if (!profileId || !user) {
         return;
       }
       
+      setIsLoading(true);
       try {
-        const { data: session } = await supabase.auth.getSession();
-        if (!session.session) {
-          navigate('/login');
-          return;
-        }
-        
         const { data: profileData, error: profileError } = await supabase
           .from('child_profiles')
           .select('*')
@@ -109,7 +139,7 @@ const ParentZone = () => {
           
         if (profileError) throw profileError;
         
-        if (profileData.parent_user_id !== session.session.user.id) {
+        if (profileData.parent_user_id !== user.id) {
           toast.error("You don't have permission to view this profile");
           navigate('/profiles');
           return;
@@ -120,7 +150,7 @@ const ParentZone = () => {
         const { data: tasksData, error: tasksError } = await supabase
           .from('tasks')
           .select('*')
-          .eq('parent_user_id', session.session.user.id);
+          .eq('parent_user_id', user.id);
           
         if (tasksError) throw tasksError;
         setTasks(tasksData || []);
@@ -141,7 +171,7 @@ const ParentZone = () => {
     };
     
     loadProfileAndTasks();
-  }, [profileId, navigate]);
+  }, [profileId, navigate, user]);
   
   const fetchAssignedTasks = async () => {
     try {

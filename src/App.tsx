@@ -13,6 +13,7 @@ import Dashboard from '@/pages/Dashboard';
 import UnifiedDashboard from '@/pages/UnifiedDashboard';
 import WonderWhiz from '@/pages/WonderWhiz';
 import ParentZone from '@/pages/ParentZone';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -39,8 +40,21 @@ function App() {
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
-                <Route path="/profiles" element={<ProfileSelector />} />
-                <Route path="/parent-zone" element={<ParentZone />} />
+                <Route path="/profiles" element={
+                  <ProtectedRoute>
+                    <ProfileSelector />
+                  </ProtectedRoute>
+                } />
+                <Route path="/parent-zone" element={
+                  <ProtectedRoute>
+                    <ParentZone />
+                  </ProtectedRoute>
+                } />
+                <Route path="/parent-zone/:profileId" element={
+                  <ProtectedRoute>
+                    <ParentZone />
+                  </ProtectedRoute>
+                } />
                 <Route path="/dashboard/:childId" element={<UnifiedDashboard />} />
                 <Route path="/legacy-dashboard/:childId" element={<Dashboard />} />
                 <Route path="/wonderwhiz/:childId" element={<WonderWhiz />} />
