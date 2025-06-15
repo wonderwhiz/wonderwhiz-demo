@@ -27,7 +27,6 @@ const SimplifiedSectionViewer: React.FC<SimplifiedSectionViewerProps> = ({
 }) => {
   const [section, setSection] = useState<LearningSection | null>(null);
   const [loading, setLoading] = useState(true);
-  const [imageLoading, setImageLoading] = useState(false);
 
   const currentSection = topic.table_of_contents[sectionIndex];
   const isYoungChild = childAge <= 8;
@@ -55,9 +54,9 @@ const SimplifiedSectionViewer: React.FC<SimplifiedSectionViewerProps> = ({
         };
         setSection(convertedSection);
         
-        // Auto-generate image for visual appeal
+        // Generate image silently if needed
         if (!convertedSection.image_url) {
-          generateImage();
+          generateImageSilently();
         }
       } else {
         // Generate new section content
@@ -79,8 +78,8 @@ const SimplifiedSectionViewer: React.FC<SimplifiedSectionViewerProps> = ({
         };
         setSection(convertedSection);
         
-        // Auto-generate image
-        generateImage();
+        // Generate image silently
+        generateImageSilently();
       }
     } catch (error) {
       console.error('Error generating section:', error);
@@ -117,10 +116,8 @@ Keep exploring and asking questions - that's how great discoveries are made!`,
     }
   };
 
-  const generateImage = async () => {
+  const generateImageSilently = async () => {
     if (!section) return;
-    
-    setImageLoading(true);
     
     try {
       const { data, error } = await supabase.functions.invoke('generate-section-image', {
@@ -136,8 +133,6 @@ Keep exploring and asking questions - that's how great discoveries are made!`,
       }
     } catch (error) {
       console.error('Image generation failed:', error);
-    } finally {
-      setImageLoading(false);
     }
   };
 
@@ -150,7 +145,15 @@ Keep exploring and asking questions - that's how great discoveries are made!`,
         reason_param: `Completed section: ${currentSection.title}`
       });
       
-      toast.success(isYoungChild ? "Awesome! +10 Wonder Points! ⭐" : "Great work! +10 Wonder Points! ⭐");
+      // Simple toast notification instead of popup
+      toast.success(`+10 Wonder Points!`, {
+        duration: 2000,
+        style: {
+          background: '#C0006A',
+          color: 'white',
+          border: 'none'
+        }
+      });
     } catch (error) {
       console.error('Error awarding points:', error);
     }
@@ -166,7 +169,7 @@ Keep exploring and asking questions - that's how great discoveries are made!`,
         className="text-center py-12"
       >
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-wonderwhiz-bright-pink mx-auto mb-4"></div>
-        <p className="text-white/80 text-lg">
+        <p className="text-white text-lg font-medium">
           {isYoungChild 
             ? "Creating something magical for you... ✨" 
             : "Preparing your content... 🚀"
@@ -187,60 +190,51 @@ Keep exploring and asking questions - that's how great discoveries are made!`,
         <Button
           variant="ghost"
           onClick={onBackToTOC}
-          className="text-white/70 hover:text-white hover:bg-white/10"
+          className="text-white hover:text-white hover:bg-white/20 font-medium"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Contents
         </Button>
         
-        <div className="text-white/70 text-sm">
+        <div className="text-white/80 text-sm font-medium bg-white/10 px-3 py-1 rounded-full">
           Section {sectionIndex + 1} of {topic.table_of_contents.length}
         </div>
       </div>
 
       {/* Main Content */}
-      <Card className="bg-white/5 backdrop-blur-sm border-white/20 p-8">
+      <Card className="bg-white/10 backdrop-blur-sm border-white/30 p-8 shadow-xl">
         {/* Section Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-white mb-3">{section?.title}</h1>
-          <p className="text-white/70 text-lg">
+          <p className="text-white/90 text-lg font-medium">
             {currentSection.description}
           </p>
         </div>
 
         {/* Generated Image */}
-        {(section?.image_url || imageLoading) && (
+        {section?.image_url && (
           <div className="mb-8">
-            {imageLoading ? (
-              <div className="aspect-[16/9] bg-gradient-to-r from-wonderwhiz-purple/20 to-wonderwhiz-bright-pink/20 rounded-lg flex items-center justify-center border border-white/10">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-wonderwhiz-bright-pink mx-auto mb-2"></div>
-                  <p className="text-white/70 text-sm">Creating visual content... 🎨</p>
-                </div>
-              </div>
-            ) : (
-              <motion.img
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                src={section?.image_url}
-                alt={section?.title}
-                className="w-full aspect-[16/9] object-cover rounded-lg"
-              />
-            )}
+            <motion.img
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              src={section.image_url}
+              alt={section.title}
+              className="w-full aspect-[16/9] object-cover rounded-lg shadow-lg"
+            />
           </div>
         )}
 
         {/* Content */}
         {section && (
           <div className="prose prose-invert max-w-none">
-            <div className="text-white/90 text-lg leading-relaxed whitespace-pre-wrap mb-8">
+            <div className="text-white text-lg leading-relaxed whitespace-pre-wrap mb-8 font-medium">
               {section.content}
             </div>
 
             {/* Fun Facts */}
             {section.facts && section.facts.length > 0 && (
-              <div className="p-6 bg-gradient-to-r from-yellow-400/10 to-orange-400/10 rounded-lg border border-yellow-400/20">
-                <h3 className="text-xl font-bold text-yellow-400 mb-4 flex items-center gap-2">
+              <div className="p-6 bg-gradient-to-r from-yellow-400/20 to-orange-400/20 rounded-lg border border-yellow-400/30 shadow-lg">
+                <h3 className="text-xl font-bold text-yellow-300 mb-4 flex items-center gap-2">
                   <Sparkles className="h-5 w-5" />
                   {isYoungChild ? "Cool Facts! 🤩" : "Did You Know? 🧠"}
                 </h3>
@@ -251,9 +245,9 @@ Keep exploring and asking questions - that's how great discoveries are made!`,
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.1 }}
-                      className="text-white/80 flex items-start gap-3"
+                      className="text-white font-medium flex items-start gap-3"
                     >
-                      <span className="text-yellow-400 text-xl">•</span>
+                      <span className="text-yellow-300 text-xl">•</span>
                       <span>{fact}</span>
                     </motion.li>
                   ))}
@@ -264,15 +258,15 @@ Keep exploring and asking questions - that's how great discoveries are made!`,
         )}
 
         {/* Navigation */}
-        <div className="flex justify-between items-center mt-12 pt-6 border-t border-white/10">
-          <div className="text-white/60 text-sm">
+        <div className="flex justify-between items-center mt-12 pt-6 border-t border-white/20">
+          <div className="text-white/70 text-sm font-medium bg-white/10 px-3 py-2 rounded-lg">
             📖 {section?.word_count || 0} words • ⏱️ ~{Math.ceil((section?.word_count || 0) / 200)} min read
           </div>
           
           <Button
             onClick={handleComplete}
             size="lg"
-            className="bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/90"
+            className="bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/90 text-white font-semibold shadow-lg"
           >
             <CheckCircle className="h-5 w-5 mr-2" />
             {isYoungChild ? "I'm Done! 🎉" : "Complete Section"}

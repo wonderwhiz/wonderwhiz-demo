@@ -15,12 +15,12 @@ const DashboardLoadingState: React.FC<DashboardLoadingStateProps> = ({ isLoading
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-wonderwhiz-deep-purple via-wonderwhiz-purple to-wonderwhiz-bright-pink flex items-center justify-center">
-        <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-8">
+        <Card className="bg-white/15 backdrop-blur-sm border-white/30 p-8 shadow-xl">
           <div className="flex items-center gap-4">
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-wonderwhiz-bright-pink"></div>
             <div>
               <h2 className="text-xl font-bold text-white">Loading your adventure...</h2>
-              <p className="text-white/70">Getting everything ready!</p>
+              <p className="text-white/90 font-medium">Getting everything ready!</p>
             </div>
           </div>
         </Card>
@@ -31,10 +31,14 @@ const DashboardLoadingState: React.FC<DashboardLoadingStateProps> = ({ isLoading
   if (!childProfile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-wonderwhiz-deep-purple via-wonderwhiz-purple to-wonderwhiz-bright-pink flex items-center justify-center">
-        <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-8">
+        <Card className="bg-white/15 backdrop-blur-sm border-white/30 p-8 shadow-xl max-w-md">
           <div className="text-center">
             <h2 className="text-xl font-bold text-white mb-4">Profile not found</h2>
-            <Button onClick={() => navigate('/profiles')} className="bg-wonderwhiz-bright-pink">
+            <p className="text-white/90 mb-4 font-medium">We couldn't find your profile</p>
+            <Button 
+              onClick={() => navigate('/profiles')} 
+              className="bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/90 text-white font-semibold"
+            >
               Back to Profiles
             </Button>
           </div>
@@ -47,4 +51,3 @@ const DashboardLoadingState: React.FC<DashboardLoadingStateProps> = ({ isLoading
 };
 
 export default DashboardLoadingState;
-

@@ -7,6 +7,7 @@ interface ConfettiTriggerProps {
   duration?: number;
 }
 
+// Simplified - no automatic confetti triggers
 const ConfettiTrigger: React.FC<ConfettiTriggerProps> = ({ 
   children,
 }) => {

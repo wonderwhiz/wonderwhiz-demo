@@ -57,7 +57,7 @@ const EncyclopediaView: React.FC<EncyclopediaViewProps> = ({
 
   return (
     <div className="max-w-6xl mx-auto">
-      {/* Simplified Header */}
+      {/* Improved Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -67,29 +67,31 @@ const EncyclopediaView: React.FC<EncyclopediaViewProps> = ({
           <Button
             variant="ghost"
             onClick={onBackToTopics}
-            className="text-white/70 hover:text-white hover:bg-white/10"
+            className="text-white hover:text-white hover:bg-white/20 font-medium"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             {isYoungChild ? "Back to Topics" : "Back to Dashboard"}
           </Button>
           
-          <div className="flex items-center gap-2 text-white/80">
+          <div className="flex items-center gap-2 text-white bg-white/10 px-3 py-2 rounded-full">
             <CheckCircle className="h-4 w-4 text-green-400" />
-            <span className="text-sm">
+            <span className="text-sm font-medium">
               {completedSections.length}/{topic.table_of_contents.length} complete
             </span>
           </div>
         </div>
 
-        {/* Progress Bar */}
-        <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-4">
+        {/* Enhanced Progress Bar */}
+        <Card className="bg-white/15 backdrop-blur-sm border-white/30 p-4 shadow-lg">
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-xl font-bold text-white">{topic.title}</h1>
-            <span className="text-white/70 text-sm">{Math.round(progress)}%</span>
+            <span className="text-white/90 text-sm font-semibold bg-white/20 px-2 py-1 rounded">
+              {Math.round(progress)}%
+            </span>
           </div>
-          <div className="w-full bg-white/10 rounded-full h-2">
+          <div className="w-full bg-white/20 rounded-full h-3 shadow-inner">
             <motion.div
-              className="bg-gradient-to-r from-wonderwhiz-bright-pink to-purple-500 h-2 rounded-full"
+              className="bg-gradient-to-r from-wonderwhiz-bright-pink to-purple-500 h-3 rounded-full shadow-sm"
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
               transition={{ duration: 0.5 }}
