@@ -10,7 +10,7 @@ import { blockAnimations, floatingEffect, pulseAnimation } from './utils/blockSt
 import { ContentBlockType } from '@/types/curio';
 
 interface FunFactBlockProps {
-  fact: string;
+  facts: string[];
   specialistId: string;
   onLike?: () => void;
   onBookmark?: () => void;
@@ -21,7 +21,7 @@ interface FunFactBlockProps {
 }
 
 const FunFactBlock: React.FC<FunFactBlockProps> = ({
-  fact,
+  facts,
   specialistId,
   onLike,
   onBookmark,
@@ -74,9 +74,13 @@ const FunFactBlock: React.FC<FunFactBlockProps> = ({
             <Lightbulb className="h-5 w-5 text-[#FFD54F]" />
           </div>
           <div>
-            <p className={`text-white ${textSize} font-nunito leading-relaxed`}>
-              {fact}
-            </p>
+            <ul className="space-y-2 list-none">
+              {facts.map((fact, index) => (
+                <li key={index} className={`text-white ${textSize} font-nunito leading-relaxed`}>
+                  {fact}
+                </li>
+              ))}
+            </ul>
             
             {childAge <= 8 && (
               <motion.div 

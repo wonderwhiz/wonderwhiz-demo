@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
@@ -86,7 +87,7 @@ const SimplifiedSectionViewer: React.FC<SimplifiedSectionViewerProps> = ({
 
         {section.facts && section.facts.length > 0 && (
           <motion.div variants={itemVariants} className="mt-8">
-            <FunFactBlock facts={section.facts} childAge={childAge} />
+            <FunFactBlock facts={section.facts} childAge={childAge} specialistId="whizzy" />
           </motion.div>
         )}
       </Card>
