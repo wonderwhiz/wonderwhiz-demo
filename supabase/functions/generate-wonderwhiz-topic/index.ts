@@ -1,4 +1,3 @@
-
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -81,7 +80,7 @@ serve(async (req) => {
             table_of_contents: topicData.table_of_contents,
             total_sections: topicData.total_sections,
             child_age: childAge,
-            status: 'ready'
+            status: 'planning'
           })
           .select()
           .single()
@@ -144,7 +143,7 @@ async function generateFallbackTopic(topic: string, childAge: number, childId: s
         table_of_contents: fallbackTopic.table_of_contents,
         total_sections: fallbackTopic.total_sections,
         child_age: childAge,
-        status: 'ready'
+        status: 'planning'
       })
       .select()
       .single()
