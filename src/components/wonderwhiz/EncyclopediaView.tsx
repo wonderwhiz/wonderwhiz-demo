@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, CheckCircle, BookOpen, Trophy } from 'lucide-react';
@@ -8,6 +9,9 @@ import SimplifiedTableOfContents from './SimplifiedTableOfContents';
 import SimplifiedSectionViewer from './SimplifiedSectionViewer';
 import QuizSystem from './QuizSystem';
 import CertificateGenerator from './CertificateGenerator';
+import KidFriendlyLoadingState from './KidFriendlyLoadingState';
+import KidCelebrationSystem from './KidCelebrationSystem';
+import KidFriendlyErrorState from './KidFriendlyErrorState';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -31,6 +35,9 @@ const EncyclopediaView: React.FC<EncyclopediaViewProps> = ({
   const [completedSections, setCompletedSections] = useState<number[]>([]);
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [isSectionLoading, setIsSectionLoading] = useState(false);
+  const [loadingError, setLoadingError] = useState<string | null>(null);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [celebrationType, setCelebrationType] = useState<'section_complete' | 'topic_complete' | 'quiz_complete'>('section_complete');
 
   const allSectionsCompleted = completedSections.length === topic.table_of_contents.length;
   const progress = (completedSections.length / topic.table_of_contents.length) * 100;
@@ -45,20 +52,24 @@ const EncyclopediaView: React.FC<EncyclopediaViewProps> = ({
     }
 
     setIsSectionLoading(true);
+    setLoadingError(null);
+    
     try {
       const { data: generatedSection, error } = await supabase.functions.invoke('generate-section-content', {
         body: {
           topicId: topic.id,
           sectionTitle: section.title,
-          sectionNumber: index + 1, // Use index + 1 for section number
+          sectionNumber: index + 1,
           childAge: childAge,
           topicTitle: topic.title,
         },
       });
 
       if (error) {
-        toast.error(`Failed to load section: ${error.message}`);
-        throw error;
+        console.error('Section generation error:', error);
+        setLoadingError(error.message || 'Failed to load content');
+        toast.error(isYoungChild ? "Oops! Having trouble getting your lesson ready!" : `Failed to load section: ${error.message}`);
+        return;
       }
 
       if (generatedSection) {
@@ -75,9 +86,16 @@ const EncyclopediaView: React.FC<EncyclopediaViewProps> = ({
           table_of_contents: updatedToc,
         };
         onTopicUpdate(updatedTopic);
+        
+        // Show success feedback for younger kids
+        if (isYoungChild) {
+          toast.success("🎉 Your lesson is ready!");
+        }
       }
     } catch (e) {
       console.error("Error loading section content:", e);
+      const errorMessage = e instanceof Error ? e.message : 'Unknown error occurred';
+      setLoadingError(errorMessage);
       setCurrentView('toc'); // Go back to TOC on error
     } finally {
       setIsSectionLoading(false);
@@ -87,6 +105,10 @@ const EncyclopediaView: React.FC<EncyclopediaViewProps> = ({
   const handleMarkSectionComplete = (index: number) => {
     if (!completedSections.includes(index)) {
       setCompletedSections(prev => [...prev, index]);
+      
+      // Trigger celebration for section completion
+      setCelebrationType('section_complete');
+      setShowCelebration(true);
     }
   };
 
@@ -109,10 +131,18 @@ const EncyclopediaView: React.FC<EncyclopediaViewProps> = ({
 
   const handleFinishTopic = () => {
     handleMarkSectionComplete(currentSectionIndex);
-    setCurrentView('toc');
+    
+    // Trigger celebration for topic completion
+    setCelebrationType('topic_complete');
+    setShowCelebration(true);
+    
+    setTimeout(() => {
+      setCurrentView('toc');
+    }, 3000); // Show celebration for 3 seconds
   };
 
   const handleStartSection = async (sectionIndex: number) => {
+    setLoadingError(null);
     await loadSectionContent(sectionIndex);
     setCurrentSectionIndex(sectionIndex);
     setCurrentView('section');
@@ -120,7 +150,19 @@ const EncyclopediaView: React.FC<EncyclopediaViewProps> = ({
 
   const handleQuizComplete = () => {
     setQuizCompleted(true);
-    setCurrentView('certificate');
+    setCelebrationType('quiz_complete');
+    setShowCelebration(true);
+    
+    setTimeout(() => {
+      setCurrentView('certificate');
+    }, 3000);
+  };
+
+  const handleRetryLoading = () => {
+    setLoadingError(null);
+    if (currentView === 'section') {
+      loadSectionContent(currentSectionIndex);
+    }
   };
 
   return (
@@ -138,13 +180,14 @@ const EncyclopediaView: React.FC<EncyclopediaViewProps> = ({
             className="text-white/80 hover:text-white hover:bg-white/10 font-semibold text-lg px-6 py-3 rounded-2xl"
           >
             <ArrowLeft className="h-5 w-5 mr-2" />
-            {isYoungChild ? "Back to Topics" : "Back to Dashboard"}
+            {isYoungChild ? "🏠 Back Home" : "Back to Topics"}
           </Button>
           
           <div className="flex items-center gap-3 bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 px-6 py-3 rounded-2xl border border-green-200">
             <CheckCircle className="h-5 w-5 text-green-600" />
             <span className="font-bold">
-              {completedSections.length}/{topic.table_of_contents.length} sections complete
+              {completedSections.length}/{topic.table_of_contents.length} 
+              {isYoungChild ? " parts done! 🌟" : " sections complete"}
             </span>
           </div>
         </div>
@@ -160,13 +203,15 @@ const EncyclopediaView: React.FC<EncyclopediaViewProps> = ({
                 <div>
                   <h1 className="text-2xl font-bold">{topic.title}</h1>
                   <p className="text-white/90 font-medium">
-                    {isYoungChild ? "Your learning adventure!" : "Encyclopedia journey"}
+                    {isYoungChild ? "Your awesome learning adventure! 🚀" : "Encyclopedia journey"}
                   </p>
                 </div>
               </div>
               <div className="text-right">
                 <div className="text-3xl font-bold">{Math.round(progress)}%</div>
-                <div className="text-sm text-white/90 font-medium">Complete</div>
+                <div className="text-sm text-white/90 font-medium">
+                  {isYoungChild ? "Done!" : "Complete"}
+                </div>
               </div>
             </div>
             <div className="w-full bg-white/20 rounded-full h-4 shadow-inner">
@@ -196,41 +241,41 @@ const EncyclopediaView: React.FC<EncyclopediaViewProps> = ({
           />
         )}
 
-        {currentView === 'section' &&
-          (isSectionLoading ? (
-            <motion.div
-              key="section-loading"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-              className="flex justify-center items-center py-20"
-            >
-              <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-8">
-                <div className="flex items-center gap-4">
-                  <BookOpen className="h-8 w-8 text-wonderwhiz-bright-pink animate-pulse" />
-                  <div>
-                    <h2 className="text-xl font-bold text-white">Preparing your lesson...</h2>
-                    <p className="text-white/70">Our educational experts are getting it ready!</p>
-                  </div>
-                </div>
-              </Card>
-            </motion.div>
-          ) : (
-            <SimplifiedSectionViewer
-              key="section"
-              topic={topic}
-              sectionIndex={currentSectionIndex}
-              childAge={childAge}
-              childProfile={childProfile}
-              onBackToTOC={() => setCurrentView('toc')}
-              onNextSection={handleNextSection}
-              onPreviousSection={handlePreviousSection}
-              onFinishTopic={handleFinishTopic}
-              isFirstSection={currentSectionIndex === 0}
-              isLastSection={currentSectionIndex === topic.table_of_contents.length - 1}
-            />
-          ))}
+        {currentView === 'section' && (
+          <>
+            {isSectionLoading ? (
+              <KidFriendlyLoadingState
+                key="section-loading"
+                type="section"
+                childAge={childAge}
+                message={isYoungChild ? "🎨 Making your lesson super awesome..." : undefined}
+              />
+            ) : loadingError ? (
+              <KidFriendlyErrorState
+                key="section-error"
+                error={loadingError}
+                type="content"
+                childAge={childAge}
+                onRetry={handleRetryLoading}
+                onGoHome={() => setCurrentView('toc')}
+              />
+            ) : (
+              <SimplifiedSectionViewer
+                key="section"
+                topic={topic}
+                sectionIndex={currentSectionIndex}
+                childAge={childAge}
+                childProfile={childProfile}
+                onBackToTOC={() => setCurrentView('toc')}
+                onNextSection={handleNextSection}
+                onPreviousSection={handlePreviousSection}
+                onFinishTopic={handleFinishTopic}
+                isFirstSection={currentSectionIndex === 0}
+                isLastSection={currentSectionIndex === topic.table_of_contents.length - 1}
+              />
+            )}
+          </>
+        )}
 
         {currentView === 'quiz' && (
           <QuizSystem
@@ -252,6 +297,14 @@ const EncyclopediaView: React.FC<EncyclopediaViewProps> = ({
           />
         )}
       </AnimatePresence>
+
+      {/* Celebration System */}
+      <KidCelebrationSystem
+        trigger={showCelebration}
+        type={celebrationType}
+        childAge={childAge}
+        onComplete={() => setShowCelebration(false)}
+      />
     </div>
   );
 };
