@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { LearningTopic } from '@/types/wonderwhiz';
 import SimplifiedTableOfContents from './SimplifiedTableOfContents';
-import SimplifiedSectionViewer from './SimplifiedSectionViewer';
+import EnhancedSectionViewer from './EnhancedSectionViewer';
 import QuizSystem from './QuizSystem';
 import CertificateGenerator from './CertificateGenerator';
 import KidFriendlyLoadingState from './KidFriendlyLoadingState';
@@ -260,7 +260,7 @@ const EncyclopediaView: React.FC<EncyclopediaViewProps> = ({
                 onGoHome={() => setCurrentView('toc')}
               />
             ) : (
-              <SimplifiedSectionViewer
+              <EnhancedSectionViewer
                 key="section"
                 topic={topic}
                 sectionIndex={currentSectionIndex}
