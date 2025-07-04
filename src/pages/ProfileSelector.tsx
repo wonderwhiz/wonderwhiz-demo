@@ -13,9 +13,9 @@ import FloatingElements from '@/components/FloatingElements';
 import ParentsZoneCard from '@/components/unified/ParentsZoneCard';
 import { useAuth } from '@/hooks/useAuth';
 import { ChildProfile } from '@/types/profiles';
-import ProfileCard from '@/components/profiles/ProfileCard';
+import EnhancedProfileCard from '@/components/profiles/EnhancedProfileCard';
 import AddProfileCard from '@/components/profiles/AddProfileCard';
-import PinDialog from '@/components/profiles/PinDialog';
+import EnhancedPinDialog from '@/components/profiles/EnhancedPinDialog';
 
 const ProfileSelector = () => {
   const navigate = useNavigate();
@@ -28,6 +28,26 @@ const ProfileSelector = () => {
   const [pinError, setPinError] = useState(false);
   const [hoveredProfile, setHoveredProfile] = useState<string | null>(null);
   const [isParentsZoneHovered, setIsParentsZoneHovered] = useState(false);
+
+  // Check for auto-login profile on component mount
+  useEffect(() => {
+    const autoLoginProfile = localStorage.getItem('autoLoginProfile');
+    if (autoLoginProfile && !selectedProfile) {
+      try {
+        const profile = JSON.parse(autoLoginProfile);
+        // Auto-login without PIN if profile is remembered
+        localStorage.setItem('currentChildProfile', JSON.stringify(profile));
+        toast.success(`Welcome back, ${profile.name}! 🌟`, {
+          position: 'top-center',
+          duration: 2000,
+        });
+        navigate(`/dashboard/${profile.id}`);
+      } catch (error) {
+        console.error('Error with auto-login:', error);
+        localStorage.removeItem('autoLoginProfile');
+      }
+    }
+  }, [navigate, selectedProfile]);
   
   useEffect(() => {
     const loadProfiles = async () => {
@@ -72,15 +92,24 @@ const ProfileSelector = () => {
     setPinError(false);
   };
   
-  const handlePinSubmit = () => {
+  const handlePinSubmit = (rememberMe: boolean = false) => {
     if (selectedProfile && pinInput === selectedProfile.pin) {
       setIsPinDialogOpen(false);
       
       // Store the selected profile in local storage
       localStorage.setItem('currentChildProfile', JSON.stringify(selectedProfile));
       
+      // If remember me is checked, store for auto-login
+      if (rememberMe) {
+        localStorage.setItem('autoLoginProfile', JSON.stringify(selectedProfile));
+        toast.success(`🔐 ${selectedProfile.name} will stay logged in!`, {
+          position: 'top-center',
+          duration: 2000,
+        });
+      }
+      
       // Show success toast
-      toast.success(`Welcome back, ${selectedProfile.name}! Let's explore!`, {
+      toast.success(`Welcome back, ${selectedProfile.name}! Let's explore! 🚀`, {
         position: 'top-center',
         duration: 3000,
         className: 'streak-toast-success'
@@ -216,7 +245,7 @@ const ProfileSelector = () => {
             animate="show"
           >
             {profiles.map(profile => (
-              <ProfileCard
+              <EnhancedProfileCard
                 key={profile.id}
                 profile={profile}
                 isHovered={hoveredProfile === profile.id}
@@ -241,7 +270,7 @@ const ProfileSelector = () => {
         )}
       </div>
       
-      <PinDialog
+      <EnhancedPinDialog
         isOpen={isPinDialogOpen}
         onOpenChange={setIsPinDialogOpen}
         selectedProfile={selectedProfile}
