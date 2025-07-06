@@ -15,6 +15,9 @@ import KidFriendlyErrorState from './KidFriendlyErrorState';
 import InstantAnswerCard from '../curio/InstantAnswerCard';
 import RelatedTopicsGrid from '../curio/RelatedTopicsGrid';
 import InteractiveLearningSection from '../content-blocks/InteractiveLearningSection';
+import QuickDiscoveryCards from '../curio/QuickDiscoveryCards';
+import CuriosityMeter from '../curio/CuriosityMeter';
+import FunFactBubbles from '../curio/FunFactBubbles';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -260,31 +263,59 @@ const EncyclopediaView: React.FC<EncyclopediaViewProps> = ({
         </Card>
       </motion.div>
 
-      {/* Instant Answer - Shows First */}
+      {/* Instant Answer & Discovery Cards - Shows First */}
       <AnimatePresence>
         {showInstantAnswer && (
-          <InstantAnswerCard
-            key="instant-answer"
-            question={topic.title}
-            childAge={childAge}
-            onExploreMore={handleStartJourney}
-          />
+          <>
+            <InstantAnswerCard
+              key="instant-answer"
+              question={topic.title}
+              childAge={childAge}
+              onExploreMore={handleStartJourney}
+            />
+            <QuickDiscoveryCards
+              key="discovery-cards"
+              topicTitle={topic.title}
+              childAge={childAge}
+              onCardClick={(discovery) => {
+                console.log('Discovery selected:', discovery);
+                handleStartJourney();
+              }}
+            />
+          </>
         )}
       </AnimatePresence>
 
       {/* Main Content */}
       <AnimatePresence mode="wait">
         {currentView === 'toc' && !showInstantAnswer && (
-          <SimplifiedTableOfContents
-            key="toc"
-            topic={topic}
-            completedSections={completedSections}
-            allSectionsCompleted={allSectionsCompleted}
-            quizCompleted={quizCompleted}
-            onStartSection={handleStartSection}
-            onStartQuiz={() => setShowInteractiveLearning(true)}
-            childAge={childAge}
-          />
+          <>
+            <CuriosityMeter
+              key="curiosity-meter"
+              currentEngagement={progress}
+              questionsAsked={2}
+              sectionsCompleted={completedSections.length}
+              timeSpent={5}
+              childAge={childAge}
+              onBoostCuriosity={() => toast.success(isYoungChild ? "🚀 Curiosity boosted!" : "💡 Inspiration activated!")}
+            />
+            <FunFactBubbles
+              key="fun-facts"
+              topicTitle={topic.title}
+              childAge={childAge}
+              onFactClick={(fact) => console.log('Fact clicked:', fact)}
+            />
+            <SimplifiedTableOfContents
+              key="toc"
+              topic={topic}
+              completedSections={completedSections}
+              allSectionsCompleted={allSectionsCompleted}
+              quizCompleted={quizCompleted}
+              onStartSection={handleStartSection}
+              onStartQuiz={() => setShowInteractiveLearning(true)}
+              childAge={childAge}
+            />
+          </>
         )}
 
         {currentView === 'section' && (
