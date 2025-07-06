@@ -12,6 +12,9 @@ import CertificateGenerator from './CertificateGenerator';
 import KidFriendlyLoadingState from './KidFriendlyLoadingState';
 import KidCelebrationSystem from './KidCelebrationSystem';
 import KidFriendlyErrorState from './KidFriendlyErrorState';
+import InstantAnswerCard from '../curio/InstantAnswerCard';
+import RelatedTopicsGrid from '../curio/RelatedTopicsGrid';
+import InteractiveLearningSection from '../content-blocks/InteractiveLearningSection';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -38,6 +41,8 @@ const EncyclopediaView: React.FC<EncyclopediaViewProps> = ({
   const [loadingError, setLoadingError] = useState<string | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
   const [celebrationType, setCelebrationType] = useState<'section_complete' | 'topic_complete' | 'quiz_complete'>('section_complete');
+  const [showInstantAnswer, setShowInstantAnswer] = useState(true);
+  const [showInteractiveLearning, setShowInteractiveLearning] = useState(false);
 
   const allSectionsCompleted = completedSections.length === topic.table_of_contents.length;
   const progress = (completedSections.length / topic.table_of_contents.length) * 100;
@@ -165,6 +170,35 @@ const EncyclopediaView: React.FC<EncyclopediaViewProps> = ({
     }
   };
 
+  const handleStartJourney = () => {
+    setShowInstantAnswer(false);
+    // Small delay for smooth transition
+    setTimeout(() => {
+      setCurrentView('toc');
+    }, 300);
+  };
+
+  const handleInteractiveLearningComplete = (score: number) => {
+    setShowInteractiveLearning(false);
+    // Trigger celebration based on score
+    if (score > 0) {
+      setCelebrationType('quiz_complete');
+      setShowCelebration(true);
+    }
+    // Return to table of contents
+    setTimeout(() => {
+      setCurrentView('toc');
+    }, 2000);
+  };
+
+  const handleRelatedTopicSelect = (topicTitle: string) => {
+    // In a real app, this would navigate to the new topic
+    console.log('Selected related topic:', topicTitle);
+    // For demo, show instant answer for new topic
+    setShowInstantAnswer(true);
+    setCurrentView('toc');
+  };
+
   return (
     <div className="max-w-6xl mx-auto">
       {/* Modern Header */}
@@ -226,9 +260,21 @@ const EncyclopediaView: React.FC<EncyclopediaViewProps> = ({
         </Card>
       </motion.div>
 
+      {/* Instant Answer - Shows First */}
+      <AnimatePresence>
+        {showInstantAnswer && (
+          <InstantAnswerCard
+            key="instant-answer"
+            question={topic.title}
+            childAge={childAge}
+            onExploreMore={handleStartJourney}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Main Content */}
       <AnimatePresence mode="wait">
-        {currentView === 'toc' && (
+        {currentView === 'toc' && !showInstantAnswer && (
           <SimplifiedTableOfContents
             key="toc"
             topic={topic}
@@ -236,7 +282,7 @@ const EncyclopediaView: React.FC<EncyclopediaViewProps> = ({
             allSectionsCompleted={allSectionsCompleted}
             quizCompleted={quizCompleted}
             onStartSection={handleStartSection}
-            onStartQuiz={() => setCurrentView('quiz')}
+            onStartQuiz={() => setShowInteractiveLearning(true)}
             childAge={childAge}
           />
         )}
@@ -288,6 +334,16 @@ const EncyclopediaView: React.FC<EncyclopediaViewProps> = ({
           />
         )}
 
+        {showInteractiveLearning && (
+          <InteractiveLearningSection
+            key="interactive-learning"
+            topicTitle={topic.title}
+            sectionTitle="Interactive Review"
+            childAge={childAge}
+            onComplete={handleInteractiveLearningComplete}
+          />
+        )}
+
         {currentView === 'certificate' && (
           <CertificateGenerator
             key="certificate"
@@ -297,6 +353,15 @@ const EncyclopediaView: React.FC<EncyclopediaViewProps> = ({
           />
         )}
       </AnimatePresence>
+
+      {/* Related Topics - Show after completing sections */}
+      {allSectionsCompleted && currentView === 'toc' && !showInstantAnswer && !showInteractiveLearning && (
+        <RelatedTopicsGrid
+          currentTopic={topic.title}
+          childAge={childAge}
+          onTopicSelect={handleRelatedTopicSelect}
+        />
+      )}
 
       {/* Celebration System */}
       <KidCelebrationSystem
