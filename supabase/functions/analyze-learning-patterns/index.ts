@@ -149,12 +149,21 @@ serve(async (req) => {
       console.error("Error refreshing memory strengths:", refreshError);
     }
 
+    // Generate personalized insights and recommendations
+    const personalizedData = await generatePersonalizedInsights(
+      supabaseAdmin, 
+      childId, 
+      processedData, 
+      childProfile
+    );
+
     return new Response(
       JSON.stringify({
         success: true,
         processedCurios: processedData.length,
         historyEntriesCreated: historyEntries.length,
-        connectionsCreated: topicConnections.length
+        connectionsCreated: topicConnections.length,
+        ...personalizedData
       }),
       { 
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -363,4 +372,254 @@ function isCommonWord(word) {
   ];
   
   return commonWords.includes(word);
+}
+
+// Generate personalized insights and recommendations
+async function generatePersonalizedInsights(supabaseAdmin, childId, processedData, childProfile) {
+  const insights = [];
+  const patterns = {
+    favoriteTopics: [],
+    averageEngagement: 0,
+    learningFrequency: 'moderate',
+    preferredDifficulty: 'medium'
+  };
+
+  // Get learning history for deeper analysis
+  const { data: learningHistory } = await supabaseAdmin
+    .from('learning_history')
+    .select('*')
+    .eq('child_id', childId)
+    .order('interaction_date', { ascending: false })
+    .limit(50);
+
+  // Get recent learning topics
+  const { data: learningTopics } = await supabaseAdmin
+    .from('learning_topics')
+    .select('*')
+    .eq('child_id', childId)
+    .order('updated_at', { ascending: false })
+    .limit(10);
+
+  // Analyze patterns from processed data
+  if (processedData && processedData.length > 0) {
+    const topicCounts = {};
+    let totalEngagement = 0;
+
+    processedData.forEach(item => {
+      // Count topic frequency
+      topicCounts[item.curio.title] = (topicCounts[item.curio.title] || 0) + 1;
+      totalEngagement += item.engagementLevel || 0;
+      
+      // Analyze extracted topics
+      item.extractedTopics.forEach(topic => {
+        topicCounts[topic] = (topicCounts[topic] || 0) + 0.5;
+      });
+    });
+
+    patterns.favoriteTopics = Object.entries(topicCounts)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 5)
+      .map(([topic]) => topic);
+
+    patterns.averageEngagement = totalEngagement / processedData.length;
+  }
+
+  // Add learning history analysis
+  if (learningHistory && learningHistory.length > 0) {
+    const historyTopicCounts = {};
+    let historyEngagement = 0;
+
+    learningHistory.forEach(entry => {
+      historyTopicCounts[entry.topic] = (historyTopicCounts[entry.topic] || 0) + 1;
+      historyEngagement += entry.engagement_level || 0.5;
+    });
+
+    // Merge with existing patterns
+    Object.entries(historyTopicCounts).forEach(([topic, count]) => {
+      const existingIndex = patterns.favoriteTopics.indexOf(topic);
+      if (existingIndex === -1 && patterns.favoriteTopics.length < 5) {
+        patterns.favoriteTopics.push(topic);
+      }
+    });
+
+    // Update average engagement with history data
+    const totalEntries = processedData.length + learningHistory.length;
+    if (totalEntries > 0) {
+      patterns.averageEngagement = (patterns.averageEngagement * processedData.length + historyEngagement) / totalEntries;
+    }
+  }
+
+  // Generate insights based on patterns
+  const childAge = childProfile?.age || 10;
+  const isYoungChild = childAge <= 8;
+
+  if (patterns.favoriteTopics.length > 0) {
+    insights.push({
+      id: 'favorite-topics',
+      title: isYoungChild ? 'Your Favorite Things to Learn!' : 'Your Learning Strengths',
+      description: isYoungChild 
+        ? `You love learning about ${patterns.favoriteTopics[0]}! You're becoming an expert! 🌟`
+        : `You've shown strong interest in ${patterns.favoriteTopics[0]}, demonstrating focused learning in this area.`,
+      type: 'strength',
+      confidence: 0.9,
+      icon: '🌟'
+    });
+  }
+
+  if (patterns.averageEngagement > 0.7) {
+    insights.push({
+      id: 'high-engagement',
+      title: isYoungChild ? 'Super Focused Learner!' : 'Excellent Focus',
+      description: isYoungChild
+        ? 'You stay super focused when learning new things! That helps you remember everything better! 🎯'
+        : 'Your engagement levels show excellent focus and attention during learning sessions.',
+      type: 'strength',
+      confidence: 0.85,
+      icon: '🎯'
+    });
+  }
+
+  if (processedData.length > 5) {
+    insights.push({
+      id: 'curiosity-explorer',
+      title: isYoungChild ? 'Curiosity Champion!' : 'Knowledge Explorer',
+      description: isYoungChild
+        ? `Wow! You've explored ${processedData.length} different topics! You're so curious! 🔍`
+        : `You've actively explored ${processedData.length} different topics, showing strong intellectual curiosity.`,
+      type: 'achievement',
+      confidence: 0.95,
+      icon: '🔍'
+    });
+  }
+
+  // Generate personalized content suggestions
+  const personalizedContent = {
+    suggestedTopics: [],
+    continueWhere: [],
+    achievements: []
+  };
+
+  // Age-appropriate topic suggestions
+  const ageSuitableSuggestions = isYoungChild ? [
+    { 
+      title: "How do butterflies get their colors?", 
+      reason: "Perfect for curious minds like yours!",
+      difficulty: "Easy",
+      estimatedTime: "5 min",
+      icon: "🦋"
+    },
+    { 
+      title: "Why do we have different seasons?", 
+      reason: "Nature mysteries you'll love discovering!",
+      difficulty: "Easy", 
+      estimatedTime: "7 min",
+      icon: "🌍"
+    },
+    { 
+      title: "How do birds learn to fly?", 
+      reason: "Amazing animal facts await!",
+      difficulty: "Easy",
+      estimatedTime: "6 min", 
+      icon: "🐦"
+    },
+    { 
+      title: "What makes thunder so loud?", 
+      reason: "Cool weather science for you!",
+      difficulty: "Easy",
+      estimatedTime: "5 min", 
+      icon: "⛈️"
+    }
+  ] : [
+    { 
+      title: "The Science Behind Lightning Formation", 
+      reason: "Complex weather phenomena you'll find fascinating",
+      difficulty: "Medium",
+      estimatedTime: "10 min",
+      icon: "⚡"
+    },
+    { 
+      title: "How Ancient Civilizations Built Pyramids", 
+      reason: "Engineering marvels and historical mysteries",
+      difficulty: "Medium",
+      estimatedTime: "12 min",
+      icon: "🏛️"
+    },
+    { 
+      title: "The Future of Space Exploration", 
+      reason: "Cutting-edge science and technology",
+      difficulty: "Medium",
+      estimatedTime: "15 min",
+      icon: "🚀"
+    },
+    { 
+      title: "How Quantum Computing Works", 
+      reason: "Advanced technology that's changing our world",
+      difficulty: "Hard",
+      estimatedTime: "18 min",
+      icon: "🔬"
+    }
+  ];
+
+  personalizedContent.suggestedTopics = ageSuitableSuggestions;
+
+  // Continue where you left off - from processed curios
+  if (processedData && processedData.length > 0) {
+    personalizedContent.continueWhere = processedData
+      .slice(0, 3)
+      .map(item => ({
+        title: item.curio.title,
+        progress: Math.min(90, Math.max(30, item.engagementLevel * 10)), // Convert engagement to progress
+        lastAccessed: item.curio.last_updated_at || item.curio.created_at,
+        type: 'curio'
+      }));
+  }
+
+  // Add learning topics to continue section
+  if (learningTopics && learningTopics.length > 0) {
+    personalizedContent.continueWhere.push(
+      ...learningTopics
+        .slice(0, 2)
+        .map(topic => ({
+          title: topic.title,
+          progress: Math.round(((topic.current_section || 1) / (topic.total_sections || 5)) * 100),
+          lastAccessed: topic.updated_at,
+          type: 'encyclopedia'
+        }))
+    );
+  }
+
+  // Generate achievements
+  const totalExplorations = processedData.length + (learningTopics?.length || 0);
+  if (totalExplorations > 0) {
+    personalizedContent.achievements = [
+      {
+        title: isYoungChild ? "Explorer Badge! 🎒" : "Knowledge Explorer",
+        description: isYoungChild
+          ? `Amazing! You've started ${totalExplorations} learning adventures! Keep exploring! 🚀`
+          : `You've completed ${totalExplorations} learning sessions, showing dedication to knowledge acquisition.`,
+        earnedAt: new Date().toISOString(),
+        icon: "🎒",
+        rarity: totalExplorations > 15 ? 'legendary' : totalExplorations > 8 ? 'rare' : 'common'
+      }
+    ];
+
+    // Add engagement-based achievement
+    if (patterns.averageEngagement > 0.8) {
+      personalizedContent.achievements.push({
+        title: isYoungChild ? "Focus Master! 🎯" : "Engagement Champion",
+        description: isYoungChild
+          ? "You're amazing at paying attention and learning! Your focus is super strong! ⭐"
+          : "Your consistently high engagement levels demonstrate exceptional learning focus.",
+        earnedAt: new Date().toISOString(),
+        icon: "🎯",
+        rarity: 'rare'
+      });
+    }
+  }
+
+  return {
+    insights,
+    patterns,
+    personalizedContent
+  };
 }

@@ -10,7 +10,7 @@ import TalkToWhizzy from '@/components/curio/TalkToWhizzy';
 import { useElevenLabsVoice } from '@/hooks/useElevenLabsVoice';
 import VoiceInputButton from '@/components/curio/VoiceInputButton';
 import DashboardControls from '@/components/dashboard/DashboardControls';
-import ConsolidatedDashboard from '@/components/dashboard/ConsolidatedDashboard';
+import PersonalizedLearningDashboard from '@/components/dashboard/PersonalizedLearningDashboard';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useEnhancedBlockInteractions } from '@/hooks/useEnhancedBlockInteractions';
@@ -253,23 +253,16 @@ const DashboardContainer = () => {
         />
         
         <div className="flex-1 overflow-y-auto">
-          <ConsolidatedDashboard
-            childId={profileId || ''}
+          <PersonalizedLearningDashboard
             childProfile={childProfile}
-            curioSuggestions={curioSuggestions}
-            isLoadingSuggestions={isLoadingSuggestions}
-            onCurioSuggestionClick={handleDashboardSearch}
-            handleRefreshSuggestions={handleRefreshSuggestions}
-            pastCurios={pastCurios}
-            sparksBalance={childProfile?.sparks_balance || 0}
-            streakDays={streakDays}
-            onLike={handleLike}
-            onBookmark={handleBookmark}
-            onReply={handleReply}
-            onReadAloud={handleReadAloud}
-            likedBlocks={likedBlocks}
-            bookmarkedBlocks={bookmarkedBlocks}
-            onImageCapture={handleImageCapture}
+            onStartLearning={handleDashboardSearch}
+            onContinueContent={(content) => {
+              if (content.type === 'curio') {
+                window.location.href = `/curio/${profileId}/${content.id}`;
+              } else if (content.type === 'encyclopedia') {
+                handleDashboardSearch(content.title);
+              }
+            }}
           />
         </div>
         

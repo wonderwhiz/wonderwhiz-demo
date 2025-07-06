@@ -5,7 +5,7 @@ import MagicalBackground from './MagicalBackground';
 import DashboardLoadingState from './DashboardLoadingState';
 import MagicalBreadcrumbs from '@/components/navigation/MagicalBreadcrumbs';
 import EncyclopediaView from '@/components/wonderwhiz/EncyclopediaView';
-import DashboardHomeView from './DashboardHomeView';
+import PersonalizedLearningDashboard from '@/components/dashboard/PersonalizedLearningDashboard';
 import FloatingKidsMenu from '@/components/navigation/FloatingKidsMenu';
 import VoiceAssistant from './VoiceAssistant';
 import ParentTasksSection from '@/components/dashboard/ParentTasksSection';
@@ -61,14 +61,14 @@ const OptimizedUnifiedDashboard: React.FC = () => {
             </motion.div>
           ) : (
             <motion.div key="dashboard-home" {...animationProps}>
-              <DashboardHomeView
+              <PersonalizedLearningDashboard
                 childProfile={childProfile}
-                streakDays={streakDays}
-                explorationsCount={explorationsCount}
-                handleUnifiedSearch={handleUnifiedSearch}
-                isCreatingContent={isCreatingContent}
-                searchQuery={searchQuery}
-                recentTopics={recentTopics}
+                onStartLearning={handleUnifiedSearch}
+                onContinueContent={(content) => {
+                  if (content.type === 'encyclopedia') {
+                    setActiveTopic(content.title);
+                  }
+                }}
               />
               <div className="mt-6">
                 <ParentTasksSection childId={childId!} />
