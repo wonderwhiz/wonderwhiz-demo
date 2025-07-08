@@ -32,23 +32,23 @@ const AgeAdaptiveBlock: React.FC<AgeAdaptiveBlockProps> = ({
   const getBlockColorScheme = () => {
     switch (type) {
       case 'fact':
-        return 'from-blue-500/20 to-indigo-600/20 border-blue-500/30';
+        return 'from-[#2A1B5D] to-[#1E1139] border-blue-500/60';
       case 'funFact':
-        return 'from-purple-500/20 to-pink-600/20 border-purple-500/30';
+        return 'from-[#2A1B5D] to-[#1E1139] border-purple-500/60';
       case 'quiz':
-        return 'from-amber-500/20 to-orange-600/20 border-amber-500/30';
+        return 'from-[#2A1B5D] to-[#1E1139] border-amber-500/60';
       case 'creative':
-        return 'from-pink-500/20 to-rose-600/20 border-pink-500/30';
+        return 'from-[#2A1B5D] to-[#1E1139] border-pink-500/60';
       case 'activity':
-        return 'from-green-500/20 to-emerald-600/20 border-green-500/30';
+        return 'from-[#2A1B5D] to-[#1E1139] border-green-500/60';
       case 'mindfulness':
-        return 'from-teal-500/20 to-cyan-600/20 border-teal-500/30';
+        return 'from-[#2A1B5D] to-[#1E1139] border-teal-500/60';
       case 'flashcard':
-        return 'from-cyan-500/20 to-blue-600/20 border-cyan-500/30';
+        return 'from-[#2A1B5D] to-[#1E1139] border-cyan-500/60';
       case 'news':
-        return 'from-gray-500/20 to-slate-600/20 border-gray-500/30';
+        return 'from-[#2A1B5D] to-[#1E1139] border-gray-500/60';
       default:
-        return 'from-indigo-500/20 to-purple-600/20 border-indigo-500/30';
+        return 'from-[#2A1B5D] to-[#1E1139] border-indigo-500/60';
     }
   };
   
@@ -68,12 +68,12 @@ const AgeAdaptiveBlock: React.FC<AgeAdaptiveBlockProps> = ({
   const getBlockStyle = () => {
     switch (ageGroup) {
       case '5-7':
-        return 'rounded-2xl p-5 border-2';
+        return 'rounded-2xl p-4 border-2';
       case '8-11':
-        return 'rounded-xl p-4 border';
+        return 'rounded-xl p-3 border-2';
       case '12-16':
       default:
-        return 'rounded-lg p-4 border';
+        return 'rounded-lg p-3 border-2';
     }
   };
   

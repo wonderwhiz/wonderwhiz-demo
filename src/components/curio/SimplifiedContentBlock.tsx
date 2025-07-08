@@ -21,31 +21,31 @@ interface SimplifiedContentBlockProps {
 const getSpecialistGradient = (specialistId: string) => {
   switch (specialistId) {
     case 'nova':
-      return 'from-[#4A6FFF]/40 via-[#00E2FF]/20 to-[#2A1B5D]/80';
+      return 'from-[#2A1B5D] via-[#1E1139] to-[#0F0820]';
     case 'spark':
-      return 'from-[#FFD54F]/40 via-[#FF8A3D]/20 to-[#2A1B5D]/80';
+      return 'from-[#2A1B5D] via-[#1E1139] to-[#0F0820]';
     case 'prism':
-      return 'from-[#FF5BA3]/40 via-[#3D2A7D]/30 to-[#2A1B5D]/80';
+      return 'from-[#2A1B5D] via-[#1E1139] to-[#0F0820]';
     case 'pixel':
-      return 'from-[#00E2FF]/40 via-[#4A6FFF]/20 to-[#2A1B5D]/80';
+      return 'from-[#2A1B5D] via-[#1E1139] to-[#0F0820]';
     case 'atlas':
-      return 'from-[#FF8A3D]/40 via-[#FFD54F]/20 to-[#2A1B5D]/80';
+      return 'from-[#2A1B5D] via-[#1E1139] to-[#0F0820]';
     case 'lotus':
-      return 'from-[#00D68F]/40 via-[#00E2FF]/20 to-[#2A1B5D]/80';
+      return 'from-[#2A1B5D] via-[#1E1139] to-[#0F0820]';
     default:
-      return 'from-[#3D2A7D]/40 via-[#2A1B5D]/60 to-[#2A1B5D]/80';
+      return 'from-[#2A1B5D] via-[#1E1139] to-[#0F0820]';
   }
 };
 
 const getSpecialistAccent = (specialistId: string) => {
   switch (specialistId) {
-    case 'nova': return 'border-[#4A6FFF]/30';
-    case 'spark': return 'border-[#FF8A3D]/30';
-    case 'prism': return 'border-[#FF5BA3]/30';
-    case 'pixel': return 'border-[#00E2FF]/30';
-    case 'atlas': return 'border-[#FF8A3D]/30';
-    case 'lotus': return 'border-[#00D68F]/30';
-    default: return 'border-[#3D2A7D]/30';
+    case 'nova': return 'border-[#4A6FFF]/50';
+    case 'spark': return 'border-[#FF8A3D]/50';
+    case 'prism': return 'border-[#FF5BA3]/50';
+    case 'pixel': return 'border-[#00E2FF]/50';
+    case 'atlas': return 'border-[#FF8A3D]/50';
+    case 'lotus': return 'border-[#00D68F]/50';
+    default: return 'border-[#4A6FFF]/50';
   }
 };
 
@@ -103,8 +103,8 @@ const renderBlockContent = (block: any, ageGroup: '5-7' | '8-11' | '12-16') => {
                 whileTap={{ scale: 0.98 }}
                 className={`w-full text-left p-3 rounded-lg ${
                   ageGroup === '5-7' 
-                    ? 'bg-white/10 text-lg border-2 border-white/5'
-                    : 'bg-white/5 hover:bg-white/10 text-base'
+                    ? 'bg-white/20 text-lg border-2 border-white/30 text-white'
+                    : 'bg-white/15 hover:bg-white/25 text-base text-white'
                 } transition-colors`}
               >
                 {option}
@@ -120,8 +120,8 @@ const renderBlockContent = (block: any, ageGroup: '5-7' | '8-11' | '12-16') => {
           <p className={textStyles}>{block.content.prompt || block.content.description}</p>
           
           {ageGroup === '5-7' && (
-            <div className="mt-4 rounded-xl bg-gradient-to-r from-pink-500/20 to-yellow-500/20 p-4 border border-white/10">
-              <p className="text-white/80 text-center">Tap to start creating!</p>
+            <div className="mt-4 rounded-xl bg-gradient-to-r from-pink-500/30 to-yellow-500/30 p-4 border border-white/30">
+              <p className="text-white font-medium text-center">Tap to start creating!</p>
             </div>
           )}
         </div>
@@ -150,12 +150,12 @@ const renderBlockContent = (block: any, ageGroup: '5-7' | '8-11' | '12-16') => {
     case 'flashcard':
       return (
         <div className="relative">
-          <div className="bg-white/5 rounded-lg p-4">
-            <p className={textStyles}>{block.content.front}</p>
+          <div className="bg-white/20 rounded-lg p-4 border border-white/30">
+            <p className={`${textStyles} text-white`}>{block.content.front}</p>
           </div>
           
-          <div className="mt-2 bg-white/5 rounded-lg p-4">
-            <p className={`${textStyles} text-white/70`}>{block.content.back}</p>
+          <div className="mt-2 bg-white/15 rounded-lg p-4 border border-white/20">
+            <p className={`${textStyles} text-white/90`}>{block.content.back}</p>
           </div>
         </div>
       );
@@ -229,7 +229,7 @@ const SimplifiedContentBlock: React.FC<SimplifiedContentBlockProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className={`mb-8 rounded-xl overflow-hidden backdrop-blur-lg bg-gradient-to-b ${getSpecialistGradient(specialistId)} border ${getSpecialistAccent(specialistId)}`}
+      className={`mb-6 rounded-xl overflow-hidden backdrop-blur-lg bg-gradient-to-b ${getSpecialistGradient(specialistId)} border-2 ${getSpecialistAccent(specialistId)}`}
       style={{ 
         boxShadow: getBlockGlow(),
       }}
