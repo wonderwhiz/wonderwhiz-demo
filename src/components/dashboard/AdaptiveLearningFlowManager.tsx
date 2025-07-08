@@ -128,14 +128,14 @@ const AdaptiveLearningFlowManager: React.FC<AdaptiveLearningFlowManagerProps> = 
   return (
     <div className="space-y-6">
       {/* Adaptive Flow Header */}
-      <Card className="bg-gradient-to-r from-wonderwhiz-deep-purple/40 to-wonderwhiz-purple/40 border-wonderwhiz-purple/30 backdrop-blur-lg">
+      <Card className="bg-[#2A1B5D]/90 backdrop-blur-lg border-2 border-wonderwhiz-purple/60">
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-xl font-bold text-white mb-2">
                 {isYoungChild ? '🎯 Your Learning Adventures' : '🚀 Intelligent Learning Flow'}
               </h3>
-              <p className="text-white/80">
+              <p className="text-white/90">
                 {isYoungChild 
                   ? 'Pick up where you left off or start something new!'
                   : 'Optimized based on your learning patterns and engagement'
@@ -152,7 +152,7 @@ const AdaptiveLearningFlowManager: React.FC<AdaptiveLearningFlowManagerProps> = 
               </div>
               <div className="flex items-center gap-2">
                 <Award className="h-5 w-5 text-wonderwhiz-vibrant-yellow" />
-                <span className="text-white/80 text-sm">Focus Score: {focusScore}%</span>
+                <span className="text-white/90 text-sm">Focus Score: {focusScore}%</span>
               </div>
             </div>
           </div>
@@ -168,7 +168,7 @@ const AdaptiveLearningFlowManager: React.FC<AdaptiveLearningFlowManagerProps> = 
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.1 }}
           >
-            <Card className="bg-white/5 backdrop-blur-sm border-white/10 hover:bg-white/10 transition-all duration-300 group cursor-pointer">
+            <Card className="bg-[#1E1139]/80 backdrop-blur-sm border-2 border-white/20 hover:bg-[#1E1139]/90 transition-all duration-300 group cursor-pointer">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
@@ -251,14 +251,14 @@ const AdaptiveLearningFlowManager: React.FC<AdaptiveLearningFlowManagerProps> = 
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
       >
-        <Card className="bg-gradient-to-r from-wonderwhiz-vibrant-yellow/20 to-wonderwhiz-cyan/20 border-wonderwhiz-vibrant-yellow/30 backdrop-blur-lg">
+        <Card className="bg-[#2A1B5D]/90 backdrop-blur-lg border-2 border-wonderwhiz-vibrant-yellow/60">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="text-lg font-bold text-white mb-2">
                   {isYoungChild ? '✨ Start Something New!' : '🌟 Begin Fresh Adventure'}
                 </h4>
-                <p className="text-white/80">
+                <p className="text-white/90">
                   {isYoungChild 
                     ? 'What are you curious about today?'
                     : 'Explore a completely new topic based on your interests'

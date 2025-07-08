@@ -157,7 +157,7 @@ const IntelligentEngagementSystem: React.FC<IntelligentEngagementSystemProps> = 
   return (
     <div className="space-y-6">
       {/* Engagement Metrics Dashboard */}
-      <Card className="bg-gradient-to-br from-wonderwhiz-deep-purple/40 via-wonderwhiz-purple/30 to-wonderwhiz-bright-pink/20 border-wonderwhiz-purple/30 backdrop-blur-lg overflow-hidden">
+      <Card className="bg-[#2A1B5D]/90 backdrop-blur-lg border-2 border-wonderwhiz-purple/60 overflow-hidden">
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-bold text-white">
@@ -178,7 +178,7 @@ const IntelligentEngagementSystem: React.FC<IntelligentEngagementSystemProps> = 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="bg-white/10 rounded-xl p-4 backdrop-blur-sm border border-white/20"
+                className="bg-white/15 rounded-xl p-4 backdrop-blur-sm border-2 border-white/30"
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className={metric.color}>
@@ -228,7 +228,7 @@ const IntelligentEngagementSystem: React.FC<IntelligentEngagementSystemProps> = 
       </Card>
 
       {/* Achievements Showcase */}
-      <Card className="bg-white/5 backdrop-blur-sm border-white/10">
+      <Card className="bg-[#1E1139]/80 backdrop-blur-sm border-2 border-white/20">
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
@@ -309,7 +309,7 @@ const IntelligentEngagementSystem: React.FC<IntelligentEngagementSystemProps> = 
         animate={{ opacity: 1, y: 0 }}
         className="text-center"
       >
-        <Card className="bg-gradient-to-r from-wonderwhiz-vibrant-yellow/20 to-wonderwhiz-bright-pink/20 border-wonderwhiz-bright-pink/30 backdrop-blur-lg">
+        <Card className="bg-[#2A1B5D]/90 backdrop-blur-lg border-2 border-wonderwhiz-bright-pink/60">
           <CardContent className="p-6">
             <motion.p
               className="text-lg font-medium text-white"

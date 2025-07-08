@@ -109,7 +109,7 @@ const IntelligentWelcomeOrchestrator: React.FC<IntelligentWelcomeOrchestratorPro
   };
 
   return (
-    <Card className="relative overflow-hidden bg-gradient-to-br from-wonderwhiz-purple/20 via-wonderwhiz-bright-pink/10 to-wonderwhiz-vibrant-yellow/15 border-wonderwhiz-bright-pink/30 backdrop-blur-lg">
+    <Card className="relative overflow-hidden bg-[#2A1B5D]/90 backdrop-blur-lg border-2 border-wonderwhiz-bright-pink/50">
       {/* Intelligent Background Effects */}
       <div className="absolute inset-0 overflow-hidden">
         {Array.from({ length: getSparkIntensity() === 'high' ? 20 : getSparkIntensity() === 'medium' ? 12 : 6 }).map((_, i) => (
@@ -181,7 +181,7 @@ const IntelligentWelcomeOrchestrator: React.FC<IntelligentWelcomeOrchestratorPro
               <Button
                 onClick={() => onStartLearning(suggestion)}
                 variant="ghost"
-                className="w-full h-auto p-4 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl transition-all duration-300 group"
+                className="w-full h-auto p-4 bg-white/15 hover:bg-white/25 text-white border-2 border-white/30 rounded-xl transition-all duration-300 group"
               >
                 <div className="flex items-center justify-between w-full">
                   <span className="text-left font-medium group-hover:text-wonderwhiz-vibrant-yellow transition-colors">
@@ -206,9 +206,9 @@ const IntelligentWelcomeOrchestrator: React.FC<IntelligentWelcomeOrchestratorPro
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 1.2 }}
         >
-          <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full border border-white/20">
+          <div className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full border-2 border-white/40">
             <Star className="h-4 w-4 text-wonderwhiz-vibrant-yellow" />
-            <span className="text-white/80 text-sm font-medium">
+            <span className="text-white font-medium text-sm">
               {isYoungChild ? 'Feeling super smart!' : `${mood.charAt(0).toUpperCase() + mood.slice(1)} mode activated`}
             </span>
           </div>
