@@ -10,8 +10,9 @@ import TalkToWhizzy from '@/components/curio/TalkToWhizzy';
 import { useElevenLabsVoice } from '@/hooks/useElevenLabsVoice';
 import VoiceInputButton from '@/components/curio/VoiceInputButton';
 import DashboardControls from '@/components/dashboard/DashboardControls';
-import AgeAppropriateWelcome from '@/components/dashboard/AgeAppropriateWelcome';
-import SimplifiedProgress from '@/components/dashboard/SimplifiedProgress';
+import AgeSpecificInterface from '@/components/dashboard/AgeSpecificInterface';
+import AgeAdaptiveNavigation from '@/components/dashboard/AgeAdaptiveNavigation';
+import ProgressVisualization from '@/components/dashboard/ProgressVisualization';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useEnhancedBlockInteractions } from '@/hooks/useEnhancedBlockInteractions';
@@ -29,6 +30,7 @@ const DashboardContainer = () => {
   const [childAge, setChildAge] = useState<number>(10);
   const [isVoiceActive, setIsVoiceActive] = useState(false);
   const [processingImage, setProcessingImage] = useState(false);
+  const [currentSection, setCurrentSection] = useState('home');
   
   const { streakDays } = useSparksSystem(profileId);
 
@@ -254,16 +256,40 @@ const DashboardContainer = () => {
         />
         
         <div className="flex-1 overflow-y-auto">
+          {/* Age-Adaptive Navigation */}
+          <AgeAdaptiveNavigation
+            childProfile={childProfile}
+            currentSection={currentSection}
+            onNavigate={setCurrentSection}
+          />
+          
           <div className="max-w-4xl mx-auto p-6 space-y-6">
-            <AgeAppropriateWelcome
-              childProfile={childProfile}
-              onStartLearning={handleDashboardSearch}
-            />
-            <SimplifiedProgress
-              childProfile={childProfile}
-              streakDays={streakDays}
-              sparksBalance={childProfile?.sparks_balance || 0}
-            />
+            {currentSection === 'home' && (
+              <>
+                <AgeSpecificInterface
+                  childProfile={childProfile}
+                  onStartLearning={handleDashboardSearch}
+                  streakDays={streakDays}
+                  sparksBalance={childProfile?.sparks_balance || 0}
+                />
+              </>
+            )}
+            
+            {currentSection === 'progress' && (
+              <ProgressVisualization
+                childProfile={childProfile}
+                streakDays={streakDays}
+                sparksBalance={childProfile?.sparks_balance || 0}
+              />
+            )}
+            
+            {currentSection === 'achievements' && (
+              <ProgressVisualization
+                childProfile={childProfile}
+                streakDays={streakDays}
+                sparksBalance={childProfile?.sparks_balance || 0}
+              />
+            )}
           </div>
         </div>
         
