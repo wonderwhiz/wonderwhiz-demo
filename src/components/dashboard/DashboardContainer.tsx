@@ -10,7 +10,8 @@ import TalkToWhizzy from '@/components/curio/TalkToWhizzy';
 import { useElevenLabsVoice } from '@/hooks/useElevenLabsVoice';
 import VoiceInputButton from '@/components/curio/VoiceInputButton';
 import DashboardControls from '@/components/dashboard/DashboardControls';
-import PersonalizedLearningDashboard from '@/components/dashboard/PersonalizedLearningDashboard';
+import AgeAppropriateWelcome from '@/components/dashboard/AgeAppropriateWelcome';
+import SimplifiedProgress from '@/components/dashboard/SimplifiedProgress';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useEnhancedBlockInteractions } from '@/hooks/useEnhancedBlockInteractions';
@@ -253,17 +254,17 @@ const DashboardContainer = () => {
         />
         
         <div className="flex-1 overflow-y-auto">
-          <PersonalizedLearningDashboard
-            childProfile={childProfile}
-            onStartLearning={handleDashboardSearch}
-            onContinueContent={(content) => {
-              if (content.type === 'curio') {
-                window.location.href = `/curio/${profileId}/${content.id}`;
-              } else if (content.type === 'encyclopedia') {
-                handleDashboardSearch(content.title);
-              }
-            }}
-          />
+          <div className="max-w-4xl mx-auto p-6 space-y-6">
+            <AgeAppropriateWelcome
+              childProfile={childProfile}
+              onStartLearning={handleDashboardSearch}
+            />
+            <SimplifiedProgress
+              childProfile={childProfile}
+              streakDays={streakDays}
+              sparksBalance={childProfile?.sparks_balance || 0}
+            />
+          </div>
         </div>
         
         <VoiceInputButton 
