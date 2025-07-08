@@ -1,13 +1,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { usePersonalizedLearning } from '@/hooks/usePersonalizedLearning';
-import PersonalizedWelcomeHero from './PersonalizedWelcomeHero';
+import IntelligentWelcomeOrchestrator from './IntelligentWelcomeOrchestrator';
+import AdaptiveLearningFlowManager from './AdaptiveLearningFlowManager';
+import IntelligentEngagementSystem from './IntelligentEngagementSystem';
 import LearningJourneyVisualizer from './LearningJourneyVisualizer';
 import SmartRecommendations from './SmartRecommendations';
 import LearningInsightsPanel from './LearningInsightsPanel';
-import ContinueLearningSection from './ContinueLearningSection';
-import AchievementsShowcase from './AchievementsShowcase';
-import QuickActionPanel from './QuickActionPanel';
 
 interface PersonalizedLearningDashboardProps {
   childProfile: any;
@@ -28,6 +27,26 @@ const PersonalizedLearningDashboard: React.FC<PersonalizedLearningDashboardProps
   } = usePersonalizedLearning(childProfile?.id);
 
   const isYoungChild = (childProfile?.age || 10) <= 8;
+  
+  // Intelligent time-of-day detection
+  const getTimeOfDay = (): 'morning' | 'afternoon' | 'evening' => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'morning';
+    if (hour < 17) return 'afternoon';
+    return 'evening';
+  };
+  
+  // Smart mood detection based on patterns
+  const detectMood = (): 'curious' | 'excited' | 'focused' | 'playful' => {
+    // Use available pattern data or fallback to defaults
+    const currentHour = new Date().getHours();
+    const streakLength = childProfile?.streak_days || 0;
+    
+    if (streakLength > 3) return 'excited';
+    if (currentHour >= 9 && currentHour <= 11) return 'focused';
+    if (isYoungChild) return 'playful';
+    return 'curious';
+  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -91,27 +110,30 @@ const PersonalizedLearningDashboard: React.FC<PersonalizedLearningDashboardProps
       animate="visible"
       className="space-y-8"
     >
-      {/* Hero Welcome Section */}
+      {/* Intelligent Welcome Orchestrator */}
       <motion.div variants={itemVariants}>
-        <PersonalizedWelcomeHero
+        <IntelligentWelcomeOrchestrator
           childProfile={childProfile}
-          insights={insights}
-          patterns={patterns}
+          onStartLearning={onStartLearning}
+          timeOfDay={getTimeOfDay()}
+          recentActivity={personalizedContent?.continueWhere || []}
+          mood={detectMood()}
         />
       </motion.div>
 
-      {/* Quick Actions - Prominent for immediate engagement */}
+      {/* Adaptive Learning Flow Manager */}
       <motion.div variants={itemVariants}>
-        <QuickActionPanel
-          childAge={childProfile?.age || 10}
-          onQuickStart={onStartLearning}
-          recentTopics={personalizedContent?.continueWhere || []}
+        <AdaptiveLearningFlowManager
+          childProfile={childProfile}
+          recentActivity={personalizedContent?.continueWhere || []}
+          onContinueLearning={onContinueContent}
+          onStartNewTopic={onStartLearning}
         />
       </motion.div>
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column - Learning Journey & Insights */}
+        {/* Left Column - Learning Journey & Recommendations */}
         <div className="lg:col-span-8 space-y-6">
           <motion.div variants={itemVariants}>
             <LearningJourneyVisualizer
@@ -128,35 +150,25 @@ const PersonalizedLearningDashboard: React.FC<PersonalizedLearningDashboardProps
               onSelectTopic={onStartLearning}
             />
           </motion.div>
-
-          {personalizedContent?.continueWhere && personalizedContent.continueWhere.length > 0 && (
-            <motion.div variants={itemVariants}>
-              <ContinueLearningSection
-                items={personalizedContent.continueWhere}
-                childAge={childProfile?.age || 10}
-                onContinue={onContinueContent}
-              />
-            </motion.div>
-          )}
         </div>
 
-        {/* Right Column - Insights & Achievements */}
+        {/* Right Column - Engagement & Insights */}
         <div className="lg:col-span-4 space-y-6">
+          <motion.div variants={itemVariants}>
+            <IntelligentEngagementSystem
+              childProfile={childProfile}
+              onEngagementAction={(action, data) => {
+                console.log('Engagement action:', action, data);
+              }}
+            />
+          </motion.div>
+
           <motion.div variants={itemVariants}>
             <LearningInsightsPanel
               insights={insights}
               childAge={childProfile?.age || 10}
             />
           </motion.div>
-
-          {personalizedContent?.achievements && personalizedContent.achievements.length > 0 && (
-            <motion.div variants={itemVariants}>
-              <AchievementsShowcase
-                achievements={personalizedContent.achievements}
-                childAge={childProfile?.age || 10}
-              />
-            </motion.div>
-          )}
         </div>
       </div>
     </motion.div>
