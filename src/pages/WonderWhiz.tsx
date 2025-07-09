@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useUser } from '@/hooks/use-user';
-import StreamlinedWonderWhiz from '@/components/wonderwhiz/StreamlinedWonderWhiz';
+import InstantWonderWhiz from '@/components/wonderwhiz/InstantWonderWhiz';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BookOpen, ArrowLeft } from 'lucide-react';
@@ -119,7 +119,7 @@ const WonderWhiz: React.FC = () => {
   }
 
   return (
-    <StreamlinedWonderWhiz childId={childId!} />
+    <InstantWonderWhiz childId={childId!} />
   );
 };
 
