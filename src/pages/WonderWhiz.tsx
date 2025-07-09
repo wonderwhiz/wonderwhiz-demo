@@ -1,125 +1,106 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { Helmet } from 'react-helmet-async';
+import { toast } from 'sonner';
+import { ArrowLeft, Sparkles } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useChildProfile } from '@/hooks/use-child-profile';
 import { supabase } from '@/integrations/supabase/client';
-import { useUser } from '@/hooks/use-user';
-import InstantWonderWhiz from '@/components/wonderwhiz/InstantWonderWhiz';
-import { Card } from '@/components/ui/card';
+import { LearningTopic } from '@/types/wonderwhiz';
 import { Button } from '@/components/ui/button';
-import { BookOpen, ArrowLeft } from 'lucide-react';
-import MagicalBreadcrumbs from '@/components/navigation/MagicalBreadcrumbs';
-import FloatingKidsMenu from '@/components/navigation/FloatingKidsMenu';
+import { Card } from '@/components/ui/card';
+import { motion } from 'framer-motion';
+import StreamlinedDashboard from '@/components/wonderwhiz/StreamlinedDashboard';
 
-const WonderWhiz: React.FC = () => {
+const WonderWhiz = () => {
   const { childId } = useParams<{ childId: string }>();
   const navigate = useNavigate();
-  const { user } = useUser();
-  const [childProfile, setChildProfile] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
+  const { childProfile, isLoading: isLoadingProfile } = useChildProfile(childId);
+  const [currentTopic, setCurrentTopic] = useState<LearningTopic | null>(null);
 
+  // Redirect if no user or childId
   useEffect(() => {
     if (!user) {
       navigate('/login');
       return;
     }
-
     if (!childId) {
       navigate('/profiles');
       return;
     }
-
-    loadChildProfile();
   }, [user, childId, navigate]);
 
-  const loadChildProfile = async () => {
-    if (!childId) return;
+  // Loading state
+  if (isLoadingProfile || !childProfile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-600 via-purple-700 to-pink-600 flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-8 text-center">
+            <div className="text-8xl mb-4">📚</div>
+            <h2 className="text-2xl font-bold text-white mb-2">
+              Loading Wonder Encyclopedia...
+            </h2>
+            <div className="flex justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400"></div>
+            </div>
+          </Card>
+        </motion.div>
+      </div>
+    );
+  }
 
-    try {
-      setIsLoading(true);
-      console.log('Loading child profile for WonderWhiz:', childId);
-      
-      const { data, error } = await supabase
-        .from('child_profiles')
-        .select('*')
-        .eq('id', childId)
-        .single();
-
-      if (error) {
-        console.error('Error loading child profile:', error);
-        throw error;
-      }
-      
-      console.log('Child profile loaded:', data);
-      setChildProfile(data);
-    } catch (error) {
-      console.error('Error loading child profile:', error);
-      setError('Failed to load child profile');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleTopicCreate = (topic: any) => {
-    console.log('Topic created:', topic);
-    // Refresh or handle new topic creation
+  const handleTopicCreate = async (topic: LearningTopic) => {
+    setCurrentTopic(topic);
+    toast.success(`Created encyclopedia for: ${topic.title}`);
   };
 
   const handleBackToDashboard = () => {
     navigate(`/dashboard/${childId}`);
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-wonderwhiz-deep-purple via-wonderwhiz-purple to-wonderwhiz-bright-pink flex items-center justify-center">
-        <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-8">
-          <div className="flex items-center gap-4">
-            <BookOpen className="h-8 w-8 text-wonderwhiz-bright-pink animate-pulse" />
-            <div>
-              <h2 className="text-xl font-bold text-white">Loading Wonder Whiz...</h2>
-              <p className="text-white/70">Preparing your encyclopedia experience</p>
-            </div>
-          </div>
-        </Card>
-      </div>
-    );
-  }
-
-  if (error || !childProfile) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-wonderwhiz-deep-purple via-wonderwhiz-purple to-wonderwhiz-bright-pink flex items-center justify-center p-6">
-        <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-8 max-w-md">
-          <div className="text-center">
-            <BookOpen className="h-12 w-12 text-red-400 mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-white mb-2">Oops!</h2>
-            <p className="text-white/70 mb-4">
-              {error || 'Child profile not found'}
-            </p>
-            <div className="flex gap-2 justify-center">
-              <Button
-                onClick={handleBackToDashboard}
-                className="bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/90"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Dashboard
-              </Button>
-              <Button
-                onClick={() => navigate('/profiles')}
-                variant="outline"
-                className="border-white/20 text-white hover:bg-white/10"
-              >
-                All Profiles
-              </Button>
-            </div>
-          </div>
-        </Card>
-      </div>
-    );
-  }
-
   return (
-    <InstantWonderWhiz childId={childId!} />
+    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-purple-700 to-pink-600">
+      <Helmet>
+        <title>{`Wonder Encyclopedia - ${childProfile?.name} | WonderWhiz`}</title>
+        <meta name="description" content="Explore amazing topics and learn with WonderWhiz Encyclopedia!" />
+      </Helmet>
+
+      {/* Header */}
+      <div className="p-4 border-b border-white/10 bg-black/20 backdrop-blur-sm">
+        <div className="flex items-center justify-between max-w-6xl mx-auto">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              onClick={handleBackToDashboard}
+              className="text-white hover:bg-white/10"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Chat
+            </Button>
+            <div className="flex items-center gap-3">
+              <Sparkles className="h-8 w-8 text-yellow-400" />
+              <div>
+                <h1 className="text-xl font-bold text-white">Wonder Encyclopedia</h1>
+                <p className="text-white/70 text-sm">Discover amazing topics, {childProfile?.name}!</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1">
+        <StreamlinedDashboard
+          childProfile={childProfile}
+          onTopicCreate={handleTopicCreate}
+        />
+      </div>
+    </div>
   );
 };
 

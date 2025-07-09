@@ -38,30 +38,12 @@ const Login = () => {
         throw new Error("Login failed, please try again.");
       }
 
-      const { data: profiles, error: profilesError } = await supabase
-        .from('child_profiles')
-        .select('*')
-        .eq('parent_user_id', user.id)
-        .order('created_at', { ascending: true });
-
-      if (profilesError) {
-        console.error("Error fetching profiles after login:", profilesError);
-        toast.error("Could not fetch profiles. Taking you to the selection page.");
-        navigate('/profiles');
-        return;
-      }
-
       toast.success("Welcome back!", {
         description: "You're now signed in.",
       });
 
-      if (profiles && profiles.length === 1) {
-        const profile = profiles[0];
-        localStorage.setItem('currentChildProfile', JSON.stringify(profile));
-        navigate(`/dashboard/${profile.id}`);
-      } else {
-        navigate('/profiles');
-      }
+      // Always go to profiles after login
+      navigate('/profiles');
 
     } catch (error: any) {
       console.error('Login error:', error);

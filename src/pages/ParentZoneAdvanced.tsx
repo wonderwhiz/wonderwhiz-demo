@@ -1,10 +1,10 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import ParentDashboard from '@/components/dashboard/ParentDashboard';
-import { useUser } from '@/hooks/use-user';
+import { useAuth } from '@/hooks/useAuth';
 
 const ParentZone: React.FC = () => {
-  const { user } = useUser();
+  const { user } = useAuth();
 
   if (!user) {
     return (

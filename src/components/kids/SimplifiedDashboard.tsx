@@ -67,6 +67,9 @@ const SimplifiedDashboard: React.FC<SimplifiedDashboardProps> = ({
   const handleSubmit = async (question: string) => {
     if (!question.trim() || isLoading) return;
 
+    console.log('🎯 User asked question:', question);
+    console.log('🔐 Auth state - Child Profile:', childProfile?.name, childProfile?.id);
+
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       type: 'question',
@@ -79,6 +82,7 @@ const SimplifiedDashboard: React.FC<SimplifiedDashboardProps> = ({
     setIsLoading(true);
 
     try {
+      console.log('📞 Calling onSearch function...');
       onSearch(question.trim());
       
       // Enhanced mock response for better UX
@@ -103,7 +107,7 @@ const SimplifiedDashboard: React.FC<SimplifiedDashboardProps> = ({
         });
       }
     } catch (error) {
-      console.error('Error getting answer:', error);
+      console.error('❌ Error getting answer:', error);
       toast.error('Oops! Something went wrong. Try asking again!');
     } finally {
       setIsLoading(false);

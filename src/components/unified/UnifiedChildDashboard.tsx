@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
-import { useUser } from '@/hooks/use-user';
+import { useAuth } from '@/hooks/useAuth';
 import { useChildProfile } from '@/hooks/use-child-profile';
 import { toast } from 'sonner';
 import { Sparkles, BookOpen, Compass, Star, ArrowRight } from 'lucide-react';
@@ -21,7 +21,7 @@ import VoiceAssistant from './VoiceAssistant';
 const UnifiedChildDashboard: React.FC = () => {
   const { childId } = useParams<{ childId: string }>();
   const navigate = useNavigate();
-  const { user } = useUser();
+  const { user } = useAuth();
   const { childProfile, isLoading: isLoadingProfile } = useChildProfile(childId);
   
   const [showOnboarding, setShowOnboarding] = useState(false);

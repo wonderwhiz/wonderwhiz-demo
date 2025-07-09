@@ -76,28 +76,8 @@ const UnifiedDashboard: React.FC = () => {
   }
 
   const handleSearch = async (query: string) => {
-    // Create Wonder Whiz topic 
-    try {
-      const { data: topicResponse, error } = await supabase.functions
-        .invoke('generate-wonderwhiz-topic', {
-          body: {
-            topic: query,
-            childAge: childProfile?.age || 10,
-            childId
-          }
-        });
-
-      if (error) throw error;
-      
-      toast.success('Creating your learning adventure! 📚');
-      // Navigate to Wonder Whiz after brief delay
-      setTimeout(() => {
-        navigate(`/wonderwhiz/${childId}`);
-      }, 1000);
-    } catch (error) {
-      console.error('Error creating content:', error);
-      toast.error('Something went wrong. Try again!');
-    }
+    // Just show a mock response for now - the real content creation happens in WonderWhiz
+    console.log('Search query:', query);
   };
 
   return (

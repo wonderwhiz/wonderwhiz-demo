@@ -55,9 +55,21 @@ function App() {
                     <ParentZone />
                   </ProtectedRoute>
                 } />
-                <Route path="/dashboard/:childId" element={<UnifiedDashboard />} />
-                <Route path="/legacy-dashboard/:childId" element={<Dashboard />} />
-                <Route path="/wonderwhiz/:childId" element={<WonderWhiz />} />
+                <Route path="/dashboard/:childId" element={
+                  <ProtectedRoute>
+                    <UnifiedDashboard />
+                  </ProtectedRoute>
+                } />
+                <Route path="/legacy-dashboard/:childId" element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                } />
+                <Route path="/wonderwhiz/:childId" element={
+                  <ProtectedRoute>
+                    <WonderWhiz />
+                  </ProtectedRoute>
+                } />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </div>

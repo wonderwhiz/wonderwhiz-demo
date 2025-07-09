@@ -1,10 +1,10 @@
 import { useState, useEffect, createContext, useContext } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 
 interface AuthContextType {
   user: User | null;
+  session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ user: User | null; session: Session | null; }>;
   signUp: (email: string, password: string, name: string) => Promise<{ user: User | null; session: Session | null; }>;
@@ -13,15 +13,40 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Clean up auth state utility
+const cleanupAuthState = () => {
+  // Remove all Supabase auth keys from localStorage
+  Object.keys(localStorage).forEach((key) => {
+    if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+      localStorage.removeItem(key);
+    }
+  });
+  
+  // Clear profile data
+  localStorage.removeItem('currentChildProfile');
+  localStorage.removeItem('rememberedProfiles');
+  localStorage.removeItem('autoLoginProfile');
+};
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log('Auth state change:', event, session?.user?.id);
+        
+        if (!mounted) return;
+        
+        if (event === 'SIGNED_OUT') {
+          cleanupAuthState();
+        }
+        
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -29,63 +54,103 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    const getInitialSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!mounted) return;
+        
+        console.log('Initial session:', session?.user?.id);
+        setSession(session);
+        setUser(session?.user ?? null);
+      } catch (error) {
+        console.error('Error getting initial session:', error);
+        if (!mounted) return;
+        setSession(null);
+        setUser(null);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
 
-    return () => subscription.unsubscribe();
+    getInitialSession();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    
-    if (error) {
+    try {
+      // Clean up any existing state first
+      cleanupAuthState();
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Sign in error:', error);
       throw error;
     }
-    return data;
   };
 
   const signUp = async (email: string, password: string, name: string) => {
-    const redirectUrl = `${window.location.origin}/profiles`;
-    
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          name: name,
+    try {
+      // Clean up any existing state first
+      cleanupAuthState();
+      
+      const redirectUrl = `${window.location.origin}/profiles`;
+      
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name: name,
+          },
+          emailRedirectTo: redirectUrl
         },
-        emailRedirectTo: redirectUrl
-      },
-    });
-    
-    if (error) {
+      });
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Sign up error:', error);
       throw error;
     }
-    
-    return data;
   };
 
   const signOut = async () => {
-    // Clear all stored profile data and preferences
-    localStorage.removeItem('currentChildProfile');
-    localStorage.removeItem('rememberedProfiles');
-    localStorage.removeItem('autoLoginProfile');
-    
-    const { error } = await supabase.auth.signOut({ scope: 'global' });
-    if (error) {
-      throw error;
+    try {
+      // Clean up state first
+      cleanupAuthState();
+      
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
+      if (error) throw error;
+      
+      // Force page reload for clean state
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 100);
+    } catch (error) {
+      console.error('Sign out error:', error);
+      // Force reload even on error
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 100);
     }
   };
 
   return (
     <AuthContext.Provider value={{
       user,
+      session,
       loading,
       signIn,
       signUp,
