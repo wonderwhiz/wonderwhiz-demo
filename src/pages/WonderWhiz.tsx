@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useUser } from '@/hooks/use-user';
-import ImprovedWonderWhizDashboard from '@/components/wonderwhiz/ImprovedWonderWhizDashboard';
+import StreamlinedWonderWhiz from '@/components/wonderwhiz/StreamlinedWonderWhiz';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BookOpen, ArrowLeft } from 'lucide-react';
@@ -119,51 +119,7 @@ const WonderWhiz: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-wonderwhiz-deep-purple via-wonderwhiz-purple to-wonderwhiz-bright-pink relative overflow-hidden">
-      {/* Magical floating particles background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(15)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-1 h-1 bg-white/30 rounded-full"
-            animate={{
-              y: [0, -80, 0],
-              x: [0, Math.random() * 30 - 15, 0],
-              opacity: [0.3, 0.9, 0.3]
-            }}
-            transition={{
-              duration: Math.random() * 8 + 8,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: Math.random() * 4
-            }}
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Enhanced Navigation */}
-      <div className="relative z-10 p-4">
-        <MagicalBreadcrumbs 
-          childId={childId!} 
-          currentTopic="Encyclopedia Adventures"
-          onBack={handleBackToDashboard}
-        />
-      </div>
-      
-      <div className="relative z-10">
-        <ImprovedWonderWhizDashboard
-          childProfile={childProfile}
-          onTopicCreate={handleTopicCreate}
-        />
-      </div>
-
-      {/* Floating Navigation Menu */}
-      <FloatingKidsMenu childId={childId!} />
-    </div>
+    <StreamlinedWonderWhiz childId={childId!} />
   );
 };
 
