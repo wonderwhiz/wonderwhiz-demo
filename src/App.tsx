@@ -9,7 +9,6 @@ import { Toaster } from 'sonner';
 import Index from '@/pages/Index';
 import Login from '@/pages/Login';
 import ProfileSelector from '@/pages/ProfileSelector';
-import Dashboard from '@/pages/Dashboard';
 import UnifiedDashboard from '@/pages/UnifiedDashboard';
 import WonderWhiz from '@/pages/WonderWhiz';
 import ParentZone from '@/pages/ParentZone';
@@ -28,8 +27,8 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <HelmetProvider>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
+      <AuthProvider>
+        <QueryClientProvider client={queryClient}>
           <Router>
             <Helmet>
               <title>WonderWhiz - The World's Best AI App for Kids! 🌟</title>
@@ -60,11 +59,6 @@ function App() {
                     <UnifiedDashboard />
                   </ProtectedRoute>
                 } />
-                <Route path="/legacy-dashboard/:childId" element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                } />
                 <Route path="/wonderwhiz/:childId" element={
                   <ProtectedRoute>
                     <WonderWhiz />
@@ -90,8 +84,8 @@ function App() {
               }}
             />
           </Router>
-        </AuthProvider>
-      </QueryClientProvider>
+        </QueryClientProvider>
+      </AuthProvider>
     </HelmetProvider>
   );
 }

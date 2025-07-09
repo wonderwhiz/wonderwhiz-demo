@@ -4,8 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useAuth } from '@/hooks/useAuth';
 import SimplifiedDashboard from '@/components/kids/SimplifiedDashboard';
-import { motion } from 'framer-motion';
-import { Card } from '@/components/ui/card';
+import KidsLoadingState from '@/components/kids/KidsLoadingState';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -54,25 +53,7 @@ const UnifiedDashboard: React.FC = () => {
 
   // Loading state
   if (isLoading || !childProfile) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-600 via-purple-700 to-pink-600 flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-8 text-center">
-            <div className="text-8xl mb-4 animate-bounce">🌟</div>
-            <h2 className="text-2xl font-bold text-white mb-2">
-              Getting your magical space ready...
-            </h2>
-            <div className="flex justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400"></div>
-            </div>
-          </Card>
-        </motion.div>
-      </div>
-    );
+    return <KidsLoadingState />;
   }
 
   const handleSearch = async (query: string) => {

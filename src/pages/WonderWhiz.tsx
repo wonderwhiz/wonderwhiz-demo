@@ -5,11 +5,9 @@ import { toast } from 'sonner';
 import { ArrowLeft, Sparkles } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useChildProfile } from '@/hooks/use-child-profile';
-import { supabase } from '@/integrations/supabase/client';
 import { LearningTopic } from '@/types/wonderwhiz';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { motion } from 'framer-motion';
+import KidsLoadingState from '@/components/kids/KidsLoadingState';
 import StreamlinedDashboard from '@/components/wonderwhiz/StreamlinedDashboard';
 
 const WonderWhiz = () => {
@@ -33,25 +31,7 @@ const WonderWhiz = () => {
 
   // Loading state
   if (isLoadingProfile || !childProfile) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-600 via-purple-700 to-pink-600 flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-8 text-center">
-            <div className="text-8xl mb-4">📚</div>
-            <h2 className="text-2xl font-bold text-white mb-2">
-              Loading Wonder Encyclopedia...
-            </h2>
-            <div className="flex justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400"></div>
-            </div>
-          </Card>
-        </motion.div>
-      </div>
-    );
+    return <KidsLoadingState message="Loading Wonder Encyclopedia..." emoji="📚" />;
   }
 
   const handleTopicCreate = async (topic: LearningTopic) => {

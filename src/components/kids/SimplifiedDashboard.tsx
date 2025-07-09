@@ -183,12 +183,15 @@ const SimplifiedDashboard: React.FC<SimplifiedDashboardProps> = ({
                   initial={{ opacity: 0, scale: 0.95, y: -10 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                  className="absolute top-16 right-4 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-2 min-w-48"
+                  className="absolute top-16 right-4 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-2 min-w-48 z-50"
                 >
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => navigate(`/wonderwhiz/${childProfile?.id}`)}
+                    onClick={() => {
+                      setShowMenu(false);
+                      navigate(`/wonderwhiz/${childProfile?.id}`);
+                    }}
                     className="w-full justify-start text-white hover:bg-white/10"
                   >
                     <Book className="h-4 w-4 mr-2" />
@@ -197,7 +200,10 @@ const SimplifiedDashboard: React.FC<SimplifiedDashboardProps> = ({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => navigate('/parent-zone')}
+                    onClick={() => {
+                      setShowMenu(false);
+                      navigate('/parent-zone');
+                    }}
                     className="w-full justify-start text-white hover:bg-white/10"
                   >
                     <Users className="h-4 w-4 mr-2" />
@@ -206,7 +212,10 @@ const SimplifiedDashboard: React.FC<SimplifiedDashboardProps> = ({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => navigate('/profiles')}
+                    onClick={() => {
+                      setShowMenu(false);
+                      navigate('/profiles');
+                    }}
                     className="w-full justify-start text-white hover:bg-white/10"
                   >
                     <Settings className="h-4 w-4 mr-2" />
@@ -216,7 +225,10 @@ const SimplifiedDashboard: React.FC<SimplifiedDashboardProps> = ({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={handleSignOut}
+                    onClick={() => {
+                      setShowMenu(false);
+                      handleSignOut();
+                    }}
                     className="w-full justify-start text-red-300 hover:bg-red-500/10"
                   >
                     <LogOut className="h-4 w-4 mr-2" />
