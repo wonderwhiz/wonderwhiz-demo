@@ -13,6 +13,7 @@ import DashboardControls from '@/components/dashboard/DashboardControls';
 import AgeSpecificInterface from '@/components/dashboard/AgeSpecificInterface';
 import AgeAdaptiveNavigation from '@/components/dashboard/AgeAdaptiveNavigation';
 import ProgressVisualization from '@/components/dashboard/ProgressVisualization';
+import SingleEntryDashboard from '@/components/dashboard/SingleEntryDashboard';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useEnhancedBlockInteractions } from '@/hooks/useEnhancedBlockInteractions';
@@ -265,14 +266,14 @@ const DashboardContainer = () => {
           
           <div className="max-w-4xl mx-auto p-6 space-y-6">
             {currentSection === 'home' && (
-              <>
-                <AgeSpecificInterface
-                  childProfile={childProfile}
-                  onStartLearning={handleDashboardSearch}
-                  streakDays={streakDays}
-                  sparksBalance={childProfile?.sparks_balance || 0}
-                />
-              </>
+              <SingleEntryDashboard
+                childProfile={childProfile}
+                onSearch={handleDashboardSearch}
+                onImageUpload={handleImageCapture}
+                isGenerating={isGenerating || processingImage}
+                streakDays={streakDays}
+                sparksBalance={childProfile?.sparks_balance || 0}
+              />
             )}
             
             {currentSection === 'progress' && (
