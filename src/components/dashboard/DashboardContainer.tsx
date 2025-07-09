@@ -13,7 +13,7 @@ import DashboardControls from '@/components/dashboard/DashboardControls';
 import AgeSpecificInterface from '@/components/dashboard/AgeSpecificInterface';
 import AgeAdaptiveNavigation from '@/components/dashboard/AgeAdaptiveNavigation';
 import ProgressVisualization from '@/components/dashboard/ProgressVisualization';
-import SingleEntryDashboard from '@/components/dashboard/SingleEntryDashboard';
+import KidsFriendlyDashboard from '@/components/dashboard/KidsFriendlyDashboard';
 import PersonalizationDashboard from '@/components/dashboard/PersonalizationDashboard';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -254,9 +254,9 @@ const DashboardContainer = () => {
             onNavigate={setCurrentSection}
           />
           
-          <div className="max-w-4xl mx-auto p-6 space-y-6">
+          <div className="flex-1">
             {currentSection === 'home' && (
-              <SingleEntryDashboard
+              <KidsFriendlyDashboard
                 childProfile={childProfile}
                 onSearch={handleDashboardSearch}
                 onImageUpload={handleImageCapture}
@@ -267,26 +267,32 @@ const DashboardContainer = () => {
             )}
             
             {currentSection === 'progress' && (
-              <ProgressVisualization
-                childProfile={childProfile}
-                streakDays={streakDays}
-                sparksBalance={childProfile?.sparks_balance || 0}
-              />
+              <div className="max-w-4xl mx-auto p-6">
+                <ProgressVisualization
+                  childProfile={childProfile}
+                  streakDays={streakDays}
+                  sparksBalance={childProfile?.sparks_balance || 0}
+                />
+              </div>
             )}
             
             {currentSection === 'achievements' && (
-              <ProgressVisualization
-                childProfile={childProfile}
-                streakDays={streakDays}
-                sparksBalance={childProfile?.sparks_balance || 0}
-              />
+              <div className="max-w-4xl mx-auto p-6">
+                <ProgressVisualization
+                  childProfile={childProfile}
+                  streakDays={streakDays}
+                  sparksBalance={childProfile?.sparks_balance || 0}
+                />
+              </div>
             )}
             
             {currentSection === 'personalization' && (
-              <PersonalizationDashboard
-                childId={profileId || ''}
-                childProfile={childProfile}
-              />
+              <div className="max-w-4xl mx-auto p-6">
+                <PersonalizationDashboard
+                  childId={profileId || ''}
+                  childProfile={childProfile}
+                />
+              </div>
             )}
           </div>
         </div>
