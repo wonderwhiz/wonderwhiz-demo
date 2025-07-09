@@ -14,9 +14,9 @@ import AgeSpecificInterface from '@/components/dashboard/AgeSpecificInterface';
 import AgeAdaptiveNavigation from '@/components/dashboard/AgeAdaptiveNavigation';
 import ProgressVisualization from '@/components/dashboard/ProgressVisualization';
 import SingleEntryDashboard from '@/components/dashboard/SingleEntryDashboard';
+import PersonalizationDashboard from '@/components/dashboard/PersonalizationDashboard';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useEnhancedBlockInteractions } from '@/hooks/useEnhancedBlockInteractions';
 
 interface Curio {
   id: string;
@@ -71,16 +71,6 @@ const DashboardContainer = () => {
     handleCreativeUpload,
     handleSparkEarned
   } = blockInteractionHandlers;
-
-  const {
-    handleLike,
-    handleBookmark,
-    handleReply,
-    handleReadAloud,
-    likedBlocks,
-    bookmarkedBlocks,
-    loadingStates
-  } = useEnhancedBlockInteractions(profileId);
 
   useEffect(() => {
     if (childProfile?.age) {
@@ -289,6 +279,13 @@ const DashboardContainer = () => {
                 childProfile={childProfile}
                 streakDays={streakDays}
                 sparksBalance={childProfile?.sparks_balance || 0}
+              />
+            )}
+            
+            {currentSection === 'personalization' && (
+              <PersonalizationDashboard
+                childId={profileId || ''}
+                childProfile={childProfile}
               />
             )}
           </div>

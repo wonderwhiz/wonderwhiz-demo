@@ -20,7 +20,7 @@ const EnhancedDashboardContainer = () => {
   const [currentSection, setCurrentSection] = useState<string>('');
 
   const { childProfile } = useDashboardProfile(profileId);
-  const { personalizationData, trackInteraction } = usePersonalizationEngine(profileId || '');
+  const { profile, patterns, recommendations } = usePersonalizationEngine(profileId || '');
 
   // Default accessibility settings
   const [accessibilitySettings, setAccessibilitySettings] = useState({
@@ -58,14 +58,7 @@ const EnhancedDashboardContainer = () => {
   const handleFloatingSearch = (query: string) => {
     setCurrentTopic(query);
     // This would trigger navigation to the topic
-    trackInteraction({
-      contentType: 'search',
-      timeSpent: 0,
-      completionRate: 1,
-      difficulty: 'medium',
-      engagement: 0.8,
-      needsHelp: false
-    });
+    console.log('Search query:', query);
   };
 
   // Handle voice input
@@ -83,14 +76,7 @@ const EnhancedDashboardContainer = () => {
   // Handle curiosity chain step selection
   const handleCuriosityStepSelect = (step: any) => {
     setCurrentTopic(step.title);
-    trackInteraction({
-      contentType: 'curiosity-chain',
-      timeSpent: 0,
-      completionRate: 0,
-      difficulty: step.difficulty,
-      engagement: 0.9,
-      needsHelp: false
-    });
+    console.log('Curiosity step selected:', step);
   };
 
   return (
@@ -137,12 +123,12 @@ const EnhancedDashboardContainer = () => {
       />
 
       {/* Curiosity Chains */}
-      {currentTopic && personalizationData && (
+      {currentTopic && profile && (
         <div className="fixed left-4 top-1/2 transform -translate-y-1/2 w-80 z-40">
           <CuriosityChains
             currentTopic={currentTopic}
             childAge={childProfile?.age || 10}
-            interests={personalizationData.preferences.interestTopics}
+            interests={profile.interests}
             onStepSelect={handleCuriosityStepSelect}
           />
         </div>

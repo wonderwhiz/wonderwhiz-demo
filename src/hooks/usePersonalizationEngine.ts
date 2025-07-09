@@ -1,260 +1,295 @@
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
-import { useState, useEffect, useCallback } from 'react';
-
-interface LearningPreference {
-  preferredDifficulty: 'easy' | 'medium' | 'hard';
-  preferredContentTypes: string[];
-  optimalSessionLength: number; // in minutes
-  bestTimeOfDay: string;
-  learningStyle: 'visual' | 'auditory' | 'kinesthetic' | 'mixed';
-  interestTopics: string[];
+interface PersonalizationProfile {
+  contentDifficulty: number;
+  learningStyle: 'visual' | 'auditory' | 'kinesthetic' | 'reading';
+  interests: string[];
   strengths: string[];
   challenges: string[];
+  optimalSessionLength: number;
+  preferredTimeOfDay: 'morning' | 'afternoon' | 'evening';
 }
 
-interface PersonalizationData {
-  preferences: LearningPreference;
-  adaptiveSettings: {
-    contentComplexity: number; // 0-1 scale
-    interactionFrequency: number; // 0-1 scale
-    gamificationLevel: number; // 0-1 scale
-    explanationDepth: number; // 0-1 scale
-  };
-  recommendations: {
-    nextTopics: string[];
-    suggestedActivities: string[];
-    optimalBreakTime: number;
-    challengeLevel: number;
-  };
-}
-
-interface InteractionData {
-  topicId?: string;
-  contentType: string;
-  timeSpent: number;
+interface LearningPattern {
+  engagementScore: number;
   completionRate: number;
-  difficulty: string;
-  engagement: number;
-  needsHelp: boolean;
-  timestamp?: string; // Made optional since trackInteraction adds it automatically
+  retentionRate: number;
+  strugglingTopics: string[];
+  masteredTopics: string[];
 }
 
-export const usePersonalizationEngine = (childId: string) => {
-  const [personalizationData, setPersonalizationData] = useState<PersonalizationData | null>(null);
+export const usePersonalizationEngine = (childId: string | undefined) => {
+  const [profile, setProfile] = useState<PersonalizationProfile | null>(null);
+  const [patterns, setPatterns] = useState<LearningPattern | null>(null);
+  const [recommendations, setRecommendations] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  // Track learning behavior - simplified to just store in localStorage for now
-  const trackInteraction = useCallback(async (data: InteractionData) => {
-    try {
-      // Store interaction data in localStorage for now
-      const interactions = JSON.parse(localStorage.getItem(`interactions-${childId}`) || '[]');
-      interactions.push({
-        ...data,
-        timestamp: new Date().toISOString()
-      });
-      localStorage.setItem(`interactions-${childId}`, JSON.stringify(interactions));
-    } catch (error) {
-      console.error('Error tracking interaction:', error);
-    }
-  }, [childId]);
-
-  // Analyze learning patterns and update preferences
-  const updatePersonalization = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      
-      // Get interactions from localStorage
-      const interactions = JSON.parse(localStorage.getItem(`interactions-${childId}`) || '[]');
-      
-      // Analyze patterns
-      const analysis = analyzeInteractions(interactions);
-      
-      // Store personalization data in localStorage
-      localStorage.setItem(`personalization-${childId}`, JSON.stringify(analysis));
-      
-      setPersonalizationData(analysis);
-    } catch (error) {
-      console.error('Error updating personalization:', error);
-      setError(error instanceof Error ? error.message : 'Unknown error');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [childId]);
-
-  // Load existing personalization data
   useEffect(() => {
-    const loadPersonalizationData = async () => {
-      try {
-        // Try to load from localStorage first
-        const stored = localStorage.getItem(`personalization-${childId}`);
-        
-        if (stored) {
-          setPersonalizationData(JSON.parse(stored));
-        } else {
-          // Initialize with defaults
-          const defaultPersonalization: PersonalizationData = {
-            preferences: {
-              preferredDifficulty: 'medium',
-              preferredContentTypes: ['interactive', 'visual'],
-              optimalSessionLength: 15,
-              bestTimeOfDay: 'afternoon',
-              learningStyle: 'mixed',
-              interestTopics: [],
-              strengths: [],
-              challenges: []
-            },
-            adaptiveSettings: {
-              contentComplexity: 0.5,
-              interactionFrequency: 0.7,
-              gamificationLevel: 0.8,
-              explanationDepth: 0.6
-            },
-            recommendations: {
-              nextTopics: [],
-              suggestedActivities: [],
-              optimalBreakTime: 5,
-              challengeLevel: 0.5
-            }
-          };
-          setPersonalizationData(defaultPersonalization);
-        }
-      } catch (error) {
-        console.error('Error loading personalization data:', error);
-        setError(error instanceof Error ? error.message : 'Unknown error');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     if (childId) {
       loadPersonalizationData();
     }
   }, [childId]);
 
-  // Analyze interactions to determine learning patterns
-  const analyzeInteractions = (interactions: InteractionData[]): PersonalizationData => {
-    if (interactions.length === 0) {
-      // Return default values
-      return {
-        preferences: {
-          preferredDifficulty: 'medium',
-          preferredContentTypes: ['interactive'],
-          optimalSessionLength: 15,
-          bestTimeOfDay: 'afternoon',
-          learningStyle: 'mixed',
-          interestTopics: [],
-          strengths: [],
-          challenges: []
-        },
-        adaptiveSettings: {
-          contentComplexity: 0.5,
-          interactionFrequency: 0.7,
-          gamificationLevel: 0.8,
-          explanationDepth: 0.6
-        },
-        recommendations: {
-          nextTopics: [],
-          suggestedActivities: [],
-          optimalBreakTime: 5,
-          challengeLevel: 0.5
-        }
-      };
+  const loadPersonalizationData = async () => {
+    if (!childId) return;
+
+    try {
+      setIsLoading(true);
+
+      // Load child profile and learning preferences
+      const { data: childProfile } = await supabase
+        .from('child_profiles')
+        .select('*')
+        .eq('id', childId)
+        .single();
+
+      // Load learning history for pattern analysis
+      const { data: learningHistory } = await supabase
+        .from('learning_history')
+        .select('*')
+        .eq('child_id', childId)
+        .order('interaction_date', { ascending: false })
+        .limit(50);
+
+      // Load recent curios for content analysis
+      const { data: recentCurios } = await supabase
+        .from('curios')
+        .select('*')
+        .eq('child_id', childId)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (childProfile) {
+        // Build personalization profile
+        const personalizationProfile: PersonalizationProfile = {
+          contentDifficulty: childProfile.content_difficulty_preference || 5,
+          learningStyle: determineLearningStyle(learningHistory),
+          interests: childProfile.interests || [],
+          strengths: extractStrengths(learningHistory),
+          challenges: extractChallenges(learningHistory),
+          optimalSessionLength: calculateOptimalSessionLength(learningHistory),
+          preferredTimeOfDay: determinePreferredTime(learningHistory)
+        };
+
+        // Analyze learning patterns
+        const learningPatterns: LearningPattern = {
+          engagementScore: calculateEngagementScore(learningHistory),
+          completionRate: calculateCompletionRate(recentCurios),
+          retentionRate: calculateRetentionRate(learningHistory),
+          strugglingTopics: identifyStrugglingTopics(learningHistory),
+          masteredTopics: identifyMasteredTopics(learningHistory)
+        };
+
+        // Generate personalized recommendations
+        const personalizedRecommendations = generateRecommendations(
+          personalizationProfile,
+          learningPatterns
+        );
+
+        setProfile(personalizationProfile);
+        setPatterns(learningPatterns);
+        setRecommendations(personalizedRecommendations);
+      }
+    } catch (error) {
+      console.error('Error loading personalization data:', error);
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    // Analyze completion rates by difficulty
-    const difficultyPerformance = interactions.reduce((acc, interaction) => {
-      const diff = interaction.difficulty;
-      if (!acc[diff]) acc[diff] = { total: 0, completions: 0, engagement: 0 };
-      acc[diff].total++;
-      acc[diff].completions += interaction.completionRate;
-      acc[diff].engagement += interaction.engagement;
-      return acc;
-    }, {} as Record<string, { total: number; completions: number; engagement: number }>);
+  const determineLearningStyle = (history: any[]): 'visual' | 'auditory' | 'kinesthetic' | 'reading' => {
+    // Analyze interaction patterns to determine preferred learning style
+    const styleScores = {
+      visual: 0,
+      auditory: 0,
+      kinesthetic: 0,
+      reading: 0
+    };
 
-    // Determine preferred difficulty
-    let preferredDifficulty: 'easy' | 'medium' | 'hard' = 'medium';
-    let bestPerformance = 0;
-    Object.entries(difficultyPerformance).forEach(([diff, stats]) => {
-      const avgPerformance = (stats.completions + stats.engagement) / (stats.total * 2);
-      if (avgPerformance > bestPerformance) {
-        bestPerformance = avgPerformance;
-        preferredDifficulty = diff as 'easy' | 'medium' | 'hard';
+    history?.forEach(entry => {
+      if (entry.engagement_level > 7) {
+        // High engagement indicates preferred style
+        styleScores.visual += 1; // Default for now
       }
     });
 
-    // Analyze content type preferences
-    const contentTypePerformance = interactions.reduce((acc, interaction) => {
-      const type = interaction.contentType;
-      if (!acc[type]) acc[type] = { engagement: 0, count: 0 };
-      acc[type].engagement += interaction.engagement;
-      acc[type].count++;
-      return acc;
-    }, {} as Record<string, { engagement: number; count: number }>);
+    return Object.entries(styleScores).reduce((a, b) => 
+      styleScores[a[0] as keyof typeof styleScores] > styleScores[b[0] as keyof typeof styleScores] ? a : b
+    )[0] as 'visual' | 'auditory' | 'kinesthetic' | 'reading';
+  };
 
-    const preferredContentTypes = Object.entries(contentTypePerformance)
-      .sort(([,a], [,b]) => (b.engagement / b.count) - (a.engagement / a.count))
-      .slice(0, 3)
-      .map(([type]) => type);
-
-    // Calculate optimal session length
-    const avgTimeSpent = interactions.reduce((sum, i) => sum + i.timeSpent, 0) / interactions.length;
-    const optimalSessionLength = Math.max(5, Math.min(30, Math.round(avgTimeSpent)));
-
-    // Determine time of day preference (simplified)
-    const timePreferences = interactions.reduce((acc, interaction) => {
-      const hour = new Date(interaction.timestamp || new Date().toISOString()).getHours();
-      let timeOfDay: string;
-      if (hour < 12) timeOfDay = 'morning';
-      else if (hour < 17) timeOfDay = 'afternoon';
-      else timeOfDay = 'evening';
-
-      if (!acc[timeOfDay]) acc[timeOfDay] = { engagement: 0, count: 0 };
-      acc[timeOfDay].engagement += interaction.engagement;
-      acc[timeOfDay].count++;
-      return acc;
-    }, {} as Record<string, { engagement: number; count: number }>);
-
-    const bestTimeOfDay = Object.entries(timePreferences)
-      .sort(([,a], [,b]) => (b.engagement / b.count) - (a.engagement / a.count))[0]?.[0] || 'afternoon';
-
-    // Calculate adaptive settings
-    const avgEngagement = interactions.reduce((sum, i) => sum + i.engagement, 0) / interactions.length;
-    const avgCompletion = interactions.reduce((sum, i) => sum + i.completionRate, 0) / interactions.length;
-    const helpRequests = interactions.filter(i => i.needsHelp).length / interactions.length;
-
-    return {
-      preferences: {
-        preferredDifficulty,
-        preferredContentTypes,
-        optimalSessionLength,
-        bestTimeOfDay,
-        learningStyle: 'mixed', // Would need more sophisticated analysis
-        interestTopics: [], // Would be extracted from topic interactions
-        strengths: [],
-        challenges: []
-      },
-      adaptiveSettings: {
-        contentComplexity: Math.max(0.1, Math.min(0.9, avgCompletion)),
-        interactionFrequency: Math.max(0.3, Math.min(1.0, 1 - avgEngagement)),
-        gamificationLevel: Math.max(0.5, Math.min(1.0, avgEngagement + 0.2)),
-        explanationDepth: Math.max(0.1, Math.min(1.0, helpRequests + 0.3))
-      },
-      recommendations: {
-        nextTopics: [], // Would be generated based on interests and performance
-        suggestedActivities: preferredContentTypes,
-        optimalBreakTime: Math.max(2, Math.min(10, Math.round(avgTimeSpent / 3))),
-        challengeLevel: Math.max(0.1, Math.min(0.9, avgCompletion - 0.1))
+  const extractStrengths = (history: any[]): string[] => {
+    const topicPerformance: Record<string, number> = {};
+    
+    history?.forEach(entry => {
+      if (entry.engagement_level >= 8) {
+        topicPerformance[entry.topic] = (topicPerformance[entry.topic] || 0) + 1;
       }
-    };
+    });
+
+    return Object.entries(topicPerformance)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 3)
+      .map(([topic]) => topic);
+  };
+
+  const extractChallenges = (history: any[]): string[] => {
+    const topicDifficulty: Record<string, number> = {};
+    
+    history?.forEach(entry => {
+      if (entry.engagement_level <= 4) {
+        topicDifficulty[entry.topic] = (topicDifficulty[entry.topic] || 0) + 1;
+      }
+    });
+
+    return Object.entries(topicDifficulty)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 2)
+      .map(([topic]) => topic);
+  };
+
+  const calculateOptimalSessionLength = (history: any[]): number => {
+    // Analyze session duration vs engagement
+    const avgEngagement = history?.reduce((sum, entry) => sum + (entry.engagement_level || 0), 0) / (history?.length || 1);
+    
+    // Return optimal session length in minutes based on engagement patterns
+    if (avgEngagement >= 8) return 25;
+    if (avgEngagement >= 6) return 20;
+    return 15;
+  };
+
+  const determinePreferredTime = (history: any[]): 'morning' | 'afternoon' | 'evening' => {
+    const timeScores = { morning: 0, afternoon: 0, evening: 0 };
+    
+    history?.forEach(entry => {
+      const hour = new Date(entry.interaction_date).getHours();
+      if (hour < 12) timeScores.morning += entry.engagement_level || 0;
+      else if (hour < 18) timeScores.afternoon += entry.engagement_level || 0;
+      else timeScores.evening += entry.engagement_level || 0;
+    });
+
+    return Object.entries(timeScores).reduce((a, b) => 
+      timeScores[a[0] as keyof typeof timeScores] > timeScores[b[0] as keyof typeof timeScores] ? a : b
+    )[0] as 'morning' | 'afternoon' | 'evening';
+  };
+
+  const calculateEngagementScore = (history: any[]): number => {
+    if (!history?.length) return 0;
+    return history.reduce((sum, entry) => sum + (entry.engagement_level || 0), 0) / history.length;
+  };
+
+  const calculateCompletionRate = (curios: any[]): number => {
+    if (!curios?.length) return 0;
+    const completed = curios.filter(c => !c.generation_error).length;
+    return (completed / curios.length) * 100;
+  };
+
+  const calculateRetentionRate = (history: any[]): number => {
+    const revisited = history?.filter(h => h.revisit_count > 0).length || 0;
+    return history?.length ? (revisited / history.length) * 100 : 0;
+  };
+
+  const identifyStrugglingTopics = (history: any[]): string[] => {
+    const topicDifficulty: Record<string, { total: number, low: number }> = {};
+    
+    history?.forEach(entry => {
+      if (!topicDifficulty[entry.topic]) {
+        topicDifficulty[entry.topic] = { total: 0, low: 0 };
+      }
+      topicDifficulty[entry.topic].total++;
+      if (entry.engagement_level <= 4) {
+        topicDifficulty[entry.topic].low++;
+      }
+    });
+
+    return Object.entries(topicDifficulty)
+      .filter(([, data]) => data.low / data.total > 0.6) // 60% low engagement
+      .map(([topic]) => topic)
+      .slice(0, 3);
+  };
+
+  const identifyMasteredTopics = (history: any[]): string[] => {
+    const topicMastery: Record<string, { total: number, high: number }> = {};
+    
+    history?.forEach(entry => {
+      if (!topicMastery[entry.topic]) {
+        topicMastery[entry.topic] = { total: 0, high: 0 };
+      }
+      topicMastery[entry.topic].total++;
+      if (entry.engagement_level >= 8) {
+        topicMastery[entry.topic].high++;
+      }
+    });
+
+    return Object.entries(topicMastery)
+      .filter(([, data]) => data.high / data.total > 0.8) // 80% high engagement
+      .map(([topic]) => topic)
+      .slice(0, 5);
+  };
+
+  const generateRecommendations = (
+    profile: PersonalizationProfile,
+    patterns: LearningPattern
+  ): string[] => {
+    const recommendations: string[] = [];
+
+    // Content difficulty recommendations
+    if (patterns.completionRate < 60) {
+      recommendations.push("Try easier topics to build confidence");
+    } else if (patterns.completionRate > 90) {
+      recommendations.push("Challenge yourself with more advanced topics");
+    }
+
+    // Learning style recommendations
+    if (profile.learningStyle === 'visual') {
+      recommendations.push("Explore topics with rich images and diagrams");
+    } else if (profile.learningStyle === 'auditory') {
+      recommendations.push("Use read-aloud features for better learning");
+    }
+
+    // Interest-based recommendations
+    profile.interests.forEach(interest => {
+      recommendations.push(`Discover more about ${interest}`);
+    });
+
+    // Time-based recommendations
+    if (profile.preferredTimeOfDay === 'morning') {
+      recommendations.push("Morning learning sessions work best for you");
+    }
+
+    return recommendations.slice(0, 5);
+  };
+
+  const updateLearningPreferences = async (updates: Partial<PersonalizationProfile>) => {
+    if (!childId) return;
+
+    try {
+      const { error } = await supabase
+        .from('child_profiles')
+        .update({
+          content_difficulty_preference: updates.contentDifficulty,
+          learning_preferences: {
+            ...profile,
+            ...updates
+          }
+        })
+        .eq('id', childId);
+
+      if (!error) {
+        setProfile(prev => prev ? { ...prev, ...updates } : null);
+      }
+    } catch (error) {
+      console.error('Error updating learning preferences:', error);
+    }
   };
 
   return {
-    personalizationData,
+    profile,
+    patterns,
+    recommendations,
     isLoading,
-    error,
-    trackInteraction,
-    updatePersonalization,
-    refetch: updatePersonalization
+    updateLearningPreferences,
+    refreshData: loadPersonalizationData
   };
 };
