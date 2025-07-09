@@ -7,13 +7,14 @@ import { useUnifiedDashboard } from '@/hooks/useUnifiedDashboard';
 import KidsFriendlyDashboard from '@/components/dashboard/KidsFriendlyDashboard';
 import QuickTopicOverview from './QuickTopicOverview';
 import SimpleEncyclopedia from './SimpleEncyclopedia';
+import RelatedTopics from './RelatedTopics';
 import { Trophy, Home, Sparkles } from 'lucide-react';
 
 interface StreamlinedWonderWhizProps {
   childId: string;
 }
 
-type ViewState = 'dashboard' | 'topic-overview' | 'learning' | 'completed';
+type ViewState = 'dashboard' | 'topic-overview' | 'learning' | 'completed' | 'explore-more';
 
 const StreamlinedWonderWhiz: React.FC<StreamlinedWonderWhizProps> = ({ childId }) => {
   const [viewState, setViewState] = useState<ViewState>('dashboard');
@@ -51,6 +52,10 @@ const StreamlinedWonderWhiz: React.FC<StreamlinedWonderWhizProps> = ({ childId }
   };
 
   const handleFinishTopic = () => {
+    setViewState('explore-more');
+  };
+
+  const handleExploreComplete = () => {
     setViewState('completed');
   };
 
@@ -121,7 +126,7 @@ const StreamlinedWonderWhiz: React.FC<StreamlinedWonderWhizProps> = ({ childId }
                 onClick={handleTryAnother}
                 className="w-full bg-wonderwhiz-cyan hover:bg-wonderwhiz-cyan/80 text-white font-bold"
               >
-                Learn Something New!
+                {childProfile?.age <= 8 ? "Another Adventure!" : "Learn Something New!"}
               </Button>
               
               <Button
@@ -191,6 +196,23 @@ const StreamlinedWonderWhiz: React.FC<StreamlinedWonderWhizProps> = ({ childId }
               childAge={childProfile?.age || 10}
               onFinish={handleFinishTopic}
               onGoHome={handleGoHome}
+            />
+          </motion.div>
+        )}
+
+        {viewState === 'explore-more' && selectedTopic && (
+          <motion.div
+            key="explore-more"
+            initial={{ opacity: 0, x: 100 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -100 }}
+            transition={{ duration: 0.3 }}
+          >
+            <RelatedTopics
+              currentTopic={selectedTopic}
+              childAge={childProfile?.age || 10}
+              childProfile={childProfile}
+              onNewTopicSelected={handleExploreComplete}
             />
           </motion.div>
         )}
