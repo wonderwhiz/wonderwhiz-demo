@@ -1,34 +1,75 @@
 
 import React from 'react';
-import DashboardContainer from '@/components/dashboard/DashboardContainer';
-import { SidebarProvider } from '@/components/ui/sidebar';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import { useUser } from '@/hooks/use-user';
+import { useUnifiedDashboard } from '@/hooks/useUnifiedDashboard';
+import MagicalDashboard from '@/components/kids/MagicalDashboard';
+import { motion } from 'framer-motion';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { BookOpen, Home } from 'lucide-react';
 
 const Dashboard = () => {
+  const { childId } = useParams<{ childId: string }>();
+  const navigate = useNavigate();
+  const { user } = useUser();
+  const {
+    childProfile,
+    isLoadingProfile,
+    handleUnifiedSearch
+  } = useUnifiedDashboard();
+
+  // Redirect if no user
+  React.useEffect(() => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    if (!childId) {
+      navigate('/profiles');
+      return;
+    }
+  }, [user, childId, navigate]);
+
+  // Loading state
+  if (isLoadingProfile || !childProfile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-wonderwhiz-deep-purple via-wonderwhiz-purple to-wonderwhiz-bright-pink flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-8 text-center">
+            <div className="text-8xl mb-4">🌟</div>
+            <h2 className="text-2xl font-bold text-white mb-2">
+              Getting your magical space ready...
+            </h2>
+            <div className="flex justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-wonderwhiz-cyan"></div>
+            </div>
+          </Card>
+        </motion.div>
+      </div>
+    );
+  }
+
+  const handleSearch = async (query: string) => {
+    await handleUnifiedSearch(query);
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#2A1B5D] to-[#3D2A7D] overflow-hidden">
+    <div className="min-h-screen">
       <Helmet>
-        <title>WonderWhiz - Your Learning Adventure</title>
-        <meta name="description" content="Discover amazing facts, fun activities, and cool adventures! What will you learn today?" />
+        <title>{`${childProfile?.name}'s Learning Adventure | WonderWhiz`}</title>
+        <meta name="description" content="Ask questions, discover amazing facts, and go on learning adventures!" />
       </Helmet>
       
-      {/* Optimized static decorative background */}
-      <div className="fixed inset-0 z-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#2A1B5D] via-[#3D2A7D] to-[#3D2A7D]"></div>
-        <div className="absolute inset-0 opacity-10" style={{ 
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.15'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }}></div>
-        
-        {/* Optimized soft glow effects */}
-        <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-[#4A6FFF]/5 blur-3xl"></div>
-        <div className="absolute bottom-1/3 right-1/4 w-96 h-96 rounded-full bg-[#FF5BA3]/5 blur-3xl"></div>
-      </div>
-      
-      <div className="relative z-10">
-        <SidebarProvider>
-          <DashboardContainer />
-        </SidebarProvider>
-      </div>
+      <MagicalDashboard
+        childProfile={childProfile}
+        onSearch={handleSearch}
+      />
     </div>
   );
 };
