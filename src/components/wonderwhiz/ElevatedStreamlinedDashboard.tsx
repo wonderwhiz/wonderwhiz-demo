@@ -139,7 +139,7 @@ const ElevatedStreamlinedDashboard: React.FC<ElevatedStreamlinedDashboardProps> 
         className="fixed inset-0 z-0"
         style={{ y: backgroundY }}
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-background via-secondary to-primary" />
+        <div className="absolute inset-0 bg-background" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(255,255,255,0.1)_0%,transparent_50%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_70%,rgba(255,255,255,0.05)_0%,transparent_50%)]" />
         
