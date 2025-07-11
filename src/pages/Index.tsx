@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Award, Sparkles } from 'lucide-react';
 import Navbar from '@/components/Navbar';
-import HeroSection from '@/components/HeroSection';
+import ElevatedHeroSection from '@/components/ElevatedHeroSection';
 import FeaturesSection from '@/components/FeaturesSection';
 import HowItWorksSection from '@/components/HowItWorksSection';
 import TestimonialsSection from '@/components/TestimonialsSection';
@@ -163,7 +163,7 @@ const Index = () => {
       
       <Navbar />
       <main>
-        <HeroSection />
+        <ElevatedHeroSection />
         <FeaturesSection />
         <HowItWorksSection />
         <TestimonialsSection />

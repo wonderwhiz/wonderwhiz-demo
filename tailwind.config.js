@@ -18,26 +18,58 @@ module.exports = {
     },
     extend: {
       colors: {
+        // Core Design System
+        surface: {
+          primary: "hsl(var(--surface-primary))",
+          secondary: "hsl(var(--surface-secondary))",
+          tertiary: "hsl(var(--surface-tertiary))",
+          elevated: "hsl(var(--surface-elevated))",
+          glass: "hsl(var(--surface-glass))",
+          overlay: "hsl(var(--surface-overlay))",
+        },
+        text: {
+          primary: "hsl(var(--text-primary))",
+          secondary: "hsl(var(--text-secondary))",
+          tertiary: "hsl(var(--text-tertiary))",
+          inverse: "hsl(var(--text-inverse))",
+          accent: "hsl(var(--text-accent))",
+        },
+        interactive: {
+          hover: "hsl(var(--interactive-hover))",
+          active: "hsl(var(--interactive-active))",
+          focus: "hsl(var(--interactive-focus))",
+          disabled: "hsl(var(--interactive-disabled))",
+        },
+        accent: {
+          brand: "hsl(var(--accent-brand))",
+          success: "hsl(var(--accent-success))",
+          warning: "hsl(var(--accent-warning))",
+          error: "hsl(var(--accent-error))",
+          info: "hsl(var(--accent-info))",
+        },
+        
+        // Legacy Compatibility
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        
+        // WonderWhiz Brand Colors (HSL)
         wonderwhiz: {
-          blue: '#4A6FFF',
-          'blue-accent': '#4A6FFF',
-          cyan: '#00A8C0',
-          purple: '#7E30E1',
-          'light-purple': '#3D2A7D',
-          'deep-purple': '#2A1B5D',
-          'bright-pink': '#C0006A',
-          'vibrant-yellow': '#F0A500',
-          orange: '#E66A2E',
-          green: '#00A36C',
-          teal: '#00CED1',
-          'light-blue': '#4169E1',
-          gold: '#FFC72C',
-          dark: '#20053D',
+          blue: 'hsl(225 100% 64%)',      // #4A6FFF
+          cyan: 'hsl(188 100% 38%)',      // #00A8C0
+          purple: 'hsl(264 77% 53%)',     // #7E30E1
+          'light-purple': 'hsl(257 56% 33%)', // #3D2A7D
+          'deep-purple': 'hsl(252 56% 24%)',  // #2A1B5D
+          'bright-pink': 'hsl(327 100% 38%)', // #C0006A
+          'vibrant-yellow': 'hsl(38 100% 47%)', // #F0A500
+          orange: 'hsl(16 78% 54%)',      // #E66A2E
+          green: 'hsl(159 100% 33%)',     // #00A36C
+          teal: 'hsl(181 100% 41%)',      // #00CED1
+          'light-blue': 'hsl(226 83% 58%)', // #4169E1
+          gold: 'hsl(44 100% 58%)',       // #FFC72C
+          dark: 'hsl(270 76% 13%)',       // #20053D
         },
         primary: {
           DEFAULT: "hsl(var(--primary))",

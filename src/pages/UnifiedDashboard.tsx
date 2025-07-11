@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useAuth } from '@/hooks/useAuth';
-import SimplifiedDashboard from '@/components/kids/SimplifiedDashboard';
+import ElevatedDashboard from '@/components/kids/ElevatedDashboard';
 import KidsLoadingState from '@/components/kids/KidsLoadingState';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -68,7 +68,7 @@ const UnifiedDashboard: React.FC = () => {
         <meta name="description" content="Ask questions, discover amazing facts, and go on learning adventures!" />
       </Helmet>
       
-      <SimplifiedDashboard
+      <ElevatedDashboard
         childProfile={childProfile}
         onSearch={handleSearch}
       />
