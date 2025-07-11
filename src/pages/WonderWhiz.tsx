@@ -44,34 +44,11 @@ const WonderWhiz = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-purple-700 to-pink-600">
+    <div className="min-h-screen bg-background">
       <Helmet>
         <title>{`Wonder Encyclopedia - ${childProfile?.name} | WonderWhiz`}</title>
         <meta name="description" content="Explore amazing topics and learn with WonderWhiz Encyclopedia!" />
       </Helmet>
-
-      {/* Header */}
-      <div className="p-4 border-b border-white/10 bg-black/20 backdrop-blur-sm">
-        <div className="flex items-center justify-between max-w-6xl mx-auto">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              onClick={handleBackToDashboard}
-              className="text-white hover:bg-white/10"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Chat
-            </Button>
-            <div className="flex items-center gap-3">
-              <Sparkles className="h-8 w-8 text-yellow-400" />
-              <div>
-                <h1 className="text-xl font-bold text-white">Wonder Encyclopedia</h1>
-                <p className="text-white/70 text-sm">Discover amazing topics, {childProfile?.name}!</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Main Content */}
       <div className="flex-1">
