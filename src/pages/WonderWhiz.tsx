@@ -8,7 +8,7 @@ import { useChildProfile } from '@/hooks/use-child-profile';
 import { LearningTopic } from '@/types/wonderwhiz';
 import { Button } from '@/components/ui/button';
 import KidsLoadingState from '@/components/kids/KidsLoadingState';
-import StreamlinedDashboard from '@/components/wonderwhiz/StreamlinedDashboard';
+import ElevatedStreamlinedDashboard from '@/components/wonderwhiz/ElevatedStreamlinedDashboard';
 
 const WonderWhiz = () => {
   const { childId } = useParams<{ childId: string }>();
@@ -75,7 +75,7 @@ const WonderWhiz = () => {
 
       {/* Main Content */}
       <div className="flex-1">
-        <StreamlinedDashboard
+        <ElevatedStreamlinedDashboard
           childProfile={childProfile}
           onTopicCreate={handleTopicCreate}
         />

@@ -85,33 +85,31 @@
   }
 
   .dark {
-    --background: 270 78% 13%;
-    --foreground: 210 40% 98%;
-
-    --card: 270 78% 13%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 270 78% 13%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 271 76% 53%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
+    /* Core Brand Colors - HSL for perfect consistency */
+    --primary: 240 15% 9%;           /* Deep charcoal */
+    --primary-deep: 240 20% 6%;      /* Even deeper charcoal */
+    --secondary: 280 30% 15%;        /* Rich purple-dark */
+    --accent: 320 70% 55%;           /* Vibrant pink-purple */
+    --accent-glow: 300 80% 65%;      /* Brighter accent for effects */
+    
+    /* Glass Morphism */
+    --glass: 240 15% 12% / 0.8;
+    --glass-light: 240 15% 20% / 0.6;
+    --glass-border: 255 255% 100% / 0.1;
+    
+    --background: var(--primary);
+    --foreground: 0 0% 95%;
+    --card: var(--glass);
+    --card-foreground: 0 0% 95%;
+    --popover: var(--glass);
+    --popover-foreground: 0 0% 95%;
+    --muted: 240 15% 15%;
+    --muted-foreground: 0 0% 65%;
+    --border: var(--glass-border);
+    --input: var(--glass);
+    --ring: var(--accent);
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 271 76% 53%;
     
     --sidebar-background: 271 76% 40%;
     --sidebar-foreground: 240 4.8% 95.9%;
@@ -450,25 +448,47 @@
     @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6;
   }
   
+  /* Enhanced Glass Morphism */
+  .bg-glass {
+    background: hsl(var(--glass));
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid hsl(var(--glass-border));
+  }
+
+  .bg-glass-light {
+    background: hsl(var(--glass-light));
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid hsl(var(--glass-border));
+  }
+
+  /* Advanced Shadow & Glow System */
+  .shadow-glow {
+    box-shadow: 0 0 40px hsl(var(--accent) / 0.3);
+  }
+
+  .shadow-glow-strong {
+    box-shadow: 0 0 60px hsl(var(--accent) / 0.4);
+  }
+
   /* Kid-friendly UI improvements */
   .kid-button {
     @apply rounded-full py-3 px-6 font-bold text-center transition-all duration-300;
-    @apply bg-gradient-to-r from-wonderwhiz-pink to-wonderwhiz-purple text-white;
-    @apply hover:from-wonderwhiz-purple hover:to-wonderwhiz-pink hover:shadow-lg hover:scale-105;
-    @apply active:scale-95 focus:outline-none focus:ring-2 focus:ring-wonderwhiz-pink focus:ring-opacity-50;
+    background: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--accent-glow)));
+    @apply text-white hover:shadow-glow hover:scale-105;
+    @apply active:scale-95 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--accent))] focus:ring-opacity-50;
     @apply disabled:opacity-50 disabled:cursor-not-allowed;
   }
   
   .kid-input {
-    @apply rounded-xl border border-white/20 bg-white/5 backdrop-blur-sm p-3;
-    @apply text-white placeholder:text-gray-400 focus:outline-none;
-    @apply focus:ring-2 focus:ring-wonderwhiz-pink focus:border-wonderwhiz-pink;
+    @apply rounded-xl p-3 bg-glass text-white placeholder:text-gray-400 focus:outline-none;
+    @apply focus:ring-2 focus:ring-[hsl(var(--accent))] focus:border-[hsl(var(--accent))];
     @apply transition-all duration-300;
   }
   
   .kid-card {
-    @apply rounded-2xl overflow-hidden border border-white/10 bg-white/5 backdrop-blur-sm;
-    @apply hover:border-white/20 transition-all duration-300 hover:shadow-lg;
+    @apply rounded-2xl overflow-hidden bg-glass hover:shadow-glow transition-all duration-300;
   }
   
   /* Custom color variations for content blocks */
