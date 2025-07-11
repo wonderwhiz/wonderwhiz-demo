@@ -85,40 +85,43 @@
   }
 
   .dark {
-    /* Core Brand Colors - HSL for perfect consistency */
-    --primary: 270 76% 13%;           /* wonderwhiz-dark */
-    --primary-deep: 270 76% 10%;      /* Even deeper */
-    --secondary: 264 77% 53%;         /* wonderwhiz-purple */
-    --accent: 327 100% 38%;           /* wonderwhiz-bright-pink */
-    --accent-glow: 327 100% 45%;      /* Brighter accent for effects */
+    /* Peak 2025 Design System - Sophisticated Dark Mode */
+    --primary: 220 20% 8%;            /* Deep sophisticated charcoal */
+    --primary-deep: 220 25% 6%;       /* Ultra deep base */
+    --secondary: 240 15% 12%;         /* Rich dark secondary */
+    --accent: 262 83% 58%;            /* Vibrant purple accent */
+    --accent-glow: 280 100% 70%;      /* Bright glow effect */
     
-    /* Glass Morphism */
-    --glass: 270 76% 13% / 0.8;
-    --glass-light: 270 76% 20% / 0.6;
-    --glass-border: 255 255 255 / 0.1;
+    /* Advanced Glass Morphism System */
+    --glass: 220 20% 8% / 0.85;
+    --glass-light: 220 15% 15% / 0.7;
+    --glass-border: 255 255 255 / 0.08;
+    --glass-bright: 255 255 255 / 0.12;
     
-    --background: 270 76% 13%;
-    --foreground: 0 0% 95%;
-    --card: 270 76% 13% / 0.8;
-    --card-foreground: 0 0% 95%;
-    --popover: 270 76% 13% / 0.8;
-    --popover-foreground: 0 0% 95%;
-    --muted: 270 76% 15%;
-    --muted-foreground: 0 0% 65%;
-    --border: 255 255 255 / 0.1;
-    --input: 270 76% 13% / 0.8;
-    --ring: 327 100% 38%;
-    --destructive: 0 62.8% 30.6%;
+    /* Semantic Color System */
+    --background: 220 20% 8%;
+    --foreground: 210 20% 98%;
+    --card: 220 20% 10%;
+    --card-foreground: 210 20% 98%;
+    --popover: 220 20% 10%;
+    --popover-foreground: 210 20% 98%;
+    --muted: 220 15% 15%;
+    --muted-foreground: 215 20% 65%;
+    --border: 220 13% 18%;
+    --input: 220 20% 10%;
+    --ring: 262 83% 58%;
+    --destructive: 0 62% 50%;
     --destructive-foreground: 210 40% 98%;
     
-    --sidebar-background: 270 76% 13%;
-    --sidebar-foreground: 0 0% 95%;
-    --sidebar-primary: 225 100% 64%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 327 100% 38%;
-    --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 255 255 255 / 0.1;
-    --sidebar-ring: 225 100% 64%;
+    /* Sidebar System */
+    --sidebar-background: 220 20% 8%;
+    --sidebar-foreground: 210 20% 98%;
+    --sidebar-primary: 262 83% 58%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 280 100% 70%;
+    --sidebar-accent-foreground: 210 20% 98%;
+    --sidebar-border: 220 13% 18%;
+    --sidebar-ring: 262 83% 58%;
   }
 }
 
@@ -128,7 +131,7 @@
   }
 
   body {
-    @apply bg-wonderwhiz-dark text-white font-lexend cursor-default;
+    @apply bg-background text-foreground font-lexend cursor-default;
   }
 
   h1, h2, h3, h4, h5, h6 {

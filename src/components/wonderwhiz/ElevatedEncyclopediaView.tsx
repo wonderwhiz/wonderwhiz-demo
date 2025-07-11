@@ -114,7 +114,7 @@ const ElevatedEncyclopediaView: React.FC<ElevatedEncyclopediaViewProps> = ({
         className="fixed inset-0 z-0"
         style={{ y: backgroundY }}
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary-deep to-secondary opacity-90" />
+        <div className="absolute inset-0 bg-gradient-to-br from-background via-secondary to-primary opacity-95" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.1)_0%,transparent_50%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(255,255,255,0.05)_0%,transparent_50%)]" />
         
