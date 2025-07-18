@@ -154,16 +154,17 @@
     @apply cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95;
   }
   
-  /* Improve touch targets on mobile */
+  /* Mobile-first responsive design */
   @media (max-width: 768px) {
     button, a, [role="button"], input[type="button"], input[type="submit"] {
-      @apply min-h-10 min-w-10;
+      @apply min-h-12 min-w-12;
     }
     
     .touch-friendly button:not(.no-touch-expand),
     .touch-friendly a:not(.no-touch-expand),
     .touch-friendly [role="button"]:not(.no-touch-expand) {
-      @apply p-2;
+      @apply p-3;
+    }
   }
   
   /* 2025 Design Guidelines for Kids */
@@ -185,7 +186,6 @@
   .high-contrast {
     filter: contrast(1.2);
   }
-}
 
 @layer components {
   /* Peak 2025 UX Components */
