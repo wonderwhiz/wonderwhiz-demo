@@ -62,7 +62,7 @@ const UnifiedDashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background">
       <Helmet>
         <title>{`${childProfile?.name}'s Learning Adventure | WonderWhiz`}</title>
         <meta name="description" content="Ask questions, discover amazing facts, and go on learning adventures!" />

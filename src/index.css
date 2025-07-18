@@ -164,7 +164,26 @@
     .touch-friendly a:not(.no-touch-expand),
     .touch-friendly [role="button"]:not(.no-touch-expand) {
       @apply p-2;
-    }
+  }
+  
+  /* 2025 Design Guidelines for Kids */
+  .touch-friendly {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  .kid-safe-text {
+    font-size: clamp(16px, 4vw, 24px);
+    line-height: 1.6;
+  }
+  
+  .card-shadow {
+    box-shadow: 0 8px 32px rgba(147, 51, 234, 0.12);
+  }
+  
+  /* High contrast for accessibility */
+  .high-contrast {
+    filter: contrast(1.2);
   }
 }
 
