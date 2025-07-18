@@ -134,47 +134,47 @@ const ElevatedDashboard: React.FC<ElevatedDashboardProps> = ({
   }, [messages]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-wonderwhiz-deep-purple via-wonderwhiz-purple to-wonderwhiz-light-purple">
-      {/* Glassmorphic Navigation */}
-      <nav className="sticky top-0 z-50 border-b border-white/10">
-        <div className="bg-surface-glass backdrop-blur-xl">
-          <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+    <div className="min-h-screen bg-background touch-manipulation overscroll-contain">
+      {/* Kid-Friendly Navigation */}
+      <nav className="sticky top-0 z-50 border-b border-border/20 shadow-sm">
+        <div className="bg-card/95 backdrop-blur-xl">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
             {/* Logo Area */}
             <motion.div 
-              className="flex items-center gap-4"
+              className="flex items-center gap-4 touch-friendly"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
             >
-              <div className="w-10 h-10 bg-gradient-to-br from-wonderwhiz-cyan to-wonderwhiz-blue rounded-xl flex items-center justify-center shadow-lg">
-                <Wand2 className="w-5 h-5 text-white" />
+              <div className="w-14 h-14 bg-gradient-to-br from-accent-brand to-accent-info rounded-2xl flex items-center justify-center shadow-lg">
+                <Wand2 className="w-7 h-7 text-white" />
               </div>
               <div>
-                <h1 className="text-lg font-semibold text-white">
-                  {childProfile?.name}'s Space
+                <h1 className="text-xl font-bold text-text-primary">
+                  Hey {childProfile?.name}! 👋
                 </h1>
-                <p className="text-xs text-white/60">Ready to explore?</p>
+                <p className="text-sm text-text-secondary font-medium">Ready for an adventure?</p>
               </div>
             </motion.div>
 
             {/* Center Actions */}
-            <div className="hidden md:flex items-center gap-3">
+            <div className="hidden md:flex items-center gap-4">
               <Button
-                variant="ghost"
-                size="sm"
+                variant="secondary"
+                size="default"
                 onClick={() => navigate(`/wonderwhiz/${childProfile?.id}`)}
-                className="text-white/80 hover:text-white hover:bg-white/10 transition-all duration-200"
+                className="bg-interactive-hover hover:bg-interactive-active text-text-primary font-semibold rounded-xl px-6 py-3 shadow-md hover:shadow-lg"
               >
-                <Book className="w-4 h-4 mr-2" />
-                Encyclopedia
+                <Book className="w-5 h-5 mr-2" />
+                📚 Encyclopedia
               </Button>
               <Button
-                variant="ghost"
-                size="sm"
+                variant="outline"
+                size="default"
                 onClick={() => navigate('/parent-zone')}
-                className="text-white/80 hover:text-white hover:bg-white/10 transition-all duration-200"
+                className="border-border hover:bg-interactive-hover text-text-primary font-semibold rounded-xl px-6 py-3"
               >
-                <Users className="w-4 h-4 mr-2" />
-                Parent Zone
+                <Users className="w-5 h-5 mr-2" />
+                👨‍👩‍👧‍👦 Parent Zone
               </Button>
             </div>
 
@@ -273,9 +273,9 @@ const ElevatedDashboard: React.FC<ElevatedDashboardProps> = ({
       </nav>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col h-[calc(100vh-4rem)]">
+      <div className="flex-1 flex flex-col h-[calc(100vh-5rem)]">
         {/* Chat Messages */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 max-w-4xl mx-auto w-full">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-8 max-w-5xl mx-auto w-full">
           <AnimatePresence>
             {messages.map((message) => (
               <motion.div
@@ -290,9 +290,9 @@ const ElevatedDashboard: React.FC<ElevatedDashboardProps> = ({
                   <div className="flex justify-end">
                     <motion.div
                       whileHover={{ scale: 1.02 }}
-                      className="bg-gradient-to-br from-wonderwhiz-cyan/30 to-wonderwhiz-blue/30 backdrop-blur-sm border border-white/20 rounded-3xl px-6 py-4 max-w-md"
+                      className="bg-gradient-to-br from-accent-brand/20 to-accent-info/20 backdrop-blur-sm border border-border/40 rounded-3xl px-8 py-6 max-w-lg shadow-lg"
                     >
-                      <p className="text-white font-medium">{message.content}</p>
+                      <p className="text-text-primary font-semibold text-lg leading-relaxed">{message.content}</p>
                     </motion.div>
                   </div>
                 ) : (
@@ -300,14 +300,14 @@ const ElevatedDashboard: React.FC<ElevatedDashboardProps> = ({
                   <div className="flex justify-start">
                     <motion.div
                       whileHover={{ scale: 1.01 }}
-                      className="bg-surface-elevated/10 backdrop-blur-sm border border-white/20 rounded-3xl p-8 max-w-3xl"
+                      className="bg-card/60 backdrop-blur-sm border border-border/40 rounded-3xl p-8 max-w-4xl shadow-lg"
                     >
-                      <div className="flex items-start gap-5">
-                        <div className="w-12 h-12 bg-gradient-to-br from-wonderwhiz-vibrant-yellow to-wonderwhiz-gold rounded-2xl flex items-center justify-center flex-shrink-0">
-                          <Lightbulb className="w-6 h-6 text-wonderwhiz-deep-purple" />
+                      <div className="flex items-start gap-6">
+                        <div className="w-16 h-16 bg-gradient-to-br from-accent-warning to-accent-brand rounded-3xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                          <Lightbulb className="w-8 h-8 text-white" />
                         </div>
-                        <div className="flex-1 space-y-5">
-                          <p className="text-white text-lg leading-relaxed">
+                        <div className="flex-1 space-y-6">
+                          <p className="text-text-primary text-xl font-medium leading-relaxed">
                             {message.content}
                           </p>
                           
@@ -317,23 +317,23 @@ const ElevatedDashboard: React.FC<ElevatedDashboardProps> = ({
                               initial={{ opacity: 0, scale: 0.95 }}
                               animate={{ opacity: 1, scale: 1 }}
                               transition={{ delay: 0.3 }}
-                              className="bg-gradient-to-br from-wonderwhiz-vibrant-yellow/10 to-wonderwhiz-gold/10 border border-wonderwhiz-gold/30 rounded-2xl p-5"
+                              className="bg-gradient-to-br from-accent-warning/15 to-accent-success/15 border border-accent-warning/40 rounded-3xl p-6 shadow-md"
                             >
-                              <h4 className="text-wonderwhiz-gold font-semibold mb-3 flex items-center gap-2">
-                                <Sparkles className="h-5 w-5" />
-                                {isVeryYoung ? "Cool Facts!" : "Fascinating Details"}
+                              <h4 className="text-accent-warning font-bold text-lg mb-4 flex items-center gap-3">
+                                <Sparkles className="h-6 w-6" />
+                                {isVeryYoung ? "🤯 Wow Facts!" : "✨ Amazing Details!"}
                               </h4>
-                              <div className="space-y-3">
+                              <div className="space-y-4">
                                 {message.funFacts.map((fact, index) => (
                                   <motion.div 
                                     key={index} 
                                     initial={{ opacity: 0, x: -10 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: 0.1 * index }}
-                                    className="flex items-start gap-3"
+                                    className="flex items-start gap-4 p-4 bg-surface-secondary/50 rounded-2xl"
                                   >
-                                    <span className="text-wonderwhiz-gold text-lg">✨</span>
-                                    <p className="text-white/90 leading-relaxed">{fact}</p>
+                                    <span className="text-accent-warning text-2xl flex-shrink-0">{isVeryYoung ? '🎉' : '💡'}</span>
+                                    <p className="text-text-primary font-medium text-lg leading-relaxed">{fact}</p>
                                   </motion.div>
                                 ))}
                               </div>
@@ -421,32 +421,49 @@ const ElevatedDashboard: React.FC<ElevatedDashboardProps> = ({
         </div>
 
         {/* Enhanced Input Area */}
-        <div className="border-t border-white/10 bg-surface-glass backdrop-blur-xl p-6">
-          <div className="max-w-4xl mx-auto">
+        <div className="border-t border-border/20 bg-card/95 backdrop-blur-xl p-4 sm:p-6 shadow-lg">
+          <div className="max-w-5xl mx-auto">
             <motion.div 
               className={`relative transition-all duration-300 ${isInputFocused ? 'transform scale-[1.02]' : ''}`}
             >
-              <div className="flex gap-4">
+              <div className="flex gap-4 items-end">
                 <div className="flex-1 relative">
                   <Input
                     ref={inputRef}
+                    placeholder={isVeryYoung ? "🤔 What amazing thing do you want to learn about?" : "💭 What sparks your curiosity today?"}
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyPress={handleKeyPress}
                     onFocus={() => setIsInputFocused(true)}
                     onBlur={() => setIsInputFocused(false)}
-                    placeholder={isVeryYoung ? "What do you want to discover? ✨" : "What sparks your curiosity today?"}
-                    className="h-14 text-lg bg-surface-elevated/20 border-white/20 focus:border-wonderwhiz-cyan text-white placeholder:text-white/60 rounded-2xl px-6 transition-all duration-200"
                     disabled={isLoading}
+                    className="bg-surface-secondary/80 border-border/40 rounded-2xl px-6 py-5 text-lg text-text-primary placeholder:text-text-tertiary focus:border-accent-brand/50 focus:ring-2 focus:ring-accent-brand/30 disabled:opacity-50 font-medium shadow-inner"
                   />
+                  {inputValue && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="absolute right-6 top-1/2 transform -translate-y-1/2"
+                    >
+                      <Sparkles className="h-6 w-6 text-accent-brand animate-pulse" />
+                    </motion.div>
+                  )}
                 </div>
-                
                 <Button
                   onClick={() => handleSubmit(inputValue)}
-                  disabled={!inputValue.trim() || isLoading}
-                  className="h-14 px-8 bg-gradient-to-r from-wonderwhiz-cyan to-wonderwhiz-blue hover:from-wonderwhiz-blue hover:to-wonderwhiz-cyan rounded-2xl transition-all duration-200 disabled:opacity-50"
+                  disabled={isLoading || !inputValue.trim()}
+                  className="bg-gradient-to-r from-accent-brand to-accent-info hover:from-accent-info hover:to-accent-brand text-white p-5 rounded-2xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed font-bold text-lg min-w-[4rem]"
                 >
-                  <Send className="h-5 w-5" />
+                  {isLoading ? (
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    >
+                      <Sparkles className="h-7 w-7" />
+                    </motion.div>
+                  ) : (
+                    <Send className="h-7 w-7" />
+                  )}
                 </Button>
               </div>
               

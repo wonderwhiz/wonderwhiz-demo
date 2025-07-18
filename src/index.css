@@ -6,29 +6,29 @@
 
 @layer base {
 :root {
-    /* Core Design System - 2025 Peak UX */
+    /* Kid-Friendly Design System - Bright & Joyful */
     --surface-primary: 255 255 255;
-    --surface-secondary: 248 250 252;
-    --surface-tertiary: 241 245 249;
+    --surface-secondary: 252 247 255;
+    --surface-tertiary: 249 242 255;
     --surface-elevated: 255 255 255;
-    --surface-glass: 255 255 255 / 0.02;
+    --surface-glass: 255 255 255 / 0.1;
     --surface-overlay: 0 0 0 / 0.4;
     
-    /* Text & Content */
-    --text-primary: 15 23 42;
-    --text-secondary: 71 85 105;
-    --text-tertiary: 148 163 184;
-    --text-inverse: 248 250 252;
-    --text-accent: 99 102 241;
+    /* Kid-Friendly Text */
+    --text-primary: 55 65 81;
+    --text-secondary: 75 85 99;
+    --text-tertiary: 107 114 128;
+    --text-inverse: 255 255 255;
+    --text-accent: 147 51 234;
     
-    /* Interactive States */
-    --interactive-hover: 241 245 249;
-    --interactive-active: 226 232 240;
-    --interactive-focus: 99 102 241 / 0.12;
+    /* Playful Interactive States */
+    --interactive-hover: 243 232 255;
+    --interactive-active: 233 213 255;
+    --interactive-focus: 147 51 234 / 0.2;
     --interactive-disabled: 203 213 225;
     
-    /* Semantic Colors */
-    --accent-brand: 99 102 241;
+    /* Fun & Bright Colors */
+    --accent-brand: 147 51 234;
     --accent-success: 34 197 94;
     --accent-warning: 251 191 36;
     --accent-error: 239 68 68;
@@ -85,51 +85,51 @@
   }
 
   .dark {
-    /* Dark mode automatically applies when system dark mode is detected */
-    --surface-primary: 15 23 42;
-    --surface-secondary: 30 41 59;
-    --surface-tertiary: 51 65 85;
-    --surface-elevated: 30 41 59;
-    --surface-glass: 15 23 42;
+    /* Kid-Friendly Dark Mode - Cozy & Magical */
+    --surface-primary: 30 27 75;
+    --surface-secondary: 41 37 88;
+    --surface-tertiary: 55 48 107;
+    --surface-elevated: 41 37 88;
+    --surface-glass: 30 27 75 / 0.85;
     --surface-overlay: 0 0 0 / 0.8;
     
-    --text-primary: 248 250 252;
-    --text-secondary: 203 213 225;
-    --text-tertiary: 148 163 184;
-    --text-inverse: 15 23 42;
-    --text-accent: 99 102 241;
+    --text-primary: 255 255 255;
+    --text-secondary: 226 232 240;
+    --text-tertiary: 203 213 225;
+    --text-inverse: 30 27 75;
+    --text-accent: 167 139 250;
     
-    --interactive-hover: 51 65 85;
-    --interactive-active: 71 85 105;
-    --interactive-focus: 99 102 241 / 0.12;
+    --interactive-hover: 55 48 107;
+    --interactive-active: 67 56 202;
+    --interactive-focus: 167 139 250 / 0.2;
     --interactive-disabled: 71 85 105;
     
-    --accent-brand: 99 102 241;
-    --accent-success: 34 197 94;
+    --accent-brand: 167 139 250;
+    --accent-success: 52 211 153;
     --accent-warning: 251 191 36;
-    --accent-error: 239 68 68;
-    --accent-info: 59 130 246;
+    --accent-error: 248 113 113;
+    --accent-info: 96 165 250;
     
     /* Legacy Support */
-    --background: 15 23 42;
-    --foreground: 248 250 252;
-    --card: 30 41 59;
-    --card-foreground: 248 250 252;
-    --popover: 30 41 59;
-    --popover-foreground: 248 250 252;
-    --primary: 99 102 241;
-    --primary-foreground: 248 250 252;
-    --secondary: 30 41 59;
-    --secondary-foreground: 203 213 225;
-    --muted: 51 65 85;
-    --muted-foreground: 148 163 184;
-    --accent: 30 41 59;
-    --accent-foreground: 248 250 252;
-    --destructive: 239 68 68;
-    --destructive-foreground: 248 250 252;
-    --border: 71 85 105;
-    --input: 30 41 59;
-    --ring: 99 102 241;
+    --background: 30 27 75;
+    --foreground: 255 255 255;
+    --card: 41 37 88;
+    --card-foreground: 255 255 255;
+    --popover: 41 37 88;
+    --popover-foreground: 255 255 255;
+    --primary: 167 139 250;
+    --primary-foreground: 30 27 75;
+    --secondary: 41 37 88;
+    --secondary-foreground: 226 232 240;
+    --muted: 55 48 107;
+    --muted-foreground: 203 213 225;
+    --accent: 41 37 88;
+    --accent-foreground: 255 255 255;
+    --destructive: 248 113 113;
+    --destructive-foreground: 255 255 255;
+    --border: 67 56 202;
+    --input: 41 37 88;
+    --ring: 167 139 250;
   }
 }
 
@@ -139,15 +139,19 @@
   }
 
   body {
-    @apply bg-background text-foreground font-lexend cursor-default;
+    @apply bg-background text-foreground font-baloo cursor-default;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-baloo font-bold;
+    @apply font-baloo font-bold leading-relaxed;
+  }
+  
+  p, span, div {
+    @apply leading-relaxed;
   }
   
   button, a, [role="button"] {
-    @apply cursor-pointer;
+    @apply cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95;
   }
   
   /* Improve touch targets on mobile */
