@@ -186,6 +186,7 @@
   .high-contrast {
     filter: contrast(1.2);
   }
+}
 
 @layer components {
   /* Peak 2025 UX Components */
