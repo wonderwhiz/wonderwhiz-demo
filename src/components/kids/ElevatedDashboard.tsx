@@ -1,5 +1,5 @@
 import React from 'react';
-import MobileResponsiveDashboard from './MobileResponsiveDashboard';
+import FreshMobileDashboard from './FreshMobileDashboard';
 
 interface ElevatedDashboardProps {
   childProfile: any;
@@ -7,7 +7,7 @@ interface ElevatedDashboardProps {
 }
 
 const ElevatedDashboard: React.FC<ElevatedDashboardProps> = (props) => {
-  return <MobileResponsiveDashboard {...props} />;
+  return <FreshMobileDashboard {...props} />;
 };
 
 export default ElevatedDashboard;
