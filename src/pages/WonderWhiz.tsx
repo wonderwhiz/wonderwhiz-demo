@@ -44,7 +44,7 @@ const WonderWhiz = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background dark">
+    <div className="min-h-screen bg-background">
       <Helmet>
         <title>{`Wonder Encyclopedia - ${childProfile?.name} | WonderWhiz`}</title>
         <meta name="description" content="Explore amazing topics and learn with WonderWhiz Encyclopedia!" />
