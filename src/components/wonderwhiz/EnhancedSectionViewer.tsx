@@ -155,6 +155,9 @@ const EnhancedSectionViewer: React.FC<EnhancedSectionViewerProps> = ({
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={handleLike}
+                  type="button"
+                  aria-pressed={liked}
+                  aria-label={liked ? 'Unlike section' : 'Like section'}
                   className={`p-2 rounded-full transition-colors ${
                     liked ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-500'
                   }`}
@@ -165,6 +168,9 @@ const EnhancedSectionViewer: React.FC<EnhancedSectionViewerProps> = ({
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={() => setBookmarked(!bookmarked)}
+                  type="button"
+                  aria-pressed={bookmarked}
+                  aria-label={bookmarked ? 'Remove bookmark' : 'Bookmark section'}
                   className={`p-2 rounded-full transition-colors ${
                     bookmarked ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600 hover:bg-blue-50 hover:text-blue-500'
                   }`}
@@ -223,6 +229,7 @@ const EnhancedSectionViewer: React.FC<EnhancedSectionViewerProps> = ({
           <motion.div 
             variants={itemVariants}
             className="mt-6 flex items-center justify-center"
+            aria-label={`Progress: Section ${sectionIndex + 1} of ${topic.table_of_contents.length}`}
           >
             <div className="flex items-center gap-2">
               {topic.table_of_contents.map((_, index) => (
@@ -250,6 +257,7 @@ const EnhancedSectionViewer: React.FC<EnhancedSectionViewerProps> = ({
         <Button
           variant="ghost"
           onClick={onBackToTOC}
+          aria-label="Back to table of contents"
           className={`text-gray-600 hover:text-gray-900 hover:bg-gray-100 font-semibold px-6 py-3 rounded-xl ${
             isYoungChild ? 'text-lg' : ''
           }`}
@@ -263,6 +271,7 @@ const EnhancedSectionViewer: React.FC<EnhancedSectionViewerProps> = ({
             onClick={onPreviousSection}
             disabled={isFirstSection}
             variant="outline"
+            aria-label="Previous section"
             className="font-bold px-6 py-3 rounded-xl shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <ArrowLeft className="h-5 w-5 mr-2" />
@@ -272,6 +281,7 @@ const EnhancedSectionViewer: React.FC<EnhancedSectionViewerProps> = ({
           {!isLastSection ? (
             <Button
               onClick={onNextSection}
+              aria-label="Next section"
               className="bg-gradient-to-r from-wonderwhiz-bright-pink to-wonderwhiz-purple hover:from-wonderwhiz-bright-pink/90 hover:to-wonderwhiz-purple/90 text-white font-bold px-8 py-3 rounded-xl shadow-lg transition-all"
             >
               {isYoungChild ? "Next! ⭐" : "Next Section"}
@@ -280,6 +290,7 @@ const EnhancedSectionViewer: React.FC<EnhancedSectionViewerProps> = ({
           ) : (
             <Button
               onClick={onFinishTopic}
+              aria-label="Finish topic"
               className="bg-gradient-to-r from-wonderwhiz-vibrant-yellow to-wonderwhiz-bright-pink hover:from-wonderwhiz-vibrant-yellow/90 hover:to-wonderwhiz-bright-pink/90 text-white font-bold px-8 py-3 rounded-xl shadow-lg transition-all"
             >
               {isYoungChild ? "Finish! 🏆" : "Finish Topic!"}

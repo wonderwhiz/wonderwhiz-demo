@@ -80,13 +80,13 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({
             </span>
           </h3>
 
-          <div className="space-y-3">
+          <ul role="list" aria-label="Table of contents" className="space-y-3">
             {topic.table_of_contents.map((section, index) => {
               const isCompleted = completedSections.includes(index);
               const isAvailable = index === 0 || completedSections.includes(index - 1);
 
               return (
-                <motion.div
+                <motion.li
                   key={index}
                   variants={itemVariants}
                   whileHover={isAvailable ? { scale: 1.02 } : {}}
@@ -140,6 +140,7 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({
                       <Button
                         onClick={() => onStartSection(index)}
                         size="sm"
+                        aria-label={`Start section ${index + 1}: ${section.title}`}
                         className="bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/90"
                       >
                         <Play className="h-4 w-4 mr-1" />
@@ -152,16 +153,17 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({
                         onClick={() => onStartSection(index)}
                         variant="outline"
                         size="sm"
+                        aria-label={`Review section ${index + 1}: ${section.title}`}
                         className="border-green-500/40 text-green-400 hover:bg-green-500/20"
                       >
                         Review
                       </Button>
                     )}
                   </div>
-                </motion.div>
+                </motion.li>
               );
             })}
-          </div>
+          </ul>
         </Card>
       </motion.div>
 
@@ -186,6 +188,7 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({
               <Button
                 onClick={onStartQuiz}
                 disabled={quizCompleted}
+                aria-label={quizCompleted ? 'Quiz completed' : 'Start quiz'}
                 className={quizCompleted 
                   ? "bg-green-500 hover:bg-green-500" 
                   : "bg-yellow-500 hover:bg-yellow-600 text-black"

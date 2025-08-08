@@ -28,7 +28,7 @@ const TopicSearch: React.FC<TopicSearchProps> = ({ onSearch, isLoading, childAge
 
   return (
     <div className="max-w-2xl mx-auto">
-      <form onSubmit={handleSubmit} className="relative mb-6">
+      <form role="search" aria-label="Search encyclopedia topics" onSubmit={handleSubmit} className="relative mb-6">
         <div className="relative">
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white/60 h-5 w-5" />
           <Input
@@ -37,11 +37,14 @@ const TopicSearch: React.FC<TopicSearchProps> = ({ onSearch, isLoading, childAge
             onChange={(e) => setQuery(e.target.value)}
             placeholder="What would you like to learn about today?"
             className="pl-12 pr-24 py-4 text-lg bg-white/10 border-white/20 text-white placeholder:text-white/60 rounded-2xl"
+            aria-label="Search topics"
+            autoComplete="off"
             disabled={isLoading}
           />
           <Button
             type="submit"
             disabled={!query.trim() || isLoading}
+            aria-label="Search"
             className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/80 text-white rounded-xl"
           >
             {isLoading ? (
@@ -55,7 +58,7 @@ const TopicSearch: React.FC<TopicSearchProps> = ({ onSearch, isLoading, childAge
 
       <div className="text-center">
         <p className="text-white/70 text-sm mb-3">Quick suggestions:</p>
-        <div className="flex flex-wrap gap-2 justify-center">
+        <div className="flex flex-wrap gap-2 justify-center" role="list" aria-label="Search suggestions">
           {suggestions.map((suggestion) => (
             <Button
               key={suggestion}
@@ -63,6 +66,7 @@ const TopicSearch: React.FC<TopicSearchProps> = ({ onSearch, isLoading, childAge
               size="sm"
               onClick={() => onSearch(suggestion)}
               disabled={isLoading}
+              aria-label={`Search suggestion: ${suggestion}`}
               className="bg-white/5 border-white/20 text-white/80 hover:bg-white/10 hover:text-white text-xs"
             >
               {suggestion}

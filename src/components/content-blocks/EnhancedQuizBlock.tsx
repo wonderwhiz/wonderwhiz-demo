@@ -129,6 +129,13 @@ const EnhancedQuizBlock: React.FC<EnhancedQuizBlockProps> = ({
     }
   };
   
+  const handleOptionKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleOptionSelect(index);
+    }
+  };
+  
   const getOptionClassName = (index: number) => {
     const baseClasses = `w-full text-left p-3.5 rounded-lg transition-all flex items-center ${textSize}`;
     
@@ -223,7 +230,7 @@ const EnhancedQuizBlock: React.FC<EnhancedQuizBlockProps> = ({
         </p>
         
         {/* Options */}
-        <div className="space-y-3 mb-4">
+        <div className="space-y-3 mb-4" role="radiogroup" aria-label="Quiz options">
           {Array.isArray(options) && options.length > 0 ? (
             options.map((option, index) => (
               <motion.button
@@ -236,6 +243,10 @@ const EnhancedQuizBlock: React.FC<EnhancedQuizBlockProps> = ({
                 } : {}}
                 className={getOptionClassName(index)}
                 onClick={() => handleOptionSelect(index)}
+                onKeyDown={(e) => handleOptionKeyDown(e, index)}
+                role="radio"
+                aria-checked={selectedIndex === index}
+                tabIndex={selectedIndex === null ? 0 : selectedIndex === index ? 0 : -1}
                 disabled={selectedIndex !== null}
                 aria-label={`Option ${index + 1}: ${option}`}
               >
