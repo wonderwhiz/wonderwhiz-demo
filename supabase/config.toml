@@ -1,8 +1,1 @@
-
-project_id = "turexhnvsvmllwitllmg"
-
-[functions.handle-block-chat]
-verify_jwt = false
-
-[functions.trigger-content-generation]
-verify_jwt = false
+project_id = "lzoysqczxxsqkvfsqygp"

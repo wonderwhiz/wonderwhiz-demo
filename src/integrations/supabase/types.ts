@@ -7,43 +7,13 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
-      api_usage_logs: {
-        Row: {
-          api_name: string
-          created_at: string
-          estimated_cost: number | null
-          id: string
-          request_data: Json | null
-          response_status: string | null
-          user_id: string | null
-        }
-        Insert: {
-          api_name: string
-          created_at?: string
-          estimated_cost?: number | null
-          id?: string
-          request_data?: Json | null
-          response_status?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          api_name?: string
-          created_at?: string
-          estimated_cost?: number | null
-          id?: string
-          request_data?: Json | null
-          response_status?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
       block_replies: {
         Row: {
           block_id: string
@@ -51,7 +21,7 @@ export type Database = {
           created_at: string
           from_user: boolean
           id: string
-          user_id: string | null
+          specialist_id: string | null
         }
         Insert: {
           block_id: string
@@ -59,7 +29,7 @@ export type Database = {
           created_at?: string
           from_user?: boolean
           id?: string
-          user_id?: string | null
+          specialist_id?: string | null
         }
         Update: {
           block_id?: string
@@ -67,7 +37,7 @@ export type Database = {
           created_at?: string
           from_user?: boolean
           id?: string
-          user_id?: string | null
+          specialist_id?: string | null
         }
         Relationships: [
           {
@@ -79,63 +49,33 @@ export type Database = {
           },
         ]
       }
-      certificates: {
-        Row: {
-          certificate_url: string | null
-          child_id: string
-          child_name: string
-          completed_at: string
-          id: string
-          points_earned: number | null
-          topic_id: string
-        }
-        Insert: {
-          certificate_url?: string | null
-          child_id: string
-          child_name: string
-          completed_at?: string
-          id?: string
-          points_earned?: number | null
-          topic_id: string
-        }
-        Update: {
-          certificate_url?: string | null
-          child_id?: string
-          child_name?: string
-          completed_at?: string
-          id?: string
-          points_earned?: number | null
-          topic_id?: string
-        }
-        Relationships: []
-      }
       child_daily_activity: {
         Row: {
           activity_date: string
           child_profile_id: string
-          created_at: string | null
+          created_at: string
           id: string
-          quizzes_completed: number | null
-          tasks_completed: number | null
-          topics_explored: number | null
+          sparks_earned: number
+          time_spent_seconds: number
+          topics_explored: number
         }
         Insert: {
-          activity_date: string
+          activity_date?: string
           child_profile_id: string
-          created_at?: string | null
+          created_at?: string
           id?: string
-          quizzes_completed?: number | null
-          tasks_completed?: number | null
-          topics_explored?: number | null
+          sparks_earned?: number
+          time_spent_seconds?: number
+          topics_explored?: number
         }
         Update: {
           activity_date?: string
           child_profile_id?: string
-          created_at?: string | null
+          created_at?: string
           id?: string
-          quizzes_completed?: number | null
-          tasks_completed?: number | null
-          topics_explored?: number | null
+          sparks_earned?: number
+          time_spent_seconds?: number
+          topics_explored?: number
         }
         Relationships: [
           {
@@ -151,56 +91,47 @@ export type Database = {
         Row: {
           age: number | null
           avatar_url: string | null
-          content_difficulty_preference: number | null
           created_at: string
-          grade: string | null
           id: string
           interests: string[] | null
           language: string | null
-          last_active: string | null
-          learning_preferences: Json | null
+          last_active_date: string | null
           name: string
           parent_user_id: string
-          pin: string
-          sparks_balance: number | null
-          streak_days: number | null
-          streak_last_updated: string | null
+          pin: string | null
+          sparks_balance: number
+          streak_days: number
+          updated_at: string
         }
         Insert: {
           age?: number | null
           avatar_url?: string | null
-          content_difficulty_preference?: number | null
           created_at?: string
-          grade?: string | null
           id?: string
           interests?: string[] | null
           language?: string | null
-          last_active?: string | null
-          learning_preferences?: Json | null
+          last_active_date?: string | null
           name: string
           parent_user_id: string
-          pin: string
-          sparks_balance?: number | null
-          streak_days?: number | null
-          streak_last_updated?: string | null
+          pin?: string | null
+          sparks_balance?: number
+          streak_days?: number
+          updated_at?: string
         }
         Update: {
           age?: number | null
           avatar_url?: string | null
-          content_difficulty_preference?: number | null
           created_at?: string
-          grade?: string | null
           id?: string
           interests?: string[] | null
           language?: string | null
-          last_active?: string | null
-          learning_preferences?: Json | null
+          last_active_date?: string | null
           name?: string
           parent_user_id?: string
-          pin?: string
-          sparks_balance?: number | null
-          streak_days?: number | null
-          streak_last_updated?: string | null
+          pin?: string | null
+          sparks_balance?: number
+          streak_days?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -210,7 +141,7 @@ export type Database = {
           child_profile_id: string
           completed_at: string | null
           id: string
-          status: string | null
+          status: string
           task_id: string
         }
         Insert: {
@@ -218,7 +149,7 @@ export type Database = {
           child_profile_id: string
           completed_at?: string | null
           id?: string
-          status?: string | null
+          status?: string
           task_id: string
         }
         Update: {
@@ -226,7 +157,7 @@ export type Database = {
           child_profile_id?: string
           completed_at?: string | null
           id?: string
-          status?: string | null
+          status?: string
           task_id?: string
         }
         Relationships: [
@@ -246,59 +177,6 @@ export type Database = {
           },
         ]
       }
-      children: {
-        Row: {
-          age: number
-          avatar: string
-          created_at: string
-          id: string
-          interests: string[]
-          language: string
-          last_active: string
-          name: string
-          parent_id: string
-          pin: string
-          streak_days: number
-          xp: number
-        }
-        Insert: {
-          age: number
-          avatar: string
-          created_at?: string
-          id?: string
-          interests?: string[]
-          language?: string
-          last_active?: string
-          name: string
-          parent_id: string
-          pin: string
-          streak_days?: number
-          xp?: number
-        }
-        Update: {
-          age?: number
-          avatar?: string
-          created_at?: string
-          id?: string
-          interests?: string[]
-          language?: string
-          last_active?: string
-          name?: string
-          parent_id?: string
-          pin?: string
-          streak_days?: number
-          xp?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "children_parent_id_fkey"
-            columns: ["parent_id"]
-            isOneToOne: false
-            referencedRelation: "parents"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       content_blocks: {
         Row: {
           bookmarked: boolean
@@ -307,17 +185,17 @@ export type Database = {
           curio_id: string
           id: string
           liked: boolean
-          specialist_id: string
+          specialist_id: string | null
           type: string
         }
         Insert: {
           bookmarked?: boolean
-          content: Json
+          content?: Json
           created_at?: string
           curio_id: string
           id?: string
           liked?: boolean
-          specialist_id: string
+          specialist_id?: string | null
           type: string
         }
         Update: {
@@ -327,7 +205,7 @@ export type Database = {
           curio_id?: string
           id?: string
           liked?: boolean
-          specialist_id?: string
+          specialist_id?: string | null
           type?: string
         }
         Relationships: [
@@ -342,22 +220,22 @@ export type Database = {
       }
       curio_images: {
         Row: {
-          created_at: string | null
-          generation_method: string
+          created_at: string
+          generation_method: string | null
           id: string
           image_url: string
           topic: string
         }
         Insert: {
-          created_at?: string | null
-          generation_method?: string
+          created_at?: string
+          generation_method?: string | null
           id?: string
           image_url: string
           topic: string
         }
         Update: {
-          created_at?: string | null
-          generation_method?: string
+          created_at?: string
+          generation_method?: string | null
           id?: string
           image_url?: string
           topic?: string
@@ -368,34 +246,25 @@ export type Database = {
         Row: {
           child_id: string
           created_at: string
-          generation_error: string | null
           id: string
-          last_revisited: string | null
           last_updated_at: string
-          query: string
-          revisit_count: number | null
+          query: string | null
           title: string
         }
         Insert: {
           child_id: string
           created_at?: string
-          generation_error?: string | null
           id?: string
-          last_revisited?: string | null
           last_updated_at?: string
-          query: string
-          revisit_count?: number | null
+          query?: string | null
           title: string
         }
         Update: {
           child_id?: string
           created_at?: string
-          generation_error?: string | null
           id?: string
-          last_revisited?: string | null
           last_updated_at?: string
-          query?: string
-          revisit_count?: number | null
+          query?: string | null
           title?: string
         }
         Relationships: [
@@ -411,57 +280,30 @@ export type Database = {
       learning_history: {
         Row: {
           child_id: string
-          comprehension_level: string | null
-          content_block_ids: string[] | null
-          created_at: string | null
-          curio_id: string | null
-          engagement_level: number | null
+          content_id: string | null
           id: string
           interaction_date: string
-          last_memory_refresh: string | null
-          last_revisited: string | null
-          memory_decay_rate: number | null
-          memory_strength: number | null
-          revisit_count: number | null
-          subtopics: string[] | null
-          topic: string
-          updated_at: string | null
+          interaction_type: string | null
+          metadata: Json | null
+          topic: string | null
         }
         Insert: {
           child_id: string
-          comprehension_level?: string | null
-          content_block_ids?: string[] | null
-          created_at?: string | null
-          curio_id?: string | null
-          engagement_level?: number | null
+          content_id?: string | null
           id?: string
           interaction_date?: string
-          last_memory_refresh?: string | null
-          last_revisited?: string | null
-          memory_decay_rate?: number | null
-          memory_strength?: number | null
-          revisit_count?: number | null
-          subtopics?: string[] | null
-          topic: string
-          updated_at?: string | null
+          interaction_type?: string | null
+          metadata?: Json | null
+          topic?: string | null
         }
         Update: {
           child_id?: string
-          comprehension_level?: string | null
-          content_block_ids?: string[] | null
-          created_at?: string | null
-          curio_id?: string | null
-          engagement_level?: number | null
+          content_id?: string | null
           id?: string
           interaction_date?: string
-          last_memory_refresh?: string | null
-          last_revisited?: string | null
-          memory_decay_rate?: number | null
-          memory_strength?: number | null
-          revisit_count?: number | null
-          subtopics?: string[] | null
-          topic?: string
-          updated_at?: string | null
+          interaction_type?: string | null
+          metadata?: Json | null
+          topic?: string | null
         }
         Relationships: [
           {
@@ -471,157 +313,104 @@ export type Database = {
             referencedRelation: "child_profiles"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "learning_history_curio_id_fkey"
-            columns: ["curio_id"]
-            isOneToOne: false
-            referencedRelation: "curios"
-            referencedColumns: ["id"]
-          },
         ]
-      }
-      learning_points: {
-        Row: {
-          child_id: string
-          earned_at: string
-          id: string
-          points: number
-          reason: string
-          topic_id: string | null
-        }
-        Insert: {
-          child_id: string
-          earned_at?: string
-          id?: string
-          points: number
-          reason: string
-          topic_id?: string | null
-        }
-        Update: {
-          child_id?: string
-          earned_at?: string
-          id?: string
-          points?: number
-          reason?: string
-          topic_id?: string | null
-        }
-        Relationships: []
       }
       learning_sections: {
         Row: {
           content: string
           created_at: string
-          facts: Json | null
+          facts: Json
           id: string
-          image_generated: boolean | null
+          image_generated: boolean
           image_url: string | null
           section_number: number
           story_mode_content: string | null
           title: string
           topic_id: string
           updated_at: string
-          word_count: number | null
+          word_count: number
         }
         Insert: {
-          content: string
+          content?: string
           created_at?: string
-          facts?: Json | null
+          facts?: Json
           id?: string
-          image_generated?: boolean | null
+          image_generated?: boolean
           image_url?: string | null
           section_number: number
           story_mode_content?: string | null
           title: string
           topic_id: string
           updated_at?: string
-          word_count?: number | null
+          word_count?: number
         }
         Update: {
           content?: string
           created_at?: string
-          facts?: Json | null
+          facts?: Json
           id?: string
-          image_generated?: boolean | null
+          image_generated?: boolean
           image_url?: string | null
           section_number?: number
           story_mode_content?: string | null
           title?: string
           topic_id?: string
           updated_at?: string
-          word_count?: number | null
+          word_count?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "learning_sections_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "learning_topics"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       learning_topics: {
         Row: {
           child_age: number
           child_id: string
           created_at: string
-          current_section: number | null
+          current_section: number
           description: string | null
           id: string
-          status: string | null
-          table_of_contents: Json | null
+          status: string
+          table_of_contents: Json
           title: string
-          total_sections: number | null
+          total_sections: number
           updated_at: string
         }
         Insert: {
-          child_age: number
+          child_age?: number
           child_id: string
           created_at?: string
-          current_section?: number | null
+          current_section?: number
           description?: string | null
           id?: string
-          status?: string | null
-          table_of_contents?: Json | null
+          status?: string
+          table_of_contents?: Json
           title: string
-          total_sections?: number | null
+          total_sections?: number
           updated_at?: string
         }
         Update: {
           child_age?: number
           child_id?: string
           created_at?: string
-          current_section?: number | null
+          current_section?: number
           description?: string | null
           id?: string
-          status?: string | null
-          table_of_contents?: Json | null
+          status?: string
+          table_of_contents?: Json
           title?: string
-          total_sections?: number | null
+          total_sections?: number
           updated_at?: string
-        }
-        Relationships: []
-      }
-      memory_factors: {
-        Row: {
-          child_id: string
-          created_at: string | null
-          factor_name: string
-          factor_weight: number
-          id: string
-          updated_at: string | null
-        }
-        Insert: {
-          child_id: string
-          created_at?: string | null
-          factor_name: string
-          factor_weight?: number
-          id?: string
-          updated_at?: string | null
-        }
-        Update: {
-          child_id?: string
-          created_at?: string | null
-          factor_name?: string
-          factor_weight?: number
-          id?: string
-          updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "memory_factors_child_id_fkey"
+            foreignKeyName: "learning_topics_child_id_fkey"
             columns: ["child_id"]
             isOneToOne: false
             referencedRelation: "child_profiles"
@@ -629,141 +418,53 @@ export type Database = {
           },
         ]
       }
-      parents: {
+      profiles: {
         Row: {
           created_at: string
-          email: string
+          email: string | null
           id: string
-          name: string
-          subscription_expires_at: string
-          subscription_status: string
+          name: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
-          email: string
+          email?: string | null
           id: string
-          name: string
-          subscription_expires_at?: string
-          subscription_status?: string
+          name?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
-          email?: string
+          email?: string | null
           id?: string
-          name?: string
-          subscription_expires_at?: string
-          subscription_status?: string
+          name?: string | null
           updated_at?: string
-        }
-        Relationships: []
-      }
-      printable_activities: {
-        Row: {
-          activity_type: string
-          created_at: string
-          description: string | null
-          difficulty_level: number | null
-          id: string
-          image_url: string | null
-          title: string
-          topic_id: string
-        }
-        Insert: {
-          activity_type: string
-          created_at?: string
-          description?: string | null
-          difficulty_level?: number | null
-          id?: string
-          image_url?: string | null
-          title: string
-          topic_id: string
-        }
-        Update: {
-          activity_type?: string
-          created_at?: string
-          description?: string | null
-          difficulty_level?: number | null
-          id?: string
-          image_url?: string | null
-          title?: string
-          topic_id?: string
-        }
-        Relationships: []
-      }
-      quiz_attempts: {
-        Row: {
-          attempted_at: string
-          child_id: string
-          correct_answer: number
-          id: string
-          is_correct: boolean | null
-          options: Json
-          question: string
-          question_number: number
-          topic_id: string
-          user_answer: number | null
-        }
-        Insert: {
-          attempted_at?: string
-          child_id: string
-          correct_answer: number
-          id?: string
-          is_correct?: boolean | null
-          options: Json
-          question: string
-          question_number: number
-          topic_id: string
-          user_answer?: number | null
-        }
-        Update: {
-          attempted_at?: string
-          child_id?: string
-          correct_answer?: number
-          id?: string
-          is_correct?: boolean | null
-          options?: Json
-          question?: string
-          question_number?: number
-          topic_id?: string
-          user_answer?: number | null
         }
         Relationships: []
       }
       sparks_transactions: {
         Row: {
           amount: number
-          block_id: string | null
           child_id: string
           created_at: string
           id: string
-          reason: string
+          reason: string | null
         }
         Insert: {
           amount: number
-          block_id?: string | null
           child_id: string
           created_at?: string
           id?: string
-          reason: string
+          reason?: string | null
         }
         Update: {
           amount?: number
-          block_id?: string | null
           child_id?: string
           created_at?: string
           id?: string
-          reason?: string
+          reason?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "sparks_transactions_block_id_fkey"
-            columns: ["block_id"]
-            isOneToOne: false
-            referencedRelation: "content_blocks"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "sparks_transactions_child_id_fkey"
             columns: ["child_id"]
@@ -779,117 +480,33 @@ export type Database = {
           description: string | null
           id: string
           parent_user_id: string
-          sparks_reward: number | null
-          status: string | null
+          sparks_reward: number
           title: string
-          type: string | null
         }
         Insert: {
           created_at?: string
           description?: string | null
           id?: string
           parent_user_id: string
-          sparks_reward?: number | null
-          status?: string | null
+          sparks_reward?: number
           title: string
-          type?: string | null
         }
         Update: {
           created_at?: string
           description?: string | null
           id?: string
           parent_user_id?: string
-          sparks_reward?: number | null
-          status?: string | null
+          sparks_reward?: number
           title?: string
-          type?: string | null
         }
         Relationships: []
-      }
-      topic_connections: {
-        Row: {
-          child_id: string
-          connection_type: string | null
-          created_at: string | null
-          from_topic: string
-          id: string
-          strength: number | null
-          to_topic: string
-          updated_at: string | null
-        }
-        Insert: {
-          child_id: string
-          connection_type?: string | null
-          created_at?: string | null
-          from_topic: string
-          id?: string
-          strength?: number | null
-          to_topic: string
-          updated_at?: string | null
-        }
-        Update: {
-          child_id?: string
-          connection_type?: string | null
-          created_at?: string | null
-          from_topic?: string
-          id?: string
-          strength?: number | null
-          to_topic?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "topic_connections_child_id_fkey"
-            columns: ["child_id"]
-            isOneToOne: false
-            referencedRelation: "child_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      award_learning_points: {
-        Args: {
-          child_id_param: string
-          topic_id_param: string
-          points_param: number
-          reason_param: string
-        }
-        Returns: string
-      }
-      calculate_memory_strength: {
-        Args: {
-          last_interaction: string
-          revisit_count: number
-          engagement_level: number
-          decay_rate?: number
-        }
-        Returns: number
-      }
-      complete_child_task: {
-        Args: { task_id: string }
-        Returns: undefined
-      }
-      create_api_usage_logs_table: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      increment_sparks: {
-        Args: { profile_id_input: string; amount_input: number }
-        Returns: number
-      }
-      increment_sparks_balance: {
-        Args: { child_id: string; amount: number }
-        Returns: undefined
-      }
-      refresh_memory_strengths: {
-        Args: { child_id_param: string }
-        Returns: number
-      }
+      owns_child: { Args: { _child_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
