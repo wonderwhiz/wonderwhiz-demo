@@ -187,13 +187,18 @@ module.exports = {
         "shimmer": "shimmer 2s linear infinite"
       },
       fontFamily: {
-        'nunito': ['Nunito', 'sans-serif'],
-        'inter': ['Inter', 'sans-serif'],
-        'baloo': ['"Baloo 2"', 'sans-serif'],
-        'lexend': ['Lexend Deca', 'sans-serif'],
+        'sans': ['"DM Sans"', 'system-ui', 'sans-serif'],
+        'display': ['"Space Grotesk"', 'system-ui', 'sans-serif'],
+        'nunito': ['"DM Sans"', 'sans-serif'],
+        'inter': ['"DM Sans"', 'sans-serif'],
+        'baloo': ['"Space Grotesk"', 'sans-serif'],
+        'lexend': ['"DM Sans"', 'sans-serif'],
       },
       backgroundImage: {
-        'button-gradient': 'linear-gradient(90deg, #C0006A 0%, #C0006A 100%)',
+        'button-gradient': 'linear-gradient(135deg, hsl(252 100% 74%), hsl(196 100% 68%))',
+        'gradient-brand': 'linear-gradient(135deg, hsl(252 100% 74%), hsl(196 100% 68%))',
+        'gradient-mint': 'linear-gradient(135deg, hsl(168 71% 60%), hsl(196 100% 68%))',
+        'gradient-hero': 'var(--gradient-hero)',
       }
     },
   },
