@@ -192,12 +192,13 @@ Keep asking questions and exploring - that's how great discoveries are made!`,
   const handleComplete = async () => {
     // Award points for section completion
     try {
-      await supabase.rpc('award_learning_points', {
+      await (supabase.rpc as any)('award_learning_points', {
         child_id_param: childProfile.id,
         topic_id_param: topic.id,
         points_param: 10,
         reason_param: `Completed section: ${currentSection.title}`
       });
+
       
       toast.success("Great work! +10 Wonder Points! ⭐");
     } catch (error) {
