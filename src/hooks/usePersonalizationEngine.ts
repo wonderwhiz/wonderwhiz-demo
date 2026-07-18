@@ -63,7 +63,7 @@ export const usePersonalizationEngine = (childId: string | undefined) => {
       if (childProfile) {
         // Build personalization profile
         const personalizationProfile: PersonalizationProfile = {
-          contentDifficulty: childProfile.content_difficulty_preference || 5,
+          contentDifficulty: (childProfile as any).content_difficulty_preference || 5,
           learningStyle: determineLearningStyle(learningHistory),
           interests: childProfile.interests || [],
           strengths: extractStrengths(learningHistory),
