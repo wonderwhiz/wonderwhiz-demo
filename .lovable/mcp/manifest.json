@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "sdk_version": "0.23.0",
+  "path": "/functions/v1/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://lzoysqczxxsqkvfsqygp.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "wonderwhiz-mcp",
+      "version": "0.1.0",
+      "title": "WonderWhiz"
+    },
+    "tools": [
+      {
+        "name": "list_child_profiles",
+        "title": "List child profiles",
+        "description": "List the signed-in parent's child learner profiles on WonderWhiz.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_learning_topics",
+        "title": "List learning topics",
+        "description": "List learning topics for one of the parent's children. Returns most recent first.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "child_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Child profile id (from list_child_profiles)."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "description": "Max rows (default 20)."
+            }
+          },
+          "required": [
+            "child_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_learning_topic",
+        "title": "Get learning topic with sections",
+        "description": "Fetch a single learning topic and its sections (title, content, facts) for one of the parent's children.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "topic_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Learning topic id."
+            }
+          },
+          "required": [
+            "topic_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
