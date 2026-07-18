@@ -233,12 +233,13 @@ const ParentDashboard: React.FC<ParentDashboardProps> = ({ parentId }) => {
       .order('activity_date', { ascending: false })
       .limit(7);
 
-    const chartData = weeklyActivity?.reverse().map(day => ({
+    const chartData = weeklyActivity?.reverse().map((day: any) => ({
       day: new Date(day.activity_date).toLocaleDateString('en-US', { weekday: 'short' }),
       topics: day.topics_explored || 0,
       tasks: day.tasks_completed || 0,
       quizzes: day.quizzes_completed || 0
     })) || [];
+
 
     setWeeklyData(chartData);
   };
