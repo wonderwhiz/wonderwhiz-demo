@@ -162,8 +162,9 @@ const ParentZone = () => {
         const activityByDay = daysOfWeek.map(day => {
           // Find activity for this day
           const dayActivity = activityData?.find(
-            act => act.activity_date.split('T')[0] === day.date
-          ) as DailyActivity | undefined;
+            (act: any) => act.activity_date.split('T')[0] === day.date
+          ) as unknown as DailyActivity | undefined;
+
           
           // If we have real data, use it
           if (dayActivity) {
@@ -349,16 +350,17 @@ const ParentZone = () => {
         if (tasksError) throw tasksError;
         
         // Get sum of activity data
-        const { data: activityData, error: activityError } = await supabase
-          .from('child_daily_activity')
+        const { data: activityData, error: activityError } = await (supabase
+          .from('child_daily_activity') as any)
           .select('tasks_completed, quizzes_completed, topics_explored')
           .eq('child_profile_id', profileId);
           
         if (activityError) throw activityError;
         
         // Calculate total activity counts
-        const totalQuizzes = activityData?.reduce((sum, item) => sum + (item.quizzes_completed || 0), 0) || 0;
-        const totalTopics = activityData?.reduce((sum, item) => sum + (item.topics_explored || 0), 0) || 0;
+        const totalQuizzes = activityData?.reduce((sum: number, item: any) => sum + (item.quizzes_completed || 0), 0) || 0;
+        const totalTopics = activityData?.reduce((sum: number, item: any) => sum + (item.topics_explored || 0), 0) || 0;
+
         
         // Set learning stats based on actual data
         setLearningStats({
@@ -417,7 +419,7 @@ const ParentZone = () => {
         
         // Add activity from daily activity logs
         if (recentActivity) {
-          for (const activity of recentActivity) {
+          for (const activity of recentActivity as any[]) {
             if (activity.quizzes_completed > 0) {
               activityItems.push({
                 type: 'quiz',

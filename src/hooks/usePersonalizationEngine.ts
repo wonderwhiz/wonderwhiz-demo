@@ -63,7 +63,7 @@ export const usePersonalizationEngine = (childId: string | undefined) => {
       if (childProfile) {
         // Build personalization profile
         const personalizationProfile: PersonalizationProfile = {
-          contentDifficulty: childProfile.content_difficulty_preference || 5,
+          contentDifficulty: (childProfile as any).content_difficulty_preference || 5,
           learningStyle: determineLearningStyle(learningHistory),
           interests: childProfile.interests || [],
           strengths: extractStrengths(learningHistory),
@@ -265,8 +265,8 @@ export const usePersonalizationEngine = (childId: string | undefined) => {
     if (!childId) return;
 
     try {
-      const { error } = await supabase
-        .from('child_profiles')
+      const { error } = await (supabase
+        .from('child_profiles') as any)
         .update({
           content_difficulty_preference: updates.contentDifficulty,
           learning_preferences: {
@@ -275,6 +275,7 @@ export const usePersonalizationEngine = (childId: string | undefined) => {
           }
         })
         .eq('id', childId);
+
 
       if (!error) {
         setProfile(prev => prev ? { ...prev, ...updates } : null);

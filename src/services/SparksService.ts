@@ -47,10 +47,11 @@ export async function awardSparks(childId: string, trigger: SparkTrigger, custom
     if (transactionError) throw transactionError;
 
     // Directly use the RPC function to increment sparks balance
-    const { error: rpcError } = await supabase.rpc('increment_sparks_balance', {
+    const { error: rpcError } = await (supabase.rpc as any)('increment_sparks_balance', {
       child_id: childId,
       amount: reward.amount
     });
+
     
     if (rpcError) throw rpcError;
 
@@ -66,11 +67,12 @@ export async function awardSparks(childId: string, trigger: SparkTrigger, custom
 export async function checkAndAwardStreakBonus(childId: string): Promise<boolean> {
   try {
     // Get current child profile to check streak
-    const { data: profile, error: profileError } = await supabase
-      .from('child_profiles')
+    const { data: profile, error: profileError } = await (supabase
+      .from('child_profiles') as any)
       .select('streak_days, streak_last_updated')
       .eq('id', childId)
       .single();
+
       
     if (profileError) {
       console.error('Error fetching profile:', profileError);

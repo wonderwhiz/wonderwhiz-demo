@@ -16,7 +16,7 @@ export function useSearch({
 }: UseSearchOptions = {}) {
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [isSearching, setIsSearching] = useState(false);
-  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [searchTimeout, setSearchTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
 
   const handleSearch = useCallback((e?: React.FormEvent) => {
     if (e) {
