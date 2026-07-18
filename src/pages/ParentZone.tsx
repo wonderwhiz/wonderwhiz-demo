@@ -162,8 +162,9 @@ const ParentZone = () => {
         const activityByDay = daysOfWeek.map(day => {
           // Find activity for this day
           const dayActivity = activityData?.find(
-            act => act.activity_date.split('T')[0] === day.date
-          ) as DailyActivity | undefined;
+            (act: any) => act.activity_date.split('T')[0] === day.date
+          ) as unknown as DailyActivity | undefined;
+
           
           // If we have real data, use it
           if (dayActivity) {
