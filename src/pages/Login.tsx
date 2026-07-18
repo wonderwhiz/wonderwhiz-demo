@@ -48,7 +48,7 @@ const Login = () => {
       });
 
       // Always go to profiles after login
-      navigate('/profiles');
+      navigate(postAuthTarget);
 
     } catch (error: any) {
       console.error('Login error:', error);
@@ -75,7 +75,7 @@ const Login = () => {
         description: "Please check your email to verify your account.",
         duration: 4000,
       });
-      navigate('/profiles');
+      navigate(postAuthTarget);
     } catch (error: any) {
       console.error('Sign up error:', error);
       toast.error("Sign up failed", {
