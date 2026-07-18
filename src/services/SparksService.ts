@@ -67,11 +67,12 @@ export async function awardSparks(childId: string, trigger: SparkTrigger, custom
 export async function checkAndAwardStreakBonus(childId: string): Promise<boolean> {
   try {
     // Get current child profile to check streak
-    const { data: profile, error: profileError } = await supabase
-      .from('child_profiles')
+    const { data: profile, error: profileError } = await (supabase
+      .from('child_profiles') as any)
       .select('streak_days, streak_last_updated')
       .eq('id', childId)
       .single();
+
       
     if (profileError) {
       console.error('Error fetching profile:', profileError);
