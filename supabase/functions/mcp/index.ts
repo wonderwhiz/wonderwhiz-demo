@@ -6,14 +6,18 @@
 import { auth, defineMcp } from "npm:@lovable.dev/mcp-js@0.23.0";
 
 // src/lib/mcp/tools/list-children.ts
-import { createClient } from "npm:@supabase/supabase-js@^2.110.2";
 import { defineTool } from "npm:@lovable.dev/mcp-js@0.23.0";
-function sb(ctx) {
+
+// src/lib/mcp/tools/_supabase.ts
+import { createClient } from "npm:@supabase/supabase-js@^2.110.2";
+function supabaseForUser(ctx) {
   return createClient(process.env.SUPABASE_URL, process.env.SUPABASE_PUBLISHABLE_KEY, {
     global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
     auth: { persistSession: false, autoRefreshToken: false }
   });
 }
+
+// src/lib/mcp/tools/list-children.ts
 var list_children_default = defineTool({
   name: "list_child_profiles",
   title: "List child profiles",
@@ -24,7 +28,7 @@ var list_children_default = defineTool({
     if (!ctx.isAuthenticated()) {
       return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
     }
-    const { data, error } = await sb(ctx).from("child_profiles").select("id, name, age, interests, language, sparks_balance, streak_days, last_active_date").order("created_at", { ascending: true });
+    const { data, error } = await supabaseForUser(ctx).from("child_profiles").select("id, name, age, interests, language, sparks_balance, streak_days, last_active_date").order("created_at", { ascending: true });
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
     return {
       content: [{ type: "text", text: JSON.stringify(data) }],
@@ -34,15 +38,8 @@ var list_children_default = defineTool({
 });
 
 // src/lib/mcp/tools/list-topics.ts
-import { createClient as createClient2 } from "npm:@supabase/supabase-js@^2.110.2";
 import { defineTool as defineTool2 } from "npm:@lovable.dev/mcp-js@0.23.0";
 import { z } from "npm:zod@^3.25.76";
-function sb2(ctx) {
-  return createClient2(process.env.SUPABASE_URL, process.env.SUPABASE_PUBLISHABLE_KEY, {
-    global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
-    auth: { persistSession: false, autoRefreshToken: false }
-  });
-}
 var list_topics_default = defineTool2({
   name: "list_learning_topics",
   title: "List learning topics",
@@ -56,7 +53,7 @@ var list_topics_default = defineTool2({
     if (!ctx.isAuthenticated()) {
       return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
     }
-    const { data, error } = await sb2(ctx).from("learning_topics").select("id, title, description, status, current_section, total_sections, child_age, created_at, updated_at").eq("child_id", child_id).order("updated_at", { ascending: false }).limit(limit ?? 20);
+    const { data, error } = await supabaseForUser(ctx).from("learning_topics").select("id, title, description, status, current_section, total_sections, child_age, created_at, updated_at").eq("child_id", child_id).order("updated_at", { ascending: false }).limit(limit ?? 20);
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
     return {
       content: [{ type: "text", text: JSON.stringify(data) }],
@@ -66,15 +63,8 @@ var list_topics_default = defineTool2({
 });
 
 // src/lib/mcp/tools/get-topic.ts
-import { createClient as createClient3 } from "npm:@supabase/supabase-js@^2.110.2";
 import { defineTool as defineTool3 } from "npm:@lovable.dev/mcp-js@0.23.0";
 import { z as z2 } from "npm:zod@^3.25.76";
-function sb3(ctx) {
-  return createClient3(process.env.SUPABASE_URL, process.env.SUPABASE_PUBLISHABLE_KEY, {
-    global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
-    auth: { persistSession: false, autoRefreshToken: false }
-  });
-}
 var get_topic_default = defineTool3({
   name: "get_learning_topic",
   title: "Get learning topic with sections",
@@ -87,7 +77,7 @@ var get_topic_default = defineTool3({
     if (!ctx.isAuthenticated()) {
       return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
     }
-    const client = sb3(ctx);
+    const client = supabaseForUser(ctx);
     const { data: topic, error: tErr } = await client.from("learning_topics").select("id, title, description, status, current_section, total_sections, child_id, child_age, table_of_contents, created_at, updated_at").eq("id", topic_id).maybeSingle();
     if (tErr) return { content: [{ type: "text", text: tErr.message }], isError: true };
     if (!topic) return { content: [{ type: "text", text: "Topic not found" }], isError: true };
