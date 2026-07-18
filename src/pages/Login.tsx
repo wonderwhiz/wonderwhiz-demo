@@ -22,6 +22,11 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('login');
 
+  // Preserve `next` (e.g. OAuth consent URL) across sign-in / sign-up.
+  const rawNext = new URLSearchParams(window.location.search).get('next');
+  const nextPath = rawNext && rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : null;
+  const postAuthTarget = nextPath ?? '/profiles';
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
