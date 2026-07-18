@@ -26,8 +26,8 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
   // Store the previous curioId to detect changes
   const previousCurioIdRef = useRef<string | undefined>(undefined);
   const blockGenerationInProgress = useRef<boolean>(false);
-  const generationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const blockLoadingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const generationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const blockLoadingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fetchInProgressRef = useRef<boolean>(false);
   const lastFetchTimeRef = useRef<number>(0);
   const callCountRef = useRef<number>(0);

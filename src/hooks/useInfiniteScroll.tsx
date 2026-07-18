@@ -28,7 +28,7 @@ const useInfiniteScroll = ({
   const observerTarget = useRef<HTMLDivElement | null>(null);
   const [intersecting, setIntersecting] = useState(false);
   const observer = useRef<IntersectionObserver | null>(null);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasTriggeredInitial = useRef<boolean>(false);
   
   // Clear any existing timeout on unmount or refresh

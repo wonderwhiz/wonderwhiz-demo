@@ -23,7 +23,7 @@ const MindfulnessBlock: React.FC<MindfulnessBlockProps> = ({
   const { textSize, interactionStyle, messageStyle } = useAgeAdaptation(childAge);
   
   const duration = content.duration || 30; // Default 30 seconds as requested
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   
   // Generate particles for background effect
@@ -80,7 +80,7 @@ const MindfulnessBlock: React.FC<MindfulnessBlockProps> = ({
         setSecondsLeft(prev => {
           const newValue = prev - 1;
           if (newValue <= 0) {
-            clearInterval(intervalRef.current as NodeJS.Timeout);
+            clearInterval(intervalRef.current as ReturnType<typeof setTimeout>);
             setIsActive(false);
             setIsCompleted(true);
             setProgress(100);
