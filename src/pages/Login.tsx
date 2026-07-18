@@ -22,6 +22,11 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('login');
 
+  // Preserve `next` (e.g. OAuth consent URL) across sign-in / sign-up.
+  const rawNext = new URLSearchParams(window.location.search).get('next');
+  const nextPath = rawNext && rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : null;
+  const postAuthTarget = nextPath ?? '/profiles';
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
@@ -43,7 +48,7 @@ const Login = () => {
       });
 
       // Always go to profiles after login
-      navigate('/profiles');
+      navigate(postAuthTarget);
 
     } catch (error: any) {
       console.error('Login error:', error);
@@ -70,7 +75,7 @@ const Login = () => {
         description: "Please check your email to verify your account.",
         duration: 4000,
       });
-      navigate('/profiles');
+      navigate(postAuthTarget);
     } catch (error: any) {
       console.error('Sign up error:', error);
       toast.error("Sign up failed", {
