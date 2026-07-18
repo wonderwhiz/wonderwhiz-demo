@@ -265,8 +265,8 @@ export const usePersonalizationEngine = (childId: string | undefined) => {
     if (!childId) return;
 
     try {
-      const { error } = await supabase
-        .from('child_profiles')
+      const { error } = await (supabase
+        .from('child_profiles') as any)
         .update({
           content_difficulty_preference: updates.contentDifficulty,
           learning_preferences: {
@@ -275,6 +275,7 @@ export const usePersonalizationEngine = (childId: string | undefined) => {
           }
         })
         .eq('id', childId);
+
 
       if (!error) {
         setProfile(prev => prev ? { ...prev, ...updates } : null);
