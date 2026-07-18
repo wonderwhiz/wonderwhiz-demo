@@ -140,8 +140,8 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
       
       // If no blocks are found, check if there's a generation error in the curio
       if (count === 0) {
-        const { data: curioData, error: curioError } = await supabase
-          .from('curios')
+        const { data: curioData, error: curioError } = await (supabase
+          .from('curios') as any)
           .select('generation_error')
           .eq('id', curioId)
           .single();
@@ -150,6 +150,7 @@ export const useCurioBlocks = (childId?: string, curioId?: string, searchQuery =
           console.error("Error fetching curio status:", curioError);
         } else if (curioData && curioData.generation_error) {
           setGenerationError(curioData.generation_error);
+
           
           // Only add placeholders if we haven't already
           if (!placeholderAddedRef.current) {
