@@ -419,7 +419,7 @@ const ParentZone = () => {
         
         // Add activity from daily activity logs
         if (recentActivity) {
-          for (const activity of recentActivity) {
+          for (const activity of recentActivity as any[]) {
             if (activity.quizzes_completed > 0) {
               activityItems.push({
                 type: 'quiz',
