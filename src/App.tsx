@@ -14,6 +14,7 @@ import WonderWhiz from '@/pages/WonderWhiz';
 import ParentZone from '@/pages/ParentZone';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import OAuthConsent from '@/pages/OAuthConsent';
+import CreateProfile from '@/pages/CreateProfile';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -44,6 +45,11 @@ function App() {
                 <Route path="/profiles" element={
                   <ProtectedRoute>
                     <ProfileSelector />
+                  </ProtectedRoute>
+                } />
+                <Route path="/create-profile" element={
+                  <ProtectedRoute>
+                    <CreateProfile />
                   </ProtectedRoute>
                 } />
                 <Route path="/parent-zone" element={
