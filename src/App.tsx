@@ -47,6 +47,11 @@ function App() {
                     <ProfileSelector />
                   </ProtectedRoute>
                 } />
+                <Route path="/create-profile" element={
+                  <ProtectedRoute>
+                    <CreateProfile />
+                  </ProtectedRoute>
+                } />
                 <Route path="/parent-zone" element={
                   <ProtectedRoute>
                     <ParentZone />
