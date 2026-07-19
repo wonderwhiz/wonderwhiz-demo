@@ -14,6 +14,7 @@ import WonderWhiz from '@/pages/WonderWhiz';
 import ParentZone from '@/pages/ParentZone';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import OAuthConsent from '@/pages/OAuthConsent';
+import CreateProfile from '@/pages/CreateProfile';
 
 // Create a client
 const queryClient = new QueryClient({
