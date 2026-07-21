@@ -4,18 +4,21 @@ import { ArrowLeft, ArrowRight, Send, Sparkles, BookOpen, Lightbulb, Compass, Ch
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { parsePartialJSON } from '@/lib/partialJson';
 
 type Vocab = { word: string; meaning: string };
 type Quiz = { question: string; options: string[]; correct_index: number; explanation: string };
 type WonderCard = {
-  title: string;
-  hook: string;
-  paragraphs: string[];
-  wow_facts: string[];
-  vocab: Vocab[];
-  rabbit_holes: string[];
-  quiz: Quiz;
+  title?: string;
+  hook?: string;
+  paragraphs?: string[];
+  wow_facts?: string[];
+  vocab?: Vocab[];
+  rabbit_holes?: string[];
+  quiz?: Partial<Quiz>;
 };
+
+type StreamingTurn = { question: string; card: WonderCard; streaming: boolean };
 
 type Turn = { question: string; card: WonderCard };
 
