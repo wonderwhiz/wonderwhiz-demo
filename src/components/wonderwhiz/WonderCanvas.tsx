@@ -256,8 +256,29 @@ const TurnBlock: React.FC<{
   onPick: (i: number) => void;
   onAsk: (q: string) => void;
   isYoung: boolean;
-}> = ({ turn, picked, onPick, onAsk, isYoung }) => {
-  const { question, card } = turn;
+}> = ({ turn, picked, onPick, onAsk }) => {
+  const { question, card, streaming } = turn;
+  const paragraphs = card.paragraphs ?? [];
+  const wowFacts = card.wow_facts ?? [];
+  const vocab = card.vocab ?? [];
+  const rabbitHoles = card.rabbit_holes ?? [];
+  const quiz = card.quiz;
+  const quizReady = !!(quiz?.question && quiz.options && quiz.options.length > 1 && typeof quiz.correct_index === 'number');
+
+  // While streaming, hide the last paragraph if it's likely still mid-sentence
+  // (we keep it visible but append a soft caret).
+  const showCaretOnLast = streaming && paragraphs.length > 0;
+
+  // Don't render the card shell until we at least know the title or hook — the
+  // parent already shows a shimmering skeleton for that phase.
+  if (streaming && !card.title && !card.hook) return (
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex justify-end">
+      <div className="max-w-[85%] px-4 py-2.5 rounded-2xl rounded-br-md bg-accent-brand/15 border border-accent-brand/25 text-text-primary font-medium">
+        {question}
+      </div>
+    </motion.div>
+  );
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -265,37 +286,45 @@ const TurnBlock: React.FC<{
       transition={{ duration: 0.35 }}
       className="space-y-5"
     >
-      {/* User question */}
       <div className="flex justify-end">
         <div className="max-w-[85%] px-4 py-2.5 rounded-2xl rounded-br-md bg-accent-brand/15 border border-accent-brand/25 text-text-primary font-medium">
           {question}
         </div>
       </div>
 
-      {/* Answer card */}
       <article className="rounded-3xl bg-card/90 border border-border/50 shadow-lg overflow-hidden">
         <header className="px-6 pt-6 pb-4 border-b border-border/40">
-          <div className="text-xs uppercase tracking-widest text-accent-brand font-semibold mb-2">
-            Wonder Card · {card.title}
+          <div className="text-xs uppercase tracking-widest text-accent-brand font-semibold mb-2 flex items-center gap-2">
+            Wonder Card {card.title ? `· ${card.title}` : ''}
+            {streaming && <span className="inline-block w-1.5 h-3 bg-accent-brand/70 animate-pulse rounded-sm" />}
           </div>
-          <p className="text-lg sm:text-xl text-text-primary font-medium leading-snug italic">
-            {card.hook}
-          </p>
+          {card.hook && (
+            <p className="text-lg sm:text-xl text-text-primary font-medium leading-snug italic">
+              {card.hook}
+            </p>
+          )}
         </header>
 
-        <div className="px-6 py-5 space-y-4 text-text-primary leading-relaxed text-[17px]">
-          {card.paragraphs.map((p, i) => (
-            <p key={i}>{p}</p>
-          ))}
-        </div>
+        {paragraphs.length > 0 && (
+          <div className="px-6 py-5 space-y-4 text-text-primary leading-relaxed text-[17px]">
+            {paragraphs.map((p, i) => (
+              <p key={i}>
+                {p}
+                {showCaretOnLast && i === paragraphs.length - 1 && (
+                  <span className="inline-block w-1.5 h-4 align-middle ml-0.5 bg-accent-brand/70 animate-pulse rounded-sm" />
+                )}
+              </p>
+            ))}
+          </div>
+        )}
 
-        {card.wow_facts?.length > 0 && (
+        {wowFacts.length > 0 && (
           <div className="px-6 py-5 bg-accent-info/5 border-t border-border/40">
             <div className="text-sm font-bold text-accent-info mb-3 uppercase tracking-wider flex items-center gap-2">
               <Sparkles className="h-4 w-4" /> Whoa, really?
             </div>
             <ul className="space-y-2">
-              {card.wow_facts.map((f, i) => (
+              {wowFacts.map((f, i) => (
                 <li key={i} className="flex gap-3 text-text-primary">
                   <span className="text-accent-brand font-bold">·</span>
                   <span>{f}</span>
@@ -305,13 +334,13 @@ const TurnBlock: React.FC<{
           </div>
         )}
 
-        {card.vocab?.length > 0 && (
+        {vocab.length > 0 && (
           <div className="px-6 py-5 border-t border-border/40">
             <div className="text-sm font-bold text-text-secondary mb-3 uppercase tracking-wider">
               Words worth knowing
             </div>
             <dl className="grid sm:grid-cols-2 gap-3">
-              {card.vocab.map((v, i) => (
+              {vocab.map((v, i) => (
                 <div key={i} className="p-3 rounded-xl bg-surface-secondary/50">
                   <dt className="font-bold text-text-primary">{v.word}</dt>
                   <dd className="text-sm text-text-secondary mt-0.5">{v.meaning}</dd>
@@ -321,22 +350,21 @@ const TurnBlock: React.FC<{
           </div>
         )}
 
-        {/* Quiz */}
-        {card.quiz && (
+        {quizReady && quiz && (
           <div className="px-6 py-5 border-t border-border/40 bg-accent-brand/5">
             <div className="text-sm font-bold text-accent-brand mb-3 uppercase tracking-wider">
               Quick check
             </div>
-            <p className="text-text-primary font-medium mb-3">{card.quiz.question}</p>
+            <p className="text-text-primary font-medium mb-3">{quiz.question}</p>
             <div className="space-y-2">
-              {card.quiz.options.map((opt, i) => {
+              {quiz.options!.map((opt, i) => {
                 const answered = picked !== undefined;
-                const isCorrect = i === card.quiz.correct_index;
+                const isCorrect = i === quiz.correct_index;
                 const isPicked = picked === i;
                 return (
                   <button
                     key={i}
-                    disabled={answered}
+                    disabled={answered || streaming}
                     onClick={() => onPick(i)}
                     className={[
                       'w-full text-left px-4 py-3 rounded-xl border transition-all flex items-center justify-between',
@@ -354,32 +382,32 @@ const TurnBlock: React.FC<{
               })}
             </div>
             <AnimatePresence>
-              {picked !== undefined && (
+              {picked !== undefined && quiz.explanation && (
                 <motion.p
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="mt-3 text-sm text-text-secondary italic"
                 >
-                  {picked === card.quiz.correct_index ? '✨ Nailed it — ' : 'Nice try — '}
-                  {card.quiz.explanation}
+                  {picked === quiz.correct_index ? '✨ Nailed it — ' : 'Nice try — '}
+                  {quiz.explanation}
                 </motion.p>
               )}
             </AnimatePresence>
           </div>
         )}
 
-        {/* Rabbit holes */}
-        {card.rabbit_holes?.length > 0 && (
+        {rabbitHoles.length > 0 && (
           <div className="px-6 py-5 border-t border-border/40">
             <div className="text-sm font-bold text-text-secondary mb-3 uppercase tracking-wider flex items-center gap-2">
               <Compass className="h-4 w-4" /> Follow your curiosity
             </div>
             <div className="grid sm:grid-cols-2 gap-2">
-              {card.rabbit_holes.map((r, i) => (
+              {rabbitHoles.map((r, i) => (
                 <button
                   key={i}
                   onClick={() => onAsk(r)}
-                  className="group text-left p-3 rounded-xl border border-border/50 hover:border-accent-brand/50 hover:bg-accent-brand/5 transition-all flex items-center justify-between gap-2"
+                  disabled={streaming}
+                  className="group text-left p-3 rounded-xl border border-border/50 hover:border-accent-brand/50 hover:bg-accent-brand/5 transition-all flex items-center justify-between gap-2 disabled:opacity-60"
                 >
                   <span className="text-text-primary text-sm font-medium">{r}</span>
                   <ArrowRight className="h-4 w-4 text-text-tertiary group-hover:text-accent-brand group-hover:translate-x-0.5 transition-all flex-shrink-0" />
