@@ -1,5 +1,6 @@
-// Wonder Explain — powers the reimagined encyclopedia.
-// Uses Lovable AI Gateway. Returns a child-psychologist-tuned learning card.
+// Wonder Explain — streaming, child-psychologist tuned learning card.
+// Streams the Lovable AI Gateway response through as SSE so the UI can
+// progressively reveal the answer while the model is still writing.
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -8,13 +9,13 @@ interface Body {
   question: string;
   childAge?: number;
   childName?: string;
-  parentTopic?: string; // when going down a rabbit hole
+  parentTopic?: string;
 }
 
 function ageBand(age: number) {
   if (age <= 7) return {
     band: "5-7",
-    voice: "Warm, playful, wondrous. Use very short sentences (max 12 words). Compare new ideas to things a young child already knows — toys, food, family, weather. No jargon. If a big word is essential, define it in the same sentence with 'which means…'.",
+    voice: "Warm, playful, wondrous. Very short sentences (max 12 words). Compare new ideas to things a young child already knows — toys, food, family, weather. No jargon. If a big word is essential, define it in the same sentence with 'which means…'.",
     paras: "2 short paragraphs, each 2-3 sentences.",
     vocab: 2,
     quizStyle: "One playful multiple choice with 3 options. Correct answer feels obvious once explained.",
@@ -42,12 +43,16 @@ const SYSTEM = (age: number, name?: string, parent?: string) => {
 WRITING RULES for age band ${a.band}:
 - Voice: ${a.voice}
 - Length: ${a.paras}
-- Always open with a one-line "hook" that names what will feel magical about this answer.
-- Facts must be genuinely surprising and true. No filler.
+- Open with a one-line "hook" that names what will feel magical about this answer.
+- Facts must be genuinely surprising AND true. No filler.
 - Rabbit-hole questions must open new doors — not rephrase the topic. They should feel like "ooh, I want to know THAT next".
 - Quiz: ${a.quizStyle} Include a one-sentence explanation of the correct answer.
 - Vocabulary: ${a.vocab} key words with kid-friendly definitions.
 ${parent ? `- CONTEXT: The child is exploring "${parent}" and just asked a follow-up. Connect the answer back to that thread in the hook.` : ""}
+
+STREAMING ORDER — CRITICAL for user experience:
+Emit JSON keys in EXACTLY this order so the UI can progressively reveal content as you write:
+1) "title"  2) "hook"  3) "paragraphs"  4) "wow_facts"  5) "vocab"  6) "quiz"  7) "rabbit_holes"
 
 SAFETY: If the question is unsafe, scary beyond age, or adult in nature, gently redirect with a related wholesome question instead. Never refuse coldly.
 
@@ -57,23 +62,19 @@ Return ONLY valid JSON matching the provided schema. No markdown, no prose outsi
 const SCHEMA = {
   type: "object",
   properties: {
-    title: { type: "string", description: "A punchy 3-6 word title" },
-    hook: { type: "string", description: "One-sentence curiosity hook" },
+    title: { type: "string" },
+    hook: { type: "string" },
     paragraphs: { type: "array", items: { type: "string" } },
     wow_facts: { type: "array", items: { type: "string" } },
     vocab: {
       type: "array",
       items: {
         type: "object",
-        properties: {
-          word: { type: "string" },
-          meaning: { type: "string" },
-        },
+        properties: { word: { type: "string" }, meaning: { type: "string" } },
         required: ["word", "meaning"],
         additionalProperties: false,
       },
     },
-    rabbit_holes: { type: "array", items: { type: "string" }, description: "4 follow-up questions" },
     quiz: {
       type: "object",
       properties: {
@@ -85,8 +86,9 @@ const SCHEMA = {
       required: ["question", "options", "correct_index", "explanation"],
       additionalProperties: false,
     },
+    rabbit_holes: { type: "array", items: { type: "string" } },
   },
-  required: ["title", "hook", "paragraphs", "wow_facts", "vocab", "rabbit_holes", "quiz"],
+  required: ["title", "hook", "paragraphs", "wow_facts", "vocab", "quiz", "rabbit_holes"],
   additionalProperties: false,
 };
 
@@ -109,7 +111,7 @@ Deno.serve(async (req) => {
     }
     const age = Math.min(16, Math.max(5, body.childAge ?? 10));
 
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const upstream = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -117,6 +119,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         model: "google/gemini-3.5-flash",
+        stream: true,
         messages: [
           { role: "system", content: SYSTEM(age, body.childName, body.parentTopic) },
           { role: "user", content: question },
@@ -128,10 +131,10 @@ Deno.serve(async (req) => {
       }),
     });
 
-    if (!res.ok) {
-      const t = await res.text();
-      console.error("Gateway error", res.status, t);
-      const status = res.status === 429 ? 429 : res.status === 402 ? 402 : 500;
+    if (!upstream.ok || !upstream.body) {
+      const t = await upstream.text();
+      console.error("Gateway error", upstream.status, t);
+      const status = upstream.status === 429 ? 429 : upstream.status === 402 ? 402 : 500;
       const msg = status === 429 ? "Too many questions right now — try again in a moment."
         : status === 402 ? "AI credits exhausted. Please add credits."
         : "Failed to generate answer.";
@@ -140,14 +143,47 @@ Deno.serve(async (req) => {
       });
     }
 
-    const data = await res.json();
-    const raw = data.choices?.[0]?.message?.content ?? "{}";
-    let card;
-    try { card = JSON.parse(raw); }
-    catch { card = JSON.parse(raw.replace(/```json|```/g, "").trim()); }
+    // Parse upstream SSE, extract JSON deltas, and forward as plain text chunks.
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
 
-    return new Response(JSON.stringify({ card, question, age }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    const stream = new ReadableStream({
+      async start(controller) {
+        const reader = upstream.body!.getReader();
+        let buffer = "";
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() ?? "";
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (!trimmed.startsWith("data:")) continue;
+              const payload = trimmed.slice(5).trim();
+              if (!payload || payload === "[DONE]") continue;
+              try {
+                const json = JSON.parse(payload);
+                const delta = json.choices?.[0]?.delta?.content ?? "";
+                if (delta) controller.enqueue(encoder.encode(delta));
+              } catch { /* ignore keep-alives */ }
+            }
+          }
+          controller.close();
+        } catch (e) {
+          controller.error(e);
+        }
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-cache",
+        "X-Accel-Buffering": "no",
+      },
     });
   } catch (e) {
     console.error(e);
