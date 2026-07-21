@@ -20,7 +20,10 @@ type WonderCard = {
 
 type StreamingTurn = { question: string; card: WonderCard; streaming: boolean };
 
-type Turn = { question: string; card: WonderCard };
+type Turn = StreamingTurn;
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 
 interface Props {
   childProfile: { id: string; name: string; age: number | null };
