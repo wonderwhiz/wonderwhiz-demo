@@ -200,10 +200,21 @@ const WonderCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
               isYoung={isYoung}
             />
           ))}
-          {loading && (
-            <div className="flex items-center gap-3 text-text-secondary py-6">
-              <Loader2 className="h-5 w-5 animate-spin text-accent-brand" />
-              <span className="font-medium">Wonder is thinking…</span>
+          {loading && turns[turns.length - 1]?.card && !turns[turns.length - 1]?.card?.hook && (
+            <div className="rounded-3xl bg-card/70 border border-border/50 shadow-lg overflow-hidden animate-pulse">
+              <div className="px-6 pt-6 pb-4 border-b border-border/40 space-y-3">
+                <div className="h-3 w-32 bg-white/10 rounded" />
+                <div className="h-6 w-3/4 bg-white/10 rounded" />
+              </div>
+              <div className="px-6 py-5 space-y-3">
+                <div className="h-4 w-full bg-white/10 rounded" />
+                <div className="h-4 w-11/12 bg-white/10 rounded" />
+                <div className="h-4 w-4/5 bg-white/10 rounded" />
+              </div>
+              <div className="px-6 pb-5 flex items-center gap-2 text-text-tertiary text-sm">
+                <Loader2 className="h-4 w-4 animate-spin text-accent-brand" />
+                Wonder is writing your answer…
+              </div>
             </div>
           )}
         </div>
