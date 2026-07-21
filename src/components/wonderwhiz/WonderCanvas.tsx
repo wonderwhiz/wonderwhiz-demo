@@ -77,16 +77,59 @@ const WonderCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
     setInput('');
     const parentTopic = turns.length ? turns[turns.length - 1].card.title : undefined;
 
+    const turnIndex = turns.length;
+    setTurns((t) => [...t, { question: q, card: {}, streaming: true }]);
+
     try {
-      const { data, error } = await supabase.functions.invoke('wonder-explain', {
-        body: { question: q, childAge: age, childName: childProfile.name, parentTopic },
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/wonder-explain`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: SUPABASE_KEY,
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ question: q, childAge: age, childName: childProfile.name, parentTopic }),
       });
-      if (error) throw error;
-      if (!data?.card) throw new Error('No answer');
-      setTurns((t) => [...t, { question: q, card: data.card as WonderCard }]);
+
+      if (!res.ok || !res.body) {
+        let msg = 'Wonder is thinking too hard. Try again.';
+        try { const j = await res.json(); if (j?.error) msg = j.error; } catch {}
+        throw new Error(msg);
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let raw = '';
+      let lastApplied: WonderCard | null = null;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        raw += decoder.decode(value, { stream: true });
+        const partial = parsePartialJSON<WonderCard>(raw);
+        if (partial && partial !== lastApplied) {
+          lastApplied = partial;
+          setTurns((t) => {
+            const copy = t.slice();
+            if (copy[turnIndex]) copy[turnIndex] = { ...copy[turnIndex], card: partial };
+            return copy;
+          });
+        }
+      }
+
+      // Final flush
+      const finalCard = parsePartialJSON<WonderCard>(raw);
+      setTurns((t) => {
+        const copy = t.slice();
+        if (copy[turnIndex]) copy[turnIndex] = { ...copy[turnIndex], card: finalCard || copy[turnIndex].card, streaming: false };
+        return copy;
+      });
     } catch (e: any) {
       console.error(e);
       toast.error(e?.message || 'Wonder is thinking too hard. Try again.');
+      setTurns((t) => t.filter((_, i) => i !== turnIndex));
     } finally {
       setLoading(false);
       setTimeout(() => inputRef.current?.focus(), 50);
