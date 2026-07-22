@@ -349,16 +349,16 @@ const ParentZone = () => {
           
         if (tasksError) throw tasksError;
         
-        // Get sum of activity data
-        const { data: activityData, error: activityError } = await (supabase
-          .from('child_daily_activity') as any)
-          .select('tasks_completed, quizzes_completed, topics_explored')
+        // Get sum of activity data (only columns that exist on child_daily_activity)
+        const { data: activityData, error: activityError } = await supabase
+          .from('child_daily_activity')
+          .select('topics_explored')
           .eq('child_profile_id', profileId);
-          
+
         if (activityError) throw activityError;
-        
-        // Calculate total activity counts
-        const totalQuizzes = activityData?.reduce((sum: number, item: any) => sum + (item.quizzes_completed || 0), 0) || 0;
+
+        // quizzes_completed isn't tracked yet; derive topics only.
+        const totalQuizzes = 0;
         const totalTopics = activityData?.reduce((sum: number, item: any) => sum + (item.topics_explored || 0), 0) || 0;
 
         
