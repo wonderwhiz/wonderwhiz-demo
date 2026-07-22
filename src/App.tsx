@@ -64,7 +64,7 @@ function App() {
                 } />
                 <Route path="/dashboard/:childId" element={
                   <ProtectedRoute>
-                    <UnifiedDashboard />
+                    <WonderWhiz />
                   </ProtectedRoute>
                 } />
                 <Route path="/wonderwhiz/:childId" element={
