@@ -29,7 +29,7 @@ const WonderWhiz = () => {
       </Helmet>
       <WonderCanvas
         childProfile={childProfile}
-        onBack={() => navigate(`/dashboard/${childId}`)}
+        onBack={() => navigate('/profiles')}
       />
     </>
   );
