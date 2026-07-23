@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft, ArrowRight, Send, Sparkles, BookOpen, Lightbulb, Compass, Check, X,
-  Loader2, Mic, MicOff, Flame, Zap, Trophy, MapPin, RotateCcw,
+  ArrowLeft, ArrowRight, Send, Sparkles, BookOpen, Compass, Check, X,
+  Loader2, Mic, MicOff, Flame, Zap, Trophy, MapPin, Shuffle,
+  Bookmark, BookmarkCheck, Volume2, VolumeX, Award, Heart,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,7 @@ type WonderCard = {
   quiz?: Partial<Quiz>;
 };
 type Turn = { question: string; card: WonderCard; streaming: boolean };
+type JournalEntry = { id: string; savedAt: number; question: string; card: WonderCard };
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
@@ -31,7 +33,6 @@ interface Props {
   onBack: () => void;
 }
 
-// Emoji-forward prompts to feel like a game menu, not a search bar.
 const AGE_PROMPTS: Record<string, { emoji: string; q: string }[]> = {
   young: [
     { emoji: '🌈', q: 'Where do rainbows come from?' },
@@ -59,6 +60,15 @@ const AGE_PROMPTS: Record<string, { emoji: string; q: string }[]> = {
   ],
 };
 
+const SURPRISE_POOL = [
+  'Why do cats purr?', 'How do volcanoes erupt?', 'What is a black hole made of?',
+  'Why does the moon change shape?', 'How do fish breathe underwater?',
+  'Why do we dream?', 'How does WiFi actually work?', 'Why is blood red?',
+  'How do birds know where to fly?', 'What is inside an atom?', 'Why do stars twinkle?',
+  'How does a caterpillar turn into a butterfly?', 'Why do we yawn?',
+  'How does the sun make energy?', 'Why do we get hiccups?', 'How do magnets work?',
+];
+
 const LEVELS = [
   { at: 0, name: 'Curious Cadet', emoji: '🌱' },
   { at: 10, name: 'Wonder Explorer', emoji: '🔭' },
@@ -66,13 +76,24 @@ const LEVELS = [
   { at: 50, name: 'Genius in Training', emoji: '⚡' },
   { at: 100, name: 'Wonder Wizard', emoji: '🧙' },
   { at: 200, name: 'Mind Master', emoji: '👑' },
+  { at: 400, name: 'Cosmic Sage', emoji: '🌌' },
+];
+
+type Achievement = { id: string; name: string; emoji: string; hint: string };
+const ACHIEVEMENTS: Achievement[] = [
+  { id: 'first_spark', name: 'First Spark', emoji: '✨', hint: 'Ask your very first question' },
+  { id: 'curious_five', name: 'Curious Five', emoji: '🖐️', hint: 'Ask 5 questions' },
+  { id: 'quiz_whiz', name: 'Quiz Whiz', emoji: '🧠', hint: 'Ace a quiz on the first try' },
+  { id: 'rabbit_diver', name: 'Rabbit Diver', emoji: '🐇', hint: 'Follow 3 rabbit holes in one session' },
+  { id: 'streak_3', name: '3-Day Streak', emoji: '🔥', hint: 'Come back 3 days in a row' },
+  { id: 'collector', name: 'Wonder Collector', emoji: '📚', hint: 'Save 5 cards to your Journal' },
+  { id: 'wordsmith', name: 'Wordsmith', emoji: '📖', hint: 'Learn 10 new vocab words' },
+  { id: 'century', name: 'Century Club', emoji: '💯', hint: 'Reach 100 Sparks' },
 ];
 
 const levelFor = (sparks: number) =>
   [...LEVELS].reverse().find((l) => sparks >= l.at) ?? LEVELS[0];
-
-const nextLevel = (sparks: number) =>
-  LEVELS.find((l) => sparks < l.at);
+const nextLevel = (sparks: number) => LEVELS.find((l) => sparks < l.at);
 
 const fireConfetti = (opts?: Partial<confetti.Options>) => {
   confetti({
@@ -84,54 +105,110 @@ const fireConfetti = (opts?: Partial<confetti.Options>) => {
   });
 };
 
+const todayKey = () => new Date().toISOString().slice(0, 10);
+
 const WonderCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
   const age = childProfile.age ?? 10;
   const band = age <= 7 ? 'young' : age <= 11 ? 'mid' : 'teen';
   const isYoung = band === 'young';
-  const storageKey = `wonder:${childProfile.id}`;
+  const storageKey = `wonder:v2:${childProfile.id}`;
 
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [turns, setTurns] = useState<Turn[]>([]);
   const [quizPicks, setQuizPicks] = useState<Record<number, number>>({});
   const [sparks, setSparks] = useState(0);
-  const [sparkPop, setSparkPop] = useState(0); // increments to trigger pop anim
+  const [sparkPop, setSparkPop] = useState(0);
   const [lastGain, setLastGain] = useState<number>(0);
   const [listening, setListening] = useState(false);
   const [rotatingPrompt, setRotatingPrompt] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [askedTotal, setAskedTotal] = useState(0);
+  const [rabbitHits, setRabbitHits] = useState(0);
+  const [vocabLearned, setVocabLearned] = useState(0);
+  const [unlocked, setUnlocked] = useState<string[]>([]);
+  const [journal, setJournal] = useState<JournalEntry[]>([]);
+  const [savedTurns, setSavedTurns] = useState<Record<number, string>>({});
+  const [factReacts, setFactReacts] = useState<Record<string, string>>({});
+  const [journalOpen, setJournalOpen] = useState(false);
+  const [awardPopup, setAwardPopup] = useState<Achievement | null>(null);
+  const [speakingId, setSpeakingId] = useState<number | null>(null);
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
 
-  // Restore session
+  // Restore persistent state + tick streak
   useEffect(() => {
     try {
-      const raw = sessionStorage.getItem(storageKey);
-      if (raw) {
-        const s = JSON.parse(raw);
-        if (typeof s.sparks === 'number') setSparks(s.sparks);
+      const raw = localStorage.getItem(storageKey);
+      const s = raw ? JSON.parse(raw) : {};
+      if (typeof s.sparks === 'number') setSparks(s.sparks);
+      if (Array.isArray(s.unlocked)) setUnlocked(s.unlocked);
+      if (Array.isArray(s.journal)) setJournal(s.journal);
+      if (typeof s.askedTotal === 'number') setAskedTotal(s.askedTotal);
+      if (typeof s.vocabLearned === 'number') setVocabLearned(s.vocabLearned);
+      if (s.factReacts) setFactReacts(s.factReacts);
+
+      // Streak logic
+      const today = todayKey();
+      let newStreak = s.streak || 0;
+      if (s.lastVisit !== today) {
+        const y = new Date(); y.setDate(y.getDate() - 1);
+        const yesterday = y.toISOString().slice(0, 10);
+        newStreak = s.lastVisit === yesterday ? newStreak + 1 : 1;
+        s.streak = newStreak;
+        s.lastVisit = today;
+        localStorage.setItem(storageKey, JSON.stringify(s));
+        if (newStreak > 1) toast.success(`🔥 ${newStreak}-day streak! Welcome back.`);
       }
+      setStreak(newStreak);
     } catch {}
-    inputRef.current?.focus();
+    setTimeout(() => inputRef.current?.focus(), 100);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storageKey]);
 
+  // Persist
   useEffect(() => {
-    try { sessionStorage.setItem(storageKey, JSON.stringify({ sparks })); } catch {}
-  }, [sparks, storageKey]);
+    try {
+      const raw = localStorage.getItem(storageKey);
+      const s = raw ? JSON.parse(raw) : {};
+      localStorage.setItem(storageKey, JSON.stringify({
+        ...s, sparks, unlocked, journal, askedTotal, vocabLearned, factReacts, streak,
+        lastVisit: todayKey(),
+      }));
+    } catch {}
+  }, [sparks, unlocked, journal, askedTotal, vocabLearned, factReacts, streak, storageKey]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [turns, loading]);
 
-  // Rotate the hero placeholder every 3s when empty
   useEffect(() => {
     if (turns.length) return;
     const id = setInterval(() => setRotatingPrompt((n) => n + 1), 3000);
     return () => clearInterval(id);
   }, [turns.length]);
 
+  const unlock = (id: string) => {
+    setUnlocked((u) => {
+      if (u.includes(id)) return u;
+      const a = ACHIEVEMENTS.find((x) => x.id === id);
+      if (a) {
+        setAwardPopup(a);
+        fireConfetti({ particleCount: 100, spread: 90 });
+        setTimeout(() => setAwardPopup(null), 3500);
+      }
+      return [...u, id];
+    });
+  };
+
   const addSparks = (n: number, opts?: { celebrate?: boolean }) => {
-    setSparks((s) => s + n);
+    setSparks((s) => {
+      const next = s + n;
+      if (s < 100 && next >= 100) setTimeout(() => unlock('century'), 300);
+      return next;
+    });
     setLastGain(n);
     setSparkPop((p) => p + 1);
     if (opts?.celebrate) fireConfetti();
@@ -145,7 +222,7 @@ const WonderCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
 
   const journey = turns.map((t) => t.card.title || t.question).filter(Boolean);
 
-  const ask = async (q: string) => {
+  const ask = async (q: string, opts?: { fromRabbit?: boolean }) => {
     if (!q.trim() || loading) return;
     setLoading(true);
     setInput('');
@@ -153,7 +230,21 @@ const WonderCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
 
     const turnIndex = turns.length;
     setTurns((t) => [...t, { question: q, card: {}, streaming: true }]);
-    addSparks(2); // reward for asking
+    addSparks(2);
+    setAskedTotal((n) => {
+      const next = n + 1;
+      if (next === 1) unlock('first_spark');
+      if (next >= 5) unlock('curious_five');
+      return next;
+    });
+    if (opts?.fromRabbit) {
+      setRabbitHits((r) => {
+        const nr = r + 1;
+        if (nr >= 3) unlock('rabbit_diver');
+        return nr;
+      });
+    }
+    if (streak >= 3) unlock('streak_3');
 
     try {
       const { data: sessionData } = await supabase.auth.getSession();
@@ -179,6 +270,7 @@ const WonderCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
       let raw = '';
       let lastApplied: WonderCard | null = null;
       let rewardedFacts = false;
+      let vocabCounted = 0;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -196,6 +288,16 @@ const WonderCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
             rewardedFacts = true;
             addSparks(3);
           }
+          const vlen = partial.vocab?.length ?? 0;
+          if (vlen > vocabCounted) {
+            const delta = vlen - vocabCounted;
+            vocabCounted = vlen;
+            setVocabLearned((v) => {
+              const nv = v + delta;
+              if (nv >= 10) unlock('wordsmith');
+              return nv;
+            });
+          }
         }
       }
 
@@ -205,7 +307,7 @@ const WonderCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
         if (copy[turnIndex]) copy[turnIndex] = { ...copy[turnIndex], card: finalCard || copy[turnIndex].card, streaming: false };
         return copy;
       });
-      addSparks(5, { celebrate: true }); // finishing an answer = mini celebration
+      addSparks(5, { celebrate: true });
     } catch (e: any) {
       console.error(e);
       toast.error(e?.message || 'Wonder is thinking too hard. Try again.');
@@ -221,13 +323,78 @@ const WonderCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
     if (choice === correct) {
       addSparks(10, { celebrate: true });
       toast.success('+10 Sparks — correct!', { icon: '⚡' });
+      unlock('quiz_whiz');
     } else {
       addSparks(2);
       toast('+2 Sparks — nice try!', { icon: '💡' });
     }
   };
 
-  // Voice input (Web Speech API — progressive enhancement)
+  const toggleSaveTurn = (idx: number) => {
+    const turn = turns[idx];
+    if (!turn) return;
+    if (savedTurns[idx]) {
+      const id = savedTurns[idx];
+      setJournal((j) => j.filter((e) => e.id !== id));
+      setSavedTurns((s) => { const c = { ...s }; delete c[idx]; return c; });
+      toast('Removed from Journal', { icon: '🗑️' });
+    } else {
+      const id = `${childProfile.id}-${Date.now()}-${idx}`;
+      const entry: JournalEntry = { id, savedAt: Date.now(), question: turn.question, card: turn.card };
+      setJournal((j) => {
+        const nj = [entry, ...j].slice(0, 50);
+        if (nj.length >= 5) unlock('collector');
+        return nj;
+      });
+      setSavedTurns((s) => ({ ...s, [idx]: id }));
+      addSparks(3);
+      toast.success('Saved to Journal ✚ +3 Sparks', { icon: '📚' });
+    }
+  };
+
+  const speakCard = (idx: number, card: WonderCard) => {
+    if (!('speechSynthesis' in window)) {
+      toast.error("Read-aloud isn't supported here.");
+      return;
+    }
+    if (speakingId === idx) {
+      window.speechSynthesis.cancel();
+      setSpeakingId(null);
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const text = [
+      card.hook,
+      ...(card.paragraphs ?? []),
+      ...(card.wow_facts ?? []).map((f) => `Whoa fact: ${f}`),
+    ].filter(Boolean).join(' ');
+    if (!text) return;
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = isYoung ? 0.95 : 1.02;
+    u.pitch = isYoung ? 1.15 : 1;
+    u.onend = () => setSpeakingId((cur) => (cur === idx ? null : cur));
+    u.onerror = () => setSpeakingId(null);
+    setSpeakingId(idx);
+    window.speechSynthesis.speak(u);
+  };
+
+  const toggleReact = (turnIdx: number, factIdx: number, emoji: string) => {
+    const key = `${turnIdx}:${factIdx}`;
+    setFactReacts((r) => {
+      const cur = r[key];
+      const nr = { ...r };
+      if (cur === emoji) delete nr[key];
+      else nr[key] = emoji;
+      return nr;
+    });
+    if (factReacts[key] !== emoji) addSparks(1);
+  };
+
+  const surpriseMe = () => {
+    const pick = SURPRISE_POOL[Math.floor(Math.random() * SURPRISE_POOL.length)];
+    ask(pick);
+  };
+
   const toggleMic = () => {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) {
@@ -257,28 +424,27 @@ const WonderCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
   const empty = turns.length === 0 && !loading;
   const prompts = AGE_PROMPTS[band];
   const heroPrompt = prompts[rotatingPrompt % prompts.length];
+  const unlockedCount = unlocked.length;
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-[radial-gradient(ellipse_at_top,hsl(var(--accent-brand)/0.18),transparent_55%),radial-gradient(ellipse_at_bottom_right,hsl(var(--accent-info)/0.14),transparent_50%),hsl(var(--background))]">
-      {/* Ambient decorative blur orbs */}
       <div aria-hidden className="pointer-events-none absolute -top-24 -left-24 w-96 h-96 rounded-full bg-accent-brand/20 blur-3xl" />
       <div aria-hidden className="pointer-events-none absolute top-1/2 -right-32 w-96 h-96 rounded-full bg-accent-info/15 blur-3xl" />
 
       {/* Top bar — game HUD */}
       <div className="sticky top-0 z-30 backdrop-blur-xl bg-background/70 border-b border-border/40">
-        <div className="max-w-3xl mx-auto flex items-center justify-between gap-3 px-3 sm:px-6 py-2.5">
-          <Button variant="ghost" size="sm" onClick={onBack} className="gap-1.5 shrink-0">
+        <div className="max-w-3xl mx-auto flex items-center justify-between gap-2 px-3 sm:px-6 py-2.5">
+          <Button variant="ghost" size="sm" onClick={onBack} className="gap-1.5 shrink-0 px-2">
             <ArrowLeft className="h-4 w-4" /> <span className="hidden sm:inline">Home</span>
           </Button>
 
-          {/* Level pill + progress */}
           <div className="flex items-center gap-2 min-w-0 flex-1 justify-center">
             <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-card/70 border border-border/50">
               <span className="text-base leading-none">{level.emoji}</span>
               <div className="min-w-0">
-                <div className="text-[11px] leading-tight font-semibold text-text-primary truncate max-w-[100px] sm:max-w-none">{level.name}</div>
+                <div className="text-[11px] leading-tight font-semibold text-text-primary truncate max-w-[90px] sm:max-w-none">{level.name}</div>
                 {upcoming && (
-                  <div className="w-20 sm:w-28 h-1 rounded-full bg-white/10 mt-0.5 overflow-hidden">
+                  <div className="w-16 sm:w-28 h-1 rounded-full bg-white/10 mt-0.5 overflow-hidden">
                     <div
                       className="h-full bg-gradient-to-r from-accent-brand to-accent-info transition-all duration-500"
                       style={{ width: `${progressPct}%` }}
@@ -287,37 +453,71 @@ const WonderCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
                 )}
               </div>
             </div>
+
+            {streak > 0 && (
+              <div
+                title={`${streak}-day streak`}
+                className="hidden xs:flex items-center gap-1 px-2 py-1 rounded-full bg-orange-500/15 border border-orange-500/40 text-orange-300 text-xs font-bold"
+              >
+                <Flame className="h-3.5 w-3.5 fill-orange-400" />{streak}
+              </div>
+            )}
           </div>
 
-          {/* Sparks counter with pop animation */}
-          <div className="relative shrink-0">
-            <motion.div
-              key={sparkPop}
-              initial={{ scale: 1 }}
-              animate={{ scale: sparkPop ? [1, 1.25, 1] : 1 }}
-              transition={{ duration: 0.5 }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-accent-brand/20 to-accent-info/20 border border-accent-brand/40"
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              onClick={() => setJournalOpen(true)}
+              title="Wonder Journal"
+              className="relative h-8 w-8 rounded-full bg-card/70 border border-border/50 flex items-center justify-center hover:border-accent-brand/60 transition"
             >
-              <Zap className="h-4 w-4 text-accent-brand fill-accent-brand/50" />
-              <span className="font-bold text-text-primary tabular-nums text-sm">{sparks}</span>
-            </motion.div>
-            <AnimatePresence>
-              {sparkPop > 0 && lastGain > 0 && (
-                <motion.div
-                  key={sparkPop + '-float'}
-                  initial={{ opacity: 0, y: 0 }}
-                  animate={{ opacity: [0, 1, 1, 0], y: -22 }}
-                  transition={{ duration: 1.1 }}
-                  className="absolute -top-1 right-1 text-xs font-bold text-accent-brand pointer-events-none"
-                >
-                  +{lastGain}
-                </motion.div>
+              <BookOpen className="h-4 w-4 text-text-secondary" />
+              {journal.length > 0 && (
+                <span className="absolute -top-1 -right-1 text-[9px] font-bold bg-accent-brand text-white rounded-full min-w-4 h-4 px-1 flex items-center justify-center">
+                  {journal.length}
+                </span>
               )}
-            </AnimatePresence>
+            </button>
+            <button
+              onClick={() => setJournalOpen(true)}
+              title={`Achievements ${unlockedCount}/${ACHIEVEMENTS.length}`}
+              className="relative h-8 w-8 rounded-full bg-card/70 border border-border/50 flex items-center justify-center hover:border-accent-brand/60 transition"
+            >
+              <Award className="h-4 w-4 text-text-secondary" />
+              {unlockedCount > 0 && (
+                <span className="absolute -top-1 -right-1 text-[9px] font-bold bg-emerald-500 text-white rounded-full min-w-4 h-4 px-1 flex items-center justify-center">
+                  {unlockedCount}
+                </span>
+              )}
+            </button>
+
+            <div className="relative">
+              <motion.div
+                key={sparkPop}
+                initial={{ scale: 1 }}
+                animate={{ scale: sparkPop ? [1, 1.25, 1] : 1 }}
+                transition={{ duration: 0.5 }}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-gradient-to-r from-accent-brand/20 to-accent-info/20 border border-accent-brand/40"
+              >
+                <Zap className="h-4 w-4 text-accent-brand fill-accent-brand/50" />
+                <span className="font-bold text-text-primary tabular-nums text-sm">{sparks}</span>
+              </motion.div>
+              <AnimatePresence>
+                {sparkPop > 0 && lastGain > 0 && (
+                  <motion.div
+                    key={sparkPop + '-float'}
+                    initial={{ opacity: 0, y: 0 }}
+                    animate={{ opacity: [0, 1, 1, 0], y: -22 }}
+                    transition={{ duration: 1.1 }}
+                    className="absolute -top-1 right-1 text-xs font-bold text-accent-brand pointer-events-none"
+                  >
+                    +{lastGain}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </div>
 
-        {/* Journey trail */}
         {journey.length > 0 && (
           <div className="max-w-3xl mx-auto px-3 sm:px-6 pb-2.5">
             <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
@@ -333,11 +533,6 @@ const WonderCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
                   {i < journey.length - 1 && <ArrowRight className="h-3 w-3 text-text-tertiary shrink-0" />}
                 </React.Fragment>
               ))}
-              {journey.length >= 3 && (
-                <span className="flex items-center gap-1 text-[11px] text-orange-400 ml-1">
-                  <Flame className="h-3 w-3 fill-orange-400" /> {journey.length}
-                </span>
-              )}
             </div>
           </div>
         )}
@@ -363,10 +558,20 @@ const WonderCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
                 : <>Hey {childProfile.name}, <br className="sm:hidden" /><span className="bg-gradient-to-r from-accent-brand to-accent-info bg-clip-text text-transparent">what should we crack open today?</span></>}
             </h1>
             <p className="text-text-secondary text-base sm:text-lg max-w-xl mx-auto">
-              Ask <em>anything</em>. Earn Sparks ⚡, unlock levels, and follow rabbit holes wherever curiosity pulls you.
+              Ask <em>anything</em>. Earn Sparks ⚡, unlock badges, and follow rabbit holes wherever curiosity pulls you.
             </p>
 
-            <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-left">
+            <div className="mt-6 flex justify-center">
+              <button
+                onClick={surpriseMe}
+                className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-accent-brand to-accent-info text-white font-semibold shadow-lg shadow-accent-brand/30 hover:shadow-xl hover:shadow-accent-brand/40 transition"
+              >
+                <Shuffle className="h-4 w-4 group-hover:rotate-180 transition-transform duration-500" />
+                Surprise me!
+              </button>
+            </div>
+
+            <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-left">
               {prompts.map((p, i) => (
                 <motion.button
                   key={p.q}
@@ -383,9 +588,39 @@ const WonderCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
               ))}
             </div>
 
-            <p className="mt-6 text-xs text-text-tertiary flex items-center justify-center gap-1.5">
-              <Trophy className="h-3.5 w-3.5" /> Ask 3 questions to hit your first streak
-            </p>
+            {/* Achievement shelf preview */}
+            <div className="mt-8 p-4 rounded-2xl bg-card/50 border border-border/40 text-left">
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-sm font-bold text-text-primary flex items-center gap-2">
+                  <Award className="h-4 w-4 text-accent-brand" /> Badges
+                  <span className="text-text-tertiary font-normal text-xs">{unlockedCount}/{ACHIEVEMENTS.length}</span>
+                </div>
+                {streak > 0 && (
+                  <div className="flex items-center gap-1 text-orange-400 text-xs font-bold">
+                    <Flame className="h-3.5 w-3.5 fill-orange-400" /> {streak}-day streak
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2 overflow-x-auto scrollbar-none">
+                {ACHIEVEMENTS.map((a) => {
+                  const got = unlocked.includes(a.id);
+                  return (
+                    <div
+                      key={a.id}
+                      title={got ? a.name : a.hint}
+                      className={`shrink-0 w-14 h-14 rounded-2xl flex flex-col items-center justify-center border transition ${
+                        got
+                          ? 'bg-accent-brand/15 border-accent-brand/50'
+                          : 'bg-white/[0.02] border-border/40 grayscale opacity-40'
+                      }`}
+                    >
+                      <span className="text-xl leading-none">{a.emoji}</span>
+                      <span className="text-[8px] mt-0.5 text-text-tertiary uppercase tracking-wider text-center px-1 leading-tight">{got ? '✓' : '?'}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </motion.div>
         )}
 
@@ -397,7 +632,13 @@ const WonderCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
               idx={idx}
               picked={quizPicks[idx]}
               onPick={(i, correct) => onQuizPick(idx, i, correct)}
-              onAsk={ask}
+              onAsk={(q) => ask(q, { fromRabbit: true })}
+              saved={!!savedTurns[idx]}
+              onToggleSave={() => toggleSaveTurn(idx)}
+              speaking={speakingId === idx}
+              onToggleSpeak={() => speakCard(idx, turn.card)}
+              reacts={factReacts}
+              onReact={(fi, emoji) => toggleReact(idx, fi, emoji)}
             />
           ))}
           {loading && turns[turns.length - 1]?.card && !turns[turns.length - 1]?.card?.hook && (
@@ -448,6 +689,15 @@ const WonderCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
               className="flex-1 min-w-0 bg-transparent px-2 py-2.5 text-text-primary placeholder:text-text-tertiary focus:outline-none text-base"
               disabled={loading}
             />
+            <button
+              type="button"
+              onClick={surpriseMe}
+              disabled={loading}
+              title="Surprise me"
+              className="h-10 w-10 rounded-xl flex items-center justify-center text-text-tertiary hover:text-accent-brand hover:bg-accent-brand/10 transition shrink-0"
+            >
+              <Shuffle className="h-5 w-5" />
+            </button>
             <Button
               type="submit"
               disabled={loading || !input.trim()}
@@ -458,6 +708,105 @@ const WonderCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
           </form>
         </div>
       </div>
+
+      {/* Achievement pop */}
+      <AnimatePresence>
+        {awardPopup && (
+          <motion.div
+            initial={{ opacity: 0, y: 30, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className="fixed left-1/2 -translate-x-1/2 top-20 z-50 pointer-events-none"
+          >
+            <div className="px-5 py-3 rounded-2xl bg-gradient-to-r from-accent-brand to-accent-info shadow-2xl shadow-accent-brand/40 flex items-center gap-3">
+              <span className="text-3xl">{awardPopup.emoji}</span>
+              <div className="text-left">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-white/80">Badge unlocked</div>
+                <div className="text-white font-bold">{awardPopup.name}</div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Journal / Badges drawer */}
+      <AnimatePresence>
+        {journalOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setJournalOpen(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+            />
+            <motion.aside
+              initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+              transition={{ type: 'tween', duration: 0.3 }}
+              className="fixed right-0 top-0 bottom-0 w-full sm:w-[420px] z-50 bg-card border-l border-border/60 shadow-2xl flex flex-col"
+            >
+              <div className="px-5 py-4 border-b border-border/50 flex items-center justify-between">
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-accent-brand font-bold">Your collection</div>
+                  <h2 className="text-xl font-bold text-text-primary">Wonder Journal</h2>
+                </div>
+                <button onClick={() => setJournalOpen(false)} className="h-9 w-9 rounded-full hover:bg-white/10 flex items-center justify-center text-text-secondary">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="p-5 border-b border-border/40">
+                <div className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-3 flex items-center justify-between">
+                  <span className="flex items-center gap-2"><Award className="h-3.5 w-3.5 text-accent-brand" /> Badges</span>
+                  <span className="text-text-tertiary">{unlockedCount}/{ACHIEVEMENTS.length}</span>
+                </div>
+                <div className="grid grid-cols-4 gap-2">
+                  {ACHIEVEMENTS.map((a) => {
+                    const got = unlocked.includes(a.id);
+                    return (
+                      <div
+                        key={a.id}
+                        className={`aspect-square rounded-2xl flex flex-col items-center justify-center p-1.5 border text-center ${
+                          got ? 'bg-accent-brand/15 border-accent-brand/50' : 'bg-white/[0.02] border-border/40 opacity-50'
+                        }`}
+                        title={a.hint}
+                      >
+                        <span className={`text-2xl leading-none ${got ? '' : 'grayscale'}`}>{a.emoji}</span>
+                        <span className="text-[9px] mt-1 font-bold text-text-primary leading-tight">{a.name}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-5 space-y-3">
+                <div className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-1 flex items-center gap-2">
+                  <Bookmark className="h-3.5 w-3.5 text-accent-brand" /> Saved cards
+                </div>
+                {journal.length === 0 ? (
+                  <div className="text-center py-10 text-text-tertiary text-sm">
+                    <BookOpen className="h-10 w-10 mx-auto mb-3 opacity-40" />
+                    Tap the bookmark on any Wonder Card to save it here.
+                  </div>
+                ) : (
+                  journal.map((e) => (
+                    <button
+                      key={e.id}
+                      onClick={() => { setJournalOpen(false); setTimeout(() => ask(e.question), 200); }}
+                      className="w-full text-left p-3 rounded-2xl bg-surface-secondary/50 border border-border/40 hover:border-accent-brand/60 transition group"
+                    >
+                      <div className="text-[10px] uppercase tracking-widest text-accent-brand font-bold mb-1">{e.card.title || 'Wonder Card'}</div>
+                      <div className="text-sm font-semibold text-text-primary line-clamp-2">{e.card.hook || e.question}</div>
+                      <div className="mt-2 text-[11px] text-text-tertiary flex items-center justify-between">
+                        <span>{new Date(e.savedAt).toLocaleDateString()}</span>
+                        <span className="opacity-0 group-hover:opacity-100 transition text-accent-brand font-semibold">Ask again →</span>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
@@ -468,7 +817,13 @@ const TurnBlock: React.FC<{
   picked?: number;
   onPick: (i: number, correct: number) => void;
   onAsk: (q: string) => void;
-}> = ({ turn, idx, picked, onPick, onAsk }) => {
+  saved: boolean;
+  onToggleSave: () => void;
+  speaking: boolean;
+  onToggleSpeak: () => void;
+  reacts: Record<string, string>;
+  onReact: (factIdx: number, emoji: string) => void;
+}> = ({ turn, idx, picked, onPick, onAsk, saved, onToggleSave, speaking, onToggleSpeak, reacts, onReact }) => {
   const { question, card, streaming } = turn;
   const paragraphs = card.paragraphs ?? [];
   const wowFacts = card.wow_facts ?? [];
@@ -502,20 +857,50 @@ const TurnBlock: React.FC<{
 
       <article className="rounded-3xl bg-card/90 backdrop-blur border border-border/50 shadow-[0_20px_60px_-20px_hsl(var(--accent-brand)/0.35)] overflow-hidden">
         <header className="px-5 sm:px-6 pt-5 pb-4 border-b border-border/40 bg-gradient-to-br from-accent-brand/10 via-transparent to-accent-info/10">
-          <div className="text-xs uppercase tracking-widest text-accent-brand font-bold mb-2 flex items-center gap-2">
-            <Sparkles className="h-3.5 w-3.5" />
-            {card.title || 'Wonder Card'}
-            {streaming && <span className="inline-block w-1.5 h-3 bg-accent-brand/70 animate-pulse rounded-sm" />}
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <div className="text-xs uppercase tracking-widest text-accent-brand font-bold mb-2 flex items-center gap-2">
+                <Sparkles className="h-3.5 w-3.5" />
+                {card.title || 'Wonder Card'}
+                {streaming && <span className="inline-block w-1.5 h-3 bg-accent-brand/70 animate-pulse rounded-sm" />}
+              </div>
+              {card.hook && (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-lg sm:text-2xl text-text-primary font-semibold leading-snug"
+                >
+                  {card.hook}
+                </motion.p>
+              )}
+            </div>
+            {!streaming && (card.hook || paragraphs.length > 0) && (
+              <div className="flex flex-col gap-1.5 shrink-0">
+                <button
+                  onClick={onToggleSpeak}
+                  title={speaking ? 'Stop reading' : 'Read to me'}
+                  className={`h-9 w-9 rounded-xl flex items-center justify-center border transition ${
+                    speaking
+                      ? 'bg-accent-brand/20 border-accent-brand/60 text-accent-brand'
+                      : 'bg-card/60 border-border/50 text-text-secondary hover:border-accent-brand/60 hover:text-accent-brand'
+                  }`}
+                >
+                  {speaking ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                </button>
+                <button
+                  onClick={onToggleSave}
+                  title={saved ? 'Remove from Journal' : 'Save to Journal'}
+                  className={`h-9 w-9 rounded-xl flex items-center justify-center border transition ${
+                    saved
+                      ? 'bg-emerald-500/20 border-emerald-500/60 text-emerald-400'
+                      : 'bg-card/60 border-border/50 text-text-secondary hover:border-accent-brand/60 hover:text-accent-brand'
+                  }`}
+                >
+                  {saved ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
+                </button>
+              </div>
+            )}
           </div>
-          {card.hook && (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-lg sm:text-2xl text-text-primary font-semibold leading-snug"
-            >
-              {card.hook}
-            </motion.p>
-          )}
         </header>
 
         {paragraphs.length > 0 && (
@@ -541,18 +926,39 @@ const TurnBlock: React.FC<{
               <span className="text-lg">🤯</span> Whoa, really?
             </div>
             <ul className="space-y-2.5">
-              {wowFacts.map((f, i) => (
-                <motion.li
-                  key={i}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.1 }}
-                  className="flex gap-3 text-text-primary items-start p-2.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition"
-                >
-                  <span className="text-accent-info text-lg leading-none mt-0.5">✦</span>
-                  <span>{f}</span>
-                </motion.li>
-              ))}
+              {wowFacts.map((f, i) => {
+                const rk = `${idx}:${i}`;
+                const chosen = reacts[rk];
+                return (
+                  <motion.li
+                    key={i}
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.1 }}
+                    className="p-2.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition"
+                  >
+                    <div className="flex gap-3 text-text-primary items-start">
+                      <span className="text-accent-info text-lg leading-none mt-0.5">✦</span>
+                      <span className="flex-1">{f}</span>
+                    </div>
+                    <div className="mt-2 pl-6 flex items-center gap-1.5">
+                      {['🤯', '❤️', '😂', '🤔'].map((e) => (
+                        <button
+                          key={e}
+                          onClick={() => onReact(i, e)}
+                          className={`text-sm h-7 min-w-7 px-1.5 rounded-full border transition ${
+                            chosen === e
+                              ? 'bg-accent-brand/20 border-accent-brand/60 scale-110'
+                              : 'bg-white/[0.03] border-border/40 hover:border-accent-brand/40 opacity-60 hover:opacity-100'
+                          }`}
+                        >
+                          {e}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.li>
+                );
+              })}
             </ul>
           </motion.div>
         )}
