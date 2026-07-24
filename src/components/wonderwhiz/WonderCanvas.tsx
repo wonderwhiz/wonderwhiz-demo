@@ -1156,6 +1156,31 @@ const TurnBlock: React.FC<{
             </div>
           </div>
         )}
+
+        {!streaming && (card.hook || paragraphs.length > 0) && (
+          <div className="px-5 sm:px-6 py-4 border-t border-border/40 bg-white/[0.02] flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[11px] uppercase tracking-widest text-text-tertiary font-bold mr-1">Tune it:</span>
+              <button
+                onClick={() => onTune('simpler')}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-500/10 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/20 transition"
+              >
+                <Baby className="h-3.5 w-3.5" /> Simpler
+              </button>
+              <button
+                onClick={() => onTune('deeper')}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-accent-info/10 border border-accent-info/40 text-accent-info hover:bg-accent-info/20 transition"
+              >
+                <Rocket className="h-3.5 w-3.5" /> Go deeper
+              </button>
+            </div>
+            {combo >= 2 && (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-orange-500/15 border border-orange-500/50 text-orange-300">
+                <Flame className="h-3.5 w-3.5 fill-orange-400" /> {combo}× quiz combo
+              </div>
+            )}
+          </div>
+        )}
       </article>
     </motion.div>
   );
