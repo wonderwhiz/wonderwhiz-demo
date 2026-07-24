@@ -698,7 +698,7 @@ const WonderCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
                   : `Go deeper and more advanced on: ${topic}`;
                 ask(q);
               }}
-              combo={picked !== undefined && quizPicks[idx] === turn.card.quiz?.correct_index ? quizCombo : 0}
+              combo={quizPicks[idx] !== undefined && quizPicks[idx] === turn.card.quiz?.correct_index ? quizCombo : 0}
             />
           ))}
           {loading && turns[turns.length - 1]?.card && !turns[turns.length - 1]?.card?.hook && (
