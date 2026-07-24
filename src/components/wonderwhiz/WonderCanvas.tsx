@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft, ArrowRight, Send, Sparkles, BookOpen, Compass, Check, X,
+  ArrowLeft, ArrowRight, ArrowUp, Send, Sparkles, BookOpen, Compass, Check, X,
   Loader2, Mic, MicOff, Flame, Zap, Trophy, MapPin, Shuffle,
   Bookmark, BookmarkCheck, Volume2, VolumeX, Award, Heart,
+  Baby, Rocket, Star, Command,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Button } from '@/components/ui/button';
@@ -133,6 +134,9 @@ const WonderCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
   const [journalOpen, setJournalOpen] = useState(false);
   const [awardPopup, setAwardPopup] = useState<Achievement | null>(null);
   const [speakingId, setSpeakingId] = useState<number | null>(null);
+  const [quizCombo, setQuizCombo] = useState(0);
+  const [showTopBtn, setShowTopBtn] = useState(false);
+  const [showKeys, setShowKeys] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -189,6 +193,45 @@ const WonderCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
     const id = setInterval(() => setRotatingPrompt((n) => n + 1), 3000);
     return () => clearInterval(id);
   }, [turns.length]);
+
+  // Scroll-aware back-to-top
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onScroll = () => setShowTopBtn(el.scrollTop > 500);
+    // fallback: window scroll for mobile
+    const onWin = () => setShowTopBtn(window.scrollY > 500);
+    window.addEventListener('scroll', onWin, { passive: true });
+    return () => window.removeEventListener('scroll', onWin);
+  }, []);
+
+  // Keyboard shortcuts: / focus, s surprise, j journal, Esc close, ? help
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const typing = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
+      if (e.key === 'Escape') {
+        if (journalOpen) setJournalOpen(false);
+        else if (showKeys) setShowKeys(false);
+        else if (typing) (target as HTMLInputElement).blur();
+        return;
+      }
+      if (typing) return;
+      if (e.key === '/') { e.preventDefault(); inputRef.current?.focus(); }
+      else if (e.key.toLowerCase() === 's') { e.preventDefault(); surpriseMe(); }
+      else if (e.key.toLowerCase() === 'j') { e.preventDefault(); setJournalOpen((o) => !o); }
+      else if (e.key === '?') { e.preventDefault(); setShowKeys((s) => !s); }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [journalOpen, showKeys]);
+
+  // Daily challenge — deterministic per day so it feels featured
+  const dailyChallenge = useMemo(() => {
+    const seed = todayKey().split('-').reduce((a, s) => a + parseInt(s, 10), 0);
+    return SURPRISE_POOL[seed % SURPRISE_POOL.length];
+  }, []);
 
   const unlock = (id: string) => {
     setUnlocked((u) => {
@@ -321,10 +364,19 @@ const WonderCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
   const onQuizPick = (turnIdx: number, choice: number, correct: number) => {
     setQuizPicks((p) => ({ ...p, [turnIdx]: choice }));
     if (choice === correct) {
-      addSparks(10, { celebrate: true });
-      toast.success('+10 Sparks — correct!', { icon: '⚡' });
+      const newCombo = quizCombo + 1;
+      const bonus = newCombo >= 2 ? newCombo * 2 : 0; // combo x2 bonus starting at streak 2
+      const total = 10 + bonus;
+      setQuizCombo(newCombo);
+      addSparks(total, { celebrate: true });
+      if (bonus > 0) {
+        toast.success(`+${total} Sparks — ${newCombo}× combo! 🔥`, { icon: '⚡' });
+      } else {
+        toast.success('+10 Sparks — correct!', { icon: '⚡' });
+      }
       unlock('quiz_whiz');
     } else {
+      setQuizCombo(0);
       addSparks(2);
       toast('+2 Sparks — nice try!', { icon: '💡' });
     }
@@ -561,15 +613,34 @@ const WonderCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
               Ask <em>anything</em>. Earn Sparks ⚡, unlock badges, and follow rabbit holes wherever curiosity pulls you.
             </p>
 
-            <div className="mt-6 flex justify-center">
+            {/* Daily Wonder Challenge — featured of the day */}
+            <motion.button
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              onClick={() => ask(dailyChallenge)}
+              className="mt-6 w-full max-w-xl mx-auto flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl bg-gradient-to-r from-accent-brand/15 via-accent-info/10 to-emerald-400/10 border border-accent-brand/40 hover:border-accent-brand/70 hover:shadow-lg hover:shadow-accent-brand/20 transition text-left group"
+            >
+              <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl bg-gradient-to-br from-accent-brand to-accent-info flex items-center justify-center shrink-0 shadow-md shadow-accent-brand/30">
+                <Star className="h-5 w-5 sm:h-6 sm:w-6 text-white fill-white/40" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-accent-brand">Today's Wonder · +15 Sparks</div>
+                <div className="text-sm sm:text-base font-semibold text-text-primary leading-snug truncate">{dailyChallenge}</div>
+              </div>
+              <ArrowRight className="h-4 w-4 text-text-tertiary group-hover:text-accent-brand group-hover:translate-x-1 transition-all shrink-0" />
+            </motion.button>
+
+            <div className="mt-4 flex justify-center">
               <button
                 onClick={surpriseMe}
-                className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-accent-brand to-accent-info text-white font-semibold shadow-lg shadow-accent-brand/30 hover:shadow-xl hover:shadow-accent-brand/40 transition"
+                className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-card/70 border border-border/50 text-text-primary font-semibold hover:border-accent-brand/60 hover:bg-card transition"
               >
                 <Shuffle className="h-4 w-4 group-hover:rotate-180 transition-transform duration-500" />
                 Surprise me!
               </button>
             </div>
+
 
             <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-left">
               {prompts.map((p, i) => (
@@ -639,6 +710,14 @@ const WonderCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
               onToggleSpeak={() => speakCard(idx, turn.card)}
               reacts={factReacts}
               onReact={(fi, emoji) => toggleReact(idx, fi, emoji)}
+              onTune={(mode) => {
+                const topic = turn.card.title || turn.question;
+                const q = mode === 'simpler'
+                  ? `Explain this in even simpler words a younger kid can get: ${topic}`
+                  : `Go deeper and more advanced on: ${topic}`;
+                ask(q);
+              }}
+              combo={quizPicks[idx] !== undefined && quizPicks[idx] === turn.card.quiz?.correct_index ? quizCombo : 0}
             />
           ))}
           {loading && turns[turns.length - 1]?.card && !turns[turns.length - 1]?.card?.hook && (
@@ -708,6 +787,58 @@ const WonderCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
           </form>
         </div>
       </div>
+
+      {/* Back to top — appears when scrolled */}
+      <AnimatePresence>
+        {showTopBtn && (
+          <motion.button
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            aria-label="Back to top"
+            className="fixed bottom-24 right-4 sm:right-6 z-30 h-11 w-11 rounded-full bg-card/95 backdrop-blur border border-border/60 shadow-lg text-text-primary flex items-center justify-center hover:border-accent-brand/60 hover:text-accent-brand transition"
+          >
+            <ArrowUp className="h-5 w-5" />
+          </motion.button>
+        )}
+      </AnimatePresence>
+
+      {/* Keyboard shortcuts overlay (press ?) */}
+      <AnimatePresence>
+        {showKeys && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setShowKeys(false)}
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 8 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-sm rounded-3xl bg-card border border-border/60 p-5 shadow-2xl"
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <Command className="h-4 w-4 text-accent-brand" />
+                <h3 className="font-bold text-text-primary">Keyboard shortcuts</h3>
+              </div>
+              <ul className="space-y-2 text-sm">
+                {[
+                  ['/', 'Focus the question box'],
+                  ['S', 'Surprise me with a question'],
+                  ['J', 'Open the Wonder Journal'],
+                  ['?', 'Show / hide this help'],
+                  ['Esc', 'Close menus'],
+                ].map(([k, v]) => (
+                  <li key={k} className="flex items-center justify-between gap-3">
+                    <span className="text-text-secondary">{v}</span>
+                    <kbd className="px-2 py-0.5 rounded-md bg-white/10 border border-border/60 text-xs font-mono text-text-primary">{k}</kbd>
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Achievement pop */}
       <AnimatePresence>
@@ -823,7 +954,9 @@ const TurnBlock: React.FC<{
   onToggleSpeak: () => void;
   reacts: Record<string, string>;
   onReact: (factIdx: number, emoji: string) => void;
-}> = ({ turn, idx, picked, onPick, onAsk, saved, onToggleSave, speaking, onToggleSpeak, reacts, onReact }) => {
+  onTune: (mode: 'simpler' | 'deeper') => void;
+  combo: number;
+}> = ({ turn, idx, picked, onPick, onAsk, saved, onToggleSave, speaking, onToggleSpeak, reacts, onReact, onTune, combo }) => {
   const { question, card, streaming } = turn;
   const paragraphs = card.paragraphs ?? [];
   const wowFacts = card.wow_facts ?? [];
@@ -832,6 +965,8 @@ const TurnBlock: React.FC<{
   const quiz = card.quiz;
   const quizReady = !!(quiz?.question && quiz.options && quiz.options.length > 1 && typeof quiz.correct_index === 'number');
   const showCaretOnLast = streaming && paragraphs.length > 0;
+  const [flipped, setFlipped] = useState<Record<number, boolean>>({});
+
 
   if (streaming && !card.title && !card.hook) return (
     <motion.div id={`turn-${idx}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex justify-end">
@@ -965,25 +1100,54 @@ const TurnBlock: React.FC<{
 
         {vocab.length > 0 && (
           <div className="px-5 sm:px-6 py-5 border-t border-border/40">
-            <div className="text-sm font-bold text-text-secondary mb-3 uppercase tracking-wider flex items-center gap-2">
-              <span className="text-lg">📖</span> Words worth knowing
+            <div className="text-sm font-bold text-text-secondary mb-3 uppercase tracking-wider flex items-center justify-between gap-2">
+              <span className="flex items-center gap-2"><span className="text-lg">📖</span> Words worth knowing</span>
+              <span className="text-[10px] font-normal text-text-tertiary normal-case tracking-normal">Tap to reveal</span>
             </div>
             <dl className="grid sm:grid-cols-2 gap-2.5">
-              {vocab.map((v, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: i * 0.06 }}
-                  className="p-3 rounded-xl bg-surface-secondary/50 border border-border/30 hover:border-accent-brand/40 transition"
-                >
-                  <dt className="font-bold text-text-primary">{v.word}</dt>
-                  <dd className="text-sm text-text-secondary mt-0.5">{v.meaning}</dd>
-                </motion.div>
-              ))}
+              {vocab.map((v, i) => {
+                const isOpen = !!flipped[i];
+                return (
+                  <motion.button
+                    key={i}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: i * 0.06 }}
+                    onClick={() => setFlipped((f) => ({ ...f, [i]: !f[i] }))}
+                    className={`text-left p-3 rounded-xl border transition group ${
+                      isOpen
+                        ? 'bg-accent-brand/10 border-accent-brand/50'
+                        : 'bg-surface-secondary/50 border-border/30 hover:border-accent-brand/40'
+                    }`}
+                    aria-expanded={isOpen}
+                  >
+                    <dt className="font-bold text-text-primary flex items-center justify-between gap-2">
+                      <span>{v.word}</span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full border transition ${
+                        isOpen ? 'border-accent-brand/50 text-accent-brand' : 'border-border/50 text-text-tertiary group-hover:text-accent-brand'
+                      }`}>
+                        {isOpen ? 'hide' : 'reveal'}
+                      </span>
+                    </dt>
+                    <AnimatePresence initial={false}>
+                      {isOpen && (
+                        <motion.dd
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="text-sm text-text-secondary mt-1.5 overflow-hidden"
+                        >
+                          {v.meaning}
+                        </motion.dd>
+                      )}
+                    </AnimatePresence>
+                  </motion.button>
+                );
+              })}
             </dl>
           </div>
         )}
+
 
         {quizReady && quiz && (
           <motion.div
@@ -1061,6 +1225,31 @@ const TurnBlock: React.FC<{
                 </motion.button>
               ))}
             </div>
+          </div>
+        )}
+
+        {!streaming && (card.hook || paragraphs.length > 0) && (
+          <div className="px-5 sm:px-6 py-4 border-t border-border/40 bg-white/[0.02] flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[11px] uppercase tracking-widest text-text-tertiary font-bold mr-1">Tune it:</span>
+              <button
+                onClick={() => onTune('simpler')}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-500/10 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/20 transition"
+              >
+                <Baby className="h-3.5 w-3.5" /> Simpler
+              </button>
+              <button
+                onClick={() => onTune('deeper')}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-accent-info/10 border border-accent-info/40 text-accent-info hover:bg-accent-info/20 transition"
+              >
+                <Rocket className="h-3.5 w-3.5" /> Go deeper
+              </button>
+            </div>
+            {combo >= 2 && (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-orange-500/15 border border-orange-500/50 text-orange-300">
+                <Flame className="h-3.5 w-3.5 fill-orange-400" /> {combo}× quiz combo
+              </div>
+            )}
           </div>
         )}
       </article>
