@@ -788,6 +788,58 @@ const WonderCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
         </div>
       </div>
 
+      {/* Back to top — appears when scrolled */}
+      <AnimatePresence>
+        {showTopBtn && (
+          <motion.button
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            aria-label="Back to top"
+            className="fixed bottom-24 right-4 sm:right-6 z-30 h-11 w-11 rounded-full bg-card/95 backdrop-blur border border-border/60 shadow-lg text-text-primary flex items-center justify-center hover:border-accent-brand/60 hover:text-accent-brand transition"
+          >
+            <ArrowUp className="h-5 w-5" />
+          </motion.button>
+        )}
+      </AnimatePresence>
+
+      {/* Keyboard shortcuts overlay (press ?) */}
+      <AnimatePresence>
+        {showKeys && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setShowKeys(false)}
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 8 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-sm rounded-3xl bg-card border border-border/60 p-5 shadow-2xl"
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <Command className="h-4 w-4 text-accent-brand" />
+                <h3 className="font-bold text-text-primary">Keyboard shortcuts</h3>
+              </div>
+              <ul className="space-y-2 text-sm">
+                {[
+                  ['/', 'Focus the question box'],
+                  ['S', 'Surprise me with a question'],
+                  ['J', 'Open the Wonder Journal'],
+                  ['?', 'Show / hide this help'],
+                  ['Esc', 'Close menus'],
+                ].map(([k, v]) => (
+                  <li key={k} className="flex items-center justify-between gap-3">
+                    <span className="text-text-secondary">{v}</span>
+                    <kbd className="px-2 py-0.5 rounded-md bg-white/10 border border-border/60 text-xs font-mono text-text-primary">{k}</kbd>
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Achievement pop */}
       <AnimatePresence>
         {awardPopup && (
