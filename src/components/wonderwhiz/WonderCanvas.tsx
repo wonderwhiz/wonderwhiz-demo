@@ -613,15 +613,34 @@ const WonderCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
               Ask <em>anything</em>. Earn Sparks ⚡, unlock badges, and follow rabbit holes wherever curiosity pulls you.
             </p>
 
-            <div className="mt-6 flex justify-center">
+            {/* Daily Wonder Challenge — featured of the day */}
+            <motion.button
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              onClick={() => ask(dailyChallenge)}
+              className="mt-6 w-full max-w-xl mx-auto flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl bg-gradient-to-r from-accent-brand/15 via-accent-info/10 to-emerald-400/10 border border-accent-brand/40 hover:border-accent-brand/70 hover:shadow-lg hover:shadow-accent-brand/20 transition text-left group"
+            >
+              <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl bg-gradient-to-br from-accent-brand to-accent-info flex items-center justify-center shrink-0 shadow-md shadow-accent-brand/30">
+                <Star className="h-5 w-5 sm:h-6 sm:w-6 text-white fill-white/40" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-accent-brand">Today's Wonder · +15 Sparks</div>
+                <div className="text-sm sm:text-base font-semibold text-text-primary leading-snug truncate">{dailyChallenge}</div>
+              </div>
+              <ArrowRight className="h-4 w-4 text-text-tertiary group-hover:text-accent-brand group-hover:translate-x-1 transition-all shrink-0" />
+            </motion.button>
+
+            <div className="mt-4 flex justify-center">
               <button
                 onClick={surpriseMe}
-                className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-accent-brand to-accent-info text-white font-semibold shadow-lg shadow-accent-brand/30 hover:shadow-xl hover:shadow-accent-brand/40 transition"
+                className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-card/70 border border-border/50 text-text-primary font-semibold hover:border-accent-brand/60 hover:bg-card transition"
               >
                 <Shuffle className="h-4 w-4 group-hover:rotate-180 transition-transform duration-500" />
                 Surprise me!
               </button>
             </div>
+
 
             <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-left">
               {prompts.map((p, i) => (
