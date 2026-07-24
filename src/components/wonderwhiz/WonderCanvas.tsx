@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft, ArrowRight, Send, Sparkles, BookOpen, Compass, Check, X,
+  ArrowLeft, ArrowRight, ArrowUp, Send, Sparkles, BookOpen, Compass, Check, X,
   Loader2, Mic, MicOff, Flame, Zap, Trophy, MapPin, Shuffle,
   Bookmark, BookmarkCheck, Volume2, VolumeX, Award, Heart,
+  Baby, Rocket, Star, Command,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Button } from '@/components/ui/button';
