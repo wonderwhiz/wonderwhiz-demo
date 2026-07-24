@@ -883,7 +883,9 @@ const TurnBlock: React.FC<{
   onToggleSpeak: () => void;
   reacts: Record<string, string>;
   onReact: (factIdx: number, emoji: string) => void;
-}> = ({ turn, idx, picked, onPick, onAsk, saved, onToggleSave, speaking, onToggleSpeak, reacts, onReact }) => {
+  onTune: (mode: 'simpler' | 'deeper') => void;
+  combo: number;
+}> = ({ turn, idx, picked, onPick, onAsk, saved, onToggleSave, speaking, onToggleSpeak, reacts, onReact, onTune, combo }) => {
   const { question, card, streaming } = turn;
   const paragraphs = card.paragraphs ?? [];
   const wowFacts = card.wow_facts ?? [];
@@ -892,6 +894,8 @@ const TurnBlock: React.FC<{
   const quiz = card.quiz;
   const quizReady = !!(quiz?.question && quiz.options && quiz.options.length > 1 && typeof quiz.correct_index === 'number');
   const showCaretOnLast = streaming && paragraphs.length > 0;
+  const [flipped, setFlipped] = useState<Record<number, boolean>>({});
+
 
   if (streaming && !card.title && !card.hook) return (
     <motion.div id={`turn-${idx}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex justify-end">
