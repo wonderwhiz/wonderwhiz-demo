@@ -691,6 +691,14 @@ const WonderCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
               onToggleSpeak={() => speakCard(idx, turn.card)}
               reacts={factReacts}
               onReact={(fi, emoji) => toggleReact(idx, fi, emoji)}
+              onTune={(mode) => {
+                const topic = turn.card.title || turn.question;
+                const q = mode === 'simpler'
+                  ? `Explain this in even simpler words a younger kid can get: ${topic}`
+                  : `Go deeper and more advanced on: ${topic}`;
+                ask(q);
+              }}
+              combo={picked !== undefined && quizPicks[idx] === turn.card.quiz?.correct_index ? quizCombo : 0}
             />
           ))}
           {loading && turns[turns.length - 1]?.card && !turns[turns.length - 1]?.card?.hook && (
