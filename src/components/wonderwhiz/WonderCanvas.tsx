@@ -1029,25 +1029,54 @@ const TurnBlock: React.FC<{
 
         {vocab.length > 0 && (
           <div className="px-5 sm:px-6 py-5 border-t border-border/40">
-            <div className="text-sm font-bold text-text-secondary mb-3 uppercase tracking-wider flex items-center gap-2">
-              <span className="text-lg">📖</span> Words worth knowing
+            <div className="text-sm font-bold text-text-secondary mb-3 uppercase tracking-wider flex items-center justify-between gap-2">
+              <span className="flex items-center gap-2"><span className="text-lg">📖</span> Words worth knowing</span>
+              <span className="text-[10px] font-normal text-text-tertiary normal-case tracking-normal">Tap to reveal</span>
             </div>
             <dl className="grid sm:grid-cols-2 gap-2.5">
-              {vocab.map((v, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: i * 0.06 }}
-                  className="p-3 rounded-xl bg-surface-secondary/50 border border-border/30 hover:border-accent-brand/40 transition"
-                >
-                  <dt className="font-bold text-text-primary">{v.word}</dt>
-                  <dd className="text-sm text-text-secondary mt-0.5">{v.meaning}</dd>
-                </motion.div>
-              ))}
+              {vocab.map((v, i) => {
+                const isOpen = !!flipped[i];
+                return (
+                  <motion.button
+                    key={i}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: i * 0.06 }}
+                    onClick={() => setFlipped((f) => ({ ...f, [i]: !f[i] }))}
+                    className={`text-left p-3 rounded-xl border transition group ${
+                      isOpen
+                        ? 'bg-accent-brand/10 border-accent-brand/50'
+                        : 'bg-surface-secondary/50 border-border/30 hover:border-accent-brand/40'
+                    }`}
+                    aria-expanded={isOpen}
+                  >
+                    <dt className="font-bold text-text-primary flex items-center justify-between gap-2">
+                      <span>{v.word}</span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full border transition ${
+                        isOpen ? 'border-accent-brand/50 text-accent-brand' : 'border-border/50 text-text-tertiary group-hover:text-accent-brand'
+                      }`}>
+                        {isOpen ? 'hide' : 'reveal'}
+                      </span>
+                    </dt>
+                    <AnimatePresence initial={false}>
+                      {isOpen && (
+                        <motion.dd
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="text-sm text-text-secondary mt-1.5 overflow-hidden"
+                        >
+                          {v.meaning}
+                        </motion.dd>
+                      )}
+                    </AnimatePresence>
+                  </motion.button>
+                );
+              })}
             </dl>
           </div>
         )}
+
 
         {quizReady && quiz && (
           <motion.div
