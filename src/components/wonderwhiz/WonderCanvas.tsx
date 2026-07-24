@@ -134,6 +134,9 @@ const WonderCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
   const [journalOpen, setJournalOpen] = useState(false);
   const [awardPopup, setAwardPopup] = useState<Achievement | null>(null);
   const [speakingId, setSpeakingId] = useState<number | null>(null);
+  const [quizCombo, setQuizCombo] = useState(0);
+  const [showTopBtn, setShowTopBtn] = useState(false);
+  const [showKeys, setShowKeys] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
