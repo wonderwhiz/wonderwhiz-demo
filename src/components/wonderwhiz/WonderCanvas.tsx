@@ -364,10 +364,19 @@ const WonderCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
   const onQuizPick = (turnIdx: number, choice: number, correct: number) => {
     setQuizPicks((p) => ({ ...p, [turnIdx]: choice }));
     if (choice === correct) {
-      addSparks(10, { celebrate: true });
-      toast.success('+10 Sparks — correct!', { icon: '⚡' });
+      const newCombo = quizCombo + 1;
+      const bonus = newCombo >= 2 ? newCombo * 2 : 0; // combo x2 bonus starting at streak 2
+      const total = 10 + bonus;
+      setQuizCombo(newCombo);
+      addSparks(total, { celebrate: true });
+      if (bonus > 0) {
+        toast.success(`+${total} Sparks — ${newCombo}× combo! 🔥`, { icon: '⚡' });
+      } else {
+        toast.success('+10 Sparks — correct!', { icon: '⚡' });
+      }
       unlock('quiz_whiz');
     } else {
+      setQuizCombo(0);
       addSparks(2);
       toast('+2 Sparks — nice try!', { icon: '💡' });
     }
