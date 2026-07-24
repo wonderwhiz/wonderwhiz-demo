@@ -194,6 +194,45 @@ const WonderCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
     return () => clearInterval(id);
   }, [turns.length]);
 
+  // Scroll-aware back-to-top
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onScroll = () => setShowTopBtn(el.scrollTop > 500);
+    // fallback: window scroll for mobile
+    const onWin = () => setShowTopBtn(window.scrollY > 500);
+    window.addEventListener('scroll', onWin, { passive: true });
+    return () => window.removeEventListener('scroll', onWin);
+  }, []);
+
+  // Keyboard shortcuts: / focus, s surprise, j journal, Esc close, ? help
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const typing = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
+      if (e.key === 'Escape') {
+        if (journalOpen) setJournalOpen(false);
+        else if (showKeys) setShowKeys(false);
+        else if (typing) (target as HTMLInputElement).blur();
+        return;
+      }
+      if (typing) return;
+      if (e.key === '/') { e.preventDefault(); inputRef.current?.focus(); }
+      else if (e.key.toLowerCase() === 's') { e.preventDefault(); surpriseMe(); }
+      else if (e.key.toLowerCase() === 'j') { e.preventDefault(); setJournalOpen((o) => !o); }
+      else if (e.key === '?') { e.preventDefault(); setShowKeys((s) => !s); }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [journalOpen, showKeys]);
+
+  // Daily challenge — deterministic per day so it feels featured
+  const dailyChallenge = useMemo(() => {
+    const seed = todayKey().split('-').reduce((a, s) => a + parseInt(s, 10), 0);
+    return SURPRISE_POOL[seed % SURPRISE_POOL.length];
+  }, []);
+
   const unlock = (id: string) => {
     setUnlocked((u) => {
       if (u.includes(id)) return u;
