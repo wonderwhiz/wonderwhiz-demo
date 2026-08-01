@@ -27,7 +27,7 @@ const WonderWhiz = () => {
         <title>{`Wonder — ${childProfile.name} | WonderWhiz`}</title>
         <meta name="description" content="Ask anything. Learn deeply. A curiosity engine designed for kids." />
       </Helmet>
-      <WonderCanvas
+      <CurioCanvas
         childProfile={childProfile}
         onBack={() => navigate('/profiles')}
       />
