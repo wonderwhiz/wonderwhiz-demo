@@ -4,7 +4,7 @@ import { Helmet } from 'react-helmet-async';
 import { useAuth } from '@/hooks/useAuth';
 import { useChildProfile } from '@/hooks/use-child-profile';
 import KidsLoadingState from '@/components/kids/KidsLoadingState';
-import WonderCanvas from '@/components/wonderwhiz/WonderCanvas';
+import CurioCanvas from '@/components/curio-adventure/CurioCanvas';
 
 const WonderWhiz = () => {
   const { childId } = useParams<{ childId: string }>();
@@ -27,7 +27,7 @@ const WonderWhiz = () => {
         <title>{`Wonder — ${childProfile.name} | WonderWhiz`}</title>
         <meta name="description" content="Ask anything. Learn deeply. A curiosity engine designed for kids." />
       </Helmet>
-      <WonderCanvas
+      <CurioCanvas
         childProfile={childProfile}
         onBack={() => navigate('/profiles')}
       />
