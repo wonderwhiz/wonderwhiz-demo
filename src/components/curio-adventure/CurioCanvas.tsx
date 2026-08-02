@@ -510,7 +510,7 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
         {/* ---------- REWARD ---------- */}
         {stage === 'reward' && spark && (
           <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} className="space-y-4">
-            <div className="rounded-3xl border border-accent-success/40 bg-gradient-to-b from-accent-success/15 to-surface-secondary/60 p-6 text-center">
+            <div className="fun-card border-accent-success bg-accent-success/10 p-6 text-center">
               <div className="text-6xl">{spark.emoji}</div>
               <h2 className="mt-3 text-3xl font-black text-text-primary">Quest complete!</h2>
               <p className="mt-1 text-text-secondary">You cracked open “{spark.title}”.</p>

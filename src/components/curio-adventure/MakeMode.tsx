@@ -35,7 +35,7 @@ const MakeMode: React.FC<Props> = ({ brief, loading, done, onComplete }) => {
     <motion.section
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-3xl border border-accent-warning/40 bg-gradient-to-b from-accent-warning/10 to-surface-secondary/60 backdrop-blur-xl p-5 sm:p-6"
+      className="fun-card border-accent-warning p-5 sm:p-6"
     >
       <p className="text-xs font-bold uppercase tracking-widest text-accent-warning">🛠️ Make Mode</p>
       <h2 className="mt-2 text-2xl sm:text-3xl font-black text-text-primary leading-tight">
