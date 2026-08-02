@@ -95,46 +95,17 @@ const InteractiveImageBlock: React.FC<InteractiveImageBlockProps> = ({
             if (isMounted) {
               setImageUrl(url);
               setLoadingImage(false);
-              
-              // Store this for future use
-              try {
-                const { error } = await supabase.from('curio_images').insert({
-                  topic: topicLower,
-                  image_url: url,
-                  generation_method: 'fallback'
-                });
-                
-                if (error) {
-                  console.error('Error storing fallback image:', error);
-                }
-              } catch (err) {
-                console.error('Error storing fallback image:', err);
-              }
             }
             return;
           }
         }
         
-        // If no fallback is found, try to generate one
+        // If no fallback is found, try to generate one.
+        // Caching into curio_images is handled server-side by the image edge function.
         const generatedImageUrl = await generateContextualImage(topic, childAge);
         
         if (isMounted && generatedImageUrl) {
           setImageUrl(generatedImageUrl);
-          
-          // Store this for future use
-          try {
-            const { error } = await supabase.from('curio_images').insert({
-              topic: topicLower,
-              image_url: generatedImageUrl,
-              generation_method: 'groq'
-            });
-            
-            if (error) {
-              console.error('Error storing generated image:', error);
-            }
-          } catch (err) {
-            console.error('Error storing generated image:', err);
-          }
         }
       } catch (error) {
         console.error('Error generating image:', error);
