@@ -258,12 +258,12 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
 
   /* ---------- shared chrome ---------- */
   const Header = (
-    <header className="sticky top-0 z-30 backdrop-blur-xl bg-surface-primary/80 border-b border-border/30">
+    <header className="sticky top-0 z-30 backdrop-blur-xl bg-surface-primary/90 border-b border-border">
       <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
         <button
           onClick={stage === 'ask' ? onBack : resetToAsk}
           aria-label={stage === 'ask' ? 'Back to profiles' : 'Back to asking'}
-          className="h-10 w-10 rounded-xl border border-border/40 bg-surface-secondary/60 flex items-center justify-center text-text-secondary hover:text-text-primary"
+          className="h-10 w-10 rounded-xl border border-border bg-surface-secondary flex items-center justify-center text-text-secondary hover:text-text-primary"
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
@@ -273,7 +273,7 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
             <span>{p.level.emoji}</span>
             <span className="truncate">{p.level.name}</span>
           </div>
-          <div className="mt-1 h-1.5 rounded-full bg-surface-tertiary/60 overflow-hidden">
+          <div className="mt-1 h-1.5 rounded-full bg-surface-tertiary overflow-hidden">
             <div className="h-full bg-accent-brand rounded-full transition-all" style={{ width: `${p.levelProgress}%` }} />
           </div>
         </div>
@@ -291,7 +291,7 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
         <button
           onClick={() => setShelfOpen(true)}
           aria-label="Trophy shelf"
-          className="h-10 w-10 rounded-xl border border-border/40 bg-surface-secondary/60 flex items-center justify-center text-text-secondary hover:text-text-primary"
+          className="h-10 w-10 rounded-xl border border-border bg-surface-secondary flex items-center justify-center text-text-secondary hover:text-text-primary"
         >
           <TrophyIcon className="h-5 w-5" />
         </button>
@@ -323,10 +323,10 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
                     key={m.id}
                     onClick={() => setMood(m.id)}
                     className={[
-                      'rounded-2xl py-3 border font-bold text-xs flex flex-col items-center gap-1 transition min-h-[70px] justify-center',
+                      'rounded-3xl py-3 border-2 font-bold text-xs flex flex-col items-center gap-1 transition min-h-[70px] justify-center',
                       mood === m.id
                         ? 'border-accent-brand bg-accent-brand/15 text-text-primary'
-                        : 'border-border/40 bg-surface-secondary/50 text-text-secondary hover:border-accent-brand/40',
+                        : 'border-border bg-surface-secondary text-text-secondary hover:border-accent-brand/40',
                     ].join(' ')}
                   >
                     <span className="text-xl">{m.emoji}</span>{m.label}
@@ -337,7 +337,7 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
 
             <button
               onClick={() => startCurio(dailyChallenge)}
-              className="w-full text-left p-4 rounded-3xl border border-accent-warning/40 bg-gradient-to-r from-accent-warning/15 to-transparent flex items-center gap-3"
+              className="w-full text-left p-4 rounded-[28px] border-2 border-accent-warning bg-accent-warning/10 flex items-center gap-3 shadow-sm"
             >
               <span className="text-2xl">🏅</span>
               <span className="flex-1">
@@ -352,7 +352,7 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
                 <button
                   key={q}
                   onClick={() => startCurio(q)}
-                  className="p-3.5 rounded-2xl border border-border/40 bg-surface-secondary/50 text-left text-sm font-semibold text-text-primary hover:border-accent-brand/50 transition min-h-[64px]"
+                  className="p-4 rounded-3xl border-2 border-border bg-surface-secondary text-left text-sm font-bold text-text-primary hover:border-accent-brand hover:-translate-y-0.5 transition min-h-[68px] shadow-sm"
                 >
                   {q}
                 </button>
@@ -369,7 +369,7 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
                     <button
                       key={h.id}
                       onClick={() => startCurio(h.question)}
-                      className="shrink-0 px-3.5 py-2.5 rounded-2xl border border-border/40 bg-surface-secondary/50 text-sm font-semibold text-text-secondary hover:text-text-primary flex items-center gap-2"
+                      className="shrink-0 px-3.5 py-2.5 rounded-2xl border border-border bg-surface-secondary text-sm font-semibold text-text-secondary hover:text-text-primary flex items-center gap-2"
                     >
                       <span>{h.emoji}</span>
                       <span className="max-w-[140px] truncate">{h.title}</span>
@@ -391,7 +391,7 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
                       title={has ? b.name : b.hint}
                       className={[
                         'px-3 py-2 rounded-2xl border text-xs font-bold flex items-center gap-1.5',
-                        has ? 'border-accent-warning/50 bg-accent-warning/10 text-text-primary' : 'border-border/30 bg-surface-secondary/30 text-text-tertiary',
+                        has ? 'border-accent-warning/50 bg-accent-warning/10 text-text-primary' : 'border-border bg-surface-secondary text-text-tertiary',
                       ].join(' ')}
                     >
                       <span className={has ? '' : 'grayscale opacity-50'}>{b.emoji}</span>
@@ -410,17 +410,17 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
             <p className="text-sm font-semibold text-text-tertiary">You asked: “{question}”</p>
 
             {!spark ? (
-              <div className="rounded-3xl border border-border/40 bg-surface-secondary/60 p-6 space-y-3">
-                <div className="h-6 w-2/3 rounded-full bg-surface-tertiary/60 animate-pulse" />
-                <div className="h-4 w-full rounded-full bg-surface-tertiary/50 animate-pulse" />
-                <div className="h-4 w-5/6 rounded-full bg-surface-tertiary/50 animate-pulse" />
+              <div className="fun-card p-6 space-y-3">
+                <div className="h-6 w-2/3 rounded-full bg-surface-tertiary animate-pulse" />
+                <div className="h-4 w-full rounded-full bg-surface-tertiary animate-pulse" />
+                <div className="h-4 w-5/6 rounded-full bg-surface-tertiary animate-pulse" />
                 <p className="text-sm text-text-tertiary flex items-center gap-2 pt-2">
                   <Loader2 className="h-4 w-4 animate-spin" /> Sparking…
                 </p>
               </div>
             ) : (
               <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-                <div className="rounded-3xl border border-border/40 bg-surface-secondary/60 backdrop-blur-xl overflow-hidden">
+                <div className="fun-card overflow-hidden">
                   {(spark as any).heroUrl && (
                     <img src={(spark as any).heroUrl} alt={spark.title} className="w-full aspect-[16/9] object-cover" />
                   )}
@@ -435,26 +435,26 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
                     </div>
                     <button
                       onClick={() => speak(`${spark.answer}. ${spark.wow_fact}`)}
-                      className="mt-4 px-3.5 py-2 rounded-full text-xs font-bold border border-border/40 bg-surface-tertiary/40 text-text-secondary min-h-[38px]"
+                      className="fun-chip mt-4"
                     >
                       {speaking ? '⏹ Stop' : '🔊 Read aloud'}
                     </button>
                   </div>
                 </div>
 
-                <div className="rounded-3xl border border-border/40 bg-surface-secondary/60 p-5">
+                <div className="fun-card p-5">
                   <p className="text-xs font-bold uppercase tracking-widest text-text-tertiary">Deep Dive · {spark.sections.length} parts</p>
                   <ul className="mt-3 space-y-2">
                     {spark.sections.map((s, i) => (
-                      <li key={i} className="flex items-center gap-3 text-text-primary font-semibold">
-                        <span className="h-8 w-8 rounded-xl bg-surface-tertiary/60 flex items-center justify-center">{s.emoji}</span>
+                      <li key={i} className="flex items-center gap-3 text-text-primary font-bold text-lg bg-surface-tertiary rounded-2xl px-3 py-2.5">
+                        <span className="h-9 w-9 shrink-0 rounded-full bg-surface-secondary text-lg flex items-center justify-center shadow-sm">{s.emoji}</span>
                         {s.title}
                       </li>
                     ))}
                   </ul>
                   <button
                     onClick={startDive}
-                    className="mt-5 w-full min-h-[60px] rounded-2xl bg-accent-brand text-text-inverse font-black text-lg flex items-center justify-center gap-2"
+                    className="fun-btn mt-5"
                   >
                     <Rocket className="h-5 w-5" /> Start Deep Dive
                   </button>
@@ -469,15 +469,15 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
           <div className="space-y-4">
             <div className="flex gap-1.5">
               {spark.sections.map((_, i) => (
-                <div key={i} className={`h-1.5 flex-1 rounded-full ${i <= sectionIdx ? 'bg-accent-brand' : 'bg-surface-tertiary/50'}`} />
+                <div key={i} className={`h-1.5 flex-1 rounded-full ${i <= sectionIdx ? 'bg-accent-brand' : 'bg-surface-tertiary'}`} />
               ))}
             </div>
 
             {sectionLoading || !sections[sectionIdx] ? (
-              <div className="rounded-3xl border border-border/40 bg-surface-secondary/60 p-6 space-y-3">
-                <div className="h-6 w-1/2 rounded-full bg-surface-tertiary/60 animate-pulse" />
-                <div className="h-4 w-full rounded-full bg-surface-tertiary/50 animate-pulse" />
-                <div className="h-4 w-4/6 rounded-full bg-surface-tertiary/50 animate-pulse" />
+              <div className="fun-card p-6 space-y-3">
+                <div className="h-6 w-1/2 rounded-full bg-surface-tertiary animate-pulse" />
+                <div className="h-4 w-full rounded-full bg-surface-tertiary animate-pulse" />
+                <div className="h-4 w-4/6 rounded-full bg-surface-tertiary animate-pulse" />
               </div>
             ) : (
               <DiveSection
@@ -510,7 +510,7 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
         {/* ---------- REWARD ---------- */}
         {stage === 'reward' && spark && (
           <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} className="space-y-4">
-            <div className="rounded-3xl border border-accent-success/40 bg-gradient-to-b from-accent-success/15 to-surface-secondary/60 p-6 text-center">
+            <div className="fun-card border-accent-success bg-accent-success/10 p-6 text-center">
               <div className="text-6xl">{spark.emoji}</div>
               <h2 className="mt-3 text-3xl font-black text-text-primary">Quest complete!</h2>
               <p className="mt-1 text-text-secondary">You cracked open “{spark.title}”.</p>
@@ -522,7 +522,7 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
               </p>
               <button
                 onClick={() => window.print()}
-                className="mt-4 px-4 py-3 rounded-2xl border border-border/40 bg-surface-tertiary/40 text-text-secondary font-bold text-sm min-h-[48px]"
+                className="fun-chip mt-4 mx-auto"
               >
                 🖨️ Print my certificate
               </button>
@@ -534,7 +534,7 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
                 <button
                   key={q}
                   onClick={() => startCurio(q)}
-                  className="p-4 rounded-2xl border border-border/40 bg-surface-secondary/50 text-left font-semibold text-text-primary hover:border-accent-brand/50 flex items-center justify-between"
+                  className="p-4 rounded-2xl border border-border bg-surface-secondary text-left font-semibold text-text-primary hover:border-accent-brand/50 flex items-center justify-between"
                 >
                   {q} <ChevronRight className="h-4 w-4 text-text-tertiary" />
                 </button>
@@ -542,7 +542,7 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
             </div>
             <button
               onClick={resetToAsk}
-              className="w-full min-h-[56px] rounded-2xl bg-accent-brand text-text-inverse font-black"
+              className="fun-btn"
             >
               Ask something new
             </button>
@@ -557,7 +557,7 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
             onSubmit={(e) => { e.preventDefault(); startCurio(input); }}
             className="max-w-2xl mx-auto px-4 flex items-center gap-2"
           >
-            <div className="flex-1 flex items-center gap-2 rounded-2xl border border-border/50 bg-surface-secondary/90 backdrop-blur-xl px-3 py-2">
+            <div className="flex-1 flex items-center gap-2 rounded-full border-2 border-border bg-surface-secondary shadow-md px-4 py-1.5">
               <Sparkles className="h-5 w-5 text-accent-brand shrink-0" />
               <input
                 ref={inputRef}
@@ -578,7 +578,7 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
               type="submit"
               disabled={!input.trim() || loading}
               aria-label="Send question"
-              className="h-12 w-12 rounded-2xl bg-accent-brand text-text-inverse flex items-center justify-center disabled:opacity-40"
+              className="h-14 w-14 shrink-0 rounded-full bg-accent-brand text-text-inverse flex items-center justify-center disabled:opacity-40 shadow-glow"
             >
               {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
             </button>
@@ -597,7 +597,7 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
             <motion.div
               initial={{ y: 40 }} animate={{ y: 0 }} exit={{ y: 40 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-lg max-h-[70vh] overflow-y-auto rounded-3xl border border-border/40 bg-surface-secondary p-5"
+              className="w-full max-w-lg max-h-[70vh] overflow-y-auto rounded-3xl border border-border bg-surface-secondary p-5"
             >
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xl font-black text-text-primary flex items-center gap-2">
@@ -612,7 +612,7 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
               ) : (
                 <div className="grid gap-3">
                   {p.trophies.map((t) => (
-                    <div key={t.id} className="rounded-2xl border border-border/40 bg-surface-tertiary/40 overflow-hidden">
+                    <div key={t.id} className="rounded-2xl border border-border bg-surface-tertiary overflow-hidden">
                       {t.photo && <img src={t.photo} alt={t.title} className="w-full max-h-40 object-cover" />}
                       <div className="p-3.5">
                         <p className="font-bold text-text-primary">{t.emoji} {t.title}</p>

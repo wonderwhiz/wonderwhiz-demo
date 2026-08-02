@@ -24,7 +24,7 @@ const MakeMode: React.FC<Props> = ({ brief, loading, done, onComplete }) => {
 
   if (loading || !brief) {
     return (
-      <div className="rounded-3xl border border-border/40 bg-surface-secondary/60 p-6 flex items-center gap-3">
+      <div className="fun-card p-6 flex items-center gap-3">
         <Loader2 className="h-5 w-5 animate-spin text-accent-brand" />
         <span className="text-text-secondary font-semibold">Cooking up your challenge…</span>
       </div>
@@ -35,13 +35,13 @@ const MakeMode: React.FC<Props> = ({ brief, loading, done, onComplete }) => {
     <motion.section
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-3xl border border-accent-warning/40 bg-gradient-to-b from-accent-warning/10 to-surface-secondary/60 backdrop-blur-xl p-5 sm:p-6"
+      className="fun-card border-accent-warning p-5 sm:p-6"
     >
       <p className="text-xs font-bold uppercase tracking-widest text-accent-warning">🛠️ Make Mode</p>
       <h2 className="mt-2 text-2xl sm:text-3xl font-black text-text-primary leading-tight">
         <span className="mr-2">{brief.emoji}</span>{brief.title}
       </h2>
-      <p className="mt-2 text-lg text-text-secondary leading-relaxed">{brief.brief}</p>
+      <p className="mt-2 text-lg text-text-primary leading-relaxed">{brief.brief}</p>
 
       <ol className="mt-4 space-y-2.5">
         {brief.steps.map((s, i) => (
@@ -69,13 +69,13 @@ const MakeMode: React.FC<Props> = ({ brief, loading, done, onComplete }) => {
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onPhoto} />
           <button
             onClick={() => fileRef.current?.click()}
-            className="px-4 py-3 rounded-2xl border border-border/40 bg-surface-tertiary/40 text-text-secondary font-bold text-sm flex items-center gap-2 min-h-[48px]"
+            className="fun-chip"
           >
             <Camera className="h-4 w-4" /> {photo ? 'Change photo' : 'Add a photo'}
           </button>
           <button
             onClick={() => onComplete(photo)}
-            className="flex-1 min-w-[180px] min-h-[48px] px-5 rounded-2xl bg-accent-success text-text-inverse font-black flex items-center justify-center gap-2"
+            className="fun-btn-mint flex-1 min-w-[180px]"
           >
             <Check className="h-5 w-5" /> I made it!
           </button>
