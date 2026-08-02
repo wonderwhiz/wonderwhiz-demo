@@ -34,7 +34,7 @@ const DiveSection: React.FC<Props> = ({
     setImgLoading(false);
   };
 
-  const chip = 'px-3.5 py-2 rounded-full text-xs font-bold border border-border/40 bg-surface-tertiary/40 text-text-secondary hover:text-text-primary hover:border-accent-brand/50 transition flex items-center gap-1.5 min-h-[38px]';
+  const chip = 'px-3.5 py-2 rounded-full text-xs font-bold border border-border bg-surface-tertiary text-text-secondary hover:text-text-primary hover:border-accent-brand/50 transition flex items-center gap-1.5 min-h-[38px]';
 
   return (
     <motion.div
@@ -43,7 +43,7 @@ const DiveSection: React.FC<Props> = ({
       transition={{ duration: 0.3 }}
       className="space-y-4"
     >
-      <div className="rounded-3xl border border-border/40 bg-surface-secondary/60 backdrop-blur-xl overflow-hidden">
+      <div className="rounded-3xl border border-border bg-surface-secondary backdrop-blur-xl overflow-hidden">
         {section.imageUrl && (
           <img
             src={section.imageUrl}
@@ -110,7 +110,7 @@ const DiveSection: React.FC<Props> = ({
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 8 }}
-                className="mt-3 p-3.5 rounded-2xl bg-surface-tertiary/50 border border-border/40 flex items-center justify-between gap-3 flex-wrap"
+                className="mt-3 p-3.5 rounded-2xl bg-surface-tertiary border border-border flex items-center justify-between gap-3 flex-wrap"
               >
                 <span className="text-sm text-text-secondary">Want me to draw this for you?</span>
                 <div className="flex gap-2">

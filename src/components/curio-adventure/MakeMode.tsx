@@ -24,7 +24,7 @@ const MakeMode: React.FC<Props> = ({ brief, loading, done, onComplete }) => {
 
   if (loading || !brief) {
     return (
-      <div className="rounded-3xl border border-border/40 bg-surface-secondary/60 p-6 flex items-center gap-3">
+      <div className="rounded-3xl border border-border bg-surface-secondary p-6 flex items-center gap-3">
         <Loader2 className="h-5 w-5 animate-spin text-accent-brand" />
         <span className="text-text-secondary font-semibold">Cooking up your challenge…</span>
       </div>
@@ -69,7 +69,7 @@ const MakeMode: React.FC<Props> = ({ brief, loading, done, onComplete }) => {
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onPhoto} />
           <button
             onClick={() => fileRef.current?.click()}
-            className="px-4 py-3 rounded-2xl border border-border/40 bg-surface-tertiary/40 text-text-secondary font-bold text-sm flex items-center gap-2 min-h-[48px]"
+            className="px-4 py-3 rounded-2xl border border-border bg-surface-tertiary text-text-secondary font-bold text-sm flex items-center gap-2 min-h-[48px]"
           >
             <Camera className="h-4 w-4" /> {photo ? 'Change photo' : 'Add a photo'}
           </button>

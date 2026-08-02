@@ -38,7 +38,7 @@ const Checkpoint: React.FC<Props> = ({ data, onResolved }) => {
     <motion.section
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-3xl border border-border/40 bg-surface-secondary/60 backdrop-blur-xl p-5 sm:p-6"
+      className="rounded-3xl border border-border bg-surface-secondary backdrop-blur-xl p-5 sm:p-6"
     >
       <p className="text-xs font-bold uppercase tracking-widest text-text-tertiary mb-3">
         {meta.emoji} {meta.label}
@@ -58,10 +58,10 @@ const Checkpoint: React.FC<Props> = ({ data, onResolved }) => {
                 disabled={picked !== null}
                 className={[
                   'w-full text-left px-4 py-3.5 rounded-2xl border text-base font-semibold transition min-h-[52px] flex items-center gap-3',
-                  state === 'idle' && 'border-border/40 bg-surface-tertiary/40 text-text-primary hover:border-accent-brand/60 hover:bg-surface-tertiary/70',
+                  state === 'idle' && 'border-border bg-surface-tertiary text-text-primary hover:border-accent-brand/60 hover:bg-surface-tertiary',
                   state === 'right' && 'border-accent-success/70 bg-accent-success/15 text-text-primary',
                   state === 'wrong' && 'border-accent-error/70 bg-accent-error/15 text-text-primary',
-                  state === 'dim' && 'border-border/20 bg-surface-tertiary/20 text-text-tertiary',
+                  state === 'dim' && 'border-border bg-surface-tertiary text-text-tertiary',
                 ].filter(Boolean).join(' ')}
               >
                 <span className="flex-1">{opt}</span>
