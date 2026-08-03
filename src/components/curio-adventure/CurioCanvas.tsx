@@ -202,7 +202,7 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
     const next = sectionIdx + 1;
     if (next >= spark.sections.length) {
       p.unlock('deep_diver');
-      p.addSparks(20, true);
+      award(20, true);
       setStage('make');
       scrollTop();
       setMakeLoading(true);
@@ -233,7 +233,7 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
         next[idx] = { ...next[idx], imageUrl: r.imageUrl };
         return next;
       });
-      p.addSparks(3);
+      award(3);
     } catch (e) {
       toast.error((e as Error).message);
     }
@@ -244,12 +244,12 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
       const c = combo + 1;
       setCombo(c);
       const bonus = c >= 2 ? c * 2 : 0;
-      p.addSparks(10 + bonus, true);
+      award(10 + bonus, true);
       p.unlock('quiz_whiz');
       toast.success(bonus ? `+${10 + bonus} Sparks — ${c}× combo! 🔥` : '+10 Sparks — nailed it!');
     } else {
       setCombo(0);
-      p.addSparks(2);
+      award(2);
       toast('+2 Sparks — good try!', { icon: '💡' });
     }
   };
@@ -262,7 +262,7 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
       topic: spark.title, kind: make.kind, createdAt: Date.now(), photo,
     });
     p.unlock('maker');
-    p.addSparks(30, true);
+    award(30, true);
     p.completeCurio(curioId);
     confetti({ particleCount: 140, spread: 100, origin: { y: 0.6 } });
     setTimeout(() => { setStage('reward'); scrollTop(); }, 900);
