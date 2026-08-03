@@ -86,7 +86,18 @@
     --input: 250 35% 86%;
     --ring: 258 84% 58%;
     --radius: 20px;
+
+    /* Landing page palette (marketing homepage) */
+    --land-navy: 240 78% 26%;
+    --land-navy-deep: 240 80% 20%;
+    --land-yellow: 45 100% 52%;
+    --land-coral: 8 88% 60%;
+    --land-cream: 40 60% 96%;
+    --land-ink: 240 60% 16%;
+    --land-mint: 160 55% 80%;
+    --land-sky: 200 80% 86%;
   }
+
 
   .dark {
     --background: 250 100% 99%;
