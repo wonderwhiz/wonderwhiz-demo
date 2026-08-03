@@ -528,18 +528,22 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
               </button>
             </div>
 
-            <p className="text-xs font-bold uppercase tracking-widest text-text-tertiary">Where next?</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-text-tertiary">🐇 Rabbit holes from this Curio</p>
             <div className="grid gap-2.5">
-              {SURPRISES.slice(0, 3).map((q) => (
+              {(spark.rabbit_holes?.length ? spark.rabbit_holes : SURPRISES.slice(0, 3)).map((q) => (
                 <button
                   key={q}
                   onClick={() => startCurio(q)}
-                  className="p-4 rounded-2xl border border-border bg-surface-secondary text-left font-semibold text-text-primary hover:border-accent-brand/50 flex items-center justify-between"
+                  className="p-4 rounded-2xl border-2 border-border bg-surface-secondary text-left font-bold text-text-primary hover:border-accent-brand hover:-translate-y-0.5 transition flex items-center justify-between gap-3"
                 >
-                  {q} <ChevronRight className="h-4 w-4 text-text-tertiary" />
+                  <span>{q}</span>
+                  <span className="shrink-0 flex items-center gap-1 text-xs font-black text-accent-warning">
+                    <Zap className="h-3.5 w-3.5" /> +5
+                  </span>
                 </button>
               ))}
             </div>
+
             <button
               onClick={resetToAsk}
               className="fun-btn"
