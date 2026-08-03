@@ -205,6 +205,7 @@ module.exports = {
       fontFamily: {
         'sans': ['"DM Sans"', 'system-ui', 'sans-serif'],
         'display': ['"Space Grotesk"', 'system-ui', 'sans-serif'],
+        'heading': ['"Space Grotesk"', 'system-ui', 'sans-serif'],
         'nunito': ['"DM Sans"', 'sans-serif'],
         'inter': ['"DM Sans"', 'sans-serif'],
         'baloo': ['"Space Grotesk"', 'sans-serif'],
