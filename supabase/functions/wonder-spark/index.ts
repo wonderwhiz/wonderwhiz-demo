@@ -43,8 +43,29 @@ const SCHEMA = {
         additionalProperties: false,
       },
     },
+    predict: {
+      type: "object",
+      description: "A fun guess-first question asked BEFORE revealing the answer. Must be answerable by a hunch, never require prior knowledge.",
+      properties: {
+        prompt: { type: "string", description: "Max 14 words, starts with 'Guess:' style curiosity" },
+        options: {
+          type: "array",
+          description: "Exactly 2 short, playful options, max 6 words each",
+          items: { type: "string" },
+        },
+        correct_index: { type: "number", description: "0 or 1" },
+        reveal: { type: "string", description: "One warm sentence explaining the true option, max 22 words" },
+      },
+      required: ["prompt", "options", "correct_index", "reveal"],
+      additionalProperties: false,
+    },
+    rabbit_holes: {
+      type: "array",
+      description: "Exactly 3 irresistible follow-up questions a curious kid would ask next. Each a full question, max 8 words.",
+      items: { type: "string" },
+    },
   },
-  required: ["title", "emoji", "answer", "wow_fact", "image_prompt", "sections"],
+  required: ["title", "emoji", "answer", "wow_fact", "image_prompt", "sections", "predict", "rabbit_holes"],
   additionalProperties: false,
 };
 

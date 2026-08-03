@@ -5,6 +5,13 @@ export interface SectionStub {
   emoji: string;
 }
 
+export interface Predict {
+  prompt: string;
+  options: string[];
+  correct_index: number;
+  reveal: string;
+}
+
 export interface Spark {
   title: string;
   emoji: string;
@@ -12,6 +19,9 @@ export interface Spark {
   wow_fact: string;
   image_prompt: string;
   sections: SectionStub[];
+  predict?: Predict;
+  rabbit_holes?: string[];
+  heroUrl?: string;
 }
 
 export type CheckpointKind = 'quiz' | 'flip' | 'myth' | 'riddle';

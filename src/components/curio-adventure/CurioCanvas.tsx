@@ -63,6 +63,10 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
   const [speaking, setSpeaking] = useState(false);
   const [shelfOpen, setShelfOpen] = useState(false);
   const [combo, setCombo] = useState(0);
+  const [guess, setGuess] = useState<number | null>(null);
+  const [chain, setChain] = useState(0);
+  const [burst, setBurst] = useState<{ id: number; n: number } | null>(null);
+
 
   const inputRef = useRef<HTMLInputElement>(null);
   const topRef = useRef<HTMLDivElement>(null);
@@ -102,6 +106,13 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
     setListening(true);
   };
 
+  /* ---------- rewards ---------- */
+  const award = useCallback((n: number, celebrate = false) => {
+    p.addSparks(n, celebrate);
+    setBurst({ id: Date.now(), n });
+    setTimeout(() => setBurst(null), 1400);
+  }, [p]);
+
   /* ---------- flow ---------- */
   const startCurio = useCallback(async (q: string) => {
     const clean = q.trim();
@@ -115,6 +126,8 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
     setMake(null);
     setMakeDone(false);
     setCombo(0);
+    setGuess(null);
+    setChain((c) => c + 1);
     setQuestion(clean);
     const id = `${Date.now()}`;
     setCurioId(id);
@@ -123,7 +136,7 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
         question: clean, childAge: age, childName: childProfile.name, mood,
       });
       setSpark(s);
-      p.addSparks(5);
+      award(5);
       p.unlock('first_spark');
       p.recordCurio({
         id, question: clean, title: s.title, emoji: s.emoji, mood,
@@ -131,7 +144,7 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
       });
       // pre-draw the hero picture quietly
       callFn<{ imageUrl: string }>('wonder-image', { prompt: s.image_prompt })
-        .then((r) => setSpark((prev) => (prev ? { ...prev, heroUrl: r.imageUrl } as any : prev)))
+        .then((r) => setSpark((prev) => (prev ? { ...prev, heroUrl: r.imageUrl } : prev)))
         .catch(() => {});
     } catch (e) {
       toast.error((e as Error).message);
@@ -139,7 +152,16 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
     } finally {
       setLoading(false);
     }
-  }, [age, childProfile.name, loading, mood, p]);
+  }, [age, award, childProfile.name, loading, mood, p]);
+
+  const onGuess = (i: number) => {
+    if (!spark?.predict) return;
+    setGuess(i);
+    const right = i === spark.predict.correct_index;
+    award(right ? 8 : 4, right);
+    toast(right ? '🎯 Great hunch! +8 Sparks' : '💡 Nice guess! +4 Sparks');
+  };
+
 
   const loadSection = useCallback(async (idx: number) => {
     if (!spark) return;
@@ -180,7 +202,7 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
     const next = sectionIdx + 1;
     if (next >= spark.sections.length) {
       p.unlock('deep_diver');
-      p.addSparks(20, true);
+      award(20, true);
       setStage('make');
       scrollTop();
       setMakeLoading(true);
@@ -211,7 +233,7 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
         next[idx] = { ...next[idx], imageUrl: r.imageUrl };
         return next;
       });
-      p.addSparks(3);
+      award(3);
     } catch (e) {
       toast.error((e as Error).message);
     }
@@ -222,12 +244,12 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
       const c = combo + 1;
       setCombo(c);
       const bonus = c >= 2 ? c * 2 : 0;
-      p.addSparks(10 + bonus, true);
+      award(10 + bonus, true);
       p.unlock('quiz_whiz');
       toast.success(bonus ? `+${10 + bonus} Sparks — ${c}× combo! 🔥` : '+10 Sparks — nailed it!');
     } else {
       setCombo(0);
-      p.addSparks(2);
+      award(2);
       toast('+2 Sparks — good try!', { icon: '💡' });
     }
   };
@@ -240,7 +262,7 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
       topic: spark.title, kind: make.kind, createdAt: Date.now(), photo,
     });
     p.unlock('maker');
-    p.addSparks(30, true);
+    award(30, true);
     p.completeCurio(curioId);
     confetti({ particleCount: 140, spread: 100, origin: { y: 0.6 } });
     setTimeout(() => { setStage('reward'); scrollTop(); }, 900);
@@ -278,16 +300,29 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-accent-warning/15 border border-accent-warning/30">
+        <motion.div
+          key={p.sparks}
+          initial={{ scale: 1 }}
+          animate={{ scale: [1, 1.18, 1] }}
+          transition={{ duration: 0.35 }}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-accent-warning/15 border border-accent-warning/30"
+        >
           <Zap className="h-4 w-4 text-accent-warning" />
           <span className="font-black text-text-primary text-sm tabular-nums">{p.sparks}</span>
-        </div>
+        </motion.div>
+        {chain > 1 && (
+          <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-accent-brand/15 border border-accent-brand/30" title="Curiosity chain this session">
+            <span className="text-sm">🔗</span>
+            <span className="font-black text-text-primary text-sm">{chain}</span>
+          </div>
+        )}
         {p.streak > 0 && (
           <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-accent-error/15 border border-accent-error/30">
             <Flame className="h-4 w-4 text-accent-error" />
             <span className="font-black text-text-primary text-sm">{p.streak}</span>
           </div>
         )}
+
         <button
           onClick={() => setShelfOpen(true)}
           aria-label="Trophy shelf"
@@ -420,9 +455,39 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
               </div>
             ) : (
               <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-                <div className="fun-card overflow-hidden">
-                  {(spark as any).heroUrl && (
-                    <img src={(spark as any).heroUrl} alt={spark.title} className="w-full aspect-[16/9] object-cover" />
+                {/* guess-first gate */}
+                {spark.predict && guess === null && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.97 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="fun-card border-accent-brand p-5 sm:p-6"
+                  >
+                    <p className="text-xs font-bold uppercase tracking-widest text-accent-brand">🤔 Guess first</p>
+                    <p className="mt-2 text-xl sm:text-2xl font-black text-text-primary leading-snug">{spark.predict.prompt}</p>
+                    <div className="mt-4 grid gap-2.5">
+                      {spark.predict.options.map((o, i) => (
+                        <button key={i} onClick={() => onGuess(i)} className="fun-chip w-full justify-start text-left">
+                          <span className="font-black mr-1">{i === 0 ? 'A' : 'B'}</span> {o}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="mt-3 text-xs text-text-tertiary">No wrong answers — guessing earns Sparks either way ⚡</p>
+                  </motion.div>
+                )}
+
+                {spark.predict && guess !== null && (
+                  <div className={`fun-card p-4 flex items-start gap-3 ${guess === spark.predict.correct_index ? 'border-accent-success' : 'border-accent-warning'}`}>
+                    <span className="text-2xl">{guess === spark.predict.correct_index ? '🎯' : '💡'}</span>
+                    <p className="text-base font-semibold text-text-primary leading-relaxed">
+                      {guess === spark.predict.correct_index ? 'Great hunch! ' : 'Close one! '}
+                      {spark.predict.reveal}
+                    </p>
+                  </div>
+                )}
+
+                <div className={`fun-card overflow-hidden transition ${spark.predict && guess === null ? 'blur-md pointer-events-none select-none' : ''}`}>
+                  {spark.heroUrl && (
+                    <img src={spark.heroUrl} alt={spark.title} className="w-full aspect-[16/9] object-cover" />
                   )}
                   <div className="p-5 sm:p-6">
                     <h1 className="text-3xl sm:text-4xl font-black text-text-primary leading-tight">
@@ -442,27 +507,48 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
                   </div>
                 </div>
 
-                <div className="fun-card p-5">
-                  <p className="text-xs font-bold uppercase tracking-widest text-text-tertiary">Deep Dive · {spark.sections.length} parts</p>
-                  <ul className="mt-3 space-y-2">
-                    {spark.sections.map((s, i) => (
-                      <li key={i} className="flex items-center gap-3 text-text-primary font-bold text-lg bg-surface-tertiary rounded-2xl px-3 py-2.5">
-                        <span className="h-9 w-9 shrink-0 rounded-full bg-surface-secondary text-lg flex items-center justify-center shadow-sm">{s.emoji}</span>
-                        {s.title}
-                      </li>
-                    ))}
-                  </ul>
-                  <button
-                    onClick={startDive}
-                    className="fun-btn mt-5"
-                  >
-                    <Rocket className="h-5 w-5" /> Start Deep Dive
-                  </button>
-                </div>
+                {(!spark.predict || guess !== null) && (
+                  <>
+                    <div className="fun-card p-5">
+                      <p className="text-xs font-bold uppercase tracking-widest text-text-tertiary">Deep Dive · {spark.sections.length} parts</p>
+                      <ul className="mt-3 space-y-2">
+                        {spark.sections.map((s, i) => (
+                          <li key={i} className="flex items-center gap-3 text-text-primary font-bold text-lg bg-surface-tertiary rounded-2xl px-3 py-2.5">
+                            <span className="h-9 w-9 shrink-0 rounded-full bg-surface-secondary text-lg flex items-center justify-center shadow-sm">{s.emoji}</span>
+                            {s.title}
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="mt-4 flex items-center gap-2 text-sm font-bold text-accent-warning">
+                        <Zap className="h-4 w-4" /> Finish all {spark.sections.length} parts to unlock +20 Sparks & Make Mode
+                      </div>
+                      <button
+                        onClick={startDive}
+                        className="fun-btn mt-4"
+                      >
+                        <Rocket className="h-5 w-5" /> Start Deep Dive
+                      </button>
+                    </div>
+
+                    {!!spark.rabbit_holes?.length && (
+                      <div className="fun-card p-5">
+                        <p className="text-xs font-bold uppercase tracking-widest text-text-tertiary">🐇 Or jump down a rabbit hole</p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {spark.rabbit_holes.map((q) => (
+                            <button key={q} onClick={() => startCurio(q)} className="fun-chip">
+                              {q}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
               </motion.div>
             )}
           </div>
         )}
+
 
         {/* ---------- DIVE ---------- */}
         {stage === 'dive' && spark && (
@@ -528,18 +614,22 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
               </button>
             </div>
 
-            <p className="text-xs font-bold uppercase tracking-widest text-text-tertiary">Where next?</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-text-tertiary">🐇 Rabbit holes from this Curio</p>
             <div className="grid gap-2.5">
-              {SURPRISES.slice(0, 3).map((q) => (
+              {(spark.rabbit_holes?.length ? spark.rabbit_holes : SURPRISES.slice(0, 3)).map((q) => (
                 <button
                   key={q}
                   onClick={() => startCurio(q)}
-                  className="p-4 rounded-2xl border border-border bg-surface-secondary text-left font-semibold text-text-primary hover:border-accent-brand/50 flex items-center justify-between"
+                  className="p-4 rounded-2xl border-2 border-border bg-surface-secondary text-left font-bold text-text-primary hover:border-accent-brand hover:-translate-y-0.5 transition flex items-center justify-between gap-3"
                 >
-                  {q} <ChevronRight className="h-4 w-4 text-text-tertiary" />
+                  <span>{q}</span>
+                  <span className="shrink-0 flex items-center gap-1 text-xs font-black text-accent-warning">
+                    <Zap className="h-3.5 w-3.5" /> +5
+                  </span>
                 </button>
               ))}
             </div>
+
             <button
               onClick={resetToAsk}
               className="fun-btn"
@@ -586,7 +676,26 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
         </div>
       )}
 
+      {/* ---------- sparks burst ---------- */}
+      <AnimatePresence>
+        {burst && (
+          <motion.div
+            key={burst.id}
+            initial={{ opacity: 0, y: 10, scale: 0.8 }}
+            animate={{ opacity: 1, y: -28, scale: 1 }}
+            exit={{ opacity: 0, y: -60, scale: 0.9 }}
+            transition={{ duration: 0.5 }}
+            className="fixed top-16 right-4 z-50 pointer-events-none"
+          >
+            <div className="px-3 py-1.5 rounded-full bg-accent-warning text-text-inverse font-black text-sm flex items-center gap-1 shadow-xl">
+              <Zap className="h-4 w-4" /> +{burst.n}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ---------- trophy shelf ---------- */}
+
       <AnimatePresence>
         {shelfOpen && (
           <motion.div
