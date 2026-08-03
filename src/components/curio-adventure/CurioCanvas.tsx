@@ -63,6 +63,10 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
   const [speaking, setSpeaking] = useState(false);
   const [shelfOpen, setShelfOpen] = useState(false);
   const [combo, setCombo] = useState(0);
+  const [guess, setGuess] = useState<number | null>(null);
+  const [chain, setChain] = useState(0);
+  const [burst, setBurst] = useState<{ id: number; n: number } | null>(null);
+
 
   const inputRef = useRef<HTMLInputElement>(null);
   const topRef = useRef<HTMLDivElement>(null);
