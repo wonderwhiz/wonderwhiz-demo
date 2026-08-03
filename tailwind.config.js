@@ -18,6 +18,17 @@ module.exports = {
     },
     extend: {
       colors: {
+        land: {
+          navy: "hsl(var(--land-navy))",
+          "navy-deep": "hsl(var(--land-navy-deep))",
+          yellow: "hsl(var(--land-yellow))",
+          coral: "hsl(var(--land-coral))",
+          cream: "hsl(var(--land-cream))",
+          ink: "hsl(var(--land-ink))",
+          mint: "hsl(var(--land-mint))",
+          sky: "hsl(var(--land-sky))",
+        },
+
         // Core Design System
         surface: {
           primary: "hsl(var(--surface-primary))",
@@ -194,6 +205,7 @@ module.exports = {
       fontFamily: {
         'sans': ['"DM Sans"', 'system-ui', 'sans-serif'],
         'display': ['"Space Grotesk"', 'system-ui', 'sans-serif'],
+        'heading': ['"Space Grotesk"', 'system-ui', 'sans-serif'],
         'nunito': ['"DM Sans"', 'sans-serif'],
         'inter': ['"DM Sans"', 'sans-serif'],
         'baloo': ['"Space Grotesk"', 'sans-serif'],
