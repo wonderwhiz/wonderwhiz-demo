@@ -106,6 +106,13 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
     setListening(true);
   };
 
+  /* ---------- rewards ---------- */
+  const award = useCallback((n: number, celebrate = false) => {
+    p.addSparks(n, celebrate);
+    setBurst({ id: Date.now(), n });
+    setTimeout(() => setBurst(null), 1400);
+  }, [p]);
+
   /* ---------- flow ---------- */
   const startCurio = useCallback(async (q: string) => {
     const clean = q.trim();
@@ -119,6 +126,8 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
     setMake(null);
     setMakeDone(false);
     setCombo(0);
+    setGuess(null);
+    setChain((c) => c + 1);
     setQuestion(clean);
     const id = `${Date.now()}`;
     setCurioId(id);
@@ -127,7 +136,7 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
         question: clean, childAge: age, childName: childProfile.name, mood,
       });
       setSpark(s);
-      p.addSparks(5);
+      award(5);
       p.unlock('first_spark');
       p.recordCurio({
         id, question: clean, title: s.title, emoji: s.emoji, mood,
@@ -135,7 +144,7 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
       });
       // pre-draw the hero picture quietly
       callFn<{ imageUrl: string }>('wonder-image', { prompt: s.image_prompt })
-        .then((r) => setSpark((prev) => (prev ? { ...prev, heroUrl: r.imageUrl } as any : prev)))
+        .then((r) => setSpark((prev) => (prev ? { ...prev, heroUrl: r.imageUrl } : prev)))
         .catch(() => {});
     } catch (e) {
       toast.error((e as Error).message);
@@ -143,7 +152,16 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
     } finally {
       setLoading(false);
     }
-  }, [age, childProfile.name, loading, mood, p]);
+  }, [age, award, childProfile.name, loading, mood, p]);
+
+  const onGuess = (i: number) => {
+    if (!spark?.predict) return;
+    setGuess(i);
+    const right = i === spark.predict.correct_index;
+    award(right ? 8 : 4, right);
+    toast(right ? '🎯 Great hunch! +8 Sparks' : '💡 Nice guess! +4 Sparks');
+  };
+
 
   const loadSection = useCallback(async (idx: number) => {
     if (!spark) return;
