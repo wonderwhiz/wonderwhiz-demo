@@ -676,7 +676,26 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
         </div>
       )}
 
+      {/* ---------- sparks burst ---------- */}
+      <AnimatePresence>
+        {burst && (
+          <motion.div
+            key={burst.id}
+            initial={{ opacity: 0, y: 10, scale: 0.8 }}
+            animate={{ opacity: 1, y: -28, scale: 1 }}
+            exit={{ opacity: 0, y: -60, scale: 0.9 }}
+            transition={{ duration: 0.5 }}
+            className="fixed top-16 right-4 z-50 pointer-events-none"
+          >
+            <div className="px-3 py-1.5 rounded-full bg-accent-warning text-text-inverse font-black text-sm flex items-center gap-1 shadow-xl">
+              <Zap className="h-4 w-4" /> +{burst.n}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ---------- trophy shelf ---------- */}
+
       <AnimatePresence>
         {shelfOpen && (
           <motion.div
