@@ -300,16 +300,29 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-accent-warning/15 border border-accent-warning/30">
+        <motion.div
+          key={p.sparks}
+          initial={{ scale: 1 }}
+          animate={{ scale: [1, 1.18, 1] }}
+          transition={{ duration: 0.35 }}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-accent-warning/15 border border-accent-warning/30"
+        >
           <Zap className="h-4 w-4 text-accent-warning" />
           <span className="font-black text-text-primary text-sm tabular-nums">{p.sparks}</span>
-        </div>
+        </motion.div>
+        {chain > 1 && (
+          <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-accent-brand/15 border border-accent-brand/30" title="Curiosity chain this session">
+            <span className="text-sm">🔗</span>
+            <span className="font-black text-text-primary text-sm">{chain}</span>
+          </div>
+        )}
         {p.streak > 0 && (
           <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-accent-error/15 border border-accent-error/30">
             <Flame className="h-4 w-4 text-accent-error" />
             <span className="font-black text-text-primary text-sm">{p.streak}</span>
           </div>
         )}
+
         <button
           onClick={() => setShelfOpen(true)}
           aria-label="Trophy shelf"
