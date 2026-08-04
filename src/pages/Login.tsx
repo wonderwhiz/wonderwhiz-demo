@@ -206,6 +206,15 @@ const Login = () => {
                   >
                     {isLoading ? 'Signing in...' : 'Sign In'}
                   </Button>
+
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    disabled={isLoading}
+                    className="w-full text-center text-sm text-white/70 hover:text-white underline-offset-4 hover:underline"
+                  >
+                    Forgot password?
+                  </button>
                 </form>
               </TabsContent>
               
