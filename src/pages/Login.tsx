@@ -157,7 +157,7 @@ const Login = () => {
           </div>
           
           <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-6">
-            <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid grid-cols-2 mb-6 bg-white/10">
                 <TabsTrigger value="login" className="data-[state=active]:bg-wonderwhiz-purple data-[state=active]:text-white">
                   <LogIn className="mr-2 h-4 w-4" />
