@@ -309,7 +309,19 @@ const Login = () => {
                       />
                     </div>
                   </div>
-                  
+
+                  <AuthErrorMessage
+                    error={signupError}
+                    onAction={
+                      signupError?.action === 'switch-to-login'
+                        ? () => switchTab('login')
+                        : undefined
+                    }
+                    actionLabel={
+                      signupError?.action === 'switch-to-login' ? 'Go to sign in' : undefined
+                    }
+                  />
+
                   <Button 
                     type="submit" 
                     className="w-full bg-gradient-to-r from-wonderwhiz-pink to-wonderwhiz-purple hover:brightness-110" 
@@ -317,6 +329,7 @@ const Login = () => {
                   >
                     {isLoading ? 'Creating Account...' : 'Create Account'}
                   </Button>
+
                 </form>
               </TabsContent>
             </Tabs>
