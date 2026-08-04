@@ -42,7 +42,10 @@ function App() {
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Login />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
+
                 <Route path="/profiles" element={
                   <ProtectedRoute>
                     <ProfileSelector />
