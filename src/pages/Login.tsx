@@ -20,7 +20,28 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('login');
+  const [activeTab, setActiveTab] = useState(
+    window.location.pathname === '/register' ? 'signup' : 'login'
+  );
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      toast.error('Enter your email first, then tap "Forgot password?"');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      toast.success('Reset link sent', { description: 'Check your inbox to set a new password.' });
+    } catch (error: any) {
+      toast.error('Could not send reset link', { description: error.message });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Preserve `next` (e.g. OAuth consent URL) across sign-in / sign-up.
   const rawNext = new URLSearchParams(window.location.search).get('next');
