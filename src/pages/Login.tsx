@@ -12,6 +12,13 @@ import ParticleEffect from '@/components/ParticleEffect';
 import { ArrowLeft, Mail, Lock, UserPlus, LogIn } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import AuthErrorMessage from '@/components/auth/AuthErrorMessage';
+import {
+  mapPasswordResetError,
+  mapSignInError,
+  mapSignUpError,
+  type AuthFormError,
+} from '@/lib/authErrors';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -20,13 +27,29 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [loginError, setLoginError] = useState<AuthFormError | null>(null);
+  const [signupError, setSignupError] = useState<AuthFormError | null>(null);
   const [activeTab, setActiveTab] = useState(
     window.location.pathname === '/register' ? 'signup' : 'login'
   );
 
+  const switchTab = (tab: string) => {
+    setLoginError(null);
+    setSignupError(null);
+    setActiveTab(tab);
+  };
+
+  // Preserve `next` (e.g. OAuth consent URL) across sign-in / sign-up.
+  const rawNext = new URLSearchParams(window.location.search).get('next');
+  const nextPath = rawNext && rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : null;
+  const postAuthTarget = nextPath ?? '/profiles';
+
   const handleForgotPassword = async () => {
     if (!email) {
-      toast.error('Enter your email first, then tap "Forgot password?"');
+      setLoginError({
+        title: 'Enter your email first',
+        detail: 'Type the email you signed up with, then tap "Forgot password?" again.',
+      });
       return;
     }
     setIsLoading(true);
@@ -35,47 +58,56 @@ const Login = () => {
         redirectTo: `${window.location.origin}/reset-password`,
       });
       if (error) throw error;
+      setLoginError(null);
       toast.success('Reset link sent', { description: 'Check your inbox to set a new password.' });
     } catch (error: any) {
-      toast.error('Could not send reset link', { description: error.message });
+      setLoginError(mapPasswordResetError(error));
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Preserve `next` (e.g. OAuth consent URL) across sign-in / sign-up.
-  const rawNext = new URLSearchParams(window.location.search).get('next');
-  const nextPath = rawNext && rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : null;
-  const postAuthTarget = nextPath ?? '/profiles';
+  const handleResendConfirmation = async () => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+        options: { emailRedirectTo: `${window.location.origin}/profiles` },
+      });
+      if (error) throw error;
+      setLoginError(null);
+      toast.success('Confirmation email sent', { description: 'Check your inbox.' });
+    } catch (error: any) {
+      setLoginError(mapPasswordResetError(error));
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoginError(null);
+
     if (!email || !password) {
-      toast.error("Please fill in all fields");
+      setLoginError({ title: 'Please fill in both email and password' });
       return;
     }
 
     setIsLoading(true);
-    
+
     try {
       const { user } = await signIn(email, password);
-      
+
       if (!user) {
-        throw new Error("Login failed, please try again.");
+        throw new Error('Login failed, please try again.');
       }
 
-      toast.success("Welcome back!", {
-        description: "You're now signed in.",
-      });
-
-      // Always go to profiles after login
+      toast.success('Welcome back!', { description: "You're now signed in." });
       navigate(postAuthTarget);
-
     } catch (error: any) {
       console.error('Login error:', error);
-      toast.error("Login failed", {
-        description: error.message || "Please check your credentials.",
-      });
+      setLoginError(mapSignInError(error));
     } finally {
       setIsLoading(false);
     }
@@ -83,8 +115,10 @@ const Login = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSignupError(null);
+
     if (!email || !password || !name) {
-      toast.error("Please fill in all fields");
+      setSignupError({ title: 'Please fill in your name, email and password' });
       return;
     }
 
@@ -93,24 +127,23 @@ const Login = () => {
     try {
       const { session } = await signUp(email, password, name);
       if (session) {
-        toast.success("Welcome to WonderWhiz!");
+        toast.success('Welcome to WonderWhiz!');
         navigate(postAuthTarget);
       } else {
-        toast.success("Account created!", {
-          description: "Check your email to confirm, then sign in.",
+        toast.success('Account created!', {
+          description: 'Check your email to confirm, then sign in.',
           duration: 5000,
         });
-        setActiveTab('login');
+        switchTab('login');
       }
     } catch (error: any) {
       console.error('Sign up error:', error);
-      toast.error("Sign up failed", {
-        description: error.message || "Please try again.",
-      });
+      setSignupError(mapSignUpError(error));
     } finally {
       setIsLoading(false);
     }
   };
+
 
   return (
     <div className="min-h-screen bg-wonderwhiz-gradient flex flex-col">
@@ -157,7 +190,7 @@ const Login = () => {
           </div>
           
           <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-6">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <Tabs value={activeTab} onValueChange={switchTab} className="w-full">
               <TabsList className="grid grid-cols-2 mb-6 bg-white/10">
                 <TabsTrigger value="login" className="data-[state=active]:bg-wonderwhiz-purple data-[state=active]:text-white">
                   <LogIn className="mr-2 h-4 w-4" />
@@ -198,7 +231,25 @@ const Login = () => {
                       />
                     </div>
                   </div>
-                  
+
+                  <AuthErrorMessage
+                    error={loginError}
+                    onAction={
+                      loginError?.action === 'reset-password'
+                        ? handleForgotPassword
+                        : loginError?.action === 'resend-confirmation'
+                        ? handleResendConfirmation
+                        : undefined
+                    }
+                    actionLabel={
+                      loginError?.action === 'reset-password'
+                        ? 'Send me a reset link'
+                        : loginError?.action === 'resend-confirmation'
+                        ? 'Resend confirmation email'
+                        : undefined
+                    }
+                  />
+
                   <Button 
                     type="submit" 
                     className="w-full bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/90" 
@@ -206,6 +257,7 @@ const Login = () => {
                   >
                     {isLoading ? 'Signing in...' : 'Sign In'}
                   </Button>
+
 
                   <button
                     type="button"
@@ -257,7 +309,19 @@ const Login = () => {
                       />
                     </div>
                   </div>
-                  
+
+                  <AuthErrorMessage
+                    error={signupError}
+                    onAction={
+                      signupError?.action === 'switch-to-login'
+                        ? () => switchTab('login')
+                        : undefined
+                    }
+                    actionLabel={
+                      signupError?.action === 'switch-to-login' ? 'Go to sign in' : undefined
+                    }
+                  />
+
                   <Button 
                     type="submit" 
                     className="w-full bg-gradient-to-r from-wonderwhiz-pink to-wonderwhiz-purple hover:brightness-110" 
@@ -265,6 +329,7 @@ const Login = () => {
                   >
                     {isLoading ? 'Creating Account...' : 'Create Account'}
                   </Button>
+
                 </form>
               </TabsContent>
             </Tabs>
