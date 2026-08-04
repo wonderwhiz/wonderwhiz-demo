@@ -20,7 +20,28 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('login');
+  const [activeTab, setActiveTab] = useState(
+    window.location.pathname === '/register' ? 'signup' : 'login'
+  );
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      toast.error('Enter your email first, then tap "Forgot password?"');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      toast.success('Reset link sent', { description: 'Check your inbox to set a new password.' });
+    } catch (error: any) {
+      toast.error('Could not send reset link', { description: error.message });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Preserve `next` (e.g. OAuth consent URL) across sign-in / sign-up.
   const rawNext = new URLSearchParams(window.location.search).get('next');
@@ -70,12 +91,17 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      await signUp(email, password, name);
-      toast.success("Account created successfully!", {
-        description: "Please check your email to verify your account.",
-        duration: 4000,
-      });
-      navigate(postAuthTarget);
+      const { session } = await signUp(email, password, name);
+      if (session) {
+        toast.success("Welcome to WonderWhiz!");
+        navigate(postAuthTarget);
+      } else {
+        toast.success("Account created!", {
+          description: "Check your email to confirm, then sign in.",
+          duration: 5000,
+        });
+        setActiveTab('login');
+      }
     } catch (error: any) {
       console.error('Sign up error:', error);
       toast.error("Sign up failed", {
@@ -131,7 +157,7 @@ const Login = () => {
           </div>
           
           <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-6">
-            <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid grid-cols-2 mb-6 bg-white/10">
                 <TabsTrigger value="login" className="data-[state=active]:bg-wonderwhiz-purple data-[state=active]:text-white">
                   <LogIn className="mr-2 h-4 w-4" />
@@ -180,6 +206,15 @@ const Login = () => {
                   >
                     {isLoading ? 'Signing in...' : 'Sign In'}
                   </Button>
+
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    disabled={isLoading}
+                    className="w-full text-center text-sm text-white/70 hover:text-white underline-offset-4 hover:underline"
+                  >
+                    Forgot password?
+                  </button>
                 </form>
               </TabsContent>
               

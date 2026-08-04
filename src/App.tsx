@@ -15,6 +15,7 @@ import ParentZone from '@/pages/ParentZone';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import OAuthConsent from '@/pages/OAuthConsent';
 import CreateProfile from '@/pages/CreateProfile';
+import ResetPassword from '@/pages/ResetPassword';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -41,7 +42,10 @@ function App() {
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Login />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
+
                 <Route path="/profiles" element={
                   <ProtectedRoute>
                     <ProfileSelector />
