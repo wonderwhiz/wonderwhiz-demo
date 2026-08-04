@@ -15,6 +15,7 @@ import ParentZone from '@/pages/ParentZone';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import OAuthConsent from '@/pages/OAuthConsent';
 import CreateProfile from '@/pages/CreateProfile';
+import ResetPassword from '@/pages/ResetPassword';
 
 // Create a client
 const queryClient = new QueryClient({
