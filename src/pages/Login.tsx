@@ -231,7 +231,25 @@ const Login = () => {
                       />
                     </div>
                   </div>
-                  
+
+                  <AuthErrorMessage
+                    error={loginError}
+                    onAction={
+                      loginError?.action === 'reset-password'
+                        ? handleForgotPassword
+                        : loginError?.action === 'resend-confirmation'
+                        ? handleResendConfirmation
+                        : undefined
+                    }
+                    actionLabel={
+                      loginError?.action === 'reset-password'
+                        ? 'Send me a reset link'
+                        : loginError?.action === 'resend-confirmation'
+                        ? 'Resend confirmation email'
+                        : undefined
+                    }
+                  />
+
                   <Button 
                     type="submit" 
                     className="w-full bg-wonderwhiz-bright-pink hover:bg-wonderwhiz-bright-pink/90" 
@@ -239,6 +257,7 @@ const Login = () => {
                   >
                     {isLoading ? 'Signing in...' : 'Sign In'}
                   </Button>
+
 
                   <button
                     type="button"
