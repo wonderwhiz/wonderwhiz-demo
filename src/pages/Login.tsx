@@ -91,12 +91,17 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      await signUp(email, password, name);
-      toast.success("Account created successfully!", {
-        description: "Please check your email to verify your account.",
-        duration: 4000,
-      });
-      navigate(postAuthTarget);
+      const { session } = await signUp(email, password, name);
+      if (session) {
+        toast.success("Welcome to WonderWhiz!");
+        navigate(postAuthTarget);
+      } else {
+        toast.success("Account created!", {
+          description: "Check your email to confirm, then sign in.",
+          duration: 5000,
+        });
+        setActiveTab('login');
+      }
     } catch (error: any) {
       console.error('Sign up error:', error);
       toast.error("Sign up failed", {
