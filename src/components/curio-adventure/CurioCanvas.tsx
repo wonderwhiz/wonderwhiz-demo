@@ -429,7 +429,19 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
               </div>
             </div>
 
+            <DailyPanel
+              streak={p.streak}
+              freezes={p.freezes}
+              week={p.week}
+              today={p.todaySparks}
+              goal={p.dailyGoal}
+              pct={p.goalPct}
+              quests={p.quests}
+              onClaim={p.claimQuest}
+            />
+
             <button
+
               onClick={() => startCurio(dailyChallenge)}
               className="w-full text-left p-4 rounded-[28px] border-2 border-accent-warning bg-accent-warning/10 flex items-center gap-3 shadow-sm"
             >
