@@ -249,6 +249,8 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
     const next = sectionIdx + 1;
     if (next >= spark.sections.length) {
       p.unlock('deep_diver');
+      p.track('dive');
+
       award(20, true);
       setStage('make');
       scrollTop();
