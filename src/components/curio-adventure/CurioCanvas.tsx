@@ -124,6 +124,8 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
     setStage('spark');
     setSpark(null);
     setSections([]);
+    sectionCache.current = new Map();
+
     setSectionIdx(0);
     setMake(null);
     setMakeDone(false);
