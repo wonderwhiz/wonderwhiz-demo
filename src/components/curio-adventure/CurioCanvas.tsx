@@ -10,6 +10,8 @@ import { useCurioProgress, BADGES } from '@/hooks/useCurioProgress';
 import { MOODS, Mood, Spark, SectionData, MakeBrief } from './types';
 import DiveSection from './DiveSection';
 import MakeMode from './MakeMode';
+import DailyPanel, { GoalRing } from './DailyPanel';
+
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
@@ -66,7 +68,9 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
   const [guess, setGuess] = useState<number | null>(null);
   const [chain, setChain] = useState(0);
   const [burst, setBurst] = useState<{ id: number; n: number } | null>(null);
+  const [session, setSession] = useState({ sparks: 0, right: 0, wrong: 0 });
   const sectionCache = useRef<Map<number, Promise<SectionData>>>(new Map());
+
 
 
 
@@ -111,9 +115,11 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
   /* ---------- rewards ---------- */
   const award = useCallback((n: number, celebrate = false) => {
     p.addSparks(n, celebrate);
+    setSession((s) => ({ ...s, sparks: s.sparks + n }));
     setBurst({ id: Date.now(), n });
     setTimeout(() => setBurst(null), 1400);
   }, [p]);
+
 
   /* ---------- flow ---------- */
   const startCurio = useCallback(async (q: string) => {
@@ -140,8 +146,11 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
         question: clean, childAge: age, childName: childProfile.name, mood,
       });
       setSpark(s);
+      setSession({ sparks: 0, right: 0, wrong: 0 });
       award(5);
+      p.track('curio');
       p.unlock('first_spark');
+
       p.recordCurio({
         id, question: clean, title: s.title, emoji: s.emoji, mood,
         createdAt: Date.now(), completed: false,
@@ -242,6 +251,8 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
     const next = sectionIdx + 1;
     if (next >= spark.sections.length) {
       p.unlock('deep_diver');
+      p.track('dive');
+
       award(20, true);
       setStage('make');
       scrollTop();
@@ -285,15 +296,19 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
     if (correct) {
       const c = combo + 1;
       setCombo(c);
+      setSession((s) => ({ ...s, right: s.right + 1 }));
+      p.track('correct');
       const bonus = c >= 2 ? c * 2 : 0;
       award(10 + bonus, true);
       p.unlock('quiz_whiz');
       toast.success(bonus ? `+${10 + bonus} Sparks — ${c}× combo! 🔥` : '+10 Sparks — nailed it!');
     } else {
       setCombo(0);
+      setSession((s) => ({ ...s, wrong: s.wrong + 1 }));
       award(2);
       toast('+2 Sparks — good try!', { icon: '💡' });
     }
+
   };
 
   const onMakeComplete = (photo?: string) => {
@@ -319,6 +334,14 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
   };
 
   useEffect(() => () => window.speechSynthesis?.cancel(), []);
+
+  // Daily-goal celebration (Duolingo's "goal met" moment)
+  useEffect(() => {
+    if (!p.goalJustHit) return;
+    confetti({ particleCount: 120, spread: 90, origin: { y: 0.6 } });
+    toast.success('Daily goal complete! ❄️ You earned a Streak Freeze');
+  }, [p.goalJustHit]);
+
 
   /* ---------- shared chrome ---------- */
   const Header = (
@@ -359,11 +382,13 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
           </div>
         )}
         {p.streak > 0 && (
-          <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-accent-error/15 border border-accent-error/30">
+          <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-accent-error/15 border border-accent-error/30" title={`${p.streak}-day streak`}>
             <Flame className="h-4 w-4 text-accent-error" />
             <span className="font-black text-text-primary text-sm">{p.streak}</span>
           </div>
         )}
+        <GoalRing pct={p.goalPct} today={p.todaySparks} goal={p.dailyGoal} />
+
 
         <button
           onClick={() => setShelfOpen(true)}
@@ -412,7 +437,19 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
               </div>
             </div>
 
+            <DailyPanel
+              streak={p.streak}
+              freezes={p.freezes}
+              week={p.week}
+              today={p.todaySparks}
+              goal={p.dailyGoal}
+              pct={p.goalPct}
+              quests={p.quests}
+              onClaim={p.claimQuest}
+            />
+
             <button
+
               onClick={() => startCurio(dailyChallenge)}
               className="w-full text-left p-4 rounded-[28px] border-2 border-accent-warning bg-accent-warning/10 flex items-center gap-3 shadow-sm"
             >
@@ -642,12 +679,42 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
               <div className="text-6xl">{spark.emoji}</div>
               <h2 className="mt-3 text-3xl font-black text-text-primary">Quest complete!</h2>
               <p className="mt-1 text-text-secondary">You cracked open “{spark.title}”.</p>
-              <div className="mt-4 flex items-center justify-center gap-2 text-accent-warning font-black text-lg">
-                <Zap className="h-5 w-5" /> {p.sparks} Sparks
+
+              {/* session scorecard */}
+              <div className="mt-5 grid grid-cols-3 gap-2.5">
+                <div className="rounded-2xl border-2 border-accent-warning/40 bg-accent-warning/10 p-3">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-accent-warning">Sparks</p>
+                  <p className="text-2xl font-black text-text-primary tabular-nums">{session.sparks}</p>
+                </div>
+                <div className="rounded-2xl border-2 border-accent-success/40 bg-accent-success/10 p-3">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-accent-success">Accuracy</p>
+                  <p className="text-2xl font-black text-text-primary tabular-nums">
+                    {session.right + session.wrong
+                      ? Math.round((session.right / (session.right + session.wrong)) * 100)
+                      : 100}%
+                  </p>
+                </div>
+                <div className="rounded-2xl border-2 border-accent-error/40 bg-accent-error/10 p-3">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-accent-error">Streak</p>
+                  <p className="text-2xl font-black text-text-primary tabular-nums">{p.streak}🔥</p>
+                </div>
               </div>
+
+              {/* daily goal nudge — the "one more" pull */}
+              <div className="mt-4 text-left">
+                <div className="flex items-center justify-between text-xs font-bold text-text-secondary mb-1.5">
+                  <span>{p.goalMet ? 'Daily goal complete!' : `${p.dailyGoal - p.todaySparks} ⚡ to your daily goal`}</span>
+                  <span className="tabular-nums">{Math.min(p.todaySparks, p.dailyGoal)}/{p.dailyGoal}</span>
+                </div>
+                <div className="h-3 rounded-full bg-surface-tertiary overflow-hidden">
+                  <div className="h-full rounded-full bg-accent-warning transition-all" style={{ width: `${p.goalPct}%` }} />
+                </div>
+              </div>
+
               <p className="mt-3 text-sm text-text-tertiary">
                 💛 A Proud Moment card was saved for your grown-up.
               </p>
+
               <button
                 onClick={() => window.print()}
                 className="fun-chip mt-4 mx-auto"
