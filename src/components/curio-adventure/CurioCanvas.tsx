@@ -144,8 +144,11 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
         question: clean, childAge: age, childName: childProfile.name, mood,
       });
       setSpark(s);
+      setSession({ sparks: 0, right: 0, wrong: 0 });
       award(5);
+      p.track('curio');
       p.unlock('first_spark');
+
       p.recordCurio({
         id, question: clean, title: s.title, emoji: s.emoji, mood,
         createdAt: Date.now(), completed: false,
