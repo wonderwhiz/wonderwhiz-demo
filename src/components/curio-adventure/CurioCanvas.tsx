@@ -111,9 +111,11 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
   /* ---------- rewards ---------- */
   const award = useCallback((n: number, celebrate = false) => {
     p.addSparks(n, celebrate);
+    setSession((s) => ({ ...s, sparks: s.sparks + n }));
     setBurst({ id: Date.now(), n });
     setTimeout(() => setBurst(null), 1400);
   }, [p]);
+
 
   /* ---------- flow ---------- */
   const startCurio = useCallback(async (q: string) => {
