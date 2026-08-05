@@ -163,32 +163,60 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
   };
 
 
-  const loadSection = useCallback(async (idx: number) => {
-    if (!spark) return;
-    setSectionLoading(true);
-    try {
-      const s = await callFn<SectionData>('wonder-section', {
-        topic: spark.title,
-        question,
-        sectionTitle: spark.sections[idx]?.title,
-        index: idx,
-        total: spark.sections.length,
-        childAge: age,
-        childName: childProfile.name,
-        mood,
-        kind: CHECKPOINT_ROTATION[idx % CHECKPOINT_ROTATION.length],
-      });
+  /* ---------- section fetching (cached + prefetched) ---------- */
+  const fetchSection = useCallback((sparkArg: Spark, q: string, idx: number): Promise<SectionData> => {
+    const cached = sectionCache.current.get(idx);
+    if (cached) return cached;
+    const req = callFn<SectionData>('wonder-section', {
+      topic: sparkArg.title,
+      question: q,
+      sectionTitle: sparkArg.sections[idx]?.title,
+      index: idx,
+      total: sparkArg.sections.length,
+      childAge: age,
+      childName: childProfile.name,
+      mood,
+      kind: CHECKPOINT_ROTATION[idx % CHECKPOINT_ROTATION.length],
+    }).then((s) => {
       setSections((prev) => {
         const next = [...prev];
         next[idx] = s;
         return next;
       });
+      return s;
+    }).catch((e) => {
+      sectionCache.current.delete(idx);
+      throw e;
+    });
+    sectionCache.current.set(idx, req);
+    return req;
+  }, [age, childProfile.name, mood]);
+
+  // Warm the next section in the background so "Continue" feels instant.
+  const prefetchSection = useCallback((idx: number) => {
+    if (!spark || idx < 0 || idx >= spark.sections.length) return;
+    fetchSection(spark, question, idx).catch(() => {});
+  }, [fetchSection, question, spark]);
+
+  const loadSection = useCallback(async (idx: number) => {
+    if (!spark) return;
+    if (sectionCache.current.has(idx) && sections[idx]) return;
+    setSectionLoading(true);
+    try {
+      await fetchSection(spark, question, idx);
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
       setSectionLoading(false);
     }
-  }, [age, childProfile.name, mood, question, spark]);
+  }, [fetchSection, question, sections, spark]);
+
+  // Once a section is on screen, quietly fetch the following one.
+  useEffect(() => {
+    if (stage !== 'dive' || !spark) return;
+    if (!sections[sectionIdx]) return;
+    prefetchSection(sectionIdx + 1);
+  }, [stage, sectionIdx, sections, spark, prefetchSection]);
 
   const startDive = async () => {
     setStage('dive');
@@ -221,7 +249,9 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
     setSectionIdx(next);
     scrollTop();
     if (!sections[next]) await loadSection(next);
+    prefetchSection(next + 1);
   };
+
 
   const onSectionImage = async (idx: number) => {
     const sec = sections[idx];
