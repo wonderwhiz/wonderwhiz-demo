@@ -335,6 +335,14 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
 
   useEffect(() => () => window.speechSynthesis?.cancel(), []);
 
+  // Daily-goal celebration (Duolingo's "goal met" moment)
+  useEffect(() => {
+    if (!p.goalJustHit) return;
+    confetti({ particleCount: 120, spread: 90, origin: { y: 0.6 } });
+    toast.success('Daily goal complete! ❄️ You earned a Streak Freeze');
+  }, [p.goalJustHit]);
+
+
   /* ---------- shared chrome ---------- */
   const Header = (
     <header className="sticky top-0 z-30 backdrop-blur-xl bg-surface-primary/90 border-b border-border">
