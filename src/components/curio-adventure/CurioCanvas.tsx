@@ -10,6 +10,8 @@ import { useCurioProgress, BADGES } from '@/hooks/useCurioProgress';
 import { MOODS, Mood, Spark, SectionData, MakeBrief } from './types';
 import DiveSection from './DiveSection';
 import MakeMode from './MakeMode';
+import DailyPanel, { GoalRing } from './DailyPanel';
+
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
