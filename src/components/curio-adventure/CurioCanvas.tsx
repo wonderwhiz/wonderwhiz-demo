@@ -215,12 +215,20 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
     }
   }, [fetchSection, question, sections, spark]);
 
+  // While the child reads the Spark, warm the first two dive sections.
+  useEffect(() => {
+    if (!spark || stage !== 'spark') return;
+    prefetchSection(0);
+    prefetchSection(1);
+  }, [spark, stage, prefetchSection]);
+
   // Once a section is on screen, quietly fetch the following one.
   useEffect(() => {
     if (stage !== 'dive' || !spark) return;
     if (!sections[sectionIdx]) return;
     prefetchSection(sectionIdx + 1);
   }, [stage, sectionIdx, sections, spark, prefetchSection]);
+
 
   const startDive = async () => {
     setStage('dive');
