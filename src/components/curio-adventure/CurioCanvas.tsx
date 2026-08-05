@@ -655,12 +655,42 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
               <div className="text-6xl">{spark.emoji}</div>
               <h2 className="mt-3 text-3xl font-black text-text-primary">Quest complete!</h2>
               <p className="mt-1 text-text-secondary">You cracked open “{spark.title}”.</p>
-              <div className="mt-4 flex items-center justify-center gap-2 text-accent-warning font-black text-lg">
-                <Zap className="h-5 w-5" /> {p.sparks} Sparks
+
+              {/* session scorecard */}
+              <div className="mt-5 grid grid-cols-3 gap-2.5">
+                <div className="rounded-2xl border-2 border-accent-warning/40 bg-accent-warning/10 p-3">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-accent-warning">Sparks</p>
+                  <p className="text-2xl font-black text-text-primary tabular-nums">{session.sparks}</p>
+                </div>
+                <div className="rounded-2xl border-2 border-accent-success/40 bg-accent-success/10 p-3">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-accent-success">Accuracy</p>
+                  <p className="text-2xl font-black text-text-primary tabular-nums">
+                    {session.right + session.wrong
+                      ? Math.round((session.right / (session.right + session.wrong)) * 100)
+                      : 100}%
+                  </p>
+                </div>
+                <div className="rounded-2xl border-2 border-accent-error/40 bg-accent-error/10 p-3">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-accent-error">Streak</p>
+                  <p className="text-2xl font-black text-text-primary tabular-nums">{p.streak}🔥</p>
+                </div>
               </div>
+
+              {/* daily goal nudge — the "one more" pull */}
+              <div className="mt-4 text-left">
+                <div className="flex items-center justify-between text-xs font-bold text-text-secondary mb-1.5">
+                  <span>{p.goalMet ? 'Daily goal complete!' : `${p.dailyGoal - p.todaySparks} ⚡ to your daily goal`}</span>
+                  <span className="tabular-nums">{Math.min(p.todaySparks, p.dailyGoal)}/{p.dailyGoal}</span>
+                </div>
+                <div className="h-3 rounded-full bg-surface-tertiary overflow-hidden">
+                  <div className="h-full rounded-full bg-accent-warning transition-all" style={{ width: `${p.goalPct}%` }} />
+                </div>
+              </div>
+
               <p className="mt-3 text-sm text-text-tertiary">
                 💛 A Proud Moment card was saved for your grown-up.
               </p>
+
               <button
                 onClick={() => window.print()}
                 className="fun-chip mt-4 mx-auto"
