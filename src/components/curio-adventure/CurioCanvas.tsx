@@ -66,7 +66,9 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
   const [guess, setGuess] = useState<number | null>(null);
   const [chain, setChain] = useState(0);
   const [burst, setBurst] = useState<{ id: number; n: number } | null>(null);
+  const [session, setSession] = useState({ sparks: 0, right: 0, wrong: 0 });
   const sectionCache = useRef<Map<number, Promise<SectionData>>>(new Map());
+
 
 
 
