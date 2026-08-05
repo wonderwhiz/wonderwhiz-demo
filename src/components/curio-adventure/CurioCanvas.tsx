@@ -289,15 +289,19 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
     if (correct) {
       const c = combo + 1;
       setCombo(c);
+      setSession((s) => ({ ...s, right: s.right + 1 }));
+      p.track('correct');
       const bonus = c >= 2 ? c * 2 : 0;
       award(10 + bonus, true);
       p.unlock('quiz_whiz');
       toast.success(bonus ? `+${10 + bonus} Sparks — ${c}× combo! 🔥` : '+10 Sparks — nailed it!');
     } else {
       setCombo(0);
+      setSession((s) => ({ ...s, wrong: s.wrong + 1 }));
       award(2);
       toast('+2 Sparks — good try!', { icon: '💡' });
     }
+
   };
 
   const onMakeComplete = (photo?: string) => {
