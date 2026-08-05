@@ -372,11 +372,13 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
           </div>
         )}
         {p.streak > 0 && (
-          <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-accent-error/15 border border-accent-error/30">
+          <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-accent-error/15 border border-accent-error/30" title={`${p.streak}-day streak`}>
             <Flame className="h-4 w-4 text-accent-error" />
             <span className="font-black text-text-primary text-sm">{p.streak}</span>
           </div>
         )}
+        <GoalRing pct={p.goalPct} today={p.todaySparks} goal={p.dailyGoal} />
+
 
         <button
           onClick={() => setShelfOpen(true)}
