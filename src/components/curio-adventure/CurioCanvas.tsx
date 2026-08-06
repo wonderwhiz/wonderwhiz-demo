@@ -221,9 +221,12 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
     fetchSection(spark, question, idx).catch(() => {});
   }, [fetchSection, question, spark]);
 
+  const sectionsRef = useRef<SectionData[]>(sections);
+  sectionsRef.current = sections;
+
   const loadSection = useCallback(async (idx: number) => {
     if (!spark) return;
-    if (sectionCache.current.has(idx) && sections[idx]) return;
+    if (sectionCache.current.has(idx) && sectionsRef.current[idx]) return;
     setSectionLoading(true);
     try {
       await fetchSection(spark, question, idx);
@@ -232,7 +235,7 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
     } finally {
       setSectionLoading(false);
     }
-  }, [fetchSection, question, sections, spark]);
+  }, [fetchSection, question, spark]);
 
   // While the child reads the Spark, warm the first two dive sections.
   useEffect(() => {
