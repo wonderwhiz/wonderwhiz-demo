@@ -1,16 +1,18 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft, Send, Mic, MicOff, Sparkles, Zap, Flame, Shuffle, Loader2,
-  Trophy as TrophyIcon, ChevronRight, Rocket, Award, X, History,
+  Send, Mic, MicOff, Sparkles, Zap, Shuffle, Loader2,
+  Rocket, Award,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { toast } from 'sonner';
-import { useCurioProgress, BADGES } from '@/hooks/useCurioProgress';
-import { MOODS, Mood, Spark, SectionData, MakeBrief } from './types';
+import { useCurioProgress } from '@/hooks/useCurioProgress';
+import { Mood, Spark, SectionData, MakeBrief } from './types';
 import DiveSection from './DiveSection';
 import MakeMode from './MakeMode';
-import DailyPanel, { GoalRing } from './DailyPanel';
+import CanvasHeader from './CanvasHeader';
+import AskScreen from './AskScreen';
+import TrophyShelf from './TrophyShelf';
 
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
