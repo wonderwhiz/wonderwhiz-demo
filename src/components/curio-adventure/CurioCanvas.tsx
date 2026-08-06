@@ -345,67 +345,31 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
   }, [p.goalJustHit]);
 
 
-  /* ---------- shared chrome ---------- */
-  const Header = (
-    <header className="sticky top-0 z-30 backdrop-blur-xl bg-surface-primary/90 border-b border-border">
-      <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
-        <button
-          onClick={stage === 'ask' ? onBack : resetToAsk}
-          aria-label={stage === 'ask' ? 'Back to profiles' : 'Back to asking'}
-          className="h-10 w-10 rounded-xl border border-border bg-surface-secondary flex items-center justify-center text-text-secondary hover:text-text-primary"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
+  const openShelf = useCallback(() => setShelfOpen(true), []);
+  const closeShelf = useCallback(() => setShelfOpen(false), []);
+  const handleBack = useCallback(() => {
+    if (stage === 'ask') onBack();
+    else resetToAsk();
+  }, [stage, onBack, resetToAsk]);
 
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 text-sm font-black text-text-primary">
-            <span>{p.level.emoji}</span>
-            <span className="truncate">{p.level.name}</span>
-          </div>
-          <div className="mt-1 h-1.5 rounded-full bg-surface-tertiary overflow-hidden">
-            <div className="h-full bg-accent-brand rounded-full transition-all" style={{ width: `${p.levelProgress}%` }} />
-          </div>
-        </div>
-
-        <motion.div
-          key={p.sparks}
-          initial={{ scale: 1 }}
-          animate={{ scale: [1, 1.18, 1] }}
-          transition={{ duration: 0.35 }}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-accent-warning/15 border border-accent-warning/30"
-        >
-          <Zap className="h-4 w-4 text-accent-warning" />
-          <span className="font-black text-text-primary text-sm tabular-nums">{p.sparks}</span>
-        </motion.div>
-        {chain > 1 && (
-          <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-accent-brand/15 border border-accent-brand/30" title="Curiosity chain this session">
-            <span className="text-sm">🔗</span>
-            <span className="font-black text-text-primary text-sm">{chain}</span>
-          </div>
-        )}
-        {p.streak > 0 && (
-          <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-accent-error/15 border border-accent-error/30" title={`${p.streak}-day streak`}>
-            <Flame className="h-4 w-4 text-accent-error" />
-            <span className="font-black text-text-primary text-sm">{p.streak}</span>
-          </div>
-        )}
-        <GoalRing pct={p.goalPct} today={p.todaySparks} goal={p.dailyGoal} />
-
-
-        <button
-          onClick={() => setShelfOpen(true)}
-          aria-label="Trophy shelf"
-          className="h-10 w-10 rounded-xl border border-border bg-surface-secondary flex items-center justify-center text-text-secondary hover:text-text-primary"
-        >
-          <TrophyIcon className="h-5 w-5" />
-        </button>
-      </div>
-    </header>
-  );
+  const suggestions = useMemo(() => SURPRISES.slice(0, 6), []);
 
   return (
     <div className="min-h-screen bg-surface-primary">
-      {Header}
+      <CanvasHeader
+        levelEmoji={p.level.emoji}
+        levelName={p.level.name}
+        levelProgress={p.levelProgress}
+        sparks={p.sparks}
+        chain={chain}
+        streak={p.streak}
+        goalPct={p.goalPct}
+        todaySparks={p.todaySparks}
+        dailyGoal={p.dailyGoal}
+        onBack={handleBack}
+        backLabel={stage === 'ask' ? 'Back to profiles' : 'Back to asking'}
+        onOpenShelf={openShelf}
+      />
       <div ref={topRef} />
 
       <main className="max-w-2xl mx-auto px-4 py-6 pb-32 space-y-5">
