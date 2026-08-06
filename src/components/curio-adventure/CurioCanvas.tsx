@@ -369,6 +369,24 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
 
   const suggestions = useMemo(() => SURPRISES.slice(0, 6), []);
 
+  /* ---------- stable props for the dive section ---------- */
+  const noop = useCallback(() => {}, []);
+  const handleSectionImage = useCallback(() => onSectionImage(sectionIdx), [onSectionImage, sectionIdx]);
+  const handleSectionSpeak = useCallback(() => {
+    const s = sectionsRef.current[sectionIdx];
+    if (s) speak(s.body.join(' '));
+  }, [speak, sectionIdx]);
+  const handleTune = useCallback((m: 'simpler' | 'deeper') => {
+    const s = sectionsRef.current[sectionIdx];
+    if (!s) return;
+    startCurio(
+      m === 'simpler'
+        ? `Explain ${s.heading} in much simpler words`
+        : `Go deeper and more advanced on ${s.heading}`,
+    );
+  }, [startCurio, sectionIdx]);
+  const currentSection = sections[sectionIdx];
+
   return (
     <div className="min-h-screen bg-surface-primary">
       <CanvasHeader
