@@ -129,9 +129,12 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
 
 
   /* ---------- flow ---------- */
+  const loadingRef = useRef(false);
+  loadingRef.current = loading;
+
   const startCurio = useCallback(async (q: string) => {
     const clean = q.trim();
-    if (!clean || loading) return;
+    if (!clean || loadingRef.current) return;
     setLoading(true);
     setInput('');
     setStage('spark');
@@ -155,10 +158,10 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
       setSpark(s);
       setSession({ sparks: 0, right: 0, wrong: 0 });
       award(5);
-      p.track('curio');
-      p.unlock('first_spark');
+      pRef.current.track('curio');
+      pRef.current.unlock('first_spark');
 
-      p.recordCurio({
+      pRef.current.recordCurio({
         id, question: clean, title: s.title, emoji: s.emoji, mood,
         createdAt: Date.now(), completed: false,
       });
@@ -172,15 +175,15 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
     } finally {
       setLoading(false);
     }
-  }, [age, award, childProfile.name, loading, mood, p]);
+  }, [age, award, childProfile.name, mood]);
 
-  const onGuess = (i: number) => {
+  const onGuess = useCallback((i: number) => {
     if (!spark?.predict) return;
     setGuess(i);
     const right = i === spark.predict.correct_index;
     award(right ? 8 : 4, right);
     toast(right ? '🎯 Great hunch! +8 Sparks' : '💡 Nice guess! +4 Sparks');
-  };
+  }, [spark, award]);
 
 
   /* ---------- section fetching (cached + prefetched) ---------- */
