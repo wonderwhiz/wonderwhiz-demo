@@ -548,7 +548,7 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
               ))}
             </div>
 
-            {sectionLoading || !sections[sectionIdx] ? (
+            {sectionLoading || !currentSection ? (
               <div className="fun-card p-6 space-y-3">
                 <div className="h-6 w-1/2 rounded-full bg-surface-tertiary animate-pulse" />
                 <div className="h-4 w-full rounded-full bg-surface-tertiary animate-pulse" />
@@ -557,19 +557,15 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
             ) : (
               <DiveSection
                 key={sectionIdx}
-                section={sections[sectionIdx]}
+                section={currentSection}
                 index={sectionIdx}
                 total={spark.sections.length}
                 isLast={sectionIdx === spark.sections.length - 1}
-                onImage={() => onSectionImage(sectionIdx)}
-                onStory={() => {}}
+                onImage={handleSectionImage}
+                onStory={noop}
                 speaking={speaking}
-                onSpeak={() => speak(sections[sectionIdx].body.join(' '))}
-                onTune={(m) => startCurio(
-                  m === 'simpler'
-                    ? `Explain ${sections[sectionIdx].heading} in much simpler words`
-                    : `Go deeper and more advanced on ${sections[sectionIdx].heading}`,
-                )}
+                onSpeak={handleSectionSpeak}
+                onTune={handleTune}
                 onCheckpoint={onCheckpoint}
                 onContinue={nextSection}
               />
