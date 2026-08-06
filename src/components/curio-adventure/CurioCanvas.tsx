@@ -305,19 +305,22 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
     }
   }, [award]);
 
+  const comboRef = useRef(combo);
+  comboRef.current = combo;
+
   const onCheckpoint = useCallback((correct: boolean) => {
     if (correct) {
-      setCombo((prev) => {
-        const c = prev + 1;
-        setSession((s) => ({ ...s, right: s.right + 1 }));
-        pRef.current.track('correct');
-        const bonus = c >= 2 ? c * 2 : 0;
-        award(10 + bonus, true);
-        pRef.current.unlock('quiz_whiz');
-        toast.success(bonus ? `+${10 + bonus} Sparks — ${c}× combo! 🔥` : '+10 Sparks — nailed it!');
-        return c;
-      });
+      const c = comboRef.current + 1;
+      comboRef.current = c;
+      setCombo(c);
+      setSession((s) => ({ ...s, right: s.right + 1 }));
+      pRef.current.track('correct');
+      const bonus = c >= 2 ? c * 2 : 0;
+      award(10 + bonus, true);
+      pRef.current.unlock('quiz_whiz');
+      toast.success(bonus ? `+${10 + bonus} Sparks — ${c}× combo! 🔥` : '+10 Sparks — nailed it!');
     } else {
+      comboRef.current = 0;
       setCombo(0);
       setSession((s) => ({ ...s, wrong: s.wrong + 1 }));
       award(2);
