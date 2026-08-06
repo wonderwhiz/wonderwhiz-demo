@@ -150,4 +150,4 @@ const DiveSection: React.FC<Props> = ({
   );
 };
 
-export default DiveSection;
+export default React.memo(DiveSection);

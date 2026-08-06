@@ -90,4 +90,4 @@ const MakeMode: React.FC<Props> = ({ brief, loading, done, onComplete }) => {
   );
 };
 
-export default MakeMode;
+export default React.memo(MakeMode);

@@ -1,16 +1,18 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft, Send, Mic, MicOff, Sparkles, Zap, Flame, Shuffle, Loader2,
-  Trophy as TrophyIcon, ChevronRight, Rocket, Award, X, History,
+  Send, Mic, MicOff, Sparkles, Zap, Shuffle, Loader2,
+  Rocket, Award,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { toast } from 'sonner';
-import { useCurioProgress, BADGES } from '@/hooks/useCurioProgress';
-import { MOODS, Mood, Spark, SectionData, MakeBrief } from './types';
+import { useCurioProgress } from '@/hooks/useCurioProgress';
+import { Mood, Spark, SectionData, MakeBrief } from './types';
 import DiveSection from './DiveSection';
 import MakeMode from './MakeMode';
-import DailyPanel, { GoalRing } from './DailyPanel';
+import CanvasHeader from './CanvasHeader';
+import AskScreen from './AskScreen';
+import TrophyShelf from './TrophyShelf';
 
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
@@ -113,18 +115,26 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
   };
 
   /* ---------- rewards ---------- */
+  // `p` is a fresh object every render; keep it in a ref so callbacks stay stable
+  // and memoized children don't re-render on every progress tick.
+  const pRef = useRef(p);
+  pRef.current = p;
+
   const award = useCallback((n: number, celebrate = false) => {
-    p.addSparks(n, celebrate);
+    pRef.current.addSparks(n, celebrate);
     setSession((s) => ({ ...s, sparks: s.sparks + n }));
     setBurst({ id: Date.now(), n });
     setTimeout(() => setBurst(null), 1400);
-  }, [p]);
+  }, []);
 
 
   /* ---------- flow ---------- */
+  const loadingRef = useRef(false);
+  loadingRef.current = loading;
+
   const startCurio = useCallback(async (q: string) => {
     const clean = q.trim();
-    if (!clean || loading) return;
+    if (!clean || loadingRef.current) return;
     setLoading(true);
     setInput('');
     setStage('spark');
@@ -148,10 +158,10 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
       setSpark(s);
       setSession({ sparks: 0, right: 0, wrong: 0 });
       award(5);
-      p.track('curio');
-      p.unlock('first_spark');
+      pRef.current.track('curio');
+      pRef.current.unlock('first_spark');
 
-      p.recordCurio({
+      pRef.current.recordCurio({
         id, question: clean, title: s.title, emoji: s.emoji, mood,
         createdAt: Date.now(), completed: false,
       });
@@ -165,15 +175,15 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
     } finally {
       setLoading(false);
     }
-  }, [age, award, childProfile.name, loading, mood, p]);
+  }, [age, award, childProfile.name, mood]);
 
-  const onGuess = (i: number) => {
+  const onGuess = useCallback((i: number) => {
     if (!spark?.predict) return;
     setGuess(i);
     const right = i === spark.predict.correct_index;
     award(right ? 8 : 4, right);
     toast(right ? '🎯 Great hunch! +8 Sparks' : '💡 Nice guess! +4 Sparks');
-  };
+  }, [spark, award]);
 
 
   /* ---------- section fetching (cached + prefetched) ---------- */
@@ -211,9 +221,12 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
     fetchSection(spark, question, idx).catch(() => {});
   }, [fetchSection, question, spark]);
 
+  const sectionsRef = useRef<SectionData[]>(sections);
+  sectionsRef.current = sections;
+
   const loadSection = useCallback(async (idx: number) => {
     if (!spark) return;
-    if (sectionCache.current.has(idx) && sections[idx]) return;
+    if (sectionCache.current.has(idx) && sectionsRef.current[idx]) return;
     setSectionLoading(true);
     try {
       await fetchSection(spark, question, idx);
@@ -222,7 +235,7 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
     } finally {
       setSectionLoading(false);
     }
-  }, [fetchSection, question, sections, spark]);
+  }, [fetchSection, question, spark]);
 
   // While the child reads the Spark, warm the first two dive sections.
   useEffect(() => {
@@ -239,19 +252,19 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
   }, [stage, sectionIdx, sections, spark, prefetchSection]);
 
 
-  const startDive = async () => {
+  const startDive = useCallback(async () => {
     setStage('dive');
     setSectionIdx(0);
     scrollTop();
-    if (!sections[0]) await loadSection(0);
-  };
+    if (!sectionsRef.current[0]) await loadSection(0);
+  }, [loadSection]);
 
-  const nextSection = async () => {
+  const nextSection = useCallback(async () => {
     if (!spark) return;
     const next = sectionIdx + 1;
     if (next >= spark.sections.length) {
-      p.unlock('deep_diver');
-      p.track('dive');
+      pRef.current.unlock('deep_diver');
+      pRef.current.track('dive');
 
       award(20, true);
       setStage('make');
@@ -271,13 +284,13 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
     }
     setSectionIdx(next);
     scrollTop();
-    if (!sections[next]) await loadSection(next);
+    if (!sectionsRef.current[next]) await loadSection(next);
     prefetchSection(next + 1);
-  };
+  }, [spark, sectionIdx, award, age, childProfile.name, mood, loadSection, prefetchSection]);
 
 
-  const onSectionImage = async (idx: number) => {
-    const sec = sections[idx];
+  const onSectionImage = useCallback(async (idx: number) => {
+    const sec = sectionsRef.current[idx];
     if (!sec) return;
     try {
       const r = await callFn<{ imageUrl: string }>('wonder-image', { prompt: sec.image_prompt });
@@ -290,48 +303,52 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
     } catch (e) {
       toast.error((e as Error).message);
     }
-  };
+  }, [award]);
 
-  const onCheckpoint = (correct: boolean) => {
+  const comboRef = useRef(combo);
+  comboRef.current = combo;
+
+  const onCheckpoint = useCallback((correct: boolean) => {
     if (correct) {
-      const c = combo + 1;
+      const c = comboRef.current + 1;
+      comboRef.current = c;
       setCombo(c);
       setSession((s) => ({ ...s, right: s.right + 1 }));
-      p.track('correct');
+      pRef.current.track('correct');
       const bonus = c >= 2 ? c * 2 : 0;
       award(10 + bonus, true);
-      p.unlock('quiz_whiz');
+      pRef.current.unlock('quiz_whiz');
       toast.success(bonus ? `+${10 + bonus} Sparks — ${c}× combo! 🔥` : '+10 Sparks — nailed it!');
     } else {
+      comboRef.current = 0;
       setCombo(0);
       setSession((s) => ({ ...s, wrong: s.wrong + 1 }));
       award(2);
       toast('+2 Sparks — good try!', { icon: '💡' });
     }
+  }, [award]);
 
-  };
-
-  const onMakeComplete = (photo?: string) => {
+  const onMakeComplete = useCallback((photo?: string) => {
     if (!make || !spark) return;
     setMakeDone(true);
-    p.addTrophy({
+    pRef.current.addTrophy({
       id: `${Date.now()}`, title: make.title, emoji: make.emoji,
       topic: spark.title, kind: make.kind, createdAt: Date.now(), photo,
     });
-    p.unlock('maker');
+    pRef.current.unlock('maker');
     award(30, true);
-    p.completeCurio(curioId);
+    pRef.current.completeCurio(curioId);
     confetti({ particleCount: 140, spread: 100, origin: { y: 0.6 } });
     setTimeout(() => { setStage('reward'); scrollTop(); }, 900);
-  };
+  }, [make, spark, award, curioId]);
 
-  const resetToAsk = () => {
+  const resetToAsk = useCallback(() => {
     setStage('ask');
     setSpark(null);
     setSections([]);
     setQuestion('');
     scrollTop();
-  };
+  }, []);
 
   useEffect(() => () => window.speechSynthesis?.cancel(), []);
 
@@ -343,179 +360,72 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
   }, [p.goalJustHit]);
 
 
-  /* ---------- shared chrome ---------- */
-  const Header = (
-    <header className="sticky top-0 z-30 backdrop-blur-xl bg-surface-primary/90 border-b border-border">
-      <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
-        <button
-          onClick={stage === 'ask' ? onBack : resetToAsk}
-          aria-label={stage === 'ask' ? 'Back to profiles' : 'Back to asking'}
-          className="h-10 w-10 rounded-xl border border-border bg-surface-secondary flex items-center justify-center text-text-secondary hover:text-text-primary"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
+  const openShelf = useCallback(() => setShelfOpen(true), []);
+  const closeShelf = useCallback(() => setShelfOpen(false), []);
+  const handleBack = useCallback(() => {
+    if (stage === 'ask') onBack();
+    else resetToAsk();
+  }, [stage, onBack, resetToAsk]);
 
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 text-sm font-black text-text-primary">
-            <span>{p.level.emoji}</span>
-            <span className="truncate">{p.level.name}</span>
-          </div>
-          <div className="mt-1 h-1.5 rounded-full bg-surface-tertiary overflow-hidden">
-            <div className="h-full bg-accent-brand rounded-full transition-all" style={{ width: `${p.levelProgress}%` }} />
-          </div>
-        </div>
+  const suggestions = useMemo(() => SURPRISES.slice(0, 6), []);
 
-        <motion.div
-          key={p.sparks}
-          initial={{ scale: 1 }}
-          animate={{ scale: [1, 1.18, 1] }}
-          transition={{ duration: 0.35 }}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-accent-warning/15 border border-accent-warning/30"
-        >
-          <Zap className="h-4 w-4 text-accent-warning" />
-          <span className="font-black text-text-primary text-sm tabular-nums">{p.sparks}</span>
-        </motion.div>
-        {chain > 1 && (
-          <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-accent-brand/15 border border-accent-brand/30" title="Curiosity chain this session">
-            <span className="text-sm">🔗</span>
-            <span className="font-black text-text-primary text-sm">{chain}</span>
-          </div>
-        )}
-        {p.streak > 0 && (
-          <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-accent-error/15 border border-accent-error/30" title={`${p.streak}-day streak`}>
-            <Flame className="h-4 w-4 text-accent-error" />
-            <span className="font-black text-text-primary text-sm">{p.streak}</span>
-          </div>
-        )}
-        <GoalRing pct={p.goalPct} today={p.todaySparks} goal={p.dailyGoal} />
-
-
-        <button
-          onClick={() => setShelfOpen(true)}
-          aria-label="Trophy shelf"
-          className="h-10 w-10 rounded-xl border border-border bg-surface-secondary flex items-center justify-center text-text-secondary hover:text-text-primary"
-        >
-          <TrophyIcon className="h-5 w-5" />
-        </button>
-      </div>
-    </header>
-  );
+  /* ---------- stable props for the dive section ---------- */
+  const noop = useCallback(() => {}, []);
+  const handleSectionImage = useCallback(() => onSectionImage(sectionIdx), [onSectionImage, sectionIdx]);
+  const handleSectionSpeak = useCallback(() => {
+    const s = sectionsRef.current[sectionIdx];
+    if (s) speak(s.body.join(' '));
+  }, [speak, sectionIdx]);
+  const handleTune = useCallback((m: 'simpler' | 'deeper') => {
+    const s = sectionsRef.current[sectionIdx];
+    if (!s) return;
+    startCurio(
+      m === 'simpler'
+        ? `Explain ${s.heading} in much simpler words`
+        : `Go deeper and more advanced on ${s.heading}`,
+    );
+  }, [startCurio, sectionIdx]);
+  const currentSection = sections[sectionIdx];
 
   return (
     <div className="min-h-screen bg-surface-primary">
-      {Header}
+      <CanvasHeader
+        levelEmoji={p.level.emoji}
+        levelName={p.level.name}
+        levelProgress={p.levelProgress}
+        sparks={p.sparks}
+        chain={chain}
+        streak={p.streak}
+        goalPct={p.goalPct}
+        todaySparks={p.todaySparks}
+        dailyGoal={p.dailyGoal}
+        onBack={handleBack}
+        backLabel={stage === 'ask' ? 'Back to profiles' : 'Back to asking'}
+        onOpenShelf={openShelf}
+      />
       <div ref={topRef} />
 
       <main className="max-w-2xl mx-auto px-4 py-6 pb-32 space-y-5">
         {/* ---------- ASK ---------- */}
         {stage === 'ask' && (
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
-            <div className="pt-4">
-              <h1 className="text-3xl sm:text-4xl font-black text-text-primary leading-tight">
-                What do you want to explore today, {childProfile.name}?
-              </h1>
-              <p className="mt-2 text-text-secondary">Ask anything. I'll spark an answer in seconds.</p>
-            </div>
-
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-text-tertiary mb-2">Pick a mood</p>
-              <div className="grid grid-cols-4 gap-2">
-                {MOODS.map((m) => (
-                  <button
-                    key={m.id}
-                    onClick={() => setMood(m.id)}
-                    className={[
-                      'rounded-3xl py-3 border-2 font-bold text-xs flex flex-col items-center gap-1 transition min-h-[70px] justify-center',
-                      mood === m.id
-                        ? 'border-accent-brand bg-accent-brand/15 text-text-primary'
-                        : 'border-border bg-surface-secondary text-text-secondary hover:border-accent-brand/40',
-                    ].join(' ')}
-                  >
-                    <span className="text-xl">{m.emoji}</span>{m.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <DailyPanel
-              streak={p.streak}
-              freezes={p.freezes}
-              week={p.week}
-              today={p.todaySparks}
-              goal={p.dailyGoal}
-              pct={p.goalPct}
-              quests={p.quests}
-              onClaim={p.claimQuest}
-            />
-
-            <button
-
-              onClick={() => startCurio(dailyChallenge)}
-              className="w-full text-left p-4 rounded-[28px] border-2 border-accent-warning bg-accent-warning/10 flex items-center gap-3 shadow-sm"
-            >
-              <span className="text-2xl">🏅</span>
-              <span className="flex-1">
-                <span className="block text-xs font-bold uppercase tracking-widest text-accent-warning">Daily Wonder</span>
-                <span className="block font-bold text-text-primary">{dailyChallenge}</span>
-              </span>
-              <ChevronRight className="h-5 w-5 text-text-tertiary" />
-            </button>
-
-            <div className="grid grid-cols-2 gap-2.5">
-              {SURPRISES.slice(0, 6).map((q) => (
-                <button
-                  key={q}
-                  onClick={() => startCurio(q)}
-                  className="p-4 rounded-3xl border-2 border-border bg-surface-secondary text-left text-sm font-bold text-text-primary hover:border-accent-brand hover:-translate-y-0.5 transition min-h-[68px] shadow-sm"
-                >
-                  {q}
-                </button>
-              ))}
-            </div>
-
-            {p.history.length > 0 && (
-              <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-text-tertiary mb-2 flex items-center gap-1.5">
-                  <History className="h-3.5 w-3.5" /> Your Curios
-                </p>
-                <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
-                  {p.history.map((h) => (
-                    <button
-                      key={h.id}
-                      onClick={() => startCurio(h.question)}
-                      className="shrink-0 px-3.5 py-2.5 rounded-2xl border border-border bg-surface-secondary text-sm font-semibold text-text-secondary hover:text-text-primary flex items-center gap-2"
-                    >
-                      <span>{h.emoji}</span>
-                      <span className="max-w-[140px] truncate">{h.title}</span>
-                      {h.completed && <span className="text-accent-success">✓</span>}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-text-tertiary mb-2">Badges</p>
-              <div className="flex flex-wrap gap-2">
-                {BADGES.map((b) => {
-                  const has = p.badges.includes(b.id);
-                  return (
-                    <div
-                      key={b.id}
-                      title={has ? b.name : b.hint}
-                      className={[
-                        'px-3 py-2 rounded-2xl border text-xs font-bold flex items-center gap-1.5',
-                        has ? 'border-accent-warning/50 bg-accent-warning/10 text-text-primary' : 'border-border bg-surface-secondary text-text-tertiary',
-                      ].join(' ')}
-                    >
-                      <span className={has ? '' : 'grayscale opacity-50'}>{b.emoji}</span>
-                      {has ? b.name : '???'}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </motion.div>
+          <AskScreen
+            childName={childProfile.name}
+            mood={mood}
+            onMood={setMood}
+            dailyChallenge={dailyChallenge}
+            suggestions={suggestions}
+            onAsk={startCurio}
+            streak={p.streak}
+            freezes={p.freezes}
+            week={p.week}
+            todaySparks={p.todaySparks}
+            dailyGoal={p.dailyGoal}
+            goalPct={p.goalPct}
+            quests={p.quests}
+            onClaim={p.claimQuest}
+            history={p.history}
+            badges={p.badges}
+          />
         )}
 
         {/* ---------- SPARK ---------- */}
@@ -638,7 +548,7 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
               ))}
             </div>
 
-            {sectionLoading || !sections[sectionIdx] ? (
+            {sectionLoading || !currentSection ? (
               <div className="fun-card p-6 space-y-3">
                 <div className="h-6 w-1/2 rounded-full bg-surface-tertiary animate-pulse" />
                 <div className="h-4 w-full rounded-full bg-surface-tertiary animate-pulse" />
@@ -647,19 +557,15 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
             ) : (
               <DiveSection
                 key={sectionIdx}
-                section={sections[sectionIdx]}
+                section={currentSection}
                 index={sectionIdx}
                 total={spark.sections.length}
                 isLast={sectionIdx === spark.sections.length - 1}
-                onImage={() => onSectionImage(sectionIdx)}
-                onStory={() => {}}
+                onImage={handleSectionImage}
+                onStory={noop}
                 speaking={speaking}
-                onSpeak={() => speak(sections[sectionIdx].body.join(' '))}
-                onTune={(m) => startCurio(
-                  m === 'simpler'
-                    ? `Explain ${sections[sectionIdx].heading} in much simpler words`
-                    : `Go deeper and more advanced on ${sections[sectionIdx].heading}`,
-                )}
+                onSpeak={handleSectionSpeak}
+                onTune={handleTune}
                 onCheckpoint={onCheckpoint}
                 onContinue={nextSection}
               />
@@ -806,43 +712,7 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
       {/* ---------- trophy shelf ---------- */}
 
       <AnimatePresence>
-        {shelfOpen && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-surface-overlay/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
-            onClick={() => setShelfOpen(false)}
-          >
-            <motion.div
-              initial={{ y: 40 }} animate={{ y: 0 }} exit={{ y: 40 }}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-lg max-h-[70vh] overflow-y-auto rounded-3xl border border-border bg-surface-secondary p-5"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-black text-text-primary flex items-center gap-2">
-                  <TrophyIcon className="h-5 w-5 text-accent-warning" /> Trophy Shelf
-                </h3>
-                <button onClick={() => setShelfOpen(false)} aria-label="Close" className="h-9 w-9 rounded-xl flex items-center justify-center text-text-secondary">
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-              {p.trophies.length === 0 ? (
-                <p className="text-text-tertiary text-sm">Finish a Make Mode challenge to earn your first trophy.</p>
-              ) : (
-                <div className="grid gap-3">
-                  {p.trophies.map((t) => (
-                    <div key={t.id} className="rounded-2xl border border-border bg-surface-tertiary overflow-hidden">
-                      {t.photo && <img src={t.photo} alt={t.title} className="w-full max-h-40 object-cover" />}
-                      <div className="p-3.5">
-                        <p className="font-bold text-text-primary">{t.emoji} {t.title}</p>
-                        <p className="text-xs text-text-tertiary mt-0.5">{t.topic} · {new Date(t.createdAt).toLocaleDateString()}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </motion.div>
-          </motion.div>
-        )}
+        {shelfOpen && <TrophyShelf trophies={p.trophies} onClose={closeShelf} />}
       </AnimatePresence>
 
       {/* ---------- badge pop ---------- */}

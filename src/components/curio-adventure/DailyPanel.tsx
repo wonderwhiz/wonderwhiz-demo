@@ -4,7 +4,7 @@ import { Flame, Zap, Snowflake, Check } from 'lucide-react';
 import type { Quest } from '@/hooks/useCurioProgress';
 
 /* ---------- header goal ring (Duolingo's daily XP ring) ---------- */
-export const GoalRing: React.FC<{ pct: number; today: number; goal: number }> = ({ pct, today, goal }) => {
+const GoalRingBase: React.FC<{ pct: number; today: number; goal: number }> = ({ pct, today, goal }) => {
   const r = 15;
   const c = 2 * Math.PI * r;
   return (
@@ -29,6 +29,8 @@ export const GoalRing: React.FC<{ pct: number; today: number; goal: number }> = 
     </div>
   );
 };
+
+export const GoalRing = React.memo(GoalRingBase);
 
 /* ---------- streak calendar + daily quests ---------- */
 interface PanelProps {
@@ -138,4 +140,4 @@ const DailyPanel: React.FC<PanelProps> = ({ streak, freezes, week, today, goal, 
   </div>
 );
 
-export default DailyPanel;
+export default React.memo(DailyPanel);
