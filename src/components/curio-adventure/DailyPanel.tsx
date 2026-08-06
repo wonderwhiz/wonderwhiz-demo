@@ -140,4 +140,4 @@ const DailyPanel: React.FC<PanelProps> = ({ streak, freezes, week, today, goal, 
   </div>
 );
 
-export default DailyPanel;
+export default React.memo(DailyPanel);

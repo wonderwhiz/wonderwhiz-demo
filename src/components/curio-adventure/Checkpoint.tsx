@@ -117,4 +117,4 @@ const Checkpoint: React.FC<Props> = ({ data, onResolved }) => {
   );
 };
 
-export default Checkpoint;
+export default React.memo(Checkpoint);
