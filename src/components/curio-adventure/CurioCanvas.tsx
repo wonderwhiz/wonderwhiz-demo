@@ -252,19 +252,19 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
   }, [stage, sectionIdx, sections, spark, prefetchSection]);
 
 
-  const startDive = async () => {
+  const startDive = useCallback(async () => {
     setStage('dive');
     setSectionIdx(0);
     scrollTop();
-    if (!sections[0]) await loadSection(0);
-  };
+    if (!sectionsRef.current[0]) await loadSection(0);
+  }, [loadSection]);
 
-  const nextSection = async () => {
+  const nextSection = useCallback(async () => {
     if (!spark) return;
     const next = sectionIdx + 1;
     if (next >= spark.sections.length) {
-      p.unlock('deep_diver');
-      p.track('dive');
+      pRef.current.unlock('deep_diver');
+      pRef.current.track('dive');
 
       award(20, true);
       setStage('make');
@@ -284,13 +284,13 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
     }
     setSectionIdx(next);
     scrollTop();
-    if (!sections[next]) await loadSection(next);
+    if (!sectionsRef.current[next]) await loadSection(next);
     prefetchSection(next + 1);
-  };
+  }, [spark, sectionIdx, award, age, childProfile.name, mood, loadSection, prefetchSection]);
 
 
-  const onSectionImage = async (idx: number) => {
-    const sec = sections[idx];
+  const onSectionImage = useCallback(async (idx: number) => {
+    const sec = sectionsRef.current[idx];
     if (!sec) return;
     try {
       const r = await callFn<{ imageUrl: string }>('wonder-image', { prompt: sec.image_prompt });
@@ -303,48 +303,49 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
     } catch (e) {
       toast.error((e as Error).message);
     }
-  };
+  }, [award]);
 
-  const onCheckpoint = (correct: boolean) => {
+  const onCheckpoint = useCallback((correct: boolean) => {
     if (correct) {
-      const c = combo + 1;
-      setCombo(c);
-      setSession((s) => ({ ...s, right: s.right + 1 }));
-      p.track('correct');
-      const bonus = c >= 2 ? c * 2 : 0;
-      award(10 + bonus, true);
-      p.unlock('quiz_whiz');
-      toast.success(bonus ? `+${10 + bonus} Sparks — ${c}× combo! 🔥` : '+10 Sparks — nailed it!');
+      setCombo((prev) => {
+        const c = prev + 1;
+        setSession((s) => ({ ...s, right: s.right + 1 }));
+        pRef.current.track('correct');
+        const bonus = c >= 2 ? c * 2 : 0;
+        award(10 + bonus, true);
+        pRef.current.unlock('quiz_whiz');
+        toast.success(bonus ? `+${10 + bonus} Sparks — ${c}× combo! 🔥` : '+10 Sparks — nailed it!');
+        return c;
+      });
     } else {
       setCombo(0);
       setSession((s) => ({ ...s, wrong: s.wrong + 1 }));
       award(2);
       toast('+2 Sparks — good try!', { icon: '💡' });
     }
+  }, [award]);
 
-  };
-
-  const onMakeComplete = (photo?: string) => {
+  const onMakeComplete = useCallback((photo?: string) => {
     if (!make || !spark) return;
     setMakeDone(true);
-    p.addTrophy({
+    pRef.current.addTrophy({
       id: `${Date.now()}`, title: make.title, emoji: make.emoji,
       topic: spark.title, kind: make.kind, createdAt: Date.now(), photo,
     });
-    p.unlock('maker');
+    pRef.current.unlock('maker');
     award(30, true);
-    p.completeCurio(curioId);
+    pRef.current.completeCurio(curioId);
     confetti({ particleCount: 140, spread: 100, origin: { y: 0.6 } });
     setTimeout(() => { setStage('reward'); scrollTop(); }, 900);
-  };
+  }, [make, spark, award, curioId]);
 
-  const resetToAsk = () => {
+  const resetToAsk = useCallback(() => {
     setStage('ask');
     setSpark(null);
     setSections([]);
     setQuestion('');
     scrollTop();
-  };
+  }, []);
 
   useEffect(() => () => window.speechSynthesis?.cancel(), []);
 
