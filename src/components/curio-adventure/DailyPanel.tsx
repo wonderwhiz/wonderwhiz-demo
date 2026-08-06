@@ -30,6 +30,8 @@ const GoalRingBase: React.FC<{ pct: number; today: number; goal: number }> = ({ 
   );
 };
 
+export const GoalRing = React.memo(GoalRingBase);
+
 /* ---------- streak calendar + daily quests ---------- */
 interface PanelProps {
   streak: number;
