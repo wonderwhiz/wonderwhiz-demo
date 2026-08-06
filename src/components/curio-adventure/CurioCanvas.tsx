@@ -115,12 +115,17 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
   };
 
   /* ---------- rewards ---------- */
+  // `p` is a fresh object every render; keep it in a ref so callbacks stay stable
+  // and memoized children don't re-render on every progress tick.
+  const pRef = useRef(p);
+  pRef.current = p;
+
   const award = useCallback((n: number, celebrate = false) => {
-    p.addSparks(n, celebrate);
+    pRef.current.addSparks(n, celebrate);
     setSession((s) => ({ ...s, sparks: s.sparks + n }));
     setBurst({ id: Date.now(), n });
     setTimeout(() => setBurst(null), 1400);
-  }, [p]);
+  }, []);
 
 
   /* ---------- flow ---------- */
