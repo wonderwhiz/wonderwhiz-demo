@@ -4,7 +4,7 @@ import { Flame, Zap, Snowflake, Check } from 'lucide-react';
 import type { Quest } from '@/hooks/useCurioProgress';
 
 /* ---------- header goal ring (Duolingo's daily XP ring) ---------- */
-export const GoalRing: React.FC<{ pct: number; today: number; goal: number }> = ({ pct, today, goal }) => {
+const GoalRingBase: React.FC<{ pct: number; today: number; goal: number }> = ({ pct, today, goal }) => {
   const r = 15;
   const c = 2 * Math.PI * r;
   return (
