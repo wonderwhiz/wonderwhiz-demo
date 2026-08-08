@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useAuth } from '@/hooks/useAuth';
 import { useChildProfile } from '@/hooks/use-child-profile';
@@ -11,6 +11,8 @@ const WonderWhiz = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { childProfile, isLoading } = useChildProfile(childId);
+  const [params] = useSearchParams();
+  const initialQuestion = params.get('q') || undefined;
 
   useEffect(() => {
     if (!user) navigate('/login');
@@ -29,7 +31,8 @@ const WonderWhiz = () => {
       </Helmet>
       <CurioCanvas
         childProfile={childProfile}
-        onBack={() => navigate('/profiles')}
+        initialQuestion={initialQuestion}
+        onBack={() => navigate(`/dashboard/${childId}`)}
       />
     </>
   );

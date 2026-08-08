@@ -32,6 +32,8 @@ type Stage = 'ask' | 'spark' | 'dive' | 'make' | 'reward';
 interface Props {
   childProfile: { id: string; name: string; age: number | null };
   onBack: () => void;
+  /** When set, the Curio starts immediately (deep link from the hub). */
+  initialQuestion?: string;
 }
 
 async function callFn<T>(name: string, body: unknown): Promise<T> {
@@ -45,7 +47,7 @@ async function callFn<T>(name: string, body: unknown): Promise<T> {
   return data as T;
 }
 
-const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
+const CurioCanvas: React.FC<Props> = ({ childProfile, onBack, initialQuestion }) => {
   const age = childProfile.age ?? 10;
   const p = useCurioProgress(childProfile.id);
 
@@ -358,6 +360,14 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
     confetti({ particleCount: 120, spread: 90, origin: { y: 0.6 } });
     toast.success('Daily goal complete! ❄️ You earned a Streak Freeze');
   }, [p.goalJustHit]);
+
+  // Deep link: start straight from a question picked on the hub — no extra taps.
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    if (autoStarted.current || !initialQuestion) return;
+    autoStarted.current = true;
+    startCurio(initialQuestion);
+  }, [initialQuestion, startCurio]);
 
 
   const openShelf = useCallback(() => setShelfOpen(true), []);
