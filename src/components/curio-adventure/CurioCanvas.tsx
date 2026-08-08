@@ -13,6 +13,9 @@ import MakeMode from './MakeMode';
 import CanvasHeader from './CanvasHeader';
 import AskScreen from './AskScreen';
 import TrophyShelf from './TrophyShelf';
+import StageRail from './StageRail';
+import WonderQueue from './WonderQueue';
+import ShareCard from './ShareCard';
 
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
@@ -73,6 +76,7 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack, initialQuestion })
   const [chain, setChain] = useState(0);
   const [burst, setBurst] = useState<{ id: number; n: number } | null>(null);
   const [session, setSession] = useState({ sparks: 0, right: 0, wrong: 0 });
+  const [queue, setQueue] = useState<string[]>([]);
   const sectionCache = useRef<Map<number, Promise<SectionData>>>(new Map());
 
 
@@ -150,6 +154,7 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack, initialQuestion })
     setCombo(0);
     setGuess(null);
     setChain((c) => c + 1);
+    setQueue([]);
     setQuestion(clean);
     const id = `${Date.now()}`;
     setCurioId(id);
@@ -370,6 +375,14 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack, initialQuestion })
   }, [initialQuestion, startCurio]);
 
 
+  const addToQueue = useCallback((q: string) => {
+    setQueue((prev) => (prev.includes(q) ? prev : [...prev, q]));
+    toast('Parked for later 🅿️ — you\'ll see it when you finish');
+  }, []);
+  const removeFromQueue = useCallback((q: string) => {
+    setQueue((prev) => prev.filter((x) => x !== q));
+  }, []);
+
   const openShelf = useCallback(() => setShelfOpen(true), []);
   const closeShelf = useCallback(() => setShelfOpen(false), []);
   const handleBack = useCallback(() => {
@@ -414,6 +427,21 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack, initialQuestion })
         onOpenShelf={openShelf}
       />
       <div ref={topRef} />
+
+      {stage !== 'ask' && (
+        <div className="max-w-2xl mx-auto px-4 pt-4">
+          <StageRail
+            stage={stage}
+            innerPct={
+              stage === 'dive' && spark?.sections.length
+                ? (sectionIdx + 1) / spark.sections.length
+                : stage === 'spark'
+                  ? (spark ? 1 : 0.3)
+                  : 1
+            }
+          />
+        </div>
+      )}
 
       <main className="max-w-2xl mx-auto px-4 py-6 pb-32 space-y-5">
         {/* ---------- ASK ---------- */}
@@ -580,6 +608,8 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack, initialQuestion })
                 onContinue={nextSection}
               />
             )}
+
+            <WonderQueue queue={queue} onAdd={addToQueue} onRemove={removeFromQueue} />
           </div>
         )}
 
@@ -593,7 +623,9 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack, initialQuestion })
           <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} className="space-y-4">
             <div className="fun-card border-accent-success bg-accent-success/10 p-6 text-center">
               <div className="text-6xl">{spark.emoji}</div>
-              <h2 className="mt-3 text-3xl font-black text-text-primary">Quest complete!</h2>
+              <h2 className="mt-3 text-3xl font-black text-text-primary">
+                {age >= 12 ? 'Topic unlocked' : 'Quest complete!'}
+              </h2>
               <p className="mt-1 text-text-secondary">You cracked open “{spark.title}”.</p>
 
               {/* session scorecard */}
@@ -638,6 +670,36 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack, initialQuestion })
                 🖨️ Print my certificate
               </button>
             </div>
+
+            <ShareCard
+              emoji={spark.emoji}
+              title={spark.title}
+              question={question}
+              wowFact={spark.wow_fact}
+              childName={childProfile.name}
+              sparks={session.sparks}
+              accuracy={session.right + session.wrong
+                ? Math.round((session.right / (session.right + session.wrong)) * 100)
+                : 100}
+              heroUrl={spark.heroUrl}
+            />
+
+            {queue.length > 0 && (
+              <div className="fun-card p-5">
+                <p className="text-xs font-bold uppercase tracking-widest text-accent-brand">🅿️ Your parked questions</p>
+                <div className="mt-3 grid gap-2.5">
+                  {queue.map((q) => (
+                    <button
+                      key={q}
+                      onClick={() => startCurio(q)}
+                      className="p-4 rounded-2xl border-2 border-accent-brand/40 bg-accent-brand/10 text-left font-bold text-text-primary hover:-translate-y-0.5 transition"
+                    >
+                      {q}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <p className="text-xs font-bold uppercase tracking-widest text-text-tertiary">🐇 Rabbit holes from this Curio</p>
             <div className="grid gap-2.5">
