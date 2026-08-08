@@ -47,7 +47,7 @@ async function callFn<T>(name: string, body: unknown): Promise<T> {
   return data as T;
 }
 
-const CurioCanvas: React.FC<Props> = ({ childProfile, onBack }) => {
+const CurioCanvas: React.FC<Props> = ({ childProfile, onBack, initialQuestion }) => {
   const age = childProfile.age ?? 10;
   const p = useCurioProgress(childProfile.id);
 
