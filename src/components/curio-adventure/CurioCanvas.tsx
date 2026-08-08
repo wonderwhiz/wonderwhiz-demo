@@ -32,6 +32,8 @@ type Stage = 'ask' | 'spark' | 'dive' | 'make' | 'reward';
 interface Props {
   childProfile: { id: string; name: string; age: number | null };
   onBack: () => void;
+  /** When set, the Curio starts immediately (deep link from the hub). */
+  initialQuestion?: string;
 }
 
 async function callFn<T>(name: string, body: unknown): Promise<T> {
