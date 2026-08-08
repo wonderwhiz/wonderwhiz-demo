@@ -1,5 +1,5 @@
 import React from 'react';
-import ModernDashboard from './ModernDashboard';
+import WonderHub from './WonderHub';
 
 interface ElevatedDashboardProps {
   childProfile: any;
@@ -7,7 +7,7 @@ interface ElevatedDashboardProps {
 }
 
 const ElevatedDashboard: React.FC<ElevatedDashboardProps> = (props) => {
-  return <ModernDashboard {...props} />;
+  return <WonderHub {...props} />;
 };
 
 export default ElevatedDashboard;
