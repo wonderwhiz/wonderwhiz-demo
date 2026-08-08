@@ -361,6 +361,14 @@ const CurioCanvas: React.FC<Props> = ({ childProfile, onBack, initialQuestion })
     toast.success('Daily goal complete! ❄️ You earned a Streak Freeze');
   }, [p.goalJustHit]);
 
+  // Deep link: start straight from a question picked on the hub — no extra taps.
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    if (autoStarted.current || !initialQuestion) return;
+    autoStarted.current = true;
+    startCurio(initialQuestion);
+  }, [initialQuestion, startCurio]);
+
 
   const openShelf = useCallback(() => setShelfOpen(true), []);
   const closeShelf = useCallback(() => setShelfOpen(false), []);
