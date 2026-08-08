@@ -52,7 +52,7 @@ const ShareCard: React.FC<Props> = ({
   const [url, setUrl] = useState<string>('');
   const [copied, setCopied] = useState(false);
 
-  const shareLink = `${window.location.origin}/wonderwhiz?q=${encodeURIComponent(question)}`;
+  const shareLink = `${window.location.origin}${window.location.pathname}?q=${encodeURIComponent(question)}`;
 
   const draw = useCallback(async () => {
     const canvas = canvasRef.current;
